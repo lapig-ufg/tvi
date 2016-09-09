@@ -8,8 +8,13 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/example.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/tvi', {
+			controller: 'TviController',
+			templateUrl: 'views/tvi.tpl.html',
+			reloadOnSearch: false
+		})
 		.otherwise({
-			redirectTo: '/example'
+			redirectTo: '/tvi'
 		});
 
 }).run(function($http) {

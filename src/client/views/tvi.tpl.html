@@ -1,0 +1,52 @@
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="row">          
+      <div class="col-md-4">            
+          <a class="navbar-brand">{{data.current}}/{{data.total}} Pontos</a>
+      </div>
+      <div class="col-md-4">
+        Tempo: 2:00
+      </div>
+      <div class="col-md-4">
+        <label>
+          <a href="#">Mudar Senha</a> 
+          <br>       
+          <a href="#">Sair</a>
+        </label>
+      </div>  
+    </div>
+  </div>
+</nav>
+<img ng-src="{{data[0].imagem[0].file}}" />
+<div class="container" ng-repeat="x in data[0].imagem">
+  <img ng-src="{{x.file}}" />
+</div>
+
+<div class="container">    
+<div class="row">
+  <div class="col-md-6">
+    <div class="radio">
+      <label>
+        <input type="radio" name="radiun1" id="optionsRadios1">
+        Seco
+      </label>
+    </div>
+    <div class="radio">
+      <label>
+        <input type="radio" name="radiun1" id="optionsRadios2">
+        Chuvoso
+      </label>
+    </div>
+  </div>
+  <div class="col-md-6 form">
+    <select class="form-control">
+      <option>2000</option>
+    </select>
+    ate
+    <select class="form-control">
+      <option>2015</option>
+    </select>  
+    <input ng-click="nextPoint()" class="btn btn-default" type="button" value="Proximo">
+  </div>
+</div>      
+</div>

@@ -27,6 +27,7 @@ app.middleware.repository.init(function() {
 
 	app.repository = app.middleware.repository;
 
+	app.use(session({secret: 'LAPIG'}));
 	app.use(compression());
 	app.use(express.static(app.config.clientDir));
 	app.set('views', __dirname + '/views');
