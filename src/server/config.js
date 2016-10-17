@@ -9,7 +9,7 @@ module.exports = function(app) {
 		"mongo": {
 			"host": "localhost",
 			"port": "27017",
-			"dbname": "lapig-maps"
+			"dbname": "tvi"
 		},
 		"port": 5000,
 	};

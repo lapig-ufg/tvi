@@ -17,36 +17,110 @@
     </div>
   </div>
 </nav>
-<img ng-src="{{data[0].imagem[0].file}}" />
-<div class="container" ng-repeat="x in data[0].imagem">
-  <img ng-src="{{x.file}}" />
+<div class="container-fluid" ng-show="data.current != data.total">
+  <div class="row">
+    <div class="col-xs-9 col-sm-9 col-md-9 col-lg-9">      
+      <div class="row">
+        <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+          <div class="center-block">            
+            <h4 class="text-center">{{data.point.images[0].data}} <small> - Periodo {{data.point.images[0].periodo}} </small> </h4>
+            <div class="row">
+              <div class="col-xs-1 col-sm-1 col-md-1">
+                <input type="checkbox" ng-model="pointEnabled2">
+              </div> 
+              <div class="col-xs-11 col-sm-11 col-md-11">
+                <p>Ponto de interesse</p>
+              </div> 
+            </div>
+            <img ng-show="pointEnabled2" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[0].imagePoint}}" />  
+            <img ng-hide="pointEnabled2" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[0].imageBase}}"/>
+          </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+          <div class="center-block ">
+            <h4 class="text-center">{{data.point.images[1].data}} <small> - Periodo {{data.point.images[1].periodo}}</small></h4>
+            <div class="row">
+              <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
+                <input type="checkbox" ng-model="pointEnabled1">
+              </div> 
+              <div class="col-xs-11 col-sm-11 col-md-11 col-lg-11">
+                <p>Ponto de interesse</p>                        
+              </div> 
+            </div>
+            <img ng-show="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imagePoint}}"/>
+            <img ng-hide="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBase}}" />
+          </div>
+        </div>        
+      </div>
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <fieldset  class="form-group scheduler-border">
+            <legend class="col-form-legend scheduler-border">Dados gerais</legend>
+              <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                <b>Bioma:</b> {{data.point.biome}} <br>
+                <b>Lotação:</b> {{suportData.value}} <br>
+                <b>Área relativa do mun. - cana:</b> {{suportData.cana}} <br>
+                <b>Área relativa do mun. - soja:</b> {{suportData.soja}} <br>
+                <b>Área relativa do mun. - vegetação nativa:</b> {{suportData.vegetacao}} <br>
+                <b>Área relativa do mun. - desmatamento ativo:</b> {{suportData.ativos}} <br>
+              </div>
+              <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                <b>Município</b>: {{data.point.county}} - {{data.point.UF}} <br>
+                <b>Área relativa do mun. - algodao:</b> {{suportData.algodao}} <br>
+                <b>Área relativa do mun. - milho</b>: {{suportData.milho}} <br>
+                <b>Área relativa do mun. - floresta plantada</b>: {{suportData.floresta}} <br>
+                <b>Desmatamento acumulado</b>: {{suportData.desmatamento}} <br>
+                <b>Produção de leite</b>: {{suportData.leite}} <br>
+              </div>
+            <div class="row">
+              <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <div class="center-block">                
+                  <input ng-click="getKml()" type="submit" class="btn btn-info" value="Gerar .kml">      
+                </div>
+              </div>
+            </div>
+          </fieldset>          
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <div class="center-block center-block-next">
+            <img class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.Modis}}" />
+          </div>          
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3 col-lg-3">
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <h2 class="text-center">Classe uso</h2>
+          <label class="form-control" ng-repeat="n in landuse">
+            <input ng-model="formData.classe_uso" type="radio" name="Land_uso" id="Classuse" ng-value="n"> {{n}}            
+          </label>                       
+        </div>        
+      </div>
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <h2 class="text-center">Indíce de certeza</h2>
+          <label class="form-control" ng-repeat="n in assurance">
+            <input ng-model="formData.ass" type="radio" name="assurance" id="ass" ng-value="n"> {{n}}
+          </label>            
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <div class="center-block center-block-next">
+            <button ng-click="submitPoint()" type="button" class="btn btn-success" ng-disabled="!formData.classe_uso || !formData.ass">proximo</button>
+          </div>
+        </div>          
+      </div>
+    </div>
+  </div>
 </div>
-
-<div class="container">    
-<div class="row">
-  <div class="col-md-6">
-    <div class="radio">
-      <label>
-        <input type="radio" name="radiun1" id="optionsRadios1">
-        Seco
-      </label>
-    </div>
-    <div class="radio">
-      <label>
-        <input type="radio" name="radiun1" id="optionsRadios2">
-        Chuvoso
-      </label>
-    </div>
+<div class="container-fluid" ng-show="data.current == data.total">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+      <img class="img-responsive" data-ng-src="../assets/finish.jpg"/>
+    </div>    
   </div>
-  <div class="col-md-6 form">
-    <select class="form-control">
-      <option>2000</option>
-    </select>
-    ate
-    <select class="form-control">
-      <option>2015</option>
-    </select>  
-    <input ng-click="nextPoint()" class="btn btn-default" type="button" value="Proximo">
-  </div>
-</div>      
 </div>

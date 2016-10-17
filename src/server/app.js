@@ -30,7 +30,7 @@ app.middleware.repository.init(function() {
 	app.use(session({secret: 'LAPIG'}));
 	app.use(compression());
 	app.use(express.static(app.config.clientDir));
-	app.set('views', __dirname + '/views');
+	app.set('views', __dirname + '/templates');
 	app.set('view engine', 'ejs');
 
 	var publicDir = path.join(__dirname, '');
