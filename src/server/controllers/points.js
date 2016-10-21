@@ -13,9 +13,9 @@ module.exports = function(app) {
 				pointsCollection.count({"Classe_uso": {$exists: true}}, function(err, current){
 					var result = {};
 					result['point'] = point;
-					result['total'] = count;
-					result['current'] = current + 1;				
-					callback(result);									
+					result['total'] = count;				
+					result['current'] = current + 1;									
+					callback(result);
 				})
 			});
 		});

@@ -4,6 +4,18 @@
 	}
 }
 
+.jumbotron {
+    width: 400px;
+    text-align: center;
+    margin-right: auto;
+    margin-top: 100px;
+    margin-left: auto;
+}
+
+.btn {
+    margin-top: 10px;
+}
+
 .area {
 	background: pink;
 }

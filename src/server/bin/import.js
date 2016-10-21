@@ -76,10 +76,10 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 	  			var bitmappoint = fs.readFileSync(imgs[i+1]);
 	  			var imgbasepoint = new Buffer(bitmappoint).toString('base64');
 		  		coordinates.push({"data": d.format(), "imageBase": imgbase, "periodo": periodo, "data": date, "imagePoint": imgbasepoint})
-		  		fs.unlinkSync(imgs[i]);
-		  		fs.unlinkSync(imgs[i]+".aux.xml")
-		  		fs.unlinkSync(imgs[i+1]);
-		  		fs.unlinkSync(imgs[i+1]+".aux.xml")				
+		  		//fs.unlinkSync(imgs[i]);
+		  		//fs.unlinkSync(imgs[i]+".aux.xml")
+		  		//fs.unlinkSync(imgs[i+1]);
+		  		//fs.unlinkSync(imgs[i+1]+".aux.xml")				
 				}
 									
 			}

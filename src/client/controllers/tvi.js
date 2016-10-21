@@ -15,24 +15,19 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 
 	requester._get('points/next-point', function(data) {
 		$scope.data = data;		
-		
 		requester._get("spatial/query?region="+$scope.data.point.biome+"&regionType=biome&city="+$scope.data.point.countyCode+"&lang=pt-br", function(pastagem) {
-
 			util._suport(pastagem, function(suportData){
-				console.log(suportData);
 				$scope.suportData = suportData;				
 			});
-
-		});
-		
+		});		
 	});
 	
 	$scope.submitPoint = function() {		
 		$scope.formData._id = $scope.data.point._id;
-		$scope.formData.classe_uso = "";
-		$scope.formData.ass = "";
 		requester._post('points/next-point', { "point": $scope.formData } , function(data) {
-			$scope.data = data;	
+			$scope.data = data;
+			$scope.formData.classe_uso = "";
+			$scope.formData.ass = "";	
 		});
 	}
 

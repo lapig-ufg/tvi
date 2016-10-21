@@ -13,6 +13,11 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/tvi.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/login', {
+			controller: 'LoginController',
+			templateUrl: 'views/login.tpl.html',
+			reloadOnSearch: false
+		})
 		.otherwise({
 			redirectTo: '/tvi'
 		});
