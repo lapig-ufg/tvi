@@ -124,7 +124,10 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 			  	"UF": uf,
 			  	"county": municipio,
 			  	"Modis": imgModis,
-			  	"countyCode": countycode
+			  	"countyCode": countycode,
+			  	"inspection":[],
+				  "classe_uso":[],
+				  "indice":[]
 			  })
 			  
 

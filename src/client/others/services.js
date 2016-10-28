@@ -7,16 +7,14 @@ Application
 			var result = '';
 
 			if(params.length > 0)
-				result = '?'
+				console.log('oi')
+				result += '?'
 
 			for(var key in params) {
-				
-				if(result.indexOf('&') > 0) {
-					result += "&"
-				}
 
 				result += key + '=' + params[key] + '&';
 			}
+			result = result.slice(0, -1);
 
 			return result;
 		}

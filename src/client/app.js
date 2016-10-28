@@ -19,7 +19,7 @@ Application.config(function($routeProvider, $locationProvider) {
 			reloadOnSearch: false
 		})
 		.otherwise({
-			redirectTo: '/tvi'
+			redirectTo: '/login'
 		});
 
 }).run(function($http) {
