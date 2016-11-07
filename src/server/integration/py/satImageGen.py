@@ -84,9 +84,6 @@ def getFileId(gDriveService, filename):
 
 	return None
 
-
-
-
 def downloadFile(gDriveService, fileGdriveId, destFilename):
 	request = gDriveService.files().get_media(fileId=fileGdriveId)
 	fh = io.FileIO(destFilename, mode='wb')
@@ -117,22 +114,12 @@ def getLandsatFromYear(year):
 	
 	return landsatBands, landsatCollection
 
-#-49.0963 #-16.8775
-#-46.2293	-11.0596 // Crop - Formosa do Rio Preto
-
-# -46.7582 -6.8643 // N pastagem
-# -54.4980 -13.7521 // N pastagem
-# -54.7599 -13.5594 // Pastagem / Crop terraclass
-
 def getPNG(files):
 	for file in files:	
 		os.system("gdal_translate -of png " +file+".tif"+" "+file+".png"+" "+"&>"+" "+"/dev/null");
+		os.system("convert " +file+".png -channel RGB -contrast-stretch 2x2% " +file+".png");
 		print(file+".png")
 		os.remove(file+".tif");
-				
-
-
-
 
 def createReferenceImage(lon, lat, files):	
 
@@ -147,7 +134,6 @@ def createReferenceImage(lon, lat, files):
 		originX = gt[0];
 		originY = gt[3];
 		
-
 		cols = rasterBand.XSize
 		rows = rasterBand.YSize
 
@@ -173,7 +159,6 @@ def createReferenceImage(lon, lat, files):
 			py = int((my - gt[3]) / gt[5]) #y pixel
 
 			intval = rasterBand.ReadAsArray()
-			#intval = outband.ReadAsArray();
 
 			for x in xrange(px-2, px+3):
 				for y in xrange(py-2, py+3):
@@ -196,10 +181,6 @@ def createReferenceImage(lon, lat, files):
 			files.append(file+"two");
 
 	return files;
-				
-
-
-
 
 def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
 	nameFile = [];
@@ -236,16 +217,12 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 	period.append(endChuva)
 	season.append(period);			
 
-
 	for year in xrange(startYear, endYear, inc):
 		
 		for x in season:
 
-
 			dtStart = str(year)+x[0];
-			dtEnd = str(year)+x[1];
-			
-			
+			dtEnd = str(year)+x[1];	
 
 			landsatBands, landsatCollection = getLandsatFromYear(year);
 
@@ -255,7 +232,6 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 												.filterMetadata('WRS_ROW', 'equals', int(row)) \
 												.sort('CLOUD_COVER', True) \
 												.first();
-
 
 			try:
 				img = ee.Image(imgResult);
@@ -269,7 +245,7 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 				filename = "coor_"+lon.replace(".","_")+"_"+lat.replace(".","_")+"_"+spacecraft.lower() + '_' + dataAcquired;
 				
 				imgResult = img.clip(bufferArea);
-				img = imgResult.visualize(bands=landsatBands, min=[0,0,0], max=[0.7,0.6,0.6], gamma=[1.5,1,1.5])
+				img = imgResult.visualize(bands=landsatBands)
 
 				coordList = bufferArea.coordinates().getInfo();
 				region = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]];
@@ -285,7 +261,6 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 				geofilename = filename
 				
 				filename = filename + '.tif'
-				
 				
 				while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
 					time.sleep(GDRIVE_SLEEP_TIME)
@@ -319,7 +294,6 @@ def timeSeriesEE(lon, lat, startYear, endYear):
 	lat = float(lat);
 
 	pixelResolution = 250
-
 
 	collectionId = "MODIS/MOD13Q1";
 	expression = "b('NDVI')*0.0001";
@@ -365,9 +339,6 @@ def timeSeriesEE(lon, lat, startYear, endYear):
 	print(csvFile+".png")
 	os.remove(csvFile+".csv")
 
-
-
-
 def parseArguments():
 	    
   parser = argparse.ArgumentParser()
@@ -375,15 +346,14 @@ def parseArguments():
   parser.add_argument("lat", help="Latitude", type=str);
   parser.add_argument("startYear", help="Ano inicial", type=str);
   parser.add_argument("endYear", help="Ano final", type=str);
-  parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-10-01', nargs='?');
-  parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-12-31', nargs='?');
+  parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
+  parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
   parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
   parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
   parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
 
   args = parser.parse_args();
   return args
-
 
 if __name__ == "__main__":
 	
