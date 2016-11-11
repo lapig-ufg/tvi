@@ -25,6 +25,8 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
+var geojsonFile = "/home/jose/Documentos/Github/tvi/src/server/integration/py/sergioGeo.geojson";
+
 fs.readFile(geojsonFile, 'utf-8', function(error, data){
 	if(error){
 		console.log('erro');
@@ -37,14 +39,16 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 	data = JSON.parse(data)
 	
 	for(var i = 0; i < data.features.length; i++){
-		coordinates.push(data.features[i].geometry.coordinates)	
+		coordinates.push({"id": data.features[i].properties.Id,
+											"X": data.features[i].properties.X,
+											"Y": data.features[i].properties.Y });
 	}
-
 	points = []
 
 	async.eachSeries(coordinates, function(coordinate, next) {
-		coordinates = []
-		var cmd = 'python ./../integration/py/satImageGen.py'+' '+coordinate[0]+' '+coordinate[1]+' '+ano1+' '+ano2 ;
+		coordinates = [];
+
+		var cmd = 'python ./../integration/py/satImageGen.py'+' '+coordinate.id+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
 
 		exec(cmd, function(err, stdout, stderr){	
 		  
@@ -85,7 +89,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 			}
 			
 			regions = "REGIONS/regions2.shp";
-			sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions2 where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate[0]+" "+coordinate[1]+")',4326))"
+			sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions2 where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
 			cmd = 'ogrinfo -q -geom=no -dialect sqlite -sql "'+sql+'" '+regions;
 			console.log(cmd);
 			exec(cmd, function(err, stdout, stderr){	
@@ -117,8 +121,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 			  points.push(
 			  { "campaign": campanha,	
 			  	"images": coordinates,
-			  	"lon": coordinate[0],
-			  	"lat": coordinate[1],
+			  	"lon": coordinate.X,
+			  	"lat": coordinate.Y,
 			  	"dateImport": date,
 			  	"biome": bioma,
 			  	"UF": uf,
@@ -127,7 +131,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 			  	"countyCode": countycode,
 			  	"inspection":[],
 				  "classe_uso":[],
-				  "indice":[]
+				  "indice":[],
+				  "inspection": 0
 			  })
 			  
 

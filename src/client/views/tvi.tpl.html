@@ -5,7 +5,7 @@
           <a class="navbar-brand">{{data.current}}/{{data.total}} Pontos</a>
       </div>
       <div class="col-md-4">
-        Tempo: 2:00
+        Tempo: {{counter}}
       </div>
       <div class="col-md-4">
         <label>
@@ -95,7 +95,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
           <h2 class="text-center">Classe uso</h2>
           <label class="form-control" ng-repeat="n in landuse">
-            <input ng-model="formData.classe_uso" type="radio" name="Land_uso" id="Classuse" ng-value="n"> {{n}}            
+            <input ng-model="formData.classe_uso" type="radio" name="Land_uso" value="clas" ng-value="n"> {{n}}            
           </label>                       
         </div>        
       </div>
@@ -103,14 +103,14 @@
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
           <h2 class="text-center">Indíce de certeza</h2>
           <label class="form-control" ng-repeat="n in assurance">
-            <input ng-model="formData.ass" type="radio" name="assurance" id="ass" ng-value="n"> {{n}}
+            <input ng-model="formData.ass" type="radio" name="assurance" value="ass" ng-value="n"> {{n}}
           </label>            
         </div>
       </div>
       <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
           <div class="center-block center-block-next">
-            <button ng-click="submitPoint()" type="button" class="btn btn-success" ng-disabled="!formData.classe_uso || !formData.ass">proximo</button>
+            <button ng-click="submitPoint(clas, ass)" type="button" class="btn btn-success" ng-disabled="!formData.classe_uso || !formData.ass">proximo</button>
           </div>
         </div>          
       </div>

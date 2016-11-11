@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('TviController', function($rootScope, $scope, $location, $window, requester, util) {
+Application.controller('TviController', function($rootScope, $scope, $location, $window, requester, util, $interval) {
 
 	requester._get('login/user', function(result) {
 		if(!result.name) {
@@ -27,6 +27,13 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		var biome;
 		var countyCode;
 
+		$scope.counter = 0;
+    var increaseCounter = function () {
+        $scope.counter = $scope.counter + 1;
+    }
+
+    $interval(increaseCounter, 1000);
+
 		requester._get('points/next-point', function(data) {
 			$scope.data = data;		
 			var params = {region: $scope.data.point.biome, regionType:'biome', city:$scope.data.point.countyCode, lang:"pt-br"  }
@@ -40,11 +47,11 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 	
 	$scope.submitPoint = function() {		
 		$scope.formData._id = $scope.data.point._id;
-		console.log()
 		requester._post('points/next-point', { "point": $scope.formData } , function(data) {
 			$scope.data = data;
 			$scope.formData.classe_uso = "";
-			$scope.formData.ass = "";	
+			$scope.formData.ass = "";
+			$scope.counter = 0;
 		});
 	}
 

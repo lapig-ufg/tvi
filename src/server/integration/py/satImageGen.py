@@ -116,16 +116,16 @@ def getLandsatFromYear(year):
 
 def getPNG(files):
 	for file in files:	
-		os.system("gdal_translate -of png " +file+".tif"+" "+file+".png"+" "+"&>"+" "+"/dev/null");
-		os.system("convert " +file+".png -channel RGB -contrast-stretch 2x2% " +file+".png");
-		print(file+".png")
-		os.remove(file+".tif");
+		os.system("gdal_translate -of png " +file['data']+".tif"+" "+file['data']+".png"+" "+"&>"+" "+"/dev/null");
+		os.system("convert " +file['data']+".png -channel RGB -contrast-stretch 2x2% " +file['data']+".png");
+		print(file['data']+".png")
+		os.remove(file['data']+".tif");
 
 def createReferenceImage(lon, lat, files):	
 
 	for file in files:
 		
-		GDALDataSet = gdal.Open(file+".tif");
+		GDALDataSet = gdal.Open(file['data']+".tif");
 
 		rasterBand = GDALDataSet.GetRasterBand(2);
 
@@ -137,10 +137,10 @@ def createReferenceImage(lon, lat, files):
 		cols = rasterBand.XSize
 		rows = rasterBand.YSize
 
-		if int(file[38:40]) >= 10:
-			newRaster = file+"two.tif";
+		if file['periodo'] == 'seco':
+			newRaster = file['periodo']+"seco.tif";
 		else:
-			newRaster = file+"one.tif";
+			newRaster = file['periodo']+"chuvoso.tif";
 
 		driver = gdal.GetDriverByName('GTiff');
 
@@ -174,20 +174,15 @@ def createReferenceImage(lon, lat, files):
 
 			outband.FlushCache()
 
-	for file in files:
-		if(file == files[0]):
-			files.insert(1, file+"one");
-		elif(file == files[2]):
-			files.append(file+"two");
-
 	return files;
 
-def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
+def main(Id, longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
 	nameFile = [];
 	longitude = float(longitude)
 	latitude = float(latitude)
 	startYear = int(startYear)
 	endYear = int(endYear)
+	nameFile = []
 
 	inc = 1
 	bufferR = 5000
@@ -204,26 +199,21 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 
 	tile = scene.get('TILE_T').getInfo();
 	path = tile[1:4]
-	row = tile[4:7]
+	row = tile[4:7] 
+			 
 
-	period = [];
-	season = []; 
-	period.append(startSeco)
-	period.append(endSeco)
-	season.append(period);
+	season = [{"start": startSeco, "end": endSeco, "type": "seco"}, {"start": startChuva, "end": endChuva, "type": "chuvoso"}];
 
-	period = [];
-	period.append(startChuva)
-	period.append(endChuva)
-	season.append(period);			
+
+
 
 	for year in xrange(startYear, endYear, inc):
 		
-		for x in season:
+		for x in season:	
 
-			dtStart = str(year)+x[0];
-			dtEnd = str(year)+x[1];	
-
+			dtStart = str(year)+x['start'];
+			dtEnd = str(year)+x['end'];	
+			
 			landsatBands, landsatCollection = getLandsatFromYear(year);
 
 			imgResult = landsatCollection \
@@ -242,8 +232,12 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 				lon = str("%.4f" % longitude);
 				lat = str("%.4f" % latitude);				
 
-				filename = "coor_"+lon.replace(".","_")+"_"+lat.replace(".","_")+"_"+spacecraft.lower() + '_' + dataAcquired;
-				
+				#filename = "coor_"+lon.replace(".","_")+"_"+lat.replace(".","_")+"_"+spacecraft.lower() + '_' + dataAcquired;
+				filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
+
+
+
+
 				imgResult = img.clip(bufferArea);
 				img = imgResult.visualize(bands=landsatBands)
 
@@ -273,7 +267,13 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 					downloadFile(gDriveService, fileGdriveId, filename);
 					permanentDeleteFile(gDriveService, fileGdriveId);
 					os.system("gdalwarp -t_srs EPSG:4326 "+ filename+" "+geofilename+"-geo.tif"+" "+"&>"+" "+"/dev/null")
-					nameFile.append(str(geofilename+"-geo"));
+
+					if x['type'] == 'seco':
+						nameFile.append({'periodo': 'seco', "data": str(geofilename+"-geo")});
+
+					else:
+						nameFile.append({'periodo': 'seco', "data": str(geofilename+"-geo")});
+						#nameFile.append(str(geofilename+"-geo"));
 					try:
 						os.remove(filename);
 					except:
@@ -283,7 +283,6 @@ def main(longitude, latitude, startYear, endYear, startChuva, endChuva, startSec
 					pass
 			except:
 				pass
-
 	return nameFile;
 
 def timeSeriesEE(lon, lat, startYear, endYear):
@@ -342,6 +341,8 @@ def timeSeriesEE(lon, lat, startYear, endYear):
 def parseArguments():
 	    
   parser = argparse.ArgumentParser()
+ 
+  parser.add_argument("id", help="id do ponto", type=str);
   parser.add_argument("lon", help="Longitude", type=str);
   parser.add_argument("lat", help="Latitude", type=str);
   parser.add_argument("startYear", help="Ano inicial", type=str);
@@ -359,7 +360,7 @@ if __name__ == "__main__":
 	
 	args = parseArguments()
 
-	nameFile = main(args.lon, args.lat, args.startYear, args.endYear, args.startChuva, args.endChuva, args.startSeco, args.endSeco, args.png);	
+	nameFile = main(args.id, args.lon, args.lat, args.startYear, args.endYear, args.startChuva, args.endChuva, args.startSeco, args.endSeco, args.png);	
 	
 	nameFile = createReferenceImage(args.lon, args.lat, nameFile);
 	
