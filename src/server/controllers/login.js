@@ -58,7 +58,13 @@ module.exports = function(app) {
 		});
 	}
 
+	app.on('socket-connection', function() {
+		console.log('connection')
+	});
 
+	app.on('socket-disconnect', function() {
+		console.log('disconnect')
+	});
 
 	return Login;
 

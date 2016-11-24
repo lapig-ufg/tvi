@@ -14,9 +14,12 @@ var express = require('express')
 , timeout = require('connect-timeout')
 , bodyParser = require('body-parser')
 , multer = require('multer')
-, session = require('express-session')
+, session = require('express-session');
 
 var app = express();
+
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
 load('config.js', {'verbose': false})
 .then('libs')
@@ -51,6 +54,13 @@ app.middleware.repository.init(function() {
 	app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(multer());
 
+	io.on('connection', function(socket){
+	  app.emit('socket-connection', socket);
+	  socket.on('disconnect', function(){
+	    app.emit('socket-disconnect');
+	  });
+	});
+
 	app.use(function(error, request, response, next) {
 		console.log('ServerError: ', error.stack);
 		next();
@@ -61,7 +71,7 @@ app.middleware.repository.init(function() {
 	.then('routes')
 	.into(app);
 
-	app.listen(app.config.port, function() {
+	http.listen(app.config.port, function() {
 		console.log('LAPIG-MAPS Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
 	});
 
