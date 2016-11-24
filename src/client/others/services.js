@@ -84,14 +84,14 @@ Application
 					suportData["info"] = pastagem[i].info;
 					suportData["value"] = pastagem[i].value;
 				}else if(pastagem[i].name === "POL_HA"){
-					totalArea = pastagem[i].value.replace(" ha", "");			
+					totalArea = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 					suportData["area"] = pastagem[i].value;
 					totalArea = parseFloat(totalArea);
 				}else if(pastagem[i].name === "ALG_APLAN"){
 					if(pastagem[i].value === "Sem inform."){
 						suportData["algodao"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "")
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["algodao"] = (relative.toFixed(2))+"%";
 					}
@@ -99,7 +99,7 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["cana"] = pastagem[i].value;
 					}else{
-						var value = pastagem[i].value.replace(" ha", "")
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["cana"] = (relative.toFixed(2))+"%"
 					}
@@ -107,7 +107,7 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["milho"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "")
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["milho"] = (relative.toFixed(2))+"%"
 					}
@@ -115,7 +115,7 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["soja"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "")
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["soja"] = (relative.toFixed(2))+"%"
 					}
@@ -123,7 +123,7 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["floresta"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "");
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["floresta"] = (relative.toFixed(2))+"%"
 					}
@@ -131,7 +131,7 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["vegetacao"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "");
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["vegetacao"] = (relative.toFixed(2))+"%"
 					}
@@ -139,24 +139,19 @@ Application
 					if(pastagem[i].value === "Sem inform."){
 						suportData["desmatamento"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "");
-						suportData["desmatamento"] = value+ " mha";
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
+						suportData["desmatamento"] = value+ " ha";
 					}
 				}else if(pastagem[i].name == "ATV_AMBIEN"){
 					if(pastagem[i].value === "Sem inform."){
 						suportData["ativos"] = pastagem[i].value
 					}else{
-						var value = pastagem[i].value.replace(" ha", "");
+						var value = pastagem[i].value.replace(" ha", "").replace(/\./g, "");
 						var relative = 100*(parseFloat(value)/totalArea)
 						suportData["ativos"] = (relative.toFixed(2))+"%"
 					}
 				}else if(pastagem[i].name == "LEI_LITROS"){
-					if(pastagem[i].value === "Sem inform."){
-						suportData["leite"] = pastagem[i].value
-					}else{
-						var value = pastagem[i].value.replace(" ha", "");						
-						suportData["leite"] = value
-					}
+					suportData["leite"] = pastagem[i].value
 				}
 
 			}

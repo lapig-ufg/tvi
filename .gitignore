@@ -11,3 +11,7 @@ src/client/build/*
 *.rdb
 src/server/passwords.json
 *.sqlite
+**/bin/REGIONS/
+**/bin/chart/
+**/integration/py/chart/
+*.tif

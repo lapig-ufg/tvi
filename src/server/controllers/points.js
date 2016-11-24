@@ -21,7 +21,8 @@ module.exports = function(app) {
 
 		var currentFilter = { 
 			"$and": [
-				{ "userName": { "$in": [ name ] } },
+				{ "userName": { "$nin": [ name ] } },
+				{ "$where":'this.userName.length<3' },
 				{ "campaign": { "$eq": campaign } }
 			]
 		};
@@ -35,18 +36,15 @@ module.exports = function(app) {
 		pointsCollection.findOne(findOneFilter, function(err, point) {
 			point.underInspection += 1;
 
-			pointsCollection.save(point, function() {
+			pointsCollection.save(point, function() {				
+				pointsCollection.count(totalFilter, function(err, total) {
 
-				pointsCollection.count(currentFilter, function(err, current) {
-					pointsCollection.count(totalFilter, function(err, total) {
-
-						var result = {};
-						result['point'] = point;
-						result['total'] = total;
-						result['current'] = (current != total) ? current + 1 : current; // current tras o numero de objetos que satisfazem, no caso, a condição findOneFilter;
-						callback(result);
-					});
-				});
+					var result = {};
+					result['point'] = point;
+					result['total'] = total;
+					result['current'] = point.index // current tras o numero de objetos que satisfazem, no caso, a condição findOneFilter;
+					callback(result);
+				});				
 			});
 		});
 

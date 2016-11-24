@@ -24,7 +24,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
       });
   });
 }
-
+var counter = 1;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
 		console.log('erro');
@@ -139,7 +139,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				  "landUse":[],
 				  "certaintyIndex":[],
 				  "counter":[],
-				  "underInspection": 0
+				  "underInspection": 0,
+				  "index": counter
 			  }
 			  
 			  insertPoints(dbUrl, CollectionName, point, function() {
@@ -151,6 +152,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 					fs.unlinkSync(imgsChuvoso[1]);
 
 			  	console.log("Coordinate " + coordinate.id + " inserted");
+			  	counter++;
 			  	next();
 				});
 			  
