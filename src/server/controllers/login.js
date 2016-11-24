@@ -6,6 +6,7 @@ module.exports = function(app) {
 	var Login = {};
 	var pointsCollection = app.repository.collections.points;
 	var usersCollection = app.repository.collections.users;
+	var Id = app.repository.id;
 
 	Login.autenticateUser = function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
@@ -45,10 +46,16 @@ module.exports = function(app) {
 	}
 
 	Login.logoff = function(request, response){
-		delete request.session.user;
-		delete request.session.name;
-		response.write("deslogado");
-		response.end();
+		var id = Id(request.session.Id)
+		console.log(id)
+		pointsCollection.update({"_id": id}, { $inc: { underInspection: -1}}, function(point){
+			console.log('oi', point)
+			delete request.session.user;
+			delete request.session.name;
+			response.write("deslogado");
+			response.end();
+			
+		});
 	}
 
 

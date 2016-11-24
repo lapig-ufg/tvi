@@ -8,7 +8,7 @@ var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
 var dbUrl = 'mongodb://localhost:27017/tvi';
 var CollectionName = "points"
-var d = moment();
+var moment = moment();
 
 insertPoints = function(dbUrl, CollectionName, points, callback) {
   var MongoClient = mongodb.MongoClient;
@@ -25,28 +25,28 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var geojsonFile = "/home/jose/Documentos/Github/tvi/src/server/integration/py/sergioGeo.geojson";
-
-fs.readFile(geojsonFile, 'utf-8', function(error, data){
+fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
 		console.log('erro');
 	}
 	
 	ano1 = 2014
 	ano2 = 2015
-	var coordinates = []
-	var imgModis;
-	data = JSON.parse(data)
+
+	geojsonData = JSON.parse(geojsonDataStr)
 	
-	for(var i = 0; i < data.features.length; i++){
-		coordinates.push({"id": data.features[i].properties.Id,
-											"X": data.features[i].properties.X,
-											"Y": data.features[i].properties.Y });
+	var coordinates = []
+	for(var i = 0; i < geojsonData.features.length; i++){
+		coordinates.push(
+			{
+				"id": geojsonData.features[i].properties.Id,
+				"X": geojsonData.features[i].geometry.coordinates[0],
+				"Y": geojsonData.features[i].geometry.coordinates[1]
+			}
+		);
 	}
-	points = []
 
 	async.eachSeries(coordinates, function(coordinate, next) {
-		coordinates = [];
 
 		var cmd = 'python ./../integration/py/satImageGen.py'+' '+coordinate.id+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
 
@@ -58,40 +58,30 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 		  }
 		  
 			imgs = stdout.split("\n");
-			console.log(imgs)
 
-			for(var i = 0; i < (imgs.length-1); i = 2 + i){
-				if(imgs[i].match(/modis/gi)){
-					var bitmap = fs.readFileSync("chart/"+imgs[i]);	
-					var imgbase = new Buffer(bitmap).toString('base64');
-					imgModis = imgbase;
-					fs.unlinkSync("chart/"+imgs[i]);	
+			var imgModis;
+			var imgsSeco = [];
+			var imgsChuvoso = [];
+
+			imgs.forEach(function(img) {
+				if(img.match(/modis/gi)){ 
+					imgModis = img;
+				} else if(img.match(/seco/gi)){
+					imgsSeco.push(img);
 				}else{
-					var date = imgs[i].slice(33,43);
-					var periodo;
-					if(parseInt(imgs[i].slice(38,40)) >= 10){
-						periodo = "chuvoso";
-					}else{
-						periodo = "seco";
-					}
-					console.log(imgs[i], imgs[i+1])
-			  	var bitmap = fs.readFileSync(imgs[i]);
-	  			var imgbase = new Buffer(bitmap).toString('base64');
-	  			var bitmappoint = fs.readFileSync(imgs[i+1]);
-	  			var imgbasepoint = new Buffer(bitmappoint).toString('base64');
-		  		coordinates.push({"data": d.format(), "imageBase": imgbase, "periodo": periodo, "data": date, "imagePoint": imgbasepoint})
-		  		//fs.unlinkSync(imgs[i]);
-		  		//fs.unlinkSync(imgs[i]+".aux.xml")
-		  		//fs.unlinkSync(imgs[i+1]);
-		  		//fs.unlinkSync(imgs[i+1]+".aux.xml")				
+					imgsChuvoso.push(img);
 				}
-									
-			}
+			});
+
+			var bitmapSeco = fs.readFileSync(imgsSeco[0]);
+			var bitmapSecoRef = fs.readFileSync(imgsSeco[1]);
+			var bitmapChuvoso = fs.readFileSync(imgsChuvoso[0]);
+			var bitmapChuvosoRef = fs.readFileSync(imgsChuvoso[1]);
+			var bitmapModis = fs.readFileSync("chart/"+imgModis);
 			
-			regions = "REGIONS/regions2.shp";
-			sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions2 where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
+			regions = "REGIONS/regions.shp";
+			sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
 			cmd = 'ogrinfo -q -geom=no -dialect sqlite -sql "'+sql+'" '+regions;
-			console.log(cmd);
 			exec(cmd, function(err, stdout, stderr){	
 			  if (err) {
 			    console.error(err);
@@ -117,36 +107,55 @@ fs.readFile(geojsonFile, 'utf-8', function(error, data){
 			 			countycode = countycode.trim();
 			 		}
 			 	}
-				date = new Date();
-			  points.push(
-			  { "campaign": campanha,	
-			  	"images": coordinates,
+
+				dateSeco = new Date(imgsSeco[0].split('_')[3]);
+				dateChuvoso = new Date(imgsChuvoso[0].split('_')[3]);
+
+			  var point = { 
+			  	"campaign": campanha,	
+			  	"images": [
+			  		{
+			  			"date": dateSeco,
+			  			"imageBase": new Buffer(bitmapSeco).toString('base64'),
+			  			"period": 'seco', 
+			  			"imageBaseRef": new Buffer(bitmapSecoRef).toString('base64'),
+		  			},
+		  			{
+			  			"date": dateChuvoso, 
+			  			"imageBase": new Buffer(bitmapChuvoso).toString('base64'),
+			  			"period": 'chuvoso', 
+			  			"imageBaseRef": new Buffer(bitmapChuvosoRef).toString('base64'),
+		  			}
+			  	],
 			  	"lon": coordinate.X,
 			  	"lat": coordinate.Y,
-			  	"dateImport": date,
+			  	"dateImport": new Date(),
 			  	"biome": bioma,
-			  	"UF": uf,
+			  	"uf": uf,
 			  	"county": municipio,
-			  	"Modis": imgModis,
+			  	"modis": new Buffer(bitmapModis).toString('base64'),
 			  	"countyCode": countycode,
-			  	"inspection":[],
-				  "classe_uso":[],
-				  "indice":[],
-				  "inspection": 0
-			  })
+			  	"userName":[],
+				  "landUse":[],
+				  "certaintyIndex":[],
+				  "counter":[],
+				  "underInspection": 0
+			  }
+			  
+			  insertPoints(dbUrl, CollectionName, point, function() {
+			  	
+			  	fs.unlinkSync("chart/"+imgModis);
+					fs.unlinkSync(imgsSeco[0]);
+					fs.unlinkSync(imgsSeco[1]);
+					fs.unlinkSync(imgsChuvoso[0]);
+					fs.unlinkSync(imgsChuvoso[1]);
+
+			  	console.log("Coordinate " + coordinate.id + " inserted");
+			  	next();
+				});
 			  
 
-			  next();
-
 			});	  
-		  
-			
-
-		});
-    
-	}, function() {
-  	insertPoints(dbUrl, CollectionName, points, function() {
-			console.log('terminou')
-		});
+		}); 
 	});
 });

@@ -10,13 +10,6 @@ from oauth2client import client
 from oauth2client import tools
 import argparse
 import numpy as np
-'''
-try:
-	import argparse
-	flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-	flags = None
-'''	
 import httplib2
 import ee
 import datetime
@@ -33,12 +26,10 @@ import shutil
 
 ee.Initialize()
 
-#L8_BANDS = ['B6','B5','B4']
 L8_BANDS = ['B5','B6','B4']
 L8_COLLECTION = ee.ImageCollection("LANDSAT/LC8_L1T_TOA")
 L8_START = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
 
-#L7_BANDS = ['B5','B4','B3']
 L7_BANDS = ['B4','B5','B3']
 L7_COLLECTION = ee.ImageCollection("LANDSAT/LE7_L1T_TOA")
 L7_START = datetime.datetime.strptime('2012-01-01', '%Y-%m-%d').date()
@@ -53,6 +44,23 @@ SCOPES = 'https://www.googleapis.com/auth/drive'
 CREDENTIALS_FILENAME = 'earth_engine_download.json'
 LANDSAT_GRID = 'ft:1qNHyIqgUjShP2gQAcfGXw-XoxWwCRn5ZXNVqKIS5'
 
+def parseArguments():
+	    
+  parser = argparse.ArgumentParser()
+ 
+  parser.add_argument("id", help="id do ponto", type=str);
+  parser.add_argument("lon", help="Longitude", type=str);
+  parser.add_argument("lat", help="Latitude", type=str);
+  parser.add_argument("startYear", help="Ano inicial", type=str);
+  parser.add_argument("endYear", help="Ano final", type=str);
+  parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
+  parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
+  parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
+  parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
+  parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
+
+  args = parser.parse_args();
+  return args
 
 def getGDriveService():
 		home_dir = os.path.expanduser('~')
@@ -114,18 +122,121 @@ def getLandsatFromYear(year):
 	
 	return landsatBands, landsatCollection
 
-def getPNG(files):
-	for file in files:	
-		os.system("gdal_translate -of png " +file['data']+".tif"+" "+file['data']+".png"+" "+"&>"+" "+"/dev/null");
-		os.system("convert " +file['data']+".png -channel RGB -contrast-stretch 2x2% " +file['data']+".png");
-		print(file['data']+".png")
-		os.remove(file['data']+".tif");
+def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
+	longitude = float(longitude)
+	latitude = float(latitude)
+	startYear = int(startYear)
+	endYear = int(endYear)
+	imageFiles = []
 
-def createReferenceImage(lon, lat, files):	
+	inc = 1
+	bufferR = 5000
+	folder='quicklook'
+	taskConfig = { "scale": 30, "maxPixels": 1.0E13, "driveFolder": 'quicklook' }
 
-	for file in files:
+	gDriveService = getGDriveService();
+
+	point = ee.Geometry.Point(longitude,latitude);
+	bufferArea = point.buffer(bufferR).bounds();
+	scene = ee.FeatureCollection(LANDSAT_GRID) \
+			.filterBounds(point) \
+			.first();
+
+	tile = scene.get('TILE_T').getInfo();
+	path = tile[1:4]
+	row = tile[4:7] 
+			 
+	season = [
+		{
+			"start": startSeco, 
+			"end": endSeco, 
+			"type": "seco"
+		}, 
+		{
+			"start": startChuva, 
+			"end": endChuva, 
+			"type": "chuvoso"
+		}
+	];
+
+	for year in xrange(startYear, endYear, inc):
 		
-		GDALDataSet = gdal.Open(file['data']+".tif");
+		for x in season:	
+
+			dtStart = str(year)+x['start'];
+			dtEnd = str(year)+x['end'];	
+			
+			landsatBands, landsatCollection = getLandsatFromYear(year);
+
+			imgResult = landsatCollection \
+												.filterDate(dtStart,dtEnd) \
+												.filterMetadata('WRS_PATH', 'equals', int(path)) \
+												.filterMetadata('WRS_ROW', 'equals', int(row)) \
+												.sort('CLOUD_COVER', True) \
+												.first();
+
+			try:
+				img = ee.Image(imgResult);
+				dataAcquired = img.get('DATE_ACQUIRED').getInfo();
+
+				spacecraft = img.get('SPACECRAFT_ID').getInfo();
+
+				lon = str("%.4f" % longitude);
+				lat = str("%.4f" % latitude);				
+
+				filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
+
+				imgResult = img.clip(bufferArea);
+				img = imgResult.visualize(bands=landsatBands)
+
+				coordList = bufferArea.coordinates().getInfo();
+				region = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]];
+				taskConfig['region'] = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]]
+
+				task = ee.batch.Export.image.toDrive(image=img, description=filename, folder=folder, region=region, scale=30)
+				task.start()
+
+				status = task.status()	
+				taskStatus = status['state']
+
+				fileGdriveId=None;
+				geofilename = filename
+				
+				filename = filename + '.tif'
+				
+				while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
+					time.sleep(GDRIVE_SLEEP_TIME)
+					fileGdriveId = getFileId(gDriveService, filename);
+					status = task.status()	
+					taskStatus = status['state']
+					taskDescri = task.config['description']
+					
+				if fileGdriveId != None:
+					downloadFile(gDriveService, fileGdriveId, filename);
+					permanentDeleteFile(gDriveService, fileGdriveId);
+					os.system("gdalwarp -t_srs EPSG:4326 "+ filename+" "+geofilename+"-geo.tif"+" "+"&>"+" "+"/dev/null")
+
+					imageFiles.append(str(geofilename+"-geo"));
+					
+					try:
+						os.remove(filename);
+					except:
+						pass
+
+				else:
+					pass
+			except:
+				pass
+	
+	return imageFiles;
+
+def createCenterPointImages(lon, lat, imageFiles):	
+
+	tempFiles = [];
+
+	for imageFile in imageFiles:
+
+		GDALDataSet = gdal.Open(imageFile+".tif");
 
 		rasterBand = GDALDataSet.GetRasterBand(2);
 
@@ -137,10 +248,10 @@ def createReferenceImage(lon, lat, files):
 		cols = rasterBand.XSize
 		rows = rasterBand.YSize
 
-		if file['periodo'] == 'seco':
-			newRaster = file['periodo']+"seco.tif";
-		else:
-			newRaster = file['periodo']+"chuvoso.tif";
+		newRasterPattern =  imageFile + "-ref";
+		newRaster = newRasterPattern + ".tif";
+
+		tempFiles.append(newRasterPattern);
 
 		driver = gdal.GetDriverByName('GTiff');
 
@@ -174,118 +285,17 @@ def createReferenceImage(lon, lat, files):
 
 			outband.FlushCache()
 
-	return files;
+	return imageFiles + tempFiles;
 
-def main(Id, longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
-	nameFile = [];
-	longitude = float(longitude)
-	latitude = float(latitude)
-	startYear = int(startYear)
-	endYear = int(endYear)
-	nameFile = []
+def convertPng(imageFiles):
+	for imageFile in imageFiles:	
+		os.system("gdal_translate -of png " +imageFile+".tif"+" "+imageFile+".png"+" "+"&>"+" "+"/dev/null");
+		os.system("convert " +imageFile+".png -channel RGB -contrast-stretch 2x2% " +imageFile+".png");
+		print(imageFile+".png");
+		os.remove(imageFile+".tif");
+		os.remove(imageFile+".png.aux.xml");
 
-	inc = 1
-	bufferR = 5000
-	folder='quicklook'
-	taskConfig = { "scale": 30, "maxPixels": 1.0E13, "driveFolder": 'quicklook' }
-
-	gDriveService = getGDriveService();
-
-	point = ee.Geometry.Point(longitude,latitude);
-	bufferArea = point.buffer(bufferR).bounds();
-	scene = ee.FeatureCollection(LANDSAT_GRID) \
-			.filterBounds(point) \
-			.first();
-
-	tile = scene.get('TILE_T').getInfo();
-	path = tile[1:4]
-	row = tile[4:7] 
-			 
-
-	season = [{"start": startSeco, "end": endSeco, "type": "seco"}, {"start": startChuva, "end": endChuva, "type": "chuvoso"}];
-
-
-
-
-	for year in xrange(startYear, endYear, inc):
-		
-		for x in season:	
-
-			dtStart = str(year)+x['start'];
-			dtEnd = str(year)+x['end'];	
-			
-			landsatBands, landsatCollection = getLandsatFromYear(year);
-
-			imgResult = landsatCollection \
-												.filterDate(dtStart,dtEnd) \
-												.filterMetadata('WRS_PATH', 'equals', int(path)) \
-												.filterMetadata('WRS_ROW', 'equals', int(row)) \
-												.sort('CLOUD_COVER', True) \
-												.first();
-
-			try:
-				img = ee.Image(imgResult);
-				dataAcquired = img.get('DATE_ACQUIRED').getInfo();
-
-				spacecraft = img.get('SPACECRAFT_ID').getInfo();
-
-				lon = str("%.4f" % longitude);
-				lat = str("%.4f" % latitude);				
-
-				#filename = "coor_"+lon.replace(".","_")+"_"+lat.replace(".","_")+"_"+spacecraft.lower() + '_' + dataAcquired;
-				filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
-
-
-
-
-				imgResult = img.clip(bufferArea);
-				img = imgResult.visualize(bands=landsatBands)
-
-				coordList = bufferArea.coordinates().getInfo();
-				region = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]];
-				taskConfig['region'] = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]]
-
-				task = ee.batch.Export.image.toDrive(image=img, description=filename, folder=folder, region=region, scale=30)
-				task.start()
-
-				status = task.status()	
-				taskStatus = status['state']
-
-				fileGdriveId=None;
-				geofilename = filename
-				
-				filename = filename + '.tif'
-				
-				while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
-					time.sleep(GDRIVE_SLEEP_TIME)
-					fileGdriveId = getFileId(gDriveService, filename);
-					status = task.status()	
-					taskStatus = status['state']
-					taskDescri = task.config['description']
-					
-				if fileGdriveId != None:
-					downloadFile(gDriveService, fileGdriveId, filename);
-					permanentDeleteFile(gDriveService, fileGdriveId);
-					os.system("gdalwarp -t_srs EPSG:4326 "+ filename+" "+geofilename+"-geo.tif"+" "+"&>"+" "+"/dev/null")
-
-					if x['type'] == 'seco':
-						nameFile.append({'periodo': 'seco', "data": str(geofilename+"-geo")});
-
-					else:
-						nameFile.append({'periodo': 'seco', "data": str(geofilename+"-geo")});
-						#nameFile.append(str(geofilename+"-geo"));
-					try:
-						os.remove(filename);
-					except:
-						pass
-
-				else:
-					pass
-			except:
-				pass
-	return nameFile;
-
-def timeSeriesEE(lon, lat, startYear, endYear):
+def generateModisChart(lon, lat, startYear, endYear):
 
 	date1 = str(int(startYear)-1);
 	date2 = str(int(endYear));
@@ -338,35 +348,16 @@ def timeSeriesEE(lon, lat, startYear, endYear):
 	print(csvFile+".png")
 	os.remove(csvFile+".csv")
 
-def parseArguments():
-	    
-  parser = argparse.ArgumentParser()
- 
-  parser.add_argument("id", help="id do ponto", type=str);
-  parser.add_argument("lon", help="Longitude", type=str);
-  parser.add_argument("lat", help="Latitude", type=str);
-  parser.add_argument("startYear", help="Ano inicial", type=str);
-  parser.add_argument("endYear", help="Ano final", type=str);
-  parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
-  parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
-  parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
-  parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
-  parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
-
-  args = parser.parse_args();
-  return args
-
 if __name__ == "__main__":
 	
 	args = parseArguments()
 
-	nameFile = main(args.id, args.lon, args.lat, args.startYear, args.endYear, args.startChuva, args.endChuva, args.startSeco, args.endSeco, args.png);	
-	
-	nameFile = createReferenceImage(args.lon, args.lat, nameFile);
+	imageFiles = downloadLandsatFromEE(args.id, args.lon, args.lat, args.startYear, args.endYear, args.startChuva, args.endChuva, args.startSeco, args.endSeco, args.png);	
+	imageFiles = createCenterPointImages(args.lon, args.lat, imageFiles);
 	
 	if args.png:
-		getPNG(nameFile);
+		convertPng(imageFiles);
 	
-	timeSeriesEE(args.lon, args.lat, args.startYear, args.endYear);
+	generateModisChart(args.lon, args.lat, args.startYear, args.endYear);
 
  

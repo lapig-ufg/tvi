@@ -19,7 +19,9 @@ module.exports = function(app) {
 		);
 
 		Repository.id = function(id) {
-				return new mongodb.ObjectID(id);
+			var x = new mongodb.ObjectID(id);
+			console.log(typeof x);
+				return x;
 		};
 
 		Repository.init = function(callback) {

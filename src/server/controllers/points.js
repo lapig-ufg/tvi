@@ -1,76 +1,93 @@
 var ejs = require('ejs');
 var fs = require('fs')
+var schedule = require('node-schedule');
 
 module.exports = function(app) {
 
 	var Points = {};
+	var pointSession = [];
 
 	var pointsCollection = app.repository.collections.points;
-	
+
 	var findPoint = function(name, campaign, callback){
 		var findOneFilter = { 
 			"$and": [
-				{ "name": { "$nin": [ name ] } },
-				{"Classe_uso" : {$exists:true}, $where:'this.Classe_uso.length<3'},//{$where: "this.Classe_uso.length < 3"},
+				{ "userName": { "$nin": [ name ] } },
+				{ "$where":'this.landUse.length<3' },
 				{ "campaign": { "$eq": campaign } },
-				{ "inspection": { $lt: 3 } }
+				{ "underInspection": { $lt: 3 } }
 			]
 		};
 
-		var countCurrentFilter = { 
+		var currentFilter = { 
 			"$and": [
-				{ "name": { "$nin": [ name ] } },
-				{"Classe_uso" : {$exists:true}, $where:'this.Classe_uso.length<3'},//{$where: "this.Classe_uso.length < 3"},
+				{ "userName": { "$in": [ name ] } },
 				{ "campaign": { "$eq": campaign } }
-			]			
+			]
 		};
 
-		var countFilter = { 
+		var totalFilter = { 
 			"$and": [
-				{"campaign": { "$eq": campaign }},
-				{"Classe_uso" : {$exists:true}, $where:'this.Classe_uso.length<3'}
+				{"campaign": { "$eq": campaign }}
 			]
 		};
 		
 		pointsCollection.findOne(findOneFilter, function(err, point) {
-			pointsCollection.count(countCurrentFilter, function(err, current) {
-				pointsCollection.count(countFilter, function(err, count) {
-					var result = {};
-					result['point'] = point;
-					result['total'] = count;
-					result['current'] = (1+count)-(current);
-					callback(result);
+			point.underInspection += 1;
+
+			pointsCollection.save(point, function() {
+
+				pointsCollection.count(currentFilter, function(err, current) {
+					pointsCollection.count(totalFilter, function(err, total) {
+
+						var result = {};
+						result['point'] = point;
+						result['total'] = total;
+						result['current'] = (current != total) ? current + 1 : current; // current tras o numero de objetos que satisfazem, no caso, a condição findOneFilter;
+						callback(result);
+					});
 				});
 			});
 		});
 
-	}
+	};
 
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
-		findPoint(user.name, user.campaign, function(result){
+
+		findPoint(user.name, user.campaign, function(result) {
+			request.session.Id = result.point._id
+			console.log("sessao1", request.session.Id)
 			response.send(result);
-			response.end();			
-		});
+			response.end();
+		});			
 	};
 
-	/*
-	setInterval(function(){
-		console.log('oi')
-	}, 1000);
-	*/
-
-	//{$set: {"Classe_uso": { $push: {point.classe_uso} }, "assurance": [point.ass], "name":[request.session.user.name]}}
-	Points.updatePoint = function(request, response) {		
+	Points.updatePoint = function(request, response) {	
+		
 		var point = request.body.point;
 		var user = request.session.user;
-		pointsCollection.update({ "_id":app.repository.id(point._id) },{$push: {"Classe_uso": point.classe_uso, "ass": point.ass, "name": request.session.user.name}}, {w: 1, multi:true}, function(err, item){
-			var current = 0;
-			findPoint(user.name, user.campaign, function(result){
-				response.send(result);
-				response.end();
-			})			
-		})
+
+		pointsCollection.update(
+			{ 
+				 
+			},
+			{
+				$push: {
+					"landUse": point.landUse,
+			 		"certaintyIndex": point.certaintyIndex,
+			  	"userName": request.session.user.name,
+			  	"counter": point.counter,
+			  }
+			}, 
+			 function(err, item){
+				findPoint(user.name, user.campaign, function(result){
+					request.session.Id = result.point._id
+					console.log("sessao1", request.session.Id)
+					response.send(result);
+					response.end();
+				})			
+		});
 	};
 
 	return Points;
