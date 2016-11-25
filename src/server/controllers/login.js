@@ -8,6 +8,10 @@ module.exports = function(app) {
 	var usersCollection = app.repository.collections.users;
 	var Id = app.repository.id;
 
+	var updateUnderInspection = function() {
+
+	}
+
 	Login.autenticateUser = function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
 			next();
@@ -47,9 +51,7 @@ module.exports = function(app) {
 
 	Login.logoff = function(request, response){
 		var id = Id(request.session.Id)
-		console.log(id)
 		pointsCollection.update({"_id": id}, { $inc: { underInspection: -1}}, function(point){
-			console.log('oi', point)
 			delete request.session.user;
 			delete request.session.name;
 			response.write("deslogado");
@@ -58,12 +60,8 @@ module.exports = function(app) {
 		});
 	}
 
-	app.on('socket-connection', function() {
-		console.log('connection')
-	});
-
-	app.on('socket-disconnect', function() {
-		console.log('disconnect')
+	app.on('socket-disconnect', function(socket) {
+		console.log(socket.session);
 	});
 
 	return Login;

@@ -39,7 +39,9 @@
     "underscore": "~1.6.0",
     "unidecode": "^0.1.7",
     "walker": "~1.0.5",
-    "xml2js": "~0.4.1"
+    "xml2js": "~0.4.1",
+    "cookie-parser": "~1.4.3",
+    "session-memory-store": "~0.2.2"
   },
   "devDependencies": {},
   "scripts": {

@@ -18,8 +18,12 @@ var express = require('express')
 
 var app = express();
 
+var parseCookie = require('cookie-parser');
+var MemoryStore = require('session-memory-store')(session);
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+
+var sessionStore = new MemoryStore();
 
 load('config.js', {'verbose': false})
 .then('libs')
@@ -30,7 +34,7 @@ app.middleware.repository.init(function() {
 
 	app.repository = app.middleware.repository;
 
-	app.use(session({secret: 'LAPIG'}));
+	app.use(session({ store: sessionStore, secret: 'LAPIG', key: 'sid' }));
 	app.use(compression());
 	app.use(express.static(app.config.clientDir));
 	app.set('views', __dirname + '/templates');
@@ -56,8 +60,16 @@ app.middleware.repository.init(function() {
 
 	io.on('connection', function(socket){
 	  app.emit('socket-connection', socket);
+
+	  parseCookie(socket.upgradeReq, null, function(err) {
+	    var sessionID = socket.upgradeReq.cookies['sid'];
+	    sessionStore.get(sessionID, function(err, session) {
+	    	socket.session = session;
+	    });
+	  });	
+
 	  socket.on('disconnect', function(){
-	    app.emit('socket-disconnect');
+	    app.emit('socket-disconnect', socket);
 	  });
 	});
 
