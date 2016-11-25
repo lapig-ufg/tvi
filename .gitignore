@@ -15,3 +15,5 @@ src/server/passwords.json
 **/bin/chart/
 **/integration/py/chart/
 *.tif
+src/server/bin/*.png
+src/server/integration/py/*.png

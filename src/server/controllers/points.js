@@ -9,7 +9,7 @@ module.exports = function(app) {
 
 	var pointsCollection = app.repository.collections.points;
 
-	var findPoint = function(name, campaign, callback){
+	var findPoint = function(name, campaign, sessionPointId, callback){
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
@@ -34,11 +34,13 @@ module.exports = function(app) {
 		};
 		
 		pointsCollection.findOne(findOneFilter, function(err, point) {
-			point.underInspection += 1;
+			if(sessionPointId == undefined || String(sessionPointId) != String(point._id)) {
+				point.underInspection += 1;
+			}
 
 			pointsCollection.save(point, function() {				
 				pointsCollection.count(totalFilter, function(err, total) {
-
+					
 					var result = {};
 					result['point'] = point;
 					result['total'] = total;
@@ -53,7 +55,7 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
 
-		findPoint(user.name, user.campaign, function(result) {
+		findPoint(user.name, user.campaign, request.session.Id, function(result) {
 			request.session.Id = result.point._id
 			console.log("sessao1", request.session.Id)
 			response.send(result);
@@ -68,7 +70,7 @@ module.exports = function(app) {
 
 		pointsCollection.update(
 			{ 
-				 
+				 _id: app.repository.id(point._id)
 			},
 			{
 				$push: {
@@ -79,7 +81,7 @@ module.exports = function(app) {
 			  }
 			}, 
 			 function(err, item){
-				findPoint(user.name, user.campaign, function(result){
+				findPoint(user.name, user.campaign, request.session.Id, function(result){
 					request.session.Id = result.point._id
 					console.log("sessao1", request.session.Id)
 					response.send(result);

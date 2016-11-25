@@ -10,6 +10,46 @@ var dbUrl = 'mongodb://localhost:27017/tvi';
 var CollectionName = "points"
 var moment = moment();
 
+var bitmapDisjoint = function(imgsSeco, imgsChuvoso){
+	seasonBitmap = {};
+	
+	if((imgsSeco[0] == "") || (imgsSeco[0] == undefined)){
+		seasonBitmap.imgsSeco = undefined;
+	}else{
+		seasonBitmap.imgsSeco = fs.readFileSync(imgsSeco[0]);
+		seasonBitmap.imgsSeco = new Buffer(seasonBitmap.imgsSeco).toString('base64')
+		fs.unlinkSync(imgsSeco[0]);
+	}
+
+	if((imgsSeco[1] == "") || (imgsSeco[1] == undefined)){
+		seasonBitmap.imgsSecoRef = undefined;
+	}else{
+		seasonBitmap.imgsSecoRef = fs.readFileSync(imgsSeco[1]);
+		seasonBitmap.imgsSecoRef = new Buffer(seasonBitmap.imgsSecoRef).toString('base64')
+		fs.unlinkSync(imgsSeco[1]);
+	}
+
+
+	if((imgsChuvoso[0] == "") || (imgsChuvoso[0] == undefined)){
+		seasonBitmap.imgsChuvos = undefined;
+	}else{
+		seasonBitmap.imgsChuvoso = fs.readFileSync(imgsChuvoso[0]);
+		seasonBitmap.imgsChuvoso = new Buffer(seasonBitmap.imgsChuvoso).toString('base64')
+		fs.unlinkSync(imgsChuvoso[0]);
+	}
+
+	if(!imgsChuvoso[1] == "" || imgsChuvoso[1] == undefined){
+		seasonBitmap.imgsChuvosoRef = undefined;
+	}else{
+		seasonBitmap.imgsChuvosoRef = fs.readFileSync(imgsChuvoso[1]);
+		seasonBitmap.imgsChuvosoRef = new Buffer(seasonBitmap.imgsChuvosoRef).toString('base64')
+		fs.unlinkSync(imgsChuvoso[1]);
+	}	
+
+	return seasonBitmap;
+
+}
+
 insertPoints = function(dbUrl, CollectionName, points, callback) {
   var MongoClient = mongodb.MongoClient;
   MongoClient.connect(dbUrl, function(err, db) {
@@ -29,7 +69,6 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
 		console.log('erro');
 	}
-	
 	ano1 = 2014
 	ano2 = 2015
 
@@ -73,10 +112,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				}
 			});
 
-			var bitmapSeco = fs.readFileSync(imgsSeco[0]);
-			var bitmapSecoRef = fs.readFileSync(imgsSeco[1]);
-			var bitmapChuvoso = fs.readFileSync(imgsChuvoso[0]);
-			var bitmapChuvosoRef = fs.readFileSync(imgsChuvoso[1]);
+			var seasonBitmap = bitmapDisjoint(imgsSeco, imgsChuvoso);
+
 			var bitmapModis = fs.readFileSync("chart/"+imgModis);
 			
 			regions = "REGIONS/regions.shp";
@@ -108,23 +145,28 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			 		}
 			 	}
 
-				dateSeco = new Date(imgsSeco[0].split('_')[3]);
+
+			 	var dateSeco;
+			 	var dateChuvoso;
+
+			 	dateSeco = new Date(imgsSeco[0].split('_')[3]);
 				dateChuvoso = new Date(imgsChuvoso[0].split('_')[3]);
+				
 
 			  var point = { 
 			  	"campaign": campanha,	
 			  	"images": [
 			  		{
 			  			"date": dateSeco,
-			  			"imageBase": new Buffer(bitmapSeco).toString('base64'),
+			  			"imageBase": seasonBitmap.imgsSeco,
 			  			"period": 'seco', 
-			  			"imageBaseRef": new Buffer(bitmapSecoRef).toString('base64'),
+			  			"imageBaseRef": seasonBitmap.imgsSecoRef,
 		  			},
 		  			{
 			  			"date": dateChuvoso, 
-			  			"imageBase": new Buffer(bitmapChuvoso).toString('base64'),
+			  			"imageBase": seasonBitmap.imgsChuvoso,
 			  			"period": 'chuvoso', 
-			  			"imageBaseRef": new Buffer(bitmapChuvosoRef).toString('base64'),
+			  			"imageBaseRef":seasonBitmap.imgsChuvosoRef,
 		  			}
 			  	],
 			  	"lon": coordinate.X,
@@ -146,11 +188,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			  insertPoints(dbUrl, CollectionName, point, function() {
 			  	
 			  	fs.unlinkSync("chart/"+imgModis);
-					fs.unlinkSync(imgsSeco[0]);
-					fs.unlinkSync(imgsSeco[1]);
-					fs.unlinkSync(imgsChuvoso[0]);
-					fs.unlinkSync(imgsChuvoso[1]);
-
+	
 			  	console.log("Coordinate " + coordinate.id + " inserted");
 			  	counter++;
 			  	next();

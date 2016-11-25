@@ -91,7 +91,8 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		var lon = $scope.data.point.lon;
 		var lat = $scope.data.point.lat;
 		var county = $scope.data.point.county;
-		$window.open("http://localhost:5000/service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
+		var url = window.location.origin+window.location.pathname
+		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
 	}
 
 

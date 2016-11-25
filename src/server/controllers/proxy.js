@@ -15,7 +15,7 @@ module.exports = function(app) {
 
 	  requester({
 	  		uri: absoluteUrl
-	  	,	timeout: 5000
+	  	,	timeout: 50000
 	  	, headers: {
 	  			'Accept': request.headers['accept']
 	  		,	'User-Agent': request.headers['user-agent']
