@@ -45,22 +45,22 @@ CREDENTIALS_FILENAME = 'earth_engine_download.json'
 LANDSAT_GRID = 'ft:1qNHyIqgUjShP2gQAcfGXw-XoxWwCRn5ZXNVqKIS5'
 
 def parseArguments():
-	    
-  parser = argparse.ArgumentParser()
+			
+	parser = argparse.ArgumentParser()
  
-  parser.add_argument("id", help="id do ponto", type=str);
-  parser.add_argument("lon", help="Longitude", type=str);
-  parser.add_argument("lat", help="Latitude", type=str);
-  parser.add_argument("startYear", help="Ano inicial", type=str);
-  parser.add_argument("endYear", help="Ano final", type=str);
-  parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
-  parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
-  parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
-  parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
-  parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
+	parser.add_argument("id", help="id do ponto", type=str);
+	parser.add_argument("lon", help="Longitude", type=str);
+	parser.add_argument("lat", help="Latitude", type=str);
+	parser.add_argument("startYear", help="Ano inicial", type=str);
+	parser.add_argument("endYear", help="Ano final", type=str);
+	parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
+	parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
+	parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
+	parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
+	parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
 
-  args = parser.parse_args();
-  return args
+	args = parser.parse_args();
+	return args
 
 def getGDriveService():
 		home_dir = os.path.expanduser('~')
@@ -263,7 +263,7 @@ def createCenterPointImages(lon, lat, imageFiles):
 
 			rasterBand = GDALDataSet.GetRasterBand(i);
 			outband = outRaster.GetRasterBand(i)
-		    
+				
 			mx, my = float(lon), float(lat);
 
 			px = int((mx - gt[0]) / gt[1]) #x pixel
@@ -295,12 +295,15 @@ def convertPng(imageFiles):
 		os.remove(imageFile+".tif");
 		os.remove(imageFile+".png.aux.xml");
 
-def generateModisChart(lon, lat, startYear, endYear):
+def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 
-	date1 = str(int(startYear)-1);
+	date1 = str(int(startYear)-3);
 	date2 = str(int(endYear));
 	lon = float(lon);
 	lat = float(lat);
+
+	if date1 < 2000:
+		date1 = 2000;
 
 	pixelResolution = 250
 
@@ -335,16 +338,22 @@ def generateModisChart(lon, lat, startYear, endYear):
 		if line != 0:
 			csvMatrix.append(lista);
 
-
 	lon = str("%.4f" % lon);
 	lat = str("%.4f" % lat);
 	csvFile = "coor_"+lon.replace(".","_")+"_"+lat.replace(".","_")+"_modis_chart_"+startYear+"_"+endYear
 	with open(csvFile+".csv", 'wb') as csvfile:
-	    spamwriter = csv.writer(csvfile, delimiter=',');
-	    for line in csvMatrix:
-	    	spamwriter.writerow(line)
+			spamwriter = csv.writer(csvfile, delimiter=',');
+			for line in csvMatrix:
+				spamwriter.writerow(line)
 
-	os.system("Rscript chart.r "+csvFile+" &> /dev/null");
+	imgDates = [];
+
+	for imageFile in imageFiles:
+		if 'geo-ref' in imageFile:
+			imgDates.append(imageFile.split('_')[3])
+
+	imgDatesStr = " ".join(imgDates);
+	os.system("Rscript chart.r "+csvFile+" "+imgDatesStr+" &> /dev/null");
 	print(csvFile+".png")
 	os.remove(csvFile+".csv")
 
@@ -358,6 +367,5 @@ if __name__ == "__main__":
 	if args.png:
 		convertPng(imageFiles);
 	
-	generateModisChart(args.lon, args.lat, args.startYear, args.endYear);
+	generateModisChart(args.lon, args.lat, args.startYear, args.endYear, imageFiles);
 
- 
