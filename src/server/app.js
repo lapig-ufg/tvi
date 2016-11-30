@@ -14,17 +14,17 @@ var express = require('express')
 , timeout = require('connect-timeout')
 , bodyParser = require('body-parser')
 , multer = require('multer')
-, session = require('express-session');
+, session = require('express-session')
 
 var app = express();
 
 var parseCookie = require('cookie-parser');
-var MemoryStore = require('session-memory-store')(session);
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var cookie = parseCookie('LAPIG')
 
-var sessionStore = new MemoryStore();
-
+var store = new session.MemoryStore()
+var KEY ="cookie"
 load('config.js', {'verbose': false})
 .then('libs')
 .then('middleware')
@@ -32,9 +32,21 @@ load('config.js', {'verbose': false})
 
 app.middleware.repository.init(function() {
 
+	
 	app.repository = app.middleware.repository;
 
-	app.use(session({ store: sessionStore, secret: 'LAPIG', key: 'sid' }));
+	app.use(cookie);
+	var middlewareSession = session({ store: store,
+										secret: 'LAPIG',
+										resave: false, 
+										saveUninitialized: true, 
+										key: 'sid' })
+
+	io.use(function(socket, next){
+		middlewareSession(socket.request, socket.request.res, next)
+	})
+	
+	app.use(middlewareSession);
 	app.use(compression());
 	app.use(express.static(app.config.clientDir));
 	app.set('views', __dirname + '/templates');
@@ -58,25 +70,22 @@ app.middleware.repository.init(function() {
 	app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(multer());
 
+
+
 	io.on('connection', function(socket){
-	  app.emit('socket-connection', socket);
-
-	  parseCookie(socket.upgradeReq, null, function(err) {
-	    var sessionID = socket.upgradeReq.cookies['sid'];
-	    sessionStore.get(sessionID, function(err, session) {
-	    	socket.session = session;
-	    });
-	  });	
-
-	  socket.on('disconnect', function(){
-	    app.emit('socket-disconnect', socket);
-	  });
-	});
+		socket.on('disconnect', function(){
+			store.get(socket.request.sessionID, function(error, session) {
+				socket.request.session = session;
+				app.emit('socket-disconnect', socket);
+			});
+		})
+	})
 
 	app.use(function(error, request, response, next) {
 		console.log('ServerError: ', error.stack);
 		next();
 	});
+
 
 	load('models', {'verbose': false})
 	.then('controllers')

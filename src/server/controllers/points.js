@@ -55,13 +55,27 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
 
-		findPoint(user.name, user.campaign, request.session.Id, function(result) {
-			request.session.Id = result.point._id
-			console.log("sessao1", request.session.Id)
-			response.send(result);
-			response.end();
-		});			
+		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
+
+				request.session.currentPointId = result.point._id;
+
+
+				//var bitmap = new Buffer(data, 'base64');
+
+				response.send(result);
+				response.end();
+				
+			})
+					
 	};
+
+	Points.getCurrentPointImage = function(request, response) {
+		
+		var pointId = request.param('id');
+		var pointPeriod = request.param('period');
+
+		response.end('fim');
+	}
 
 	Points.updatePoint = function(request, response) {	
 		
@@ -81,9 +95,8 @@ module.exports = function(app) {
 			  }
 			}, 
 			 function(err, item){
-				findPoint(user.name, user.campaign, request.session.Id, function(result){
-					request.session.Id = result.point._id
-					console.log("sessao1", request.session.Id)
+				findPoint(user.name, user.campaign, request.session.currentPointId, function(result){
+					request.session.currentPointId = result.point._id
 					response.send(result);
 					response.end();
 				})			

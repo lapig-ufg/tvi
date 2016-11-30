@@ -6,7 +6,7 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27017/tvi';
+var dbUrl = 'mongodb://localhost:27018/tvi';
 var CollectionName = "points"
 var moment = moment();
 
@@ -189,7 +189,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			  	
 			  	fs.unlinkSync("chart/"+imgModis);
 	
-			  	console.log("Coordinate " + coordinate.id + " inserted");
+			  	console.log(counter + " ("+new Date()+") - Coordinate " + coordinate.id + " inserted");
 			  	counter++;
 			  	next();
 				});

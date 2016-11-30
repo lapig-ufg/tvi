@@ -6,7 +6,7 @@ module.exports = function(app) {
 	var Login = {};
 	var pointsCollection = app.repository.collections.points;
 	var usersCollection = app.repository.collections.users;
-	var Id = app.repository.id;
+	
 
 	var updateUnderInspection = function() {
 
@@ -50,8 +50,8 @@ module.exports = function(app) {
 	}
 
 	Login.logoff = function(request, response){
-		var id = Id(request.session.Id)
-		pointsCollection.update({"_id": id}, { $inc: { underInspection: -1}}, function(point){
+		var id = app.repository.id(request.session.currentPointId)
+		pointsCollection.update({"_id": id}, { $inc: { underInspection: -1}}, function(point) {
 			delete request.session.user;
 			delete request.session.name;
 			response.write("deslogado");
@@ -61,7 +61,11 @@ module.exports = function(app) {
 	}
 
 	app.on('socket-disconnect', function(socket) {
-		console.log(socket.session);
+		var id = app.repository.id(socket.request.session.currentPointId);
+
+		pointsCollection.update({"_id": id}, { $inc: { underInspection: -1}}, function(point) {
+			console.log("disconneect");
+		});
 	});
 
 	return Login;

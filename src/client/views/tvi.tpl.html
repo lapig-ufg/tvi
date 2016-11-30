@@ -19,7 +19,12 @@
         <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
           <h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled1">
           {{data.point.images[1].date | date:'dd/MM/yyyy'}} <small> - Periodo {{data.point.images[1].period}}</small></h4>
-          <img ng-show="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBaseRef}}"/>
+          <!--span id='thumb'>
+            <img src="../assets/finish.jpg">            
+          </span-->
+          <span id='thumb'>
+            <img ng-show="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBaseRef}}" data-large-img-wrapper="preview"/>
+          </span>
           <img ng-hide="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBase}}" />
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
@@ -108,6 +113,6 @@
     </div>    
   </div>
 </div>
-<!--script>
+<script>
   var socket = io();
-</script-->
+</script>
