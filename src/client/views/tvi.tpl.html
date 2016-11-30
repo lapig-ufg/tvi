@@ -17,23 +17,18 @@
     <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">      
       <div class="row">
         <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-          <h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled1">
+          <h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled1" >
           {{data.point.images[1].date | date:'dd/MM/yyyy'}} <small> - Periodo {{data.point.images[1].period}}</small></h4>
-          <!--span id='thumb'>
-            <img src="../assets/finish.jpg">            
-          </span-->
-          <span id='thumb'>
-            <img ng-show="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBaseRef}}" data-large-img-wrapper="preview"/>
-          </span>
-          <img ng-hide="pointEnabled1" class="img-responsive" data-ng-src="data:image/png;base64,{{data.point.images[1].imageBase}}" />
+          <div ng-show="pointEnabled1" class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{data.point.images[1].imageBaseRef}}"></div>
+          <div ng-hide="pointEnabled1" class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{data.point.images[1].imageBase}}"></div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
           <h4 class="pull-left">
             <input type="checkbox" class="form-check-input" ng-model="pointEnabled2">
             {{data.point.images[0].date | date:'dd/MM/yyyy'}} <small> - Periodo {{data.point.images[0].period}} </small> 
-          </h4>           
-          <img ng-show="pointEnabled2" class="img-responsive pull-left" data-ng-src="data:image/png;base64,{{data.point.images[0].imageBaseRef}}" />  
-          <img ng-hide="pointEnabled2" class="img-responsive pull-left" data-ng-src="data:image/png;base64,{{data.point.images[0].imageBase}}"/>
+          </h4>
+          <div ng-show="pointEnabled2" class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{data.point.images[0].imageBaseRef}}"></div>
+          <div ng-hide="pointEnabled2" class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{data.point.images[0].imageBase}}"></div>
         </div>
       </div>
       <div class="row">

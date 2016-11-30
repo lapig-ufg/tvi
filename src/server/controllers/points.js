@@ -40,11 +40,16 @@ module.exports = function(app) {
 
 			pointsCollection.save(point, function() {				
 				pointsCollection.count(totalFilter, function(err, total) {
+
+					/*for (var i in point.images) {
+						point.images[i].imageBase = 'service/points/'+point._id+'/'+point.images[i].period+'/nopoint/image.png';
+						point.images[i].imageBaseRef = 'service/points/'+point._id+'/'+point.images[i].period+'/wpoint/image.png';
+					}*/
 					
 					var result = {};
 					result['point'] = point;
 					result['total'] = total;
-					result['current'] = point.index // current tras o numero de objetos que satisfazem, no caso, a condição findOneFilter;
+					result['current'] = point.index
 					callback(result);
 				});				
 			});
@@ -59,9 +64,6 @@ module.exports = function(app) {
 
 				request.session.currentPointId = result.point._id;
 
-
-				//var bitmap = new Buffer(data, 'base64');
-
 				response.send(result);
 				response.end();
 				
@@ -69,13 +71,32 @@ module.exports = function(app) {
 					
 	};
 
-	Points.getCurrentPointImage = function(request, response) {
+	/*Points.getCurrentPointImage = function(request, response) {
 		
 		var pointId = request.param('id');
 		var pointPeriod = request.param('period');
+		var pointType = request.param('type');
 
-		response.end('fim');
-	}
+		pointsCollection.findOne({ _id: app.repository.id(pointId) }, function(err, point) {
+			
+			var result = '';
+
+			for (i in point.images) {
+				if(point.images[i].period == pointPeriod) {
+					var imgBase = (pointType == 'wpoint') ? point.images[i].imageBaseRef : point.images[i].imageBase
+					if(imgBase != undefined) {
+						result = new Buffer(imgBase, 'base64');
+						break;
+					}
+				}
+			}
+
+			response.setHeader('content-type', 'image/png');
+			response.write(result);
+			response.end();
+		})
+
+	}*/
 
 	Points.updatePoint = function(request, response) {	
 		

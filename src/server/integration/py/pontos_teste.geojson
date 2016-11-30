@@ -3,11 +3,6 @@
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
                                                                                 
 "features": [
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Vegetacao Remanescente" }, "geometry": { "type": "Point", "coordinates": [ -49.435819996311139, -16.960561412224791 ] } },
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Pastagem" }, "geometry": { "type": "Point", "coordinates": [ -50.29778433510689, -13.757504415100721 ] } },
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Vegetacao Remanescente" }, "geometry": { "type": "Point", "coordinates": [ -50.44276496305951, -12.351714064902751 ] } },
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Pastagem" }, "geometry": { "type": "Point", "coordinates": [ -50.98292047734796, -15.525313803568856 ] } },
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Pastagem" }, "geometry": { "type": "Point", "coordinates": [ -52.922632712646632, -17.768124070456324 ] } },
-{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Vegetacao Mista" }, "geometry": { "type": "Point", "coordinates": [ -53.997687328804631, -15.563638393752953 ] } }
+{ "type": "Feature", "properties": { "Id": 0, "Classe_Uso": "Vegetacao Remanescente" }, "geometry": { "type": "Point", "coordinates": [ -49.435819996311139, -16.960561412224791 ] } }
 ]
 }

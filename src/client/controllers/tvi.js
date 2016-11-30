@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('TviController', function($rootScope, $scope, $location, $window, requester, util, $interval) {
+Application.controller('TviController', function($rootScope, $scope, $location, $window, requester, util, $interval, $timeout) {
 
 	requester._get('login/user', function(result) {
 		if(!result.name) {
@@ -63,12 +63,10 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 
 		requester._get('points/next-point', function(data) {
 			$scope.data = data;
-			console.log(data);
 			requestSupportInfo()
-			$('#thumb').zoom();
 		});
-	}
-	
+	}	
+
 	$scope.submitPoint = function() {
 		
 		$scope.formData._id = $scope.data.point._id;

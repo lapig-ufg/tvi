@@ -1,4 +1,4 @@
-var Application = angular.module('application', ['ngRoute']);
+var Application = angular.module('application', ['ngRoute', 'ngMagnify']);
 
 Application.config(function($routeProvider, $locationProvider) {
 
