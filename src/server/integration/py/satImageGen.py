@@ -241,9 +241,6 @@ def createCenterPointImages(lon, lat, imageFiles):
 		rasterBand = GDALDataSet.GetRasterBand(2);
 
 		gt = GDALDataSet.GetGeoTransform()
-
-		originX = gt[0];
-		originY = gt[3];
 		
 		cols = rasterBand.XSize
 		rows = rasterBand.YSize
@@ -256,26 +253,23 @@ def createCenterPointImages(lon, lat, imageFiles):
 		driver = gdal.GetDriverByName('GTiff');
 
 		outRaster = driver.Create(newRaster, cols, rows, 3, gdal.GDT_Byte)
-
-		outRaster.SetGeoTransform((originX, 1, 0, originY, 0, 1))
+		outRaster.SetGeoTransform((gt[0], gt[1], gt[2], gt[3], gt[4], gt[5]))
 
 		for i in xrange(1,4):
 
 			rasterBand = GDALDataSet.GetRasterBand(i);
 			outband = outRaster.GetRasterBand(i)
-				
-			mx, my = float(lon), float(lat);
 
-			px = int((mx - gt[0]) / gt[1]) #x pixel
-			py = int((my - gt[3]) / gt[5]) #y pixel
+			px = int(rows/2)
+			py = int(cols/2)
 
 			intval = rasterBand.ReadAsArray()
 
 			for x in xrange(px-2, px+3):
 				for y in xrange(py-2, py+3):
-					if(x == px-2) | (x == px+2) | (y == py-2) | (y == py+2):
+					if(x == px-2) or (x == px+2) or (y == py-2) or (y == py+2):
 						intval[x][y] = 255;
-					else:
+					elif(x == px and y == py):
 						intval[x][y] = 0;
 				
 			outband.WriteArray(intval)
@@ -292,13 +286,13 @@ def convertPng(imageFiles):
 		os.system("gdal_translate -of png " +imageFile+".tif"+" "+imageFile+".png"+" "+"&>"+" "+"/dev/null");
 		os.system("convert " +imageFile+".png -channel RGB -contrast-stretch 2x2% " +imageFile+".png");
 		print(imageFile+".png");
-		os.remove(imageFile+".tif");
-		os.remove(imageFile+".png.aux.xml");
+		#os.remove(imageFile+".tif");
+		#os.remove(imageFile+".png.aux.xml");
 
 def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 
 	date1 = str(int(startYear)-3);
-	date2 = str(int(endYear));
+	date2 = endYear+'12-31';
 	lon = float(lon);
 	lat = float(lat);
 
