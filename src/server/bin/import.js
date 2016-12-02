@@ -6,7 +6,7 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27017/tvi';
+var dbUrl = 'mongodb://localhost:27018/tvi';
 var CollectionName = "points"
 var moment = moment();
 
@@ -71,8 +71,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
 		console.log('erro');
 	}
-	ano1 = 2014
-	ano2 = 2015
+	ano1 = 2015
+	ano2 = 2016
 
 	geojsonData = JSON.parse(geojsonDataStr)
 	
@@ -80,7 +80,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	for(var i = 0; i < geojsonData.features.length; i++){
 		coordinates.push(
 			{
-				"id": geojsonData.features[i].properties.Id,
+				"id": geojsonData.features[i].properties['id'],
 				"X": geojsonData.features[i].geometry.coordinates[0],
 				"Y": geojsonData.features[i].geometry.coordinates[1]
 			}

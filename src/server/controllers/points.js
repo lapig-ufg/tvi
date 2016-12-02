@@ -32,9 +32,9 @@ module.exports = function(app) {
 				{"campaign": { "$eq": campaign }}
 			]
 		};
-		
+		console.log(sessionPointId)
 		pointsCollection.findOne(findOneFilter, function(err, point) {
-			if(sessionPointId == undefined || String(sessionPointId) != String(point._id)) {
+			if(String(sessionPointId) != String(point._id)) {
 				point.underInspection += 1;
 			}
 
@@ -45,7 +45,10 @@ module.exports = function(app) {
 						point.images[i].imageBase = 'service/points/'+point._id+'/'+point.images[i].period+'/nopoint/image.png';
 						point.images[i].imageBaseRef = 'service/points/'+point._id+'/'+point.images[i].period+'/wpoint/image.png';
 					}*/
-					pointsCollection.find({"userName": { $in: [name]}}).count(function (err, count) {						
+					pointsCollection.count({$and: [
+    														{ userName: { $in: [name] } },
+    														{"campaign":campaign}]}, function (err, count) {						
+						
 						var result = {};
 						result['point'] = point;
 						result['total'] = total;
