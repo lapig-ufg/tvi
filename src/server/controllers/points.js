@@ -45,12 +45,15 @@ module.exports = function(app) {
 						point.images[i].imageBase = 'service/points/'+point._id+'/'+point.images[i].period+'/nopoint/image.png';
 						point.images[i].imageBaseRef = 'service/points/'+point._id+'/'+point.images[i].period+'/wpoint/image.png';
 					}*/
-					
-					var result = {};
-					result['point'] = point;
-					result['total'] = total;
-					result['current'] = point.index
-					callback(result);
+					pointsCollection.find({"userName": { $in: [name]}}).count(function (err, count) {						
+						var result = {};
+						result['point'] = point;
+						result['total'] = total;
+						result['current'] = point.index
+						result['user'] = name;
+						result['count'] = count;
+						callback(result);
+					})
 				});				
 			});
 		});
@@ -63,7 +66,6 @@ module.exports = function(app) {
 		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
 
 				request.session.currentPointId = result.point._id;
-
 				response.send(result);
 				response.end();
 				

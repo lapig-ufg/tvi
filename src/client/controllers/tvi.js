@@ -63,6 +63,7 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 
 		requester._get('points/next-point', function(data) {
 			$scope.data = data;
+			console.log(data);
 			requestSupportInfo()
 		});
 	}	

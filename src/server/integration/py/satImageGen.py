@@ -286,13 +286,13 @@ def convertPng(imageFiles):
 		os.system("gdal_translate -of png " +imageFile+".tif"+" "+imageFile+".png"+" "+"&>"+" "+"/dev/null");
 		os.system("convert " +imageFile+".png -channel RGB -contrast-stretch 2x2% " +imageFile+".png");
 		print(imageFile+".png");
-		#os.remove(imageFile+".tif");
-		#os.remove(imageFile+".png.aux.xml");
+		os.remove(imageFile+".tif");
+		os.remove(imageFile+".png.aux.xml");
 
 def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 
 	date1 = str(int(startYear)-3);
-	date2 = endYear+'12-31';
+	date2 = endYear+'-12-31';
 	lon = float(lon);
 	lat = float(lat);
 

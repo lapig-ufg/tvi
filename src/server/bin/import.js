@@ -6,7 +6,7 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27018/tvi';
+var dbUrl = 'mongodb://localhost:27017/tvi';
 var CollectionName = "points"
 var moment = moment();
 
@@ -31,14 +31,15 @@ var bitmapDisjoint = function(imgsSeco, imgsChuvoso){
 
 
 	if((imgsChuvoso[0] == "") || (imgsChuvoso[0] == undefined)){
-		seasonBitmap.imgsChuvos = undefined;
+		seasonBitmap.imgsChuvoso = undefined;
 	}else{
 		seasonBitmap.imgsChuvoso = fs.readFileSync(imgsChuvoso[0]);
 		seasonBitmap.imgsChuvoso = new Buffer(seasonBitmap.imgsChuvoso).toString('base64')
 		fs.unlinkSync(imgsChuvoso[0]);
 	}
 
-	if(!imgsChuvoso[1] == "" || imgsChuvoso[1] == undefined){
+	if((imgsChuvoso[1] == "") || (imgsChuvoso[1] == undefined)){
+		console.log(imgsChuvoso[1])
 		seasonBitmap.imgsChuvosoRef = undefined;
 	}else{
 		seasonBitmap.imgsChuvosoRef = fs.readFileSync(imgsChuvoso[1]);
@@ -64,6 +65,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
       });
   });
 }
+
 var counter = 1;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
@@ -112,6 +114,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				}
 			});
 
+			
 			var seasonBitmap = bitmapDisjoint(imgsSeco, imgsChuvoso);
 
 			var bitmapModis = fs.readFileSync("chart/"+imgModis);

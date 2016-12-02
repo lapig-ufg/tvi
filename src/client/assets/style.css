@@ -58,6 +58,14 @@
 	margin-top: 40px;
 }
 
+.user-info {
+  color: white;
+  text-align: right;
+  padding-top: 5px;
+  padding-right: 10px;
+  font-weight: normal;
+}
+
 legend.scheduler-border {
     font-size: 1.2em !important;
     font-weight: bold !important;
