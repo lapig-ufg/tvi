@@ -13,16 +13,16 @@ module.exports = function(app) {
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.landUse.length<3' },
+				{ "$where":'this.landUse.length<5' },
 				{ "campaign": { "$eq": campaign } },
-				{ "underInspection": { $lt: 3 } }
+				{ "underInspection": { $lt: 5 } }
 			]
 		};
 
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<3' },
+				{ "$where":'this.userName.length<5' },
 				{ "campaign": { "$eq": campaign } }
 			]
 		};
@@ -32,8 +32,8 @@ module.exports = function(app) {
 				{"campaign": { "$eq": campaign }}
 			]
 		};
-		console.log(sessionPointId)
-		pointsCollection.findOne(findOneFilter, function(err, point) {
+		
+		pointsCollection.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 			if(String(sessionPointId) != String(point._id)) {
 				point.underInspection += 1;
 			}

@@ -10,7 +10,6 @@ module.exports = function(app) {
 
 		var region = request.param('region');
 		var city = request.param('city');
-		console.log(region, city);
 		var absoluteUrl = "http://maps.lapig.iesa.ufg.br/spatial/query?region="+region+"&regionType=biome&city="+city+"&lang=pt-br";
 
 	  requester({
@@ -28,8 +27,6 @@ module.exports = function(app) {
 	  	if(error) {
 	  		console.log(error);
 	  		response.end();	
-	  	} else {
-	  		console.log(proxyResponse.statusCode, absoluteUrl);
 	  	}
 
 	  }).pipe(response)
