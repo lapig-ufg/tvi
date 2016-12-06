@@ -52,6 +52,7 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		$scope.pointEnabled1 = true;
 		$scope.pointEnabled2 = true;
 		$scope.formData = {};
+		$scope.isDisabled = false;
 
 		var biome;
 		var countyCode;
@@ -69,19 +70,20 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 	}	
 
 	$scope.submitPoint = function() {
-		
+
+		$scope.isDisabled = true;
 		$scope.formData._id = $scope.data.point._id;
 		$scope.formData.counter = $scope.counter;
 
 		requester._post('points/next-point', { "point": $scope.formData }, function(data) {
-			
+			console.log($scope.isDisabled)
 			$scope.data = data;
 			$scope.counter = 0;
-			
+			$scope.isDisabled = false;		
 			$scope.suportData = null;
 			$scope.formData.landUse = "";
 			$scope.formData.certaintyIndex = "";
-
+			console.log($scope.isDisabled)
 			requestSupportInfo();
 		});
 	}

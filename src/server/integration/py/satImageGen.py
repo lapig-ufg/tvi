@@ -142,92 +142,93 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			.filterBounds(point) \
 			.first();
 
-	tile = scene.get('TILE_T').getInfo();
-	path = tile[1:4]
-	row = tile[4:7] 
-			 
-	season = [
-		{
-			"start": startSeco, 
-			"end": endSeco, 
-			"type": "seco"
-		}, 
-		{
-			"start": startChuva, 
-			"end": endChuva, 
-			"type": "chuvoso"
-		}
-	];
+	if(scene.getInfo() != None):
+		tile = scene.get('TILE_T').getInfo();
+		path = tile[1:4]
+		row = tile[4:7] 
+				 
+		season = [
+			{
+				"start": startSeco, 
+				"end": endSeco, 
+				"type": "seco"
+			}, 
+			{
+				"start": startChuva, 
+				"end": endChuva, 
+				"type": "chuvoso"
+			}
+		];
 
-	for year in xrange(startYear, endYear, inc):
-		
-		for x in season:	
-
-			dtStart = str(year)+x['start'];
-			dtEnd = str(year)+x['end'];	
+		for year in xrange(startYear, endYear, inc):
 			
-			landsatBands, landsatCollection = getLandsatFromYear(year);
+			for x in season:	
 
-			imgResult = landsatCollection \
-												.filterDate(dtStart,dtEnd) \
-												.filterMetadata('WRS_PATH', 'equals', int(path)) \
-												.filterMetadata('WRS_ROW', 'equals', int(row)) \
-												.sort('CLOUD_COVER', True) \
-												.first();
-
-			try:
-				img = ee.Image(imgResult);
-				dataAcquired = img.get('DATE_ACQUIRED').getInfo();
-
-				spacecraft = img.get('SPACECRAFT_ID').getInfo();
-
-				lon = str("%.4f" % longitude);
-				lat = str("%.4f" % latitude);				
-
-				filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
-
-				imgResult = img.clip(bufferArea);
-				img = imgResult.visualize(bands=landsatBands)
-
-				coordList = bufferArea.coordinates().getInfo();
-				region = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]];
-				taskConfig['region'] = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]]
-
-				task = ee.batch.Export.image.toDrive(image=img, description=filename, folder=folder, region=region, scale=30)
-				task.start()
-
-				status = task.status()	
-				taskStatus = status['state']
-
-				fileGdriveId=None;
-				geofilename = filename
+				dtStart = str(year)+x['start'];
+				dtEnd = str(year)+x['end'];	
 				
-				filename = filename + '.tif'
-				
-				while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
-					time.sleep(GDRIVE_SLEEP_TIME)
-					fileGdriveId = getFileId(gDriveService, filename);
+				landsatBands, landsatCollection = getLandsatFromYear(year);
+
+				imgResult = landsatCollection \
+													.filterDate(dtStart,dtEnd) \
+													.filterMetadata('WRS_PATH', 'equals', int(path)) \
+													.filterMetadata('WRS_ROW', 'equals', int(row)) \
+													.sort('CLOUD_COVER', True) \
+													.first();
+
+				try:
+					img = ee.Image(imgResult);
+					dataAcquired = img.get('DATE_ACQUIRED').getInfo();
+
+					spacecraft = img.get('SPACECRAFT_ID').getInfo();
+
+					lon = str("%.4f" % longitude);
+					lat = str("%.4f" % latitude);				
+
+					filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
+
+					imgResult = img.clip(bufferArea);
+					img = imgResult.visualize(bands=landsatBands)
+
+					coordList = bufferArea.coordinates().getInfo();
+					region = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]];
+					taskConfig['region'] = [coordList[0][0], coordList[0][1], coordList[0][2], coordList[0][3]]
+
+					task = ee.batch.Export.image.toDrive(image=img, description=filename, folder=folder, region=region, scale=30)
+					task.start()
+
 					status = task.status()	
 					taskStatus = status['state']
-					taskDescri = task.config['description']
-					
-				if fileGdriveId != None:
-					downloadFile(gDriveService, fileGdriveId, filename);
-					permanentDeleteFile(gDriveService, fileGdriveId);
-					os.system("gdalwarp -t_srs EPSG:4326 "+ filename+" "+geofilename+"-geo.tif"+" "+"&>"+" "+"/dev/null")
 
-					imageFiles.append(str(geofilename+"-geo"));
+					fileGdriveId=None;
+					geofilename = filename
 					
-					try:
-						os.remove(filename);
-					except:
+					filename = filename + '.tif'
+					
+					while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
+						time.sleep(GDRIVE_SLEEP_TIME)
+						fileGdriveId = getFileId(gDriveService, filename);
+						status = task.status()	
+						taskStatus = status['state']
+						taskDescri = task.config['description']
+						
+					if fileGdriveId != None:
+						downloadFile(gDriveService, fileGdriveId, filename);
+						permanentDeleteFile(gDriveService, fileGdriveId);
+						os.system("gdalwarp -t_srs EPSG:4326 "+ filename+" "+geofilename+"-geo.tif"+" "+"&>"+" "+"/dev/null")
+
+						imageFiles.append(str(geofilename+"-geo"));
+						
+						try:
+							os.remove(filename);
+						except:
+							pass
+
+					else:
 						pass
-
-				else:
+				except:
 					pass
-			except:
-				pass
-	
+
 	return imageFiles;
 
 def createCenterPointImages(lon, lat, imageFiles):	

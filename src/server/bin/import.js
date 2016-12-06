@@ -66,7 +66,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 1;
+var counter = 1338;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){
 		console.log('erro');
@@ -90,7 +90,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	async.eachSeries(coordinates, function(coordinate, next) {
 
 		var cmd = 'python ./../integration/py/satImageGen.py'+' '+coordinate.id+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
-
+		console.log(cmd);
 		exec(cmd, function(err, stdout, stderr){	
 		  
 		  if (err) {
@@ -152,8 +152,13 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			 	var dateSeco;
 			 	var dateChuvoso;
 
-			 	dateSeco = new Date(imgsSeco[0].split('_')[3]);
-				dateChuvoso = new Date(imgsChuvoso[0].split('_')[3]);
+				try {				    
+				 	dateSeco = new Date(imgsSeco[0].split('_')[3]);
+					dateChuvoso = new Date(imgsChuvoso[0].split('_')[3]);
+				}
+				catch(err) {
+				  console.log(err)
+				}
 				
 
 			  var point = { 
