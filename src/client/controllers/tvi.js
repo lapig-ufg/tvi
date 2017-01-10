@@ -8,6 +8,7 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		} else {
 			$scope.name = result.name;
 			$scope.campaign = result.campaign;
+			$scope.senha = result.senha;
 			init();
 		}
 	});
@@ -76,14 +77,15 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		$scope.formData.counter = $scope.counter;
 
 		requester._post('points/next-point', { "point": $scope.formData }, function(data) {
-			console.log($scope.isDisabled)
+			
 			$scope.data = data;
+			console.log(data)
 			$scope.counter = 0;
 			$scope.isDisabled = false;		
 			$scope.suportData = null;
 			$scope.formData.landUse = "";
 			$scope.formData.certaintyIndex = "";
-			console.log($scope.isDisabled)
+			
 			requestSupportInfo();
 		});
 	}

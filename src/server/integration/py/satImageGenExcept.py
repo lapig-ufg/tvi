@@ -4,6 +4,7 @@ from __future__ import print_function
 from apiclient import discovery
 from apiclient.http import MediaIoBaseDownload
 from sys import argv
+import time 
 
 import oauth2client
 from oauth2client import client
@@ -32,7 +33,7 @@ L8_START = datetime.datetime.strptime('2013-01-01', '%Y-%m-%d').date()
 
 L7_BANDS = ['B4','B5','B3']
 L7_COLLECTION = ee.ImageCollection("LANDSAT/LE7_L1T_TOA")
-L7_START = datetime.datetime.strptime('2000-01-01', '%Y-%m-%d').date()
+L7_START = datetime.datetime.strptime('2012-01-01', '%Y-%m-%d').date()
 
 L5_START = datetime.datetime.strptime('1984-01-01', '%Y-%m-%d').date()
 L5_COLLECTION = ee.ImageCollection("LANDSAT/LT5_L1T_TOA");
@@ -135,16 +136,24 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 	taskConfig = { "scale": 30, "maxPixels": 1.0E13, "driveFolder": 'quicklook' }
 
 	gDriveService = getGDriveService();
-
-	point = ee.Geometry.Point(longitude,latitude);
-	bufferArea = point.buffer(bufferR).bounds();
-	scene = ee.FeatureCollection(LANDSAT_GRID) \
-			.filterBounds(point) \
-			.first();
+	while True:
+		try:		
+			point = ee.Geometry.Point(longitude,latitude);
+			bufferArea = point.buffer(bufferR).bounds();
+			scene = ee.FeatureCollection(LANDSAT_GRID) \
+					.filterBounds(point) \
+					.first();
+			break;
+		except Exception:
+			traceback.print_exc();
+			time.sleep(60);
 
 	if(scene.getInfo() != None):
+
 		tile = scene.get('TILE_T').getInfo();
+		
 		path = tile[1:4]
+
 		row = tile[4:7] 
 				 
 		season = [
@@ -308,16 +317,9 @@ def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 	def calculateIndex(image):
 		 return image.expression(expression);
 
-	
-	try:
-		point = ee.Geometry.Point([lon, lat]);
-		timeSeries = ee.ImageCollection(collectionId).filterDate(date1, date2).map(calculateIndex);
-		result = timeSeries.getRegion(point,pixelResolution).getInfo();
-	except: ee.ee_exception.EEException	
-		point = ee.Geometry.Point([lon, lat]);
-		timeSeries = ee.ImageCollection(collectionId).filterDate(date1, date2).map(calculateIndex);
-		result = timeSeries.getRegion(point,pixelResolution).getInfo();
-	
+	point = ee.Geometry.Point([lon, lat]);
+	timeSeries = ee.ImageCollection(collectionId).filterDate(date1, date2).map(calculateIndex);
+	result = timeSeries.getRegion(point,pixelResolution).getInfo();
 	csvMatrix = [];
 
 	for line in xrange(0, len(result)):
@@ -362,7 +364,6 @@ def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 if __name__ == "__main__":
 	
 	args = parseArguments()
-
 	imageFiles = downloadLandsatFromEE(args.id, args.lon, args.lat, args.startYear, args.endYear, args.startChuva, args.endChuva, args.startSeco, args.endSeco, args.png);	
 	imageFiles = createCenterPointImages(args.lon, args.lat, imageFiles);
 	
@@ -371,4 +372,3 @@ if __name__ == "__main__":
 	
 	generateModisChart(args.lon, args.lat, args.startYear, args.endYear, imageFiles);
 
- 

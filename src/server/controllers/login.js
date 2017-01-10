@@ -29,9 +29,11 @@ module.exports = function(app) {
 	Login.enterTvi = function(request, response){
 		var campaign = request.param('campaign');
 		var name = request.param('name');
+		var senha = request.param('senha');
 
+		console.log({"campaign": campaign});
 		pointsCollection.count({"campaign": campaign}, function(err, count) {
-			
+
 			var result = {
 				login: (count > 0)
 			}
@@ -39,8 +41,15 @@ module.exports = function(app) {
 			if(result.login) {
 				request.session.user = { 
 					"name": name, 
-					"campaign": campaign
+					"campaign": campaign,
+					"type": 'inspector'
 				};
+
+				if(name == 'admin' && senha == 'lapigSergio') {
+					request.session.user.type = 'supervisor';
+					result.type = 'supervisor';
+				}
+
 			}
 
 			response.send(result);

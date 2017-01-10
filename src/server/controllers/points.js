@@ -18,7 +18,7 @@ module.exports = function(app) {
 				{ "underInspection": { $lt: 5 } }
 			]
 		};
-
+''
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },

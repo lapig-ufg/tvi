@@ -18,6 +18,7 @@
 @media (max-width: 780px){
 .form-control{
 		font-size: 10px !important;
+    margin-top: 5px;
 	}
 }
 
@@ -27,6 +28,19 @@
     margin-right: auto;
     margin-top: 100px;
     margin-left: auto;
+}
+
+.input {
+  margin-bottom: 100px;
+}
+
+
+.form-inline {
+  margin-top: 6px;
+}
+
+.btn-navbar {
+  margin-bottom: 9px;
 }
 
 .button-align {

@@ -39,7 +39,6 @@ Application
 				callback = params;
 				params = [];
 			}
-			
 			$http.post(url, params).success(function(response){
         callback(response);
       }.bind(this));

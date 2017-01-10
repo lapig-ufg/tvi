@@ -6,7 +6,11 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 	$scope.showForm = false;
 
 	requester._get('login/user', function(result) {
-		if(result.name) {
+
+		if(result.name && result.senha){
+			$location.path('tviSuper');
+		}
+		else if(result.name) {
 			$location.path('tvi');
 		} else {
 			$scope.showForm = true;
@@ -14,19 +18,22 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 	});
 
 	$scope.logoff = function(){
-		console.log('angular')
 		requester._get('login/logoff', function(result){
 
 		})
 	}
 
-	$scope.submit = function(name, campaign){
+	$scope.submit = function(name, campaign, senha){
 		$scope.name = name;
 		$scope.campaign = campaign;
+		$scope.senha = senha;
 
-		requester._post('login',{'name':$scope.name, 'campaign':$scope.campaign}, function(result) {
+		requester._post('login',{'name':$scope.name, 'campaign':$scope.campaign, 'senha': $scope.senha}, function(result) {
 			
-			if(result.login){
+			if(result.type == 'supervisor'){
+				
+				$location.path('tviSuper')
+			}else if(result.login){
 				$location.path('tvi');
 			} else {
 				$scope.showMsg = true;

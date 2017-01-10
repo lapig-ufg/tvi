@@ -10,6 +10,9 @@ var dbUrl = 'mongodb://localhost:27018/tvi';
 var CollectionName = "points"
 var moment = moment();
 
+//var geojsonFile = JSON.parse(geojsonFile)
+
+
 var bitmapDisjoint = function(imgsSeco, imgsChuvoso){
 	seasonBitmap = {};
 	
@@ -66,13 +69,13 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 1338;
+var counter = 0;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
-	if(error){
+	if(error){	
 		console.log('erro');
 	}
-	ano1 = 2015
-	ano2 = 2016
+	ano1 = 2000
+	ano2 = 2001
 
 	geojsonData = JSON.parse(geojsonDataStr)
 	
@@ -82,14 +85,15 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			{
 				"id": geojsonData.features[i].properties['id'],
 				"X": geojsonData.features[i].geometry.coordinates[0],
-				"Y": geojsonData.features[i].geometry.coordinates[1]
+				"Y": geojsonData.features[i].geometry.coordinates[1],
+				"value": geojsonData.features[i].properties.value
 			}
 		);
 	}
 
 	async.eachSeries(coordinates, function(coordinate, next) {
 
-		var cmd = 'python ./../integration/py/satImageGen.py'+' '+coordinate.id+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
+		var cmd = 'python ./../integration/py/satImageGenExcept.py'+' '+coordinate.id+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
 		console.log(cmd);
 		exec(cmd, function(err, stdout, stderr){	
 		  
@@ -159,7 +163,11 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				catch(err) {
 				  console.log(err)
 				}
-				
+
+				var lon = String(coordinate.X).substring(0, String(coordinate.X).length - 10)
+				var lat = String(coordinate.Y).substring(0, String(coordinate.Y).length - 10)
+				coord = lon+'_'+lat;
+
 
 			  var point = { 
 			  	"campaign": campanha,	
@@ -190,7 +198,9 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				  "certaintyIndex":[],
 				  "counter":[],
 				  "underInspection": 0,
-				  "index": counter
+				  "index": counter,
+				  "value": coordinate.value,
+				  "coord": coord
 			  }
 			  
 			  insertPoints(dbUrl, CollectionName, point, function() {
