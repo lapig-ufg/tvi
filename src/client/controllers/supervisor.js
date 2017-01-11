@@ -54,10 +54,17 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 	}
 
 	var init = function() {
-
 		requester._get('points/get-point', function(data) {
 			dataAdjustment(data);			
 		});
+	}
+	$scope.getKml = function(){
+		console.log('oi')
+		var lon = $scope.data.lon;
+		var lat = $scope.data.lat;
+		var county = $scope.data.county;
+		var url = window.location.origin+window.location.pathname
+		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
 	}	
 
 });
