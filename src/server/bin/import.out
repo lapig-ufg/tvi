@@ -1,697 +1,452 @@
-python ./../integration/py/satImageGenExcept.py 4652 -56.406852507029306 -10.523619836557948 2015 2016
-4652 (Mon Dec 19 2016 16:28:52 GMT-0200 (BRST)) - Coordinate 4652 inserted
-python ./../integration/py/satImageGenExcept.py 4653 -50.749238286959596 -14.394441418788174 2015 2016
-4653 (Mon Dec 19 2016 16:29:44 GMT-0200 (BRST)) - Coordinate 4653 inserted
-python ./../integration/py/satImageGenExcept.py 4654 -57.31997146967406 -11.483429925400095 2015 2016
-4654 (Mon Dec 19 2016 16:30:35 GMT-0200 (BRST)) - Coordinate 4654 inserted
-python ./../integration/py/satImageGenExcept.py 4655 -41.641389404188516 -22.17867045043584 2015 2016
-4655 (Mon Dec 19 2016 16:31:25 GMT-0200 (BRST)) - Coordinate 4655 inserted
-python ./../integration/py/satImageGenExcept.py 4656 -53.0136561505585 -3.162932793153005 2015 2016
-4656 (Mon Dec 19 2016 16:32:15 GMT-0200 (BRST)) - Coordinate 4656 inserted
-python ./../integration/py/satImageGenExcept.py 4657 -39.77713043953702 -17.312779049258744 2015 2016
-4657 (Mon Dec 19 2016 16:33:05 GMT-0200 (BRST)) - Coordinate 4657 inserted
-python ./../integration/py/satImageGenExcept.py 4658 -49.65483019721826 -14.781030799805379 2015 2016
-4658 (Mon Dec 19 2016 16:34:08 GMT-0200 (BRST)) - Coordinate 4658 inserted
-python ./../integration/py/satImageGenExcept.py 4659 -42.248050097640636 -5.63183177713514 2015 2016
-4659 (Mon Dec 19 2016 16:34:59 GMT-0200 (BRST)) - Coordinate 4659 inserted
-python ./../integration/py/satImageGenExcept.py 4660 -55.093118220207984 -10.561221936964632 2015 2016
-4660 (Mon Dec 19 2016 16:35:49 GMT-0200 (BRST)) - Coordinate 4660 inserted
-python ./../integration/py/satImageGenExcept.py 4661 -64.22096630931527 -9.656024752341098 2015 2016
-4661 (Mon Dec 19 2016 16:36:58 GMT-0200 (BRST)) - Coordinate 4661 inserted
-python ./../integration/py/satImageGenExcept.py 4662 -45.15280368510955 -3.621969516442511 2015 2016
-4662 (Mon Dec 19 2016 16:37:53 GMT-0200 (BRST)) - Coordinate 4662 inserted
-python ./../integration/py/satImageGenExcept.py 4663 -40.17643375235885 -16.040190174194148 2015 2016
-4663 (Mon Dec 19 2016 16:38:43 GMT-0200 (BRST)) - Coordinate 4663 inserted
-python ./../integration/py/satImageGenExcept.py 4664 -45.4669816581905 -5.134566726100052 2015 2016
-4664 (Mon Dec 19 2016 16:39:31 GMT-0200 (BRST)) - Coordinate 4664 inserted
-python ./../integration/py/satImageGenExcept.py 4665 -44.94863864837379 -12.922424028202531 2015 2016
-4665 (Mon Dec 19 2016 16:40:21 GMT-0200 (BRST)) - Coordinate 4665 inserted
-python ./../integration/py/satImageGenExcept.py 4666 -49.63015179747356 -4.511857310651878 2015 2016
-4666 (Mon Dec 19 2016 16:41:12 GMT-0200 (BRST)) - Coordinate 4666 inserted
-python ./../integration/py/satImageGenExcept.py 4667 -47.780243955441954 -22.721014483020483 2015 2016
-4667 (Mon Dec 19 2016 16:42:12 GMT-0200 (BRST)) - Coordinate 4667 inserted
-python ./../integration/py/satImageGenExcept.py 4668 -57.95787380563831 -11.413923096746172 2015 2016
-4668 (Mon Dec 19 2016 16:43:02 GMT-0200 (BRST)) - Coordinate 4668 inserted
-python ./../integration/py/satImageGenExcept.py 4669 -43.41709684203018 -13.340416185896977 2015 2016
-4669 (Mon Dec 19 2016 16:43:52 GMT-0200 (BRST)) - Coordinate 4669 inserted
-python ./../integration/py/satImageGenExcept.py 4670 -48.560738623389625 -18.926571362717596 2015 2016
-4670 (Mon Dec 19 2016 16:44:43 GMT-0200 (BRST)) - Coordinate 4670 inserted
-python ./../integration/py/satImageGenExcept.py 4671 -39.748203961938906 -11.486446968582438 2015 2016
-4671 (Mon Dec 19 2016 16:45:32 GMT-0200 (BRST)) - Coordinate 4671 inserted
-python ./../integration/py/satImageGenExcept.py 4672 -61.301253257933546 -7.879044834489918 2015 2016
-4672 (Mon Dec 19 2016 16:46:22 GMT-0200 (BRST)) - Coordinate 4672 inserted
-python ./../integration/py/satImageGenExcept.py 4673 -47.96024918718201 -22.898855160374858 2015 2016
-4673 (Mon Dec 19 2016 16:47:15 GMT-0200 (BRST)) - Coordinate 4673 inserted
-python ./../integration/py/satImageGenExcept.py 4674 -42.80366660940114 -20.93415665618151 2015 2016
-4674 (Mon Dec 19 2016 16:48:03 GMT-0200 (BRST)) - Coordinate 4674 inserted
-python ./../integration/py/satImageGenExcept.py 4675 -52.98111212274337 -33.21068218361496 2015 2016
-4675 (Mon Dec 19 2016 16:48:55 GMT-0200 (BRST)) - Coordinate 4675 inserted
-python ./../integration/py/satImageGenExcept.py 4676 -51.54927989752718 -20.847035374860347 2015 2016
-4676 (Mon Dec 19 2016 16:49:56 GMT-0200 (BRST)) - Coordinate 4676 inserted
-python ./../integration/py/satImageGenExcept.py 4677 -60.72597074328489 -11.921363478748496 2015 2016
-4677 (Mon Dec 19 2016 16:50:47 GMT-0200 (BRST)) - Coordinate 4677 inserted
-python ./../integration/py/satImageGenExcept.py 4678 -67.5891949678889 -10.118185829208652 2015 2016
-4678 (Mon Dec 19 2016 16:51:39 GMT-0200 (BRST)) - Coordinate 4678 inserted
-python ./../integration/py/satImageGenExcept.py 4679 -41.762003222457096 -3.731574735267657 2015 2016
-4679 (Mon Dec 19 2016 16:52:30 GMT-0200 (BRST)) - Coordinate 4679 inserted
-python ./../integration/py/satImageGenExcept.py 4680 -56.558773394676486 -20.91031606377957 2015 2016
-4680 (Mon Dec 19 2016 16:53:19 GMT-0200 (BRST)) - Coordinate 4680 inserted
-python ./../integration/py/satImageGenExcept.py 4681 -39.546915617532335 -3.925498469787478 2015 2016
-4681 (Mon Dec 19 2016 16:54:21 GMT-0200 (BRST)) - Coordinate 4681 inserted
-python ./../integration/py/satImageGenExcept.py 4682 -45.12119005813957 -10.409128057789031 2015 2016
-4682 (Mon Dec 19 2016 16:55:35 GMT-0200 (BRST)) - Coordinate 4682 inserted
-python ./../integration/py/satImageGenExcept.py 4683 -52.83459041615532 -24.03963344860371 2015 2016
-4683 (Mon Dec 19 2016 16:56:26 GMT-0200 (BRST)) - Coordinate 4683 inserted
-python ./../integration/py/satImageGenExcept.py 4684 -43.382034705372014 -6.688835854071634 2015 2016
-4684 (Mon Dec 19 2016 16:57:16 GMT-0200 (BRST)) - Coordinate 4684 inserted
-python ./../integration/py/satImageGenExcept.py 4685 -40.37921133426464 -17.33790598771936 2015 2016
-4685 (Mon Dec 19 2016 16:58:06 GMT-0200 (BRST)) - Coordinate 4685 inserted
-python ./../integration/py/satImageGenExcept.py 4686 -46.27011382944786 -20.13138055854435 2015 2016
-4686 (Mon Dec 19 2016 16:58:57 GMT-0200 (BRST)) - Coordinate 4686 inserted
-python ./../integration/py/satImageGenExcept.py 4687 -53.611515086619406 -19.75397915477643 2015 2016
-4687 (Mon Dec 19 2016 16:59:48 GMT-0200 (BRST)) - Coordinate 4687 inserted
-python ./../integration/py/satImageGenExcept.py 4688 -49.613911635032 -15.806679776225717 2015 2016
-4688 (Mon Dec 19 2016 17:00:38 GMT-0200 (BRST)) - Coordinate 4688 inserted
-python ./../integration/py/satImageGenExcept.py 4689 -53.32982281944322 -19.205406859492808 2015 2016
-4689 (Mon Dec 19 2016 17:01:29 GMT-0200 (BRST)) - Coordinate 4689 inserted
-python ./../integration/py/satImageGenExcept.py 4690 -41.24393532685195 -18.43276701014664 2015 2016
-4690 (Mon Dec 19 2016 17:02:20 GMT-0200 (BRST)) - Coordinate 4690 inserted
-python ./../integration/py/satImageGenExcept.py 4691 -42.68690452072588 -17.812906523670733 2015 2016
-4691 (Mon Dec 19 2016 17:03:09 GMT-0200 (BRST)) - Coordinate 4691 inserted
-python ./../integration/py/satImageGenExcept.py 4692 -42.15317898064485 -7.867804644144854 2015 2016
-4692 (Mon Dec 19 2016 17:03:59 GMT-0200 (BRST)) - Coordinate 4692 inserted
-python ./../integration/py/satImageGenExcept.py 4693 -49.23511059980413 -20.42497762554322 2015 2016
-4693 (Mon Dec 19 2016 17:04:49 GMT-0200 (BRST)) - Coordinate 4693 inserted
-python ./../integration/py/satImageGenExcept.py 4694 -48.45925358822919 -4.973595538163769 2015 2016
-4694 (Mon Dec 19 2016 17:05:38 GMT-0200 (BRST)) - Coordinate 4694 inserted
-python ./../integration/py/satImageGenExcept.py 4695 -49.245232758781526 -26.155927579237158 2015 2016
-4695 (Mon Dec 19 2016 17:06:29 GMT-0200 (BRST)) - Coordinate 4695 inserted
-python ./../integration/py/satImageGenExcept.py 4696 -43.684204000032594 -20.69336625943707 2015 2016
-4696 (Mon Dec 19 2016 17:07:18 GMT-0200 (BRST)) - Coordinate 4696 inserted
-python ./../integration/py/satImageGenExcept.py 4697 -45.41128113031165 -3.37457870280647 2015 2016
-4697 (Mon Dec 19 2016 17:08:10 GMT-0200 (BRST)) - Coordinate 4697 inserted
-python ./../integration/py/satImageGenExcept.py 4698 -54.70234011419636 -23.553379129409905 2015 2016
-4698 (Mon Dec 19 2016 17:09:09 GMT-0200 (BRST)) - Coordinate 4698 inserted
-python ./../integration/py/satImageGenExcept.py 4699 -66.50597849485324 -9.84271249697717 2015 2016
-4699 (Mon Dec 19 2016 17:09:59 GMT-0200 (BRST)) - Coordinate 4699 inserted
-python ./../integration/py/satImageGenExcept.py 4700 -46.80655603447659 -14.294371046625802 2015 2016
-4700 (Mon Dec 19 2016 17:10:49 GMT-0200 (BRST)) - Coordinate 4700 inserted
-python ./../integration/py/satImageGenExcept.py 4701 -55.80939283767732 -9.869884578320313 2015 2016
-4701 (Mon Dec 19 2016 17:11:39 GMT-0200 (BRST)) - Coordinate 4701 inserted
-python ./../integration/py/satImageGenExcept.py 4702 -59.221686777608696 -15.511069865382163 2015 2016
-4702 (Mon Dec 19 2016 17:12:40 GMT-0200 (BRST)) - Coordinate 4702 inserted
-python ./../integration/py/satImageGenExcept.py 4703 -48.884868708937184 -23.693126332466804 2015 2016
-4703 (Mon Dec 19 2016 17:13:29 GMT-0200 (BRST)) - Coordinate 4703 inserted
-python ./../integration/py/satImageGenExcept.py 4704 -43.94909168110286 -21.822089534294122 2015 2016
-4704 (Mon Dec 19 2016 17:14:17 GMT-0200 (BRST)) - Coordinate 4704 inserted
-python ./../integration/py/satImageGenExcept.py 4705 -51.915751006946465 -15.559398797764928 2015 2016
-4705 (Mon Dec 19 2016 17:15:05 GMT-0200 (BRST)) - Coordinate 4705 inserted
-python ./../integration/py/satImageGenExcept.py 4706 -45.070936868549445 -23.003707412063786 2015 2016
-4706 (Mon Dec 19 2016 17:15:55 GMT-0200 (BRST)) - Coordinate 4706 inserted
-python ./../integration/py/satImageGenExcept.py 4707 -46.60729464841327 -7.48413848345105 2015 2016
-4707 (Mon Dec 19 2016 17:16:45 GMT-0200 (BRST)) - Coordinate 4707 inserted
-python ./../integration/py/satImageGenExcept.py 4708 -54.91427567630636 -19.19941006613717 2015 2016
-4708 (Mon Dec 19 2016 17:17:58 GMT-0200 (BRST)) - Coordinate 4708 inserted
-python ./../integration/py/satImageGenExcept.py 4709 -61.66276774095812 -10.826041951109092 2015 2016
-4709 (Mon Dec 19 2016 17:18:48 GMT-0200 (BRST)) - Coordinate 4709 inserted
-python ./../integration/py/satImageGenExcept.py 4710 -51.13495150953375 -15.80482259416622 2015 2016
-4710 (Mon Dec 19 2016 17:19:37 GMT-0200 (BRST)) - Coordinate 4710 inserted
-python ./../integration/py/satImageGenExcept.py 4711 -41.57334772409015 -21.939829672808383 2015 2016
-4711 (Mon Dec 19 2016 17:20:29 GMT-0200 (BRST)) - Coordinate 4711 inserted
-python ./../integration/py/satImageGenExcept.py 4712 -49.2157963733329 -28.523873054389092 2015 2016
-4712 (Mon Dec 19 2016 17:21:18 GMT-0200 (BRST)) - Coordinate 4712 inserted
-python ./../integration/py/satImageGenExcept.py 4713 -47.2845027101617 -17.692071012708148 2015 2016
-4713 (Mon Dec 19 2016 17:22:08 GMT-0200 (BRST)) - Coordinate 4713 inserted
-python ./../integration/py/satImageGenExcept.py 4714 -49.578818014343895 -16.811177313310793 2015 2016
-4714 (Mon Dec 19 2016 17:22:57 GMT-0200 (BRST)) - Coordinate 4714 inserted
-python ./../integration/py/satImageGenExcept.py 4715 -51.85268468138086 -9.1300307583088 2015 2016
-4715 (Mon Dec 19 2016 17:23:55 GMT-0200 (BRST)) - Coordinate 4715 inserted
-python ./../integration/py/satImageGenExcept.py 4716 -45.52276371278789 -2.255299604796424 2015 2016
-4716 (Mon Dec 19 2016 17:25:08 GMT-0200 (BRST)) - Coordinate 4716 inserted
-python ./../integration/py/satImageGenExcept.py 4717 -46.612480082733185 -6.326952564122713 2015 2016
-4717 (Mon Dec 19 2016 17:25:58 GMT-0200 (BRST)) - Coordinate 4717 inserted
-python ./../integration/py/satImageGenExcept.py 4718 -39.84347655831324 -9.682742865108057 2015 2016
-4718 (Mon Dec 19 2016 17:26:49 GMT-0200 (BRST)) - Coordinate 4718 inserted
-python ./../integration/py/satImageGenExcept.py 4719 -49.329696945311014 -9.337178742433874 2015 2016
-4719 (Mon Dec 19 2016 17:27:39 GMT-0200 (BRST)) - Coordinate 4719 inserted
-python ./../integration/py/satImageGenExcept.py 4720 -50.757222052649354 -26.593029540631083 2015 2016
-4720 (Mon Dec 19 2016 17:28:29 GMT-0200 (BRST)) - Coordinate 4720 inserted
-python ./../integration/py/satImageGenExcept.py 4721 -41.56539841671264 -11.589865447182543 2015 2016
-4721 (Mon Dec 19 2016 17:29:21 GMT-0200 (BRST)) - Coordinate 4721 inserted
-python ./../integration/py/satImageGenExcept.py 4722 -48.11865530953765 -5.156178837395176 2015 2016
-4722 (Mon Dec 19 2016 17:30:10 GMT-0200 (BRST)) - Coordinate 4722 inserted
-python ./../integration/py/satImageGenExcept.py 4723 -54.77479322138752 -19.743715037206933 2015 2016
-4723 (Mon Dec 19 2016 17:31:01 GMT-0200 (BRST)) - Coordinate 4723 inserted
-python ./../integration/py/satImageGenExcept.py 4724 -61.66839699078519 2.536322436027893 2015 2016
-4724 (Mon Dec 19 2016 17:31:52 GMT-0200 (BRST)) - Coordinate 4724 inserted
-python ./../integration/py/satImageGenExcept.py 4725 -46.65011100269539 -6.602460934644621 2015 2016
-4725 (Mon Dec 19 2016 17:32:42 GMT-0200 (BRST)) - Coordinate 4725 inserted
-python ./../integration/py/satImageGenExcept.py 4726 -47.76508339548354 -11.691970739475153 2015 2016
-4726 (Mon Dec 19 2016 17:33:31 GMT-0200 (BRST)) - Coordinate 4726 inserted
-python ./../integration/py/satImageGenExcept.py 4727 -38.038576844453054 -11.542366567613128 2015 2016
-4727 (Mon Dec 19 2016 17:35:30 GMT-0200 (BRST)) - Coordinate 4727 inserted
-python ./../integration/py/satImageGenExcept.py 4728 -47.38349479968318 -5.511240319781469 2015 2016
-4728 (Mon Dec 19 2016 17:36:21 GMT-0200 (BRST)) - Coordinate 4728 inserted
-python ./../integration/py/satImageGenExcept.py 4729 -47.086989453980685 -14.156313155763202 2015 2016
-4729 (Mon Dec 19 2016 17:37:10 GMT-0200 (BRST)) - Coordinate 4729 inserted
-python ./../integration/py/satImageGenExcept.py 4730 -50.8750387885972 -27.517093229668003 2015 2016
-4730 (Mon Dec 19 2016 17:37:59 GMT-0200 (BRST)) - Coordinate 4730 inserted
-python ./../integration/py/satImageGenExcept.py 4731 -53.194521375263264 -32.276214990367116 2015 2016
-4731 (Mon Dec 19 2016 17:38:49 GMT-0200 (BRST)) - Coordinate 4731 inserted
-python ./../integration/py/satImageGenExcept.py 4732 -54.689420555403736 -14.496690450640312 2015 2016
-4732 (Mon Dec 19 2016 17:40:13 GMT-0200 (BRST)) - Coordinate 4732 inserted
-python ./../integration/py/satImageGenExcept.py 4733 -53.622540598752124 -10.096944529122283 2015 2016
-4733 (Mon Dec 19 2016 17:41:04 GMT-0200 (BRST)) - Coordinate 4733 inserted
-python ./../integration/py/satImageGenExcept.py 4734 -48.718210625505144 -7.734895587334206 2015 2016
-4734 (Mon Dec 19 2016 17:41:52 GMT-0200 (BRST)) - Coordinate 4734 inserted
-python ./../integration/py/satImageGenExcept.py 4735 -58.07725710960179 -16.854972690936975 2015 2016
-4735 (Mon Dec 19 2016 17:42:42 GMT-0200 (BRST)) - Coordinate 4735 inserted
-python ./../integration/py/satImageGenExcept.py 4736 -48.3930899466953 -6.880431115903887 2015 2016
-4736 (Mon Dec 19 2016 17:43:30 GMT-0200 (BRST)) - Coordinate 4736 inserted
-python ./../integration/py/satImageGenExcept.py 4737 -47.572509167425856 -18.420130120922444 2015 2016
-4737 (Mon Dec 19 2016 17:44:21 GMT-0200 (BRST)) - Coordinate 4737 inserted
-python ./../integration/py/satImageGenExcept.py 4738 -37.41118708334056 -10.712066378145854 2015 2016
-4738 (Mon Dec 19 2016 17:45:34 GMT-0200 (BRST)) - Coordinate 4738 inserted
-python ./../integration/py/satImageGenExcept.py 4739 -39.36155762106632 -15.799142868063608 2015 2016
-4739 (Mon Dec 19 2016 17:46:24 GMT-0200 (BRST)) - Coordinate 4739 inserted
-python ./../integration/py/satImageGenExcept.py 4740 -54.26516509324689 -22.465289333706767 2015 2016
-4740 (Mon Dec 19 2016 17:47:13 GMT-0200 (BRST)) - Coordinate 4740 inserted
-python ./../integration/py/satImageGenExcept.py 4741 -48.818960649854404 -4.697628141156441 2015 2016
-4741 (Mon Dec 19 2016 17:48:06 GMT-0200 (BRST)) - Coordinate 4741 inserted
-python ./../integration/py/satImageGenExcept.py 4742 -51.32674119541238 -19.076189195162378 2015 2016
-4742 (Mon Dec 19 2016 17:48:56 GMT-0200 (BRST)) - Coordinate 4742 inserted
-python ./../integration/py/satImageGenExcept.py 4743 -53.45716904810228 -20.206474277602297 2015 2016
-4743 (Mon Dec 19 2016 17:49:47 GMT-0200 (BRST)) - Coordinate 4743 inserted
-python ./../integration/py/satImageGenExcept.py 4744 -55.782623917000066 -20.614105055290757 2015 2016
-4744 (Mon Dec 19 2016 17:50:36 GMT-0200 (BRST)) - Coordinate 4744 inserted
-python ./../integration/py/satImageGenExcept.py 4745 -41.619639658924164 -17.083188270181275 2015 2016
-4745 (Mon Dec 19 2016 17:51:28 GMT-0200 (BRST)) - Coordinate 4745 inserted
-python ./../integration/py/satImageGenExcept.py 4746 -51.95804245655579 -11.04437714939201 2015 2016
-4746 (Mon Dec 19 2016 17:52:18 GMT-0200 (BRST)) - Coordinate 4746 inserted
-python ./../integration/py/satImageGenExcept.py 4747 -37.95188972029438 -7.103478911648222 2015 2016
-4747 (Mon Dec 19 2016 17:53:09 GMT-0200 (BRST)) - Coordinate 4747 inserted
-python ./../integration/py/satImageGenExcept.py 4748 -51.08127752628343 -5.70026125728026 2015 2016
-4748 (Mon Dec 19 2016 17:54:00 GMT-0200 (BRST)) - Coordinate 4748 inserted
-python ./../integration/py/satImageGenExcept.py 4749 -58.17334534933437 -16.69632124860973 2015 2016
-4749 (Mon Dec 19 2016 17:55:02 GMT-0200 (BRST)) - Coordinate 4749 inserted
-python ./../integration/py/satImageGenExcept.py 4750 -44.496567845446265 -16.50672276941421 2015 2016
-4750 (Mon Dec 19 2016 17:55:51 GMT-0200 (BRST)) - Coordinate 4750 inserted
-python ./../integration/py/satImageGenExcept.py 4751 -54.177438906733194 -20.803505587569877 2015 2016
-4751 (Mon Dec 19 2016 17:56:52 GMT-0200 (BRST)) - Coordinate 4751 inserted
-python ./../integration/py/satImageGenExcept.py 4752 -57.72302498651911 -13.429774029555169 2015 2016
-4752 (Mon Dec 19 2016 17:57:42 GMT-0200 (BRST)) - Coordinate 4752 inserted
-python ./../integration/py/satImageGenExcept.py 4753 -55.007304681997724 -10.291608652509424 2015 2016
-4753 (Mon Dec 19 2016 17:58:30 GMT-0200 (BRST)) - Coordinate 4753 inserted
-python ./../integration/py/satImageGenExcept.py 4754 -55.986960491117365 -6.423052456435997 2015 2016
-4754 (Mon Dec 19 2016 17:59:20 GMT-0200 (BRST)) - Coordinate 4754 inserted
-python ./../integration/py/satImageGenExcept.py 4755 -57.48070455235401 -21.46790433322648 2015 2016
-4755 (Mon Dec 19 2016 18:00:25 GMT-0200 (BRST)) - Coordinate 4755 inserted
-python ./../integration/py/satImageGenExcept.py 4756 -55.61049697194201 -18.4734130344886 2015 2016
-4756 (Mon Dec 19 2016 18:01:29 GMT-0200 (BRST)) - Coordinate 4756 inserted
-python ./../integration/py/satImageGenExcept.py 4757 -50.489625364309376 -21.6513014117575 2015 2016
-4757 (Mon Dec 19 2016 18:02:22 GMT-0200 (BRST)) - Coordinate 4757 inserted
-python ./../integration/py/satImageGenExcept.py 4758 -50.335648400286445 -6.683448609886471 2015 2016
-4758 (Mon Dec 19 2016 18:03:13 GMT-0200 (BRST)) - Coordinate 4758 inserted
-python ./../integration/py/satImageGenExcept.py 4759 -49.97573328818711 -21.92596451915403 2015 2016
-4759 (Mon Dec 19 2016 18:04:03 GMT-0200 (BRST)) - Coordinate 4759 inserted
-python ./../integration/py/satImageGenExcept.py 4760 -44.2738687030491 -4.943006517432647 2015 2016
-4760 (Mon Dec 19 2016 18:04:54 GMT-0200 (BRST)) - Coordinate 4760 inserted
-python ./../integration/py/satImageGenExcept.py 4761 -38.22659948125268 -7.754819645004522 2015 2016
-4761 (Mon Dec 19 2016 18:05:45 GMT-0200 (BRST)) - Coordinate 4761 inserted
-python ./../integration/py/satImageGenExcept.py 4762 -48.46899060180584 -5.867086045939962 2015 2016
-4762 (Mon Dec 19 2016 18:06:34 GMT-0200 (BRST)) - Coordinate 4762 inserted
-python ./../integration/py/satImageGenExcept.py 4763 -58.88079350332948 -11.421690946555383 2015 2016
-4763 (Mon Dec 19 2016 18:07:35 GMT-0200 (BRST)) - Coordinate 4763 inserted
-python ./../integration/py/satImageGenExcept.py 4764 -50.481413940250604 -15.854695943493432 2015 2016
-4764 (Mon Dec 19 2016 18:08:36 GMT-0200 (BRST)) - Coordinate 4764 inserted
-python ./../integration/py/satImageGenExcept.py 4765 -50.25579883252236 -15.191533891895205 2015 2016
-4765 (Mon Dec 19 2016 18:09:37 GMT-0200 (BRST)) - Coordinate 4765 inserted
-python ./../integration/py/satImageGenExcept.py 4766 -54.37309159349946 -11.021925620915926 2015 2016
-4766 (Mon Dec 19 2016 18:10:30 GMT-0200 (BRST)) - Coordinate 4766 inserted
-python ./../integration/py/satImageGenExcept.py 4767 -47.022254783128666 -21.975667436886862 2015 2016
-4767 (Mon Dec 19 2016 18:11:20 GMT-0200 (BRST)) - Coordinate 4767 inserted
-python ./../integration/py/satImageGenExcept.py 4768 -45.575341217883235 -13.405613242829768 2015 2016
-4768 (Mon Dec 19 2016 18:12:11 GMT-0200 (BRST)) - Coordinate 4768 inserted
-python ./../integration/py/satImageGenExcept.py 4769 -37.50924517645322 -6.328371806557129 2015 2016
-4769 (Mon Dec 19 2016 18:13:01 GMT-0200 (BRST)) - Coordinate 4769 inserted
-python ./../integration/py/satImageGenExcept.py 4770 -60.600888892678576 -11.688054544628406 2015 2016
-4770 (Mon Dec 19 2016 18:13:53 GMT-0200 (BRST)) - Coordinate 4770 inserted
-python ./../integration/py/satImageGenExcept.py 4771 -54.35213176598809 -20.1188943198411 2015 2016
-4771 (Mon Dec 19 2016 18:14:46 GMT-0200 (BRST)) - Coordinate 4771 inserted
-python ./../integration/py/satImageGenExcept.py 4772 -53.62965206153896 -4.100079112092693 2015 2016
+nohup: ignorando entrada
+python ./../integration/py/satImageGenExcept.py undefined -36.71272088968625 -7.048680215059964 2000 2001
+2078 (Thu Jan 12 2017 09:41:18 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.32929989086108 -9.680353653341008 2000 2001
 undefined
-4772 (Mon Dec 19 2016 18:15:18 GMT-0200 (BRST)) - Coordinate 4772 inserted
-python ./../integration/py/satImageGenExcept.py 4773 -36.38157418589205 -9.547986790584162 2015 2016
-4773 (Mon Dec 19 2016 18:16:11 GMT-0200 (BRST)) - Coordinate 4773 inserted
-python ./../integration/py/satImageGenExcept.py 4774 -42.549444660960006 -16.884587673830715 2015 2016
-4774 (Mon Dec 19 2016 18:17:03 GMT-0200 (BRST)) - Coordinate 4774 inserted
-python ./../integration/py/satImageGenExcept.py 4775 -44.93513792758443 -22.777299050286466 2015 2016
-4775 (Mon Dec 19 2016 18:17:52 GMT-0200 (BRST)) - Coordinate 4775 inserted
-python ./../integration/py/satImageGenExcept.py 4776 -38.438751235875856 -8.932395618780456 2015 2016
-4776 (Mon Dec 19 2016 18:18:54 GMT-0200 (BRST)) - Coordinate 4776 inserted
-python ./../integration/py/satImageGenExcept.py 4777 -68.4762897366414 -10.82140286827619 2015 2016
-4777 (Mon Dec 19 2016 18:19:44 GMT-0200 (BRST)) - Coordinate 4777 inserted
-python ./../integration/py/satImageGenExcept.py 4778 -39.8275758160132 -9.165846282218256 2015 2016
-4778 (Mon Dec 19 2016 18:20:37 GMT-0200 (BRST)) - Coordinate 4778 inserted
-python ./../integration/py/satImageGenExcept.py 4779 -40.00518674774688 -11.157372881025271 2015 2016
-4779 (Mon Dec 19 2016 18:21:27 GMT-0200 (BRST)) - Coordinate 4779 inserted
-python ./../integration/py/satImageGenExcept.py 4780 -57.51016082753243 -21.881291257624916 2015 2016
-4780 (Mon Dec 19 2016 18:22:17 GMT-0200 (BRST)) - Coordinate 4780 inserted
-python ./../integration/py/satImageGenExcept.py 4781 -47.66811578321544 -23.12035321427703 2015 2016
-4781 (Mon Dec 19 2016 18:23:05 GMT-0200 (BRST)) - Coordinate 4781 inserted
-python ./../integration/py/satImageGenExcept.py 4782 -49.41251472470428 -15.570219802940745 2015 2016
-4782 (Mon Dec 19 2016 18:23:57 GMT-0200 (BRST)) - Coordinate 4782 inserted
-python ./../integration/py/satImageGenExcept.py 4783 -49.99093812310248 -23.63749268844141 2015 2016
-4783 (Mon Dec 19 2016 18:24:47 GMT-0200 (BRST)) - Coordinate 4783 inserted
-python ./../integration/py/satImageGenExcept.py 4784 -62.85552456800377 -10.579521290449868 2015 2016
-4784 (Mon Dec 19 2016 18:25:37 GMT-0200 (BRST)) - Coordinate 4784 inserted
-python ./../integration/py/satImageGenExcept.py 4785 -46.925121651402456 -12.765381282307423 2015 2016
-4785 (Mon Dec 19 2016 18:26:28 GMT-0200 (BRST)) - Coordinate 4785 inserted
-python ./../integration/py/satImageGenExcept.py 4786 -61.8303552790938 -11.535624992661885 2015 2016
-4786 (Mon Dec 19 2016 18:27:53 GMT-0200 (BRST)) - Coordinate 4786 inserted
-python ./../integration/py/satImageGenExcept.py 4787 -42.30558068554775 -16.793556162365256 2015 2016
-4787 (Mon Dec 19 2016 18:28:45 GMT-0200 (BRST)) - Coordinate 4787 inserted
-python ./../integration/py/satImageGenExcept.py 4788 -52.037579181507255 -19.9922769790854 2015 2016
-4788 (Mon Dec 19 2016 18:29:39 GMT-0200 (BRST)) - Coordinate 4788 inserted
-python ./../integration/py/satImageGenExcept.py 4789 -47.31380761592398 -14.079778045251755 2015 2016
-4789 (Mon Dec 19 2016 18:30:31 GMT-0200 (BRST)) - Coordinate 4789 inserted
-python ./../integration/py/satImageGenExcept.py 4790 -42.622726954615295 -20.176530952143118 2015 2016
-4790 (Mon Dec 19 2016 18:31:22 GMT-0200 (BRST)) - Coordinate 4790 inserted
-python ./../integration/py/satImageGenExcept.py 4791 -52.4836803963735 -11.959386458097589 2015 2016
-4791 (Mon Dec 19 2016 18:32:12 GMT-0200 (BRST)) - Coordinate 4791 inserted
-python ./../integration/py/satImageGenExcept.py 4792 -45.92468816303203 -19.104947081560958 2015 2016
-4792 (Mon Dec 19 2016 18:33:02 GMT-0200 (BRST)) - Coordinate 4792 inserted
-python ./../integration/py/satImageGenExcept.py 4793 -53.05273859000914 -3.2584189713403 2015 2016
-4793 (Mon Dec 19 2016 18:33:53 GMT-0200 (BRST)) - Coordinate 4793 inserted
-python ./../integration/py/satImageGenExcept.py 4794 -50.216360023175994 -19.546793219210734 2015 2016
-4794 (Mon Dec 19 2016 18:34:42 GMT-0200 (BRST)) - Coordinate 4794 inserted
-python ./../integration/py/satImageGenExcept.py 4795 -57.554397557071646 -7.197438981300469 2015 2016
-4795 (Mon Dec 19 2016 18:35:32 GMT-0200 (BRST)) - Coordinate 4795 inserted
-python ./../integration/py/satImageGenExcept.py 4796 -51.326206072398286 -14.364149294917928 2015 2016
-4796 (Mon Dec 19 2016 18:36:23 GMT-0200 (BRST)) - Coordinate 4796 inserted
-python ./../integration/py/satImageGenExcept.py 4797 -40.26371396979255 -11.615444250109421 2015 2016
-4797 (Mon Dec 19 2016 18:37:12 GMT-0200 (BRST)) - Coordinate 4797 inserted
-python ./../integration/py/satImageGenExcept.py 4798 -54.07432227807022 -22.957756894695237 2015 2016
-4798 (Mon Dec 19 2016 18:38:03 GMT-0200 (BRST)) - Coordinate 4798 inserted
-python ./../integration/py/satImageGenExcept.py 4799 -39.73173633429768 -11.007823795909307 2015 2016
-4799 (Mon Dec 19 2016 18:38:53 GMT-0200 (BRST)) - Coordinate 4799 inserted
-python ./../integration/py/satImageGenExcept.py 4800 -43.07542623526827 -19.998289038713487 2015 2016
-4800 (Mon Dec 19 2016 18:39:42 GMT-0200 (BRST)) - Coordinate 4800 inserted
-python ./../integration/py/satImageGenExcept.py 4801 -42.78777531042793 -18.467698345229934 2015 2016
-4801 (Mon Dec 19 2016 18:40:33 GMT-0200 (BRST)) - Coordinate 4801 inserted
-python ./../integration/py/satImageGenExcept.py 4802 -68.50624410537688 -11.058622898171688 2015 2016
-4802 (Mon Dec 19 2016 18:41:24 GMT-0200 (BRST)) - Coordinate 4802 inserted
-python ./../integration/py/satImageGenExcept.py 4803 -41.81599363021555 -14.252991238870628 2015 2016
-4803 (Mon Dec 19 2016 18:42:14 GMT-0200 (BRST)) - Coordinate 4803 inserted
-python ./../integration/py/satImageGenExcept.py 4804 -53.055490026116416 -22.44198399631872 2015 2016
-4804 (Mon Dec 19 2016 18:43:05 GMT-0200 (BRST)) - Coordinate 4804 inserted
-python ./../integration/py/satImageGenExcept.py 4805 -51.068701892829864 -22.204437240842847 2015 2016
-4805 (Mon Dec 19 2016 18:44:00 GMT-0200 (BRST)) - Coordinate 4805 inserted
-python ./../integration/py/satImageGenExcept.py 4806 -39.72136003425412 -4.969339002635301 2015 2016
-4806 (Mon Dec 19 2016 18:44:50 GMT-0200 (BRST)) - Coordinate 4806 inserted
-python ./../integration/py/satImageGenExcept.py 4807 -51.826425628596 -21.90603203511895 2015 2016
-4807 (Mon Dec 19 2016 18:45:39 GMT-0200 (BRST)) - Coordinate 4807 inserted
-python ./../integration/py/satImageGenExcept.py 4808 -38.869320943401085 -6.603550428465597 2015 2016
-4808 (Mon Dec 19 2016 18:46:30 GMT-0200 (BRST)) - Coordinate 4808 inserted
-python ./../integration/py/satImageGenExcept.py 4809 -52.35421633667094 -25.827039182716476 2015 2016
-4809 (Mon Dec 19 2016 18:47:20 GMT-0200 (BRST)) - Coordinate 4809 inserted
-python ./../integration/py/satImageGenExcept.py 4810 -57.32100743656592 -15.197117252102124 2015 2016
-4810 (Mon Dec 19 2016 18:48:11 GMT-0200 (BRST)) - Coordinate 4810 inserted
-python ./../integration/py/satImageGenExcept.py 4811 -49.42850017370275 -2.555422411954088 2015 2016
-4811 (Mon Dec 19 2016 18:49:12 GMT-0200 (BRST)) - Coordinate 4811 inserted
-python ./../integration/py/satImageGenExcept.py 4812 -44.84035127157061 -16.958315942842585 2015 2016
-4812 (Mon Dec 19 2016 18:50:19 GMT-0200 (BRST)) - Coordinate 4812 inserted
-python ./../integration/py/satImageGenExcept.py 4813 -46.64914698800165 -15.589936887234863 2015 2016
-4813 (Mon Dec 19 2016 18:51:10 GMT-0200 (BRST)) - Coordinate 4813 inserted
-python ./../integration/py/satImageGenExcept.py 4814 -41.44529334213702 -21.075917345947715 2015 2016
-4814 (Mon Dec 19 2016 18:52:24 GMT-0200 (BRST)) - Coordinate 4814 inserted
-python ./../integration/py/satImageGenExcept.py 4815 -67.68871056376459 -9.724511674380162 2015 2016
-4815 (Mon Dec 19 2016 18:53:40 GMT-0200 (BRST)) - Coordinate 4815 inserted
-python ./../integration/py/satImageGenExcept.py 4816 -42.773812972026 -20.870497513658606 2015 2016
-4816 (Mon Dec 19 2016 18:54:54 GMT-0200 (BRST)) - Coordinate 4816 inserted
-python ./../integration/py/satImageGenExcept.py 4817 -48.86951325511917 -16.088379301372875 2015 2016
-4817 (Mon Dec 19 2016 18:56:54 GMT-0200 (BRST)) - Coordinate 4817 inserted
-python ./../integration/py/satImageGenExcept.py 4818 -48.46239992046885 -7.647347111560207 2015 2016
-4818 (Mon Dec 19 2016 18:57:55 GMT-0200 (BRST)) - Coordinate 4818 inserted
-python ./../integration/py/satImageGenExcept.py 4819 -43.75505339562802 -15.198791276606023 2015 2016
-4819 (Mon Dec 19 2016 18:58:55 GMT-0200 (BRST)) - Coordinate 4819 inserted
-python ./../integration/py/satImageGenExcept.py 4820 -38.04279553849654 -10.914522969147653 2015 2016
-4820 (Mon Dec 19 2016 18:59:47 GMT-0200 (BRST)) - Coordinate 4820 inserted
-python ./../integration/py/satImageGenExcept.py 4821 -44.44219706048452 -14.263488698028354 2015 2016
-4821 (Mon Dec 19 2016 19:00:48 GMT-0200 (BRST)) - Coordinate 4821 inserted
-python ./../integration/py/satImageGenExcept.py 4822 -54.79606020238711 -31.413960180615927 2015 2016
-4822 (Mon Dec 19 2016 19:01:38 GMT-0200 (BRST)) - Coordinate 4822 inserted
-python ./../integration/py/satImageGenExcept.py 4823 -55.77820724983469 -29.968113731123466 2015 2016
-4823 (Mon Dec 19 2016 19:11:25 GMT-0200 (BRST)) - Coordinate 4823 inserted
-python ./../integration/py/satImageGenExcept.py 4824 -65.15959790721612 -10.93953771967389 2015 2016
-4824 (Mon Dec 19 2016 19:12:16 GMT-0200 (BRST)) - Coordinate 4824 inserted
-python ./../integration/py/satImageGenExcept.py 4825 -52.008140732954196 -19.56514741965077 2015 2016
-4825 (Mon Dec 19 2016 19:16:30 GMT-0200 (BRST)) - Coordinate 4825 inserted
-python ./../integration/py/satImageGenExcept.py 4826 -55.334883412994 -20.67844587736438 2015 2016
-4826 (Mon Dec 19 2016 19:22:38 GMT-0200 (BRST)) - Coordinate 4826 inserted
-python ./../integration/py/satImageGenExcept.py 4827 -46.87074049406782 -21.20905048664119 2015 2016
-4827 (Mon Dec 19 2016 19:27:20 GMT-0200 (BRST)) - Coordinate 4827 inserted
-python ./../integration/py/satImageGenExcept.py 4828 -57.88794477579869 -2.972328200367296 2015 2016
-4828 (Mon Dec 19 2016 19:31:37 GMT-0200 (BRST)) - Coordinate 4828 inserted
-python ./../integration/py/satImageGenExcept.py 4829 -50.0384832194188 -19.419487372767037 2015 2016
-4829 (Mon Dec 19 2016 19:35:33 GMT-0200 (BRST)) - Coordinate 4829 inserted
-python ./../integration/py/satImageGenExcept.py 4830 -55.17658184473207 -14.771498117172033 2015 2016
-4830 (Mon Dec 19 2016 19:39:05 GMT-0200 (BRST)) - Coordinate 4830 inserted
-python ./../integration/py/satImageGenExcept.py 4831 -44.16619708444974 -6.480231882347729 2015 2016
-4831 (Mon Dec 19 2016 19:45:20 GMT-0200 (BRST)) - Coordinate 4831 inserted
-python ./../integration/py/satImageGenExcept.py 4832 -55.80186376253066 -7.142407766729537 2015 2016
-4832 (Mon Dec 19 2016 19:50:58 GMT-0200 (BRST)) - Coordinate 4832 inserted
-python ./../integration/py/satImageGenExcept.py 4833 -41.07386970756383 -3.277716468229359 2015 2016
-4833 (Mon Dec 19 2016 19:53:56 GMT-0200 (BRST)) - Coordinate 4833 inserted
-python ./../integration/py/satImageGenExcept.py 4834 -49.53873932464012 -16.05736279661247 2015 2016
-4834 (Mon Dec 19 2016 19:56:56 GMT-0200 (BRST)) - Coordinate 4834 inserted
-python ./../integration/py/satImageGenExcept.py 4835 -38.12666157020695 -11.627267574819504 2015 2016
-4835 (Mon Dec 19 2016 19:59:14 GMT-0200 (BRST)) - Coordinate 4835 inserted
-python ./../integration/py/satImageGenExcept.py 4836 -55.16317349798929 -1.562735733305036 2015 2016
-4836 (Mon Dec 19 2016 20:03:56 GMT-0200 (BRST)) - Coordinate 4836 inserted
-python ./../integration/py/satImageGenExcept.py 4837 -62.509314538149454 -8.621838959580222 2015 2016
-4837 (Mon Dec 19 2016 20:06:22 GMT-0200 (BRST)) - Coordinate 4837 inserted
-python ./../integration/py/satImageGenExcept.py 4838 -47.555157982725255 -21.90204589760011 2015 2016
-4838 (Mon Dec 19 2016 20:08:13 GMT-0200 (BRST)) - Coordinate 4838 inserted
-python ./../integration/py/satImageGenExcept.py 4839 -54.48507760108318 -18.70296621136051 2015 2016
-4839 (Mon Dec 19 2016 20:10:58 GMT-0200 (BRST)) - Coordinate 4839 inserted
-python ./../integration/py/satImageGenExcept.py 4840 -53.59457360508957 -17.913552039903287 2015 2016
-4840 (Mon Dec 19 2016 20:19:06 GMT-0200 (BRST)) - Coordinate 4840 inserted
-python ./../integration/py/satImageGenExcept.py 4841 -54.82819042057182 -18.154322152686714 2015 2016
-4841 (Mon Dec 19 2016 20:21:33 GMT-0200 (BRST)) - Coordinate 4841 inserted
-python ./../integration/py/satImageGenExcept.py 4842 -43.2085277020564 -16.67586275732714 2015 2016
-4842 (Mon Dec 19 2016 20:23:47 GMT-0200 (BRST)) - Coordinate 4842 inserted
-python ./../integration/py/satImageGenExcept.py 4843 -50.57386235962369 -29.882699617616385 2015 2016
-4843 (Mon Dec 19 2016 20:25:13 GMT-0200 (BRST)) - Coordinate 4843 inserted
-python ./../integration/py/satImageGenExcept.py 4844 -48.869321231219594 -14.139797896727192 2015 2016
-4844 (Mon Dec 19 2016 20:26:50 GMT-0200 (BRST)) - Coordinate 4844 inserted
-python ./../integration/py/satImageGenExcept.py 4845 -42.10522904777483 -18.111490481409586 2015 2016
-4845 (Mon Dec 19 2016 20:28:12 GMT-0200 (BRST)) - Coordinate 4845 inserted
-python ./../integration/py/satImageGenExcept.py 4846 -49.09477579651773 -0.960798073860003 2015 2016
-4846 (Mon Dec 19 2016 20:29:40 GMT-0200 (BRST)) - Coordinate 4846 inserted
-python ./../integration/py/satImageGenExcept.py 4847 -51.261206282674436 -29.262406907163903 2015 2016
-4847 (Mon Dec 19 2016 20:30:42 GMT-0200 (BRST)) - Coordinate 4847 inserted
-python ./../integration/py/satImageGenExcept.py 4848 -40.643324936282184 -18.307730047375514 2015 2016
-4848 (Mon Dec 19 2016 20:32:16 GMT-0200 (BRST)) - Coordinate 4848 inserted
-python ./../integration/py/satImageGenExcept.py 4849 -54.68855382281118 -29.97219830172925 2015 2016
-4849 (Mon Dec 19 2016 20:33:32 GMT-0200 (BRST)) - Coordinate 4849 inserted
-python ./../integration/py/satImageGenExcept.py 4850 -44.42566051135285 -4.971988514340356 2015 2016
-4850 (Mon Dec 19 2016 20:34:34 GMT-0200 (BRST)) - Coordinate 4850 inserted
-python ./../integration/py/satImageGenExcept.py 4851 -54.40593094497473 -13.883434004945201 2015 2016
-4851 (Mon Dec 19 2016 20:35:47 GMT-0200 (BRST)) - Coordinate 4851 inserted
-python ./../integration/py/satImageGenExcept.py 4852 -49.27740817651945 -12.701840400951447 2015 2016
-4852 (Mon Dec 19 2016 20:37:01 GMT-0200 (BRST)) - Coordinate 4852 inserted
-python ./../integration/py/satImageGenExcept.py 4853 -50.71129104004166 -20.188917914596644 2015 2016
-4853 (Mon Dec 19 2016 20:38:04 GMT-0200 (BRST)) - Coordinate 4853 inserted
-python ./../integration/py/satImageGenExcept.py 4854 -52.09269444579751 -11.942215685251243 2015 2016
-4854 (Mon Dec 19 2016 20:39:43 GMT-0200 (BRST)) - Coordinate 4854 inserted
-python ./../integration/py/satImageGenExcept.py 4855 -50.204300832299865 -29.893487878176042 2015 2016
-4855 (Mon Dec 19 2016 20:40:45 GMT-0200 (BRST)) - Coordinate 4855 inserted
-python ./../integration/py/satImageGenExcept.py 4856 -56.86313883383916 -14.216031120635838 2015 2016
-4856 (Mon Dec 19 2016 20:41:52 GMT-0200 (BRST)) - Coordinate 4856 inserted
-python ./../integration/py/satImageGenExcept.py 4857 -53.488242237351265 -3.438899729254361 2015 2016
-4857 (Mon Dec 19 2016 20:42:53 GMT-0200 (BRST)) - Coordinate 4857 inserted
-python ./../integration/py/satImageGenExcept.py 4858 -46.92649850319401 -18.26184268714949 2015 2016
-4858 (Mon Dec 19 2016 20:44:06 GMT-0200 (BRST)) - Coordinate 4858 inserted
-python ./../integration/py/satImageGenExcept.py 4859 -52.11990634150924 -25.178941360406654 2015 2016
-4859 (Mon Dec 19 2016 20:44:57 GMT-0200 (BRST)) - Coordinate 4859 inserted
-python ./../integration/py/satImageGenExcept.py 4860 -55.1580201445554 -18.921385791980764 2015 2016
-4860 (Mon Dec 19 2016 20:46:00 GMT-0200 (BRST)) - Coordinate 4860 inserted
-python ./../integration/py/satImageGenExcept.py 4861 -55.92429544237598 -29.926999757377484 2015 2016
-4861 (Mon Dec 19 2016 20:47:12 GMT-0200 (BRST)) - Coordinate 4861 inserted
-python ./../integration/py/satImageGenExcept.py 4862 -52.263946921972675 -10.056753615899805 2015 2016
-4862 (Mon Dec 19 2016 20:48:37 GMT-0200 (BRST)) - Coordinate 4862 inserted
-python ./../integration/py/satImageGenExcept.py 4863 -47.14952784652678 -2.018348772506237 2015 2016
-4863 (Mon Dec 19 2016 20:49:39 GMT-0200 (BRST)) - Coordinate 4863 inserted
-python ./../integration/py/satImageGenExcept.py 4864 -51.82380816716226 -10.03918008753438 2015 2016
-4864 (Mon Dec 19 2016 20:51:15 GMT-0200 (BRST)) - Coordinate 4864 inserted
-python ./../integration/py/satImageGenExcept.py 4865 -47.369371914715074 -5.044503318725859 2015 2016
-4865 (Mon Dec 19 2016 20:52:28 GMT-0200 (BRST)) - Coordinate 4865 inserted
-python ./../integration/py/satImageGenExcept.py 4866 -41.44088929016217 -4.099831732257127 2015 2016
-4866 (Mon Dec 19 2016 20:54:04 GMT-0200 (BRST)) - Coordinate 4866 inserted
-python ./../integration/py/satImageGenExcept.py 4867 -43.54376222733548 -15.415002739049953 2015 2016
-4867 (Mon Dec 19 2016 20:55:30 GMT-0200 (BRST)) - Coordinate 4867 inserted
-python ./../integration/py/satImageGenExcept.py 4868 -49.16977711068505 -7.069847591446878 2015 2016
-4868 (Mon Dec 19 2016 20:56:36 GMT-0200 (BRST)) - Coordinate 4868 inserted
-python ./../integration/py/satImageGenExcept.py 4869 -56.29963809416239 -21.052664360463076 2015 2016
-4869 (Mon Dec 19 2016 20:57:51 GMT-0200 (BRST)) - Coordinate 4869 inserted
-python ./../integration/py/satImageGenExcept.py 4870 -48.59353146095461 -18.245349478289032 2015 2016
-4870 (Mon Dec 19 2016 20:58:53 GMT-0200 (BRST)) - Coordinate 4870 inserted
-python ./../integration/py/satImageGenExcept.py 4871 -62.55611453370639 -11.40172296699669 2015 2016
-4871 (Mon Dec 19 2016 20:59:45 GMT-0200 (BRST)) - Coordinate 4871 inserted
-python ./../integration/py/satImageGenExcept.py 4872 -49.40310429640913 -16.776153881037185 2015 2016
-4872 (Mon Dec 19 2016 21:00:47 GMT-0200 (BRST)) - Coordinate 4872 inserted
-python ./../integration/py/satImageGenExcept.py 4873 -51.958752729832426 -19.168836170411296 2015 2016
-4873 (Mon Dec 19 2016 21:01:38 GMT-0200 (BRST)) - Coordinate 4873 inserted
-python ./../integration/py/satImageGenExcept.py 4874 -46.422116461378735 -16.950774188451874 2015 2016
-4874 (Mon Dec 19 2016 21:02:40 GMT-0200 (BRST)) - Coordinate 4874 inserted
-python ./../integration/py/satImageGenExcept.py 4875 -36.815212066317486 -9.165057230224171 2015 2016
-4875 (Mon Dec 19 2016 21:03:54 GMT-0200 (BRST)) - Coordinate 4875 inserted
-python ./../integration/py/satImageGenExcept.py 4876 -42.09345622110891 -21.5985981918897 2015 2016
-4876 (Mon Dec 19 2016 21:05:43 GMT-0200 (BRST)) - Coordinate 4876 inserted
-python ./../integration/py/satImageGenExcept.py 4877 -43.93075815350531 -15.833254469550242 2015 2016
-4877 (Mon Dec 19 2016 21:07:08 GMT-0200 (BRST)) - Coordinate 4877 inserted
-python ./../integration/py/satImageGenExcept.py 4878 -41.7983458100361 -14.364476672944441 2015 2016
-4878 (Mon Dec 19 2016 21:08:48 GMT-0200 (BRST)) - Coordinate 4878 inserted
-python ./../integration/py/satImageGenExcept.py 4879 -52.1761083327098 -18.657170695017406 2015 2016
-4879 (Mon Dec 19 2016 21:09:49 GMT-0200 (BRST)) - Coordinate 4879 inserted
-python ./../integration/py/satImageGenExcept.py 4880 -53.94666816953104 -13.471074088462785 2015 2016
-4880 (Mon Dec 19 2016 21:11:02 GMT-0200 (BRST)) - Coordinate 4880 inserted
-python ./../integration/py/satImageGenExcept.py 4881 -57.56981706009361 -14.766298502731575 2015 2016
-4881 (Mon Dec 19 2016 21:12:05 GMT-0200 (BRST)) - Coordinate 4881 inserted
-python ./../integration/py/satImageGenExcept.py 4882 -57.47360198019039 -2.645040997887128 2015 2016
-4882 (Mon Dec 19 2016 21:13:17 GMT-0200 (BRST)) - Coordinate 4882 inserted
-python ./../integration/py/satImageGenExcept.py 4883 -49.5046122892182 -11.231351853489727 2015 2016
-4883 (Mon Dec 19 2016 21:14:39 GMT-0200 (BRST)) - Coordinate 4883 inserted
-python ./../integration/py/satImageGenExcept.py 4884 -49.163680579698834 -11.124011826474504 2015 2016
-4884 (Mon Dec 19 2016 21:16:19 GMT-0200 (BRST)) - Coordinate 4884 inserted
-python ./../integration/py/satImageGenExcept.py 4885 -52.543920952481955 -16.095960171457673 2015 2016
-4885 (Mon Dec 19 2016 21:18:19 GMT-0200 (BRST)) - Coordinate 4885 inserted
-python ./../integration/py/satImageGenExcept.py 4886 -48.291075389406586 -6.496022415487477 2015 2016
-4886 (Mon Dec 19 2016 21:20:10 GMT-0200 (BRST)) - Coordinate 4886 inserted
-python ./../integration/py/satImageGenExcept.py 4887 -55.08487958576082 -28.799526509509118 2015 2016
-4887 (Mon Dec 19 2016 21:22:07 GMT-0200 (BRST)) - Coordinate 4887 inserted
-python ./../integration/py/satImageGenExcept.py 4888 -52.124880165826816 -10.274007066850992 2015 2016
-4888 (Mon Dec 19 2016 21:24:30 GMT-0200 (BRST)) - Coordinate 4888 inserted
-python ./../integration/py/satImageGenExcept.py 4889 -40.67632081892731 -3.58289120393988 2015 2016
-4889 (Mon Dec 19 2016 21:27:04 GMT-0200 (BRST)) - Coordinate 4889 inserted
-python ./../integration/py/satImageGenExcept.py 4890 -63.77252865960962 -11.867648584611576 2015 2016
-4890 (Mon Dec 19 2016 21:29:37 GMT-0200 (BRST)) - Coordinate 4890 inserted
-python ./../integration/py/satImageGenExcept.py 4891 -61.24692802063497 -12.879948679853992 2015 2016
-4891 (Mon Dec 19 2016 21:30:39 GMT-0200 (BRST)) - Coordinate 4891 inserted
-python ./../integration/py/satImageGenExcept.py 4892 -55.52512491051021 -7.344140395492435 2015 2016
-4892 (Mon Dec 19 2016 21:33:02 GMT-0200 (BRST)) - Coordinate 4892 inserted
-python ./../integration/py/satImageGenExcept.py 4893 -55.43557073471904 -23.576048688160014 2015 2016
-4893 (Mon Dec 19 2016 21:34:06 GMT-0200 (BRST)) - Coordinate 4893 inserted
-python ./../integration/py/satImageGenExcept.py 4894 -49.66399578641708 -12.308244173474485 2015 2016
-4894 (Mon Dec 19 2016 21:36:09 GMT-0200 (BRST)) - Coordinate 4894 inserted
-python ./../integration/py/satImageGenExcept.py 4895 -47.341693326684556 -3.777332728405744 2015 2016
-4895 (Mon Dec 19 2016 21:37:24 GMT-0200 (BRST)) - Coordinate 4895 inserted
-python ./../integration/py/satImageGenExcept.py 4896 -52.15244145753249 -22.282324391162778 2015 2016
-4896 (Mon Dec 19 2016 21:39:05 GMT-0200 (BRST)) - Coordinate 4896 inserted
-python ./../integration/py/satImageGenExcept.py 4897 -55.68171112229155 -19.04855055751547 2015 2016
-4897 (Mon Dec 19 2016 21:41:04 GMT-0200 (BRST)) - Coordinate 4897 inserted
-python ./../integration/py/satImageGenExcept.py 4898 -56.357940702396874 -13.577068391205872 2015 2016
-4898 (Mon Dec 19 2016 21:43:28 GMT-0200 (BRST)) - Coordinate 4898 inserted
-python ./../integration/py/satImageGenExcept.py 4899 -52.27870180173543 -16.16377895617918 2015 2016
-4899 (Mon Dec 19 2016 21:44:20 GMT-0200 (BRST)) - Coordinate 4899 inserted
-python ./../integration/py/satImageGenExcept.py 4900 -39.446538804514155 -16.682110145399893 2015 2016
-4900 (Mon Dec 19 2016 21:45:45 GMT-0200 (BRST)) - Coordinate 4900 inserted
-python ./../integration/py/satImageGenExcept.py 4901 -46.8732123124238 -1.423005710482095 2015 2016
-4901 (Mon Dec 19 2016 21:46:46 GMT-0200 (BRST)) - Coordinate 4901 inserted
-python ./../integration/py/satImageGenExcept.py 4902 -49.58671641105009 -20.66507905094845 2015 2016
-4902 (Mon Dec 19 2016 21:47:47 GMT-0200 (BRST)) - Coordinate 4902 inserted
-python ./../integration/py/satImageGenExcept.py 4903 -64.03359120406408 -12.381413685234486 2015 2016
-4903 (Mon Dec 19 2016 21:49:13 GMT-0200 (BRST)) - Coordinate 4903 inserted
-python ./../integration/py/satImageGenExcept.py 4904 -51.310558892107764 -21.653272810769465 2015 2016
-4904 (Mon Dec 19 2016 21:50:16 GMT-0200 (BRST)) - Coordinate 4904 inserted
-python ./../integration/py/satImageGenExcept.py 4905 -50.411912100995416 -7.412296024259772 2015 2016
-4905 (Mon Dec 19 2016 21:51:40 GMT-0200 (BRST)) - Coordinate 4905 inserted
-python ./../integration/py/satImageGenExcept.py 4906 -52.41347383784284 -27.204602938292226 2015 2016
-4906 (Mon Dec 19 2016 21:52:32 GMT-0200 (BRST)) - Coordinate 4906 inserted
-python ./../integration/py/satImageGenExcept.py 4907 -62.39374461938199 -11.019950956315894 2015 2016
-4907 (Mon Dec 19 2016 21:53:34 GMT-0200 (BRST)) - Coordinate 4907 inserted
-python ./../integration/py/satImageGenExcept.py 4908 -49.17208320712524 -7.267001427439052 2015 2016
-4908 (Mon Dec 19 2016 21:54:36 GMT-0200 (BRST)) - Coordinate 4908 inserted
-python ./../integration/py/satImageGenExcept.py 4909 -46.42948141086894 -6.615972973234333 2015 2016
-4909 (Mon Dec 19 2016 21:57:53 GMT-0200 (BRST)) - Coordinate 4909 inserted
-python ./../integration/py/satImageGenExcept.py 4910 -48.41729154904582 -6.392510652102924 2015 2016
-4910 (Mon Dec 19 2016 21:59:43 GMT-0200 (BRST)) - Coordinate 4910 inserted
-python ./../integration/py/satImageGenExcept.py 4911 -52.684820577363254 -20.494771738798836 2015 2016
-4911 (Mon Dec 19 2016 22:03:50 GMT-0200 (BRST)) - Coordinate 4911 inserted
-python ./../integration/py/satImageGenExcept.py 4912 -56.407749613279684 -15.279332669318556 2015 2016
-4912 (Mon Dec 19 2016 22:07:42 GMT-0200 (BRST)) - Coordinate 4912 inserted
-python ./../integration/py/satImageGenExcept.py 4913 -41.91318911093742 -11.591353363480977 2015 2016
-4913 (Mon Dec 19 2016 22:09:52 GMT-0200 (BRST)) - Coordinate 4913 inserted
-python ./../integration/py/satImageGenExcept.py 4914 -49.12382557214513 -17.877965000001222 2015 2016
-4914 (Mon Dec 19 2016 22:12:38 GMT-0200 (BRST)) - Coordinate 4914 inserted
-python ./../integration/py/satImageGenExcept.py 4915 -56.908307798130146 -21.555087596898414 2015 2016
-4915 (Mon Dec 19 2016 22:14:37 GMT-0200 (BRST)) - Coordinate 4915 inserted
-python ./../integration/py/satImageGenExcept.py 4916 -54.922954718787935 -14.715227834315035 2015 2016
-4916 (Mon Dec 19 2016 22:16:35 GMT-0200 (BRST)) - Coordinate 4916 inserted
-python ./../integration/py/satImageGenExcept.py 4917 -51.755316230253065 -29.56793055975812 2015 2016
-4917 (Mon Dec 19 2016 22:18:47 GMT-0200 (BRST)) - Coordinate 4917 inserted
-python ./../integration/py/satImageGenExcept.py 4918 -48.80341156468704 -6.007418043957304 2015 2016
-4918 (Mon Dec 19 2016 22:20:11 GMT-0200 (BRST)) - Coordinate 4918 inserted
-python ./../integration/py/satImageGenExcept.py 4919 -41.17394157736361 -18.997217336795583 2015 2016
-4919 (Mon Dec 19 2016 22:21:48 GMT-0200 (BRST)) - Coordinate 4919 inserted
-python ./../integration/py/satImageGenExcept.py 4920 -48.76670761886095 -15.676801769618173 2015 2016
-4920 (Mon Dec 19 2016 22:23:47 GMT-0200 (BRST)) - Coordinate 4920 inserted
-python ./../integration/py/satImageGenExcept.py 4921 -55.20379675082655 -14.43602190216946 2015 2016
-4921 (Mon Dec 19 2016 22:25:34 GMT-0200 (BRST)) - Coordinate 4921 inserted
-python ./../integration/py/satImageGenExcept.py 4922 -51.8464407958068 -18.71770480753882 2015 2016
-4922 (Mon Dec 19 2016 22:28:08 GMT-0200 (BRST)) - Coordinate 4922 inserted
-python ./../integration/py/satImageGenExcept.py 4923 -56.346054902748364 -17.10715195294297 2015 2016
-4923 (Mon Dec 19 2016 22:30:42 GMT-0200 (BRST)) - Coordinate 4923 inserted
-python ./../integration/py/satImageGenExcept.py 4924 -45.634436512695174 -2.082050774058365 2015 2016
-4924 (Mon Dec 19 2016 22:32:07 GMT-0200 (BRST)) - Coordinate 4924 inserted
-python ./../integration/py/satImageGenExcept.py 4925 -48.989668171846546 -11.87363489851028 2015 2016
-4925 (Mon Dec 19 2016 22:33:21 GMT-0200 (BRST)) - Coordinate 4925 inserted
-python ./../integration/py/satImageGenExcept.py 4926 -47.82274517307155 -3.823802655114495 2015 2016
-4926 (Mon Dec 19 2016 22:35:12 GMT-0200 (BRST)) - Coordinate 4926 inserted
-python ./../integration/py/satImageGenExcept.py 4927 -36.774208588356814 -9.296671048878803 2015 2016
-4927 (Mon Dec 19 2016 22:37:04 GMT-0200 (BRST)) - Coordinate 4927 inserted
-python ./../integration/py/satImageGenExcept.py 4928 -49.28180294341914 -11.447602823838942 2015 2016
-4928 (Mon Dec 19 2016 22:39:06 GMT-0200 (BRST)) - Coordinate 4928 inserted
-python ./../integration/py/satImageGenExcept.py 4929 -49.4991624405044 -10.342281055004431 2015 2016
-4929 (Mon Dec 19 2016 22:40:22 GMT-0200 (BRST)) - Coordinate 4929 inserted
-python ./../integration/py/satImageGenExcept.py 4930 -47.16036906449938 -2.50273862174669 2015 2016
-4930 (Mon Dec 19 2016 22:41:57 GMT-0200 (BRST)) - Coordinate 4930 inserted
-python ./../integration/py/satImageGenExcept.py 4931 -58.37281119602021 -2.762995819910952 2015 2016
-4931 (Mon Dec 19 2016 22:44:53 GMT-0200 (BRST)) - Coordinate 4931 inserted
-python ./../integration/py/satImageGenExcept.py 4932 -40.950570296951156 -6.515796319436984 2015 2016
-4932 (Mon Dec 19 2016 22:48:37 GMT-0200 (BRST)) - Coordinate 4932 inserted
-python ./../integration/py/satImageGenExcept.py 4933 -49.909366713006136 -20.056717103348078 2015 2016
-4933 (Mon Dec 19 2016 22:50:25 GMT-0200 (BRST)) - Coordinate 4933 inserted
-python ./../integration/py/satImageGenExcept.py 4934 -65.14916130160466 -10.068190639191922 2015 2016
-4934 (Mon Dec 19 2016 22:52:02 GMT-0200 (BRST)) - Coordinate 4934 inserted
-python ./../integration/py/satImageGenExcept.py 4935 -55.176372587614296 -18.312445479909154 2015 2016
-4935 (Mon Dec 19 2016 22:53:28 GMT-0200 (BRST)) - Coordinate 4935 inserted
-python ./../integration/py/satImageGenExcept.py 4936 -48.61978397597818 -5.686944982043926 2015 2016
-4936 (Mon Dec 19 2016 22:55:08 GMT-0200 (BRST)) - Coordinate 4936 inserted
-python ./../integration/py/satImageGenExcept.py 4937 -56.1869390403578 -21.659325607303526 2015 2016
-4937 (Mon Dec 19 2016 22:56:44 GMT-0200 (BRST)) - Coordinate 4937 inserted
-python ./../integration/py/satImageGenExcept.py 4938 -48.385273589956896 -12.930713575228884 2015 2016
-4938 (Mon Dec 19 2016 22:59:29 GMT-0200 (BRST)) - Coordinate 4938 inserted
-python ./../integration/py/satImageGenExcept.py 4939 -49.97537694179057 -28.230146596177477 2015 2016
-4939 (Mon Dec 19 2016 23:01:01 GMT-0200 (BRST)) - Coordinate 4939 inserted
-python ./../integration/py/satImageGenExcept.py 4940 -49.94786979818171 -16.637468793793197 2015 2016
-4940 (Mon Dec 19 2016 23:02:12 GMT-0200 (BRST)) - Coordinate 4940 inserted
-python ./../integration/py/satImageGenExcept.py 4941 -55.14376818193316 -9.544592352162674 2015 2016
-4941 (Mon Dec 19 2016 23:04:32 GMT-0200 (BRST)) - Coordinate 4941 inserted
-python ./../integration/py/satImageGenExcept.py 4942 -50.23694707732686 -27.851601082410305 2015 2016
-4942 (Mon Dec 19 2016 23:06:08 GMT-0200 (BRST)) - Coordinate 4942 inserted
-python ./../integration/py/satImageGenExcept.py 4943 -49.46402781947701 -12.833676330536175 2015 2016
-4943 (Mon Dec 19 2016 23:07:56 GMT-0200 (BRST)) - Coordinate 4943 inserted
-python ./../integration/py/satImageGenExcept.py 4944 -60.279266697949325 -12.464158400919004 2015 2016
-4944 (Mon Dec 19 2016 23:09:09 GMT-0200 (BRST)) - Coordinate 4944 inserted
-python ./../integration/py/satImageGenExcept.py 4945 -36.55753817780844 -5.534884985839693 2015 2016
-4945 (Mon Dec 19 2016 23:10:35 GMT-0200 (BRST)) - Coordinate 4945 inserted
-python ./../integration/py/satImageGenExcept.py 4946 -47.124409856741046 -17.919255934727158 2015 2016
-4946 (Mon Dec 19 2016 23:12:15 GMT-0200 (BRST)) - Coordinate 4946 inserted
-python ./../integration/py/satImageGenExcept.py 4947 -52.10029262572518 -6.054268311648861 2015 2016
-4947 (Mon Dec 19 2016 23:13:29 GMT-0200 (BRST)) - Coordinate 4947 inserted
-python ./../integration/py/satImageGenExcept.py 4948 -55.262200400086705 -20.563059967681873 2015 2016
-4948 (Mon Dec 19 2016 23:14:55 GMT-0200 (BRST)) - Coordinate 4948 inserted
-python ./../integration/py/satImageGenExcept.py 4949 -45.019999228020545 -19.705336837953336 2015 2016
-4949 (Mon Dec 19 2016 23:16:32 GMT-0200 (BRST)) - Coordinate 4949 inserted
-python ./../integration/py/satImageGenExcept.py 4950 -42.67940650789476 -7.118895630752412 2015 2016
-4950 (Mon Dec 19 2016 23:19:07 GMT-0200 (BRST)) - Coordinate 4950 inserted
-python ./../integration/py/satImageGenExcept.py 4951 -43.79417513944118 -18.69536183800608 2015 2016
-4951 (Mon Dec 19 2016 23:22:15 GMT-0200 (BRST)) - Coordinate 4951 inserted
-python ./../integration/py/satImageGenExcept.py 4952 -68.55650009314363 -10.705372805761202 2015 2016
-4952 (Mon Dec 19 2016 23:24:36 GMT-0200 (BRST)) - Coordinate 4952 inserted
-python ./../integration/py/satImageGenExcept.py 4953 -41.07061151019892 -9.74213898634303 2015 2016
-4953 (Mon Dec 19 2016 23:26:00 GMT-0200 (BRST)) - Coordinate 4953 inserted
-python ./../integration/py/satImageGenExcept.py 4954 -47.130222492442606 -23.12669857573937 2015 2016
-4954 (Mon Dec 19 2016 23:27:36 GMT-0200 (BRST)) - Coordinate 4954 inserted
-python ./../integration/py/satImageGenExcept.py 4955 -40.27028904276461 -12.719329226755542 2015 2016
-4955 (Mon Dec 19 2016 23:29:26 GMT-0200 (BRST)) - Coordinate 4955 inserted
-python ./../integration/py/satImageGenExcept.py 4956 -47.85566272244631 -17.895130812168933 2015 2016
-4956 (Mon Dec 19 2016 23:30:38 GMT-0200 (BRST)) - Coordinate 4956 inserted
-python ./../integration/py/satImageGenExcept.py 4957 -51.48434385142826 -24.992053724054237 2015 2016
-4957 (Mon Dec 19 2016 23:32:14 GMT-0200 (BRST)) - Coordinate 4957 inserted
-python ./../integration/py/satImageGenExcept.py 4958 -38.991519132836686 -10.42725629628114 2015 2016
-4958 (Mon Dec 19 2016 23:34:37 GMT-0200 (BRST)) - Coordinate 4958 inserted
-python ./../integration/py/satImageGenExcept.py 4959 -52.23800700112984 -10.20152731446715 2015 2016
-4959 (Mon Dec 19 2016 23:36:13 GMT-0200 (BRST)) - Coordinate 4959 inserted
-python ./../integration/py/satImageGenExcept.py 4960 -41.741501752918865 -15.02796219519303 2015 2016
-4960 (Mon Dec 19 2016 23:37:40 GMT-0200 (BRST)) - Coordinate 4960 inserted
-python ./../integration/py/satImageGenExcept.py 4961 -63.7686184874207 -8.638171938739813 2015 2016
-4961 (Mon Dec 19 2016 23:39:42 GMT-0200 (BRST)) - Coordinate 4961 inserted
-python ./../integration/py/satImageGenExcept.py 4962 -36.143447508253395 -7.912185959519737 2015 2016
-4962 (Mon Dec 19 2016 23:41:06 GMT-0200 (BRST)) - Coordinate 4962 inserted
-python ./../integration/py/satImageGenExcept.py 4963 -49.432399243018 -5.518950452416457 2015 2016
-4963 (Mon Dec 19 2016 23:42:52 GMT-0200 (BRST)) - Coordinate 4963 inserted
-python ./../integration/py/satImageGenExcept.py 4964 -49.665966308194044 -11.195982602015619 2015 2016
-4964 (Mon Dec 19 2016 23:45:48 GMT-0200 (BRST)) - Coordinate 4964 inserted
-python ./../integration/py/satImageGenExcept.py 4965 -53.70926895199972 -21.709649571899753 2015 2016
-4965 (Mon Dec 19 2016 23:47:48 GMT-0200 (BRST)) - Coordinate 4965 inserted
-python ./../integration/py/satImageGenExcept.py 4966 -41.142998289881554 -21.74915360292175 2015 2016
-4966 (Mon Dec 19 2016 23:50:56 GMT-0200 (BRST)) - Coordinate 4966 inserted
-python ./../integration/py/satImageGenExcept.py 4967 -36.59607237771243 -8.922166380468635 2015 2016
-4967 (Mon Dec 19 2016 23:52:44 GMT-0200 (BRST)) - Coordinate 4967 inserted
-python ./../integration/py/satImageGenExcept.py 4968 -47.06680456520668 -1.884480329770961 2015 2016
-4968 (Mon Dec 19 2016 23:54:22 GMT-0200 (BRST)) - Coordinate 4968 inserted
-python ./../integration/py/satImageGenExcept.py 4969 -51.698406903086955 -19.063745347529455 2015 2016
-4969 (Mon Dec 19 2016 23:55:25 GMT-0200 (BRST)) - Coordinate 4969 inserted
-python ./../integration/py/satImageGenExcept.py 4970 -48.227460536441846 -2.531777327484436 2015 2016
-4970 (Mon Dec 19 2016 23:57:58 GMT-0200 (BRST)) - Coordinate 4970 inserted
-python ./../integration/py/satImageGenExcept.py 4971 -50.298880009202605 -8.433270929253545 2015 2016
-4971 (Mon Dec 19 2016 23:59:35 GMT-0200 (BRST)) - Coordinate 4971 inserted
-python ./../integration/py/satImageGenExcept.py 4972 -47.78931079069915 -22.880339040973567 2015 2016
-4972 (Tue Dec 20 2016 00:03:07 GMT-0200 (BRST)) - Coordinate 4972 inserted
-python ./../integration/py/satImageGenExcept.py 4973 -46.403359000131054 -20.13602845255845 2015 2016
-4973 (Tue Dec 20 2016 00:06:15 GMT-0200 (BRST)) - Coordinate 4973 inserted
-python ./../integration/py/satImageGenExcept.py 4974 -48.20078043765825 -14.356977112408234 2015 2016
-4974 (Tue Dec 20 2016 00:11:01 GMT-0200 (BRST)) - Coordinate 4974 inserted
-python ./../integration/py/satImageGenExcept.py 4975 -55.04496536745968 -12.627756599446272 2015 2016
-4975 (Tue Dec 20 2016 00:13:12 GMT-0200 (BRST)) - Coordinate 4975 inserted
-python ./../integration/py/satImageGenExcept.py 4976 -54.52133774129889 -21.379543325208413 2015 2016
-4976 (Tue Dec 20 2016 00:16:19 GMT-0200 (BRST)) - Coordinate 4976 inserted
-python ./../integration/py/satImageGenExcept.py 4977 -54.31295255945288 -31.40933131248105 2015 2016
-4977 (Tue Dec 20 2016 00:18:54 GMT-0200 (BRST)) - Coordinate 4977 inserted
-python ./../integration/py/satImageGenExcept.py 4978 -54.96547761393605 -20.798024354550094 2015 2016
-4978 (Tue Dec 20 2016 00:20:32 GMT-0200 (BRST)) - Coordinate 4978 inserted
-python ./../integration/py/satImageGenExcept.py 4979 -54.66410353841752 -20.275761264836728 2015 2016
-4979 (Tue Dec 20 2016 00:23:19 GMT-0200 (BRST)) - Coordinate 4979 inserted
-python ./../integration/py/satImageGenExcept.py 4980 -50.72515885655385 -8.032567696800836 2015 2016
-4980 (Tue Dec 20 2016 00:25:19 GMT-0200 (BRST)) - Coordinate 4980 inserted
-python ./../integration/py/satImageGenExcept.py 4981 -52.19707283498643 -30.08167335977183 2015 2016
-4981 (Tue Dec 20 2016 00:26:44 GMT-0200 (BRST)) - Coordinate 4981 inserted
-python ./../integration/py/satImageGenExcept.py 4982 -36.37236429828636 -8.862270790062652 2015 2016
-4982 (Tue Dec 20 2016 00:28:33 GMT-0200 (BRST)) - Coordinate 4982 inserted
-python ./../integration/py/satImageGenExcept.py 4983 -51.00878598651551 -8.45560951998117 2015 2016
-4983 (Tue Dec 20 2016 00:30:22 GMT-0200 (BRST)) - Coordinate 4983 inserted
-python ./../integration/py/satImageGenExcept.py 4984 -54.66129411107046 -31.438903766872357 2015 2016
-4984 (Tue Dec 20 2016 00:32:37 GMT-0200 (BRST)) - Coordinate 4984 inserted
-python ./../integration/py/satImageGenExcept.py 4985 -39.944356506394875 -19.240415055081364 2015 2016
-4985 (Tue Dec 20 2016 00:35:02 GMT-0200 (BRST)) - Coordinate 4985 inserted
-python ./../integration/py/satImageGenExcept.py 4986 -48.08455586267638 -8.69728466983871 2015 2016
-4986 (Tue Dec 20 2016 00:36:51 GMT-0200 (BRST)) - Coordinate 4986 inserted
-python ./../integration/py/satImageGenExcept.py 4987 -43.2178074499668 -6.695253370686784 2015 2016
-4987 (Tue Dec 20 2016 00:38:52 GMT-0200 (BRST)) - Coordinate 4987 inserted
-python ./../integration/py/satImageGenExcept.py 4988 -60.561385546926935 -11.521273490702615 2015 2016
-4988 (Tue Dec 20 2016 00:41:37 GMT-0200 (BRST)) - Coordinate 4988 inserted
-python ./../integration/py/satImageGenExcept.py 4989 -56.16231837005697 -22.21940159214471 2015 2016
-4989 (Tue Dec 20 2016 00:43:00 GMT-0200 (BRST)) - Coordinate 4989 inserted
-python ./../integration/py/satImageGenExcept.py 4990 -49.70442202668032 -10.421351782727156 2015 2016
-4990 (Tue Dec 20 2016 00:44:57 GMT-0200 (BRST)) - Coordinate 4990 inserted
-python ./../integration/py/satImageGenExcept.py 4991 -60.19287649279987 2.423799682133047 2015 2016
-4991 (Tue Dec 20 2016 00:46:46 GMT-0200 (BRST)) - Coordinate 4991 inserted
-python ./../integration/py/satImageGenExcept.py 4992 -53.77323222188575 -15.740770978866497 2015 2016
-4992 (Tue Dec 20 2016 00:48:34 GMT-0200 (BRST)) - Coordinate 4992 inserted
-python ./../integration/py/satImageGenExcept.py 4993 -52.220921052881366 -18.985530197264183 2015 2016
-4993 (Tue Dec 20 2016 00:51:06 GMT-0200 (BRST)) - Coordinate 4993 inserted
-python ./../integration/py/satImageGenExcept.py 4994 -45.56167058574849 -20.775279476769988 2015 2016
-4994 (Tue Dec 20 2016 00:52:31 GMT-0200 (BRST)) - Coordinate 4994 inserted
-python ./../integration/py/satImageGenExcept.py 4995 -49.65705279113121 -5.074060465595337 2015 2016
-4995 (Tue Dec 20 2016 00:54:10 GMT-0200 (BRST)) - Coordinate 4995 inserted
-python ./../integration/py/satImageGenExcept.py 4996 -40.980139349967 -8.576759055080878 2015 2016
-4996 (Tue Dec 20 2016 00:56:56 GMT-0200 (BRST)) - Coordinate 4996 inserted
-python ./../integration/py/satImageGenExcept.py 4997 -56.68773187727084 -30.187372780311684 2015 2016
-4997 (Tue Dec 20 2016 01:00:40 GMT-0200 (BRST)) - Coordinate 4997 inserted
-python ./../integration/py/satImageGenExcept.py 4998 -40.09810293639861 -15.94141179090443 2015 2016
-4998 (Tue Dec 20 2016 01:02:18 GMT-0200 (BRST)) - Coordinate 4998 inserted
-python ./../integration/py/satImageGenExcept.py 4999 -43.093221085513996 -13.466672709345945 2015 2016
-4999 (Tue Dec 20 2016 01:03:53 GMT-0200 (BRST)) - Coordinate 4999 inserted
+2079 (Thu Jan 12 2017 09:42:01 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -65.00549316694642 -0.583531659437547 2000 2001
+2080 (Thu Jan 12 2017 09:43:15 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -69.22257133992971 -8.783418365140271 2000 2001
+2081 (Thu Jan 12 2017 09:44:17 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.97214924364616 -5.246081348729525 2000 2001
+undefined
+2082 (Thu Jan 12 2017 09:45:11 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.59787764552432 -3.3875954777529 2000 2001
+undefined
+2083 (Thu Jan 12 2017 09:45:54 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.18020546216161 -12.26156950762934 2000 2001
+2084 (Thu Jan 12 2017 09:46:56 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.32325857969015 -12.90884714690155 2000 2001
+2085 (Thu Jan 12 2017 09:48:11 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.26202851246991 -4.982099170351244 2000 2001
+2086 (Thu Jan 12 2017 09:49:12 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.027595443563904 -9.267340251784741 2000 2001
+2087 (Thu Jan 12 2017 09:50:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -42.28762556618686 -3.165013386967694 2000 2001
+2088 (Thu Jan 12 2017 09:52:14 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.063336273873915 -12.141186853922836 2000 2001
+undefined
+2089 (Thu Jan 12 2017 09:52:57 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.28198984320353 -14.616211127992933 2000 2001
+2090 (Thu Jan 12 2017 09:53:47 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.23670879100642 -9.381200705821133 2000 2001
+2091 (Thu Jan 12 2017 09:56:14 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.23234756930103 -19.124990851807535 2000 2001
+2092 (Thu Jan 12 2017 09:58:13 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.18954565448014 -14.224185719426934 2000 2001
+2093 (Thu Jan 12 2017 09:59:56 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.05165523427014 -4.772867651669252 2000 2001
+undefined
+2094 (Thu Jan 12 2017 10:00:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.03991335511568 -21.728978805733675 2000 2001
+2095 (Thu Jan 12 2017 10:01:43 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.79030248938534 -22.949820259333414 2000 2001
+2096 (Thu Jan 12 2017 10:02:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.42447445540385 2.346747024365811 2000 2001
+undefined
+[TypeError: Cannot call method 'split' of undefined]
+2097 (Thu Jan 12 2017 10:02:42 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.77373040777389 -18.59786009094236 2000 2001
+2098 (Thu Jan 12 2017 10:03:52 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.60997708152786 -15.64068811158447 2000 2001
+2099 (Thu Jan 12 2017 10:05:17 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.82606986253457 -7.453677303635679 2000 2001
+2100 (Thu Jan 12 2017 10:06:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.60057291310266 -14.305854163208963 2000 2001
+2101 (Thu Jan 12 2017 10:07:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -58.32325179845358 -11.640260593488446 2000 2001
+2102 (Thu Jan 12 2017 10:09:04 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.497628291380835 -17.96162810921772 2000 2001
+2103 (Thu Jan 12 2017 10:10:17 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.44895760576316 -7.35101129493637 2000 2001
+2104 (Thu Jan 12 2017 10:11:27 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.26466991463175 -10.147264192983176 2000 2001
+undefined
+[TypeError: Cannot call method 'split' of undefined]
+2105 (Thu Jan 12 2017 10:11:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.787879922135076 -22.444572681077023 2000 2001
+2106 (Thu Jan 12 2017 10:12:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -66.49159380979454 0.654603678608325 2000 2001
+2107 (Thu Jan 12 2017 10:14:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.47151660549476 -15.17444268196039 2000 2001
+2108 (Thu Jan 12 2017 10:15:13 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.01718719368512 -27.726711982053143 2000 2001
+2109 (Thu Jan 12 2017 10:16:25 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.42824615512768 -20.372019339501712 2000 2001
+2110 (Thu Jan 12 2017 10:17:16 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -58.64641301510369 -11.309040244624693 2000 2001
+2111 (Thu Jan 12 2017 10:18:30 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.23235367692148 -16.903429619524168 2000 2001
+2112 (Thu Jan 12 2017 10:19:20 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.86612790235635 -28.19699041621117 2000 2001
+2113 (Thu Jan 12 2017 10:20:23 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.209065125826804 -12.176997060672601 2000 2001
+2114 (Thu Jan 12 2017 10:21:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.60871613243257 -30.517859670525404 2000 2001
+2115 (Thu Jan 12 2017 10:22:39 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.58476961586062 -13.818688231238351 2000 2001
+2116 (Thu Jan 12 2017 10:23:41 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.4722648303576 -10.469829164062798 2000 2001
+2117 (Thu Jan 12 2017 10:25:13 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -66.37264763687716 -4.307411923151513 2000 2001
+2118 (Thu Jan 12 2017 10:26:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.30128407376701 -24.65774425472116 2000 2001
+2119 (Thu Jan 12 2017 10:28:15 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -70.78644134655538 -5.760864488749359 2000 2001
+undefined
+2120 (Thu Jan 12 2017 10:29:14 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.32436883388694 -17.468941917900842 2000 2001
+2121 (Thu Jan 12 2017 10:30:42 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.24557189351694 -8.424980362726878 2000 2001
+2122 (Thu Jan 12 2017 10:31:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.63914993317363 -6.05448189893503 2000 2001
+2123 (Thu Jan 12 2017 10:33:09 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -57.15605874196653 -9.607598084832404 2000 2001
+undefined
+2124 (Thu Jan 12 2017 10:33:50 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -57.83720461210957 -20.67667644600754 2000 2001
+2125 (Thu Jan 12 2017 10:34:50 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.65156037704325 -14.032659940218323 2000 2001
+2126 (Thu Jan 12 2017 10:36:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -35.32131549613037 -8.441897551197652 2000 2001
+2127 (Thu Jan 12 2017 10:36:57 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -65.19353226493331 0.043563594203512 2000 2001
+2128 (Thu Jan 12 2017 10:37:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.83231954186167 -5.362320421958163 2000 2001
+undefined
+2129 (Thu Jan 12 2017 10:38:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -44.66277906341506 -21.88602659584449 2000 2001
+2130 (Thu Jan 12 2017 10:39:44 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.842812828148226 -8.774180852403571 2000 2001
+[TypeError: Cannot call method 'split' of undefined]
+2131 (Thu Jan 12 2017 10:40:16 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -71.8318546526088 -5.235353444022763 2000 2001
+undefined
+2132 (Thu Jan 12 2017 10:40:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -71.22799416636244 -5.076822575404325 2000 2001
+2133 (Thu Jan 12 2017 10:41:40 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -63.81179336213726 -11.531616810711508 2000 2001
+2134 (Thu Jan 12 2017 10:42:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.429539167964265 -27.846434418000616 2000 2001
+2135 (Thu Jan 12 2017 10:44:01 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.688293929294204 -8.896557203956402 2000 2001
+undefined
+2136 (Thu Jan 12 2017 10:44:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.140148316810674 -19.599354120792615 2000 2001
+2137 (Thu Jan 12 2017 10:45:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.52199504614036 -26.433337381167195 2000 2001
+2138 (Thu Jan 12 2017 10:47:18 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.35562344165312 -5.593439572861151 2000 2001
+2139 (Thu Jan 12 2017 10:48:21 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.053914421701506 -30.130704371092246 2000 2001
+2140 (Thu Jan 12 2017 10:49:19 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -57.03759465456956 -5.489284574430823 2000 2001
+undefined
+2141 (Thu Jan 12 2017 10:49:54 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.67441893733918 -1.576677032532466 2000 2001
+undefined
+2142 (Thu Jan 12 2017 10:50:25 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.68239476215726 -18.5717642684531 2000 2001
+2143 (Thu Jan 12 2017 10:51:18 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -68.59998335238839 -10.84467939678796 2000 2001
+2144 (Thu Jan 12 2017 10:52:10 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.9147994895865 -17.47406291310816 2000 2001
+2145 (Thu Jan 12 2017 10:52:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.337446195379 -27.478534512405144 2000 2001
+2146 (Thu Jan 12 2017 10:53:48 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.35540941081601 -19.69637915683583 2000 2001
+2147 (Thu Jan 12 2017 10:54:36 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.0176694899618 -8.526905134719463 2000 2001
+2148 (Thu Jan 12 2017 10:55:36 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -65.64043243180113 -9.72250287646347 2000 2001
+2149 (Thu Jan 12 2017 10:56:26 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.80177005227425 -0.855114700572535 2000 2001
+2150 (Thu Jan 12 2017 10:57:16 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.056770362576955 -18.821671037646766 2000 2001
+2151 (Thu Jan 12 2017 10:58:18 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -57.136556657295 -29.94997625719353 2000 2001
+2152 (Thu Jan 12 2017 10:59:12 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.04791600760818 -14.6150257812555 2000 2001
+2153 (Thu Jan 12 2017 11:00:01 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.25390926529482 -6.630713539823354 2000 2001
+2154 (Thu Jan 12 2017 11:00:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.51444824134053 -22.38975259988287 2000 2001
+2155 (Thu Jan 12 2017 11:01:41 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.38829043578468 -10.843551236656197 2000 2001
+2156 (Thu Jan 12 2017 11:02:43 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.89142220808928 -22.909228010470176 2000 2001
+2157 (Thu Jan 12 2017 11:03:37 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.54337951999388 -21.99683781615675 2000 2001
+2158 (Thu Jan 12 2017 11:04:28 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.486439190379485 2.220529522232624 2000 2001
+undefined
+[TypeError: Cannot call method 'split' of undefined]
+2159 (Thu Jan 12 2017 11:04:39 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.68143374548366 -11.45833185545574 2000 2001
+undefined
+2160 (Thu Jan 12 2017 11:05:10 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.245894597446366 -12.91991832413612 2000 2001
+2161 (Thu Jan 12 2017 11:06:13 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.69404050679854 -19.95891509401767 2000 2001
+2162 (Thu Jan 12 2017 11:07:04 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.95673643787602 -4.017446541475195 2000 2001
+undefined
+2163 (Thu Jan 12 2017 11:07:52 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.56237849269276 -23.241706916659652 2000 2001
+2164 (Thu Jan 12 2017 11:09:28 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.993318479365925 -11.345155003596716 2000 2001
+2165 (Thu Jan 12 2017 11:11:09 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.38020914013423 -18.643680918674 2000 2001
+2166 (Thu Jan 12 2017 11:12:39 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.04785939100901 -28.289417198157388 2000 2001
+2167 (Thu Jan 12 2017 11:13:44 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.9562943172672 -22.176149370377622 2000 2001
+2168 (Thu Jan 12 2017 11:14:48 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.10612421563716 -17.51629287407162 2000 2001
+2169 (Thu Jan 12 2017 11:15:42 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -73.05256988447914 -8.538407956606836 2000 2001
+2170 (Thu Jan 12 2017 11:16:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.00488534718396 -10.50615916727429 2000 2001
+undefined
+[TypeError: Cannot call method 'split' of undefined]
+2171 (Thu Jan 12 2017 11:16:48 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -61.430070987568 -11.896794334899703 2000 2001
+undefined
+2172 (Thu Jan 12 2017 11:17:19 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.13211696880105 -22.401459569349125 2000 2001
+2173 (Thu Jan 12 2017 11:18:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -61.26429879931999 -2.572059414346111 2000 2001
+2174 (Thu Jan 12 2017 11:19:23 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.59619807931134 -17.638685291116747 2000 2001
+2175 (Thu Jan 12 2017 11:20:14 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.86571359667562 -22.655921774702627 2000 2001
+2176 (Thu Jan 12 2017 11:21:06 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.67614824990464 -20.206518269671616 2000 2001
+2177 (Thu Jan 12 2017 11:21:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.88914484036192 -3.346425462424939 2000 2001
+undefined
+2178 (Thu Jan 12 2017 11:22:33 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.821860023179546 -30.742119063537082 2000 2001
+2179 (Thu Jan 12 2017 11:24:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -44.60963184928994 -19.336394874411283 2000 2001
+2180 (Thu Jan 12 2017 11:25:36 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -66.40632235375526 0.778016256377349 2000 2001
+2181 (Thu Jan 12 2017 11:26:58 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.909553703712554 -27.854685964607036 2000 2001
+2182 (Thu Jan 12 2017 11:29:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.66130601764685 -19.999025772384073 2000 2001
+2183 (Thu Jan 12 2017 11:30:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.63913679025841 -1.397796819174054 2000 2001
+undefined
+2184 (Thu Jan 12 2017 11:31:19 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -66.63380818242138 0.720215519243482 2000 2001
+2185 (Thu Jan 12 2017 11:32:13 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.474414349524515 -14.959378924246838 2000 2001
+2186 (Thu Jan 12 2017 11:33:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.77430624690425 -4.336432745815987 2000 2001
+2187 (Thu Jan 12 2017 11:33:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.23398033099003 -23.8015376915762 2000 2001
+2188 (Thu Jan 12 2017 11:34:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -36.084130150926484 -6.5717764488451 2000 2001
+2189 (Thu Jan 12 2017 11:35:25 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.894831886303145 -23.834827828786104 2000 2001
+2190 (Thu Jan 12 2017 11:36:15 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -40.557868976846486 -16.3818713838133 2000 2001
+2191 (Thu Jan 12 2017 11:37:14 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.40251493391975 -16.394416583425222 2000 2001
+2192 (Thu Jan 12 2017 11:38:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.101914662062214 -8.214357437859316 2000 2001
+undefined
+2193 (Thu Jan 12 2017 11:38:33 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -59.17423889704067 -5.681408586271026 2000 2001
+undefined
+2194 (Thu Jan 12 2017 11:39:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -66.46010254002809 -3.331607241471644 2000 2001
+2195 (Thu Jan 12 2017 11:39:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.74946913962276 -11.386127017650605 2000 2001
+2196 (Thu Jan 12 2017 11:40:42 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -38.97842778820572 -16.198173388667097 2000 2001
+2197 (Thu Jan 12 2017 11:41:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.597504543792404 -11.019036873611974 2000 2001
+2198 (Thu Jan 12 2017 11:42:21 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.5814328410952 -18.866042803689503 2000 2001
+2199 (Thu Jan 12 2017 11:43:12 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -44.467007990553924 -3.10742951415758 2000 2001
+undefined
+2200 (Thu Jan 12 2017 11:43:43 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.58441368206574 -8.976426782331934 2000 2001
+2201 (Thu Jan 12 2017 11:44:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -71.67845704162917 -6.420364698426809 2000 2001
+undefined
+2202 (Thu Jan 12 2017 11:45:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -64.95717066563479 -6.027969975123955 2000 2001
+undefined
+2203 (Thu Jan 12 2017 11:45:34 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.884677411885 -2.473100892089651 2000 2001
+2204 (Thu Jan 12 2017 11:46:36 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.550913281414545 -23.886376856302782 2000 2001
+2205 (Thu Jan 12 2017 11:47:27 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -71.85094668919673 -9.740928439947275 2000 2001
+2206 (Thu Jan 12 2017 11:48:20 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -40.92104413840574 -10.615115048815557 2000 2001
+2207 (Thu Jan 12 2017 11:49:12 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.6695714023418 -10.05447370897642 2000 2001
+2208 (Thu Jan 12 2017 11:50:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.091959938346946 -21.416411735498848 2000 2001
+2209 (Thu Jan 12 2017 11:50:53 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -44.18802021953943 -17.0910480254951 2000 2001
+2210 (Thu Jan 12 2017 11:51:46 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.98500028718676 1.387141406703485 2000 2001
+2211 (Thu Jan 12 2017 11:52:40 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.26400799723494 -5.826420958912301 2000 2001
+2212 (Thu Jan 12 2017 11:53:30 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -63.341134461792834 -2.304799383032439 2000 2001
+2213 (Thu Jan 12 2017 11:54:22 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -59.85494458448514 -9.291698368897041 2000 2001
+undefined
+2214 (Thu Jan 12 2017 11:54:53 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.931635436565614 -12.776495487875938 2000 2001
+2215 (Thu Jan 12 2017 11:55:47 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.74549392478 -12.006254370799805 2000 2001
+2216 (Thu Jan 12 2017 11:56:41 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -42.48104792162225 -18.408910474133563 2000 2001
+2217 (Thu Jan 12 2017 11:57:31 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.80710781158581 -15.970091990458272 2000 2001
+2218 (Thu Jan 12 2017 11:58:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.17726679744833 -24.0409544052522 2000 2001
+2219 (Thu Jan 12 2017 11:59:26 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -38.00915386098761 -11.208831140443014 2000 2001
+undefined
+2220 (Thu Jan 12 2017 11:59:56 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.7798546615748 -19.582210388351406 2000 2001
+2221 (Thu Jan 12 2017 12:00:46 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -58.587653524435616 -4.373691085585925 2000 2001
+2222 (Thu Jan 12 2017 12:02:18 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -65.7341856027474 -6.254632346866849 2000 2001
+2223 (Thu Jan 12 2017 12:03:44 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.0128481809319 -8.871995531083837 2000 2001
+[TypeError: Cannot call method 'split' of undefined]
+2224 (Thu Jan 12 2017 12:04:31 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.816233048062 -27.356209862833992 2000 2001
+2225 (Thu Jan 12 2017 12:05:49 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.75463280274997 -13.89024752949134 2000 2001
+2226 (Thu Jan 12 2017 12:07:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.841641321726485 -13.677350821081841 2000 2001
+2227 (Thu Jan 12 2017 12:07:59 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.79543123166879 -25.665374173944045 2000 2001
+2228 (Thu Jan 12 2017 12:08:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -48.118599821609315 -11.909673016829547 2000 2001
+2229 (Thu Jan 12 2017 12:09:40 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.39061527577549 -31.15280389866088 2000 2001
+2230 (Thu Jan 12 2017 12:10:30 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -44.96262056650553 -18.097312010098864 2000 2001
+2231 (Thu Jan 12 2017 12:11:19 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.31225776186818 -21.50902021024391 2000 2001
+2232 (Thu Jan 12 2017 12:12:09 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.03178075610727 -4.384839092973493 2000 2001
+undefined
+2233 (Thu Jan 12 2017 12:12:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.505178728953986 -21.34714604908933 2000 2001
+2234 (Thu Jan 12 2017 12:13:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -50.04520158620775 -19.41146973213588 2000 2001
+2235 (Thu Jan 12 2017 12:14:19 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -38.858051080781316 -10.077584104656335 2000 2001
+2236 (Thu Jan 12 2017 12:15:34 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -70.32742205643528 -10.651620822945308 2000 2001
+2237 (Thu Jan 12 2017 12:17:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -57.04062214034501 -15.345968391035914 2000 2001
+2238 (Thu Jan 12 2017 12:18:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.05549210101275 -16.35756086674012 2000 2001
+2239 (Thu Jan 12 2017 12:20:16 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -38.776223717183086 -6.467151705717551 2000 2001
+2240 (Thu Jan 12 2017 12:21:33 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.15323670809738 -19.1712775898353 2000 2001
+2241 (Thu Jan 12 2017 12:22:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.82526624659745 -6.173531802763296 2000 2001
+undefined
+2242 (Thu Jan 12 2017 12:23:11 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.76477809774197 -12.53710304260068 2000 2001
+2243 (Thu Jan 12 2017 12:24:07 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.17772601667923 -23.38621246267674 2000 2001
+2244 (Thu Jan 12 2017 12:25:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.32156543499039 -21.163776874013813 2000 2001
+2245 (Thu Jan 12 2017 12:25:53 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -37.96960424029442 -5.651657560286246 2000 2001
+2246 (Thu Jan 12 2017 12:27:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -70.305679464597 -7.846552694259834 2000 2001
+2247 (Thu Jan 12 2017 12:28:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -60.451460329983334 -4.160604818519182 2000 2001
+2248 (Thu Jan 12 2017 12:29:44 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.56651079887558 -11.96640835387592 2000 2001
+2249 (Thu Jan 12 2017 12:30:58 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -68.602201999969 -5.894593505449627 2000 2001
+undefined
+2250 (Thu Jan 12 2017 12:31:28 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.74976773689049 -3.22816721197449 2000 2001
+undefined
+2251 (Thu Jan 12 2017 12:32:00 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -68.5428247787256 -0.899327702441369 2000 2001
+2252 (Thu Jan 12 2017 12:32:51 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.16901492024884 -11.500439082146713 2000 2001
+2253 (Thu Jan 12 2017 12:33:40 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -53.56983496196317 -14.607269084241825 2000 2001
+2254 (Thu Jan 12 2017 12:34:31 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.27281395594534 -18.164720982022462 2000 2001
+2255 (Thu Jan 12 2017 12:35:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -55.70392926943626 -19.08276090629237 2000 2001
+2256 (Thu Jan 12 2017 12:36:28 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.88278215599762 -3.049017784127791 2000 2001
+undefined
+2257 (Thu Jan 12 2017 12:36:57 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -43.86866984908498 -21.458472505770104 2000 2001
+2258 (Thu Jan 12 2017 12:37:47 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.89927449908329 -25.121141573822257 2000 2001
+2259 (Thu Jan 12 2017 12:38:38 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.384112409860144 -21.529685543480156 2000 2001
+2260 (Thu Jan 12 2017 12:39:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.63569021931236 1.273823972243342 2000 2001
+undefined
+2261 (Thu Jan 12 2017 12:39:58 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.79690858255978 -10.168564639858658 2000 2001
+undefined
+2262 (Thu Jan 12 2017 12:40:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -48.14267196528077 -22.821186639922495 2000 2001
+2263 (Thu Jan 12 2017 12:41:20 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.55416150801914 -19.6806055628669 2000 2001
+2264 (Thu Jan 12 2017 12:42:12 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -56.85424606627302 -15.782528235218912 2000 2001
+2265 (Thu Jan 12 2017 12:43:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -41.95109971695263 -21.6480108659172 2000 2001
+2266 (Thu Jan 12 2017 12:44:06 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.394716421640666 -9.390844641767785 2000 2001
+2267 (Thu Jan 12 2017 12:45:11 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.62753283806325 -9.76983922226292 2000 2001
+2268 (Thu Jan 12 2017 12:46:02 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -49.099277512169465 -6.447326965959999 2000 2001
+2269 (Thu Jan 12 2017 12:46:54 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -62.76534562004982 -11.056898523475013 2000 2001
+2270 (Thu Jan 12 2017 12:47:45 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.95244032132424 -29.135772926934685 2000 2001
+2271 (Thu Jan 12 2017 12:48:32 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.79420403867089 -14.719447601546655 2000 2001
+2272 (Thu Jan 12 2017 12:49:29 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -46.873275136358046 -21.77533523340476 2000 2001
+2273 (Thu Jan 12 2017 12:50:15 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.378981838778536 -20.641068497855585 2000 2001
+2274 (Thu Jan 12 2017 12:51:24 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -54.29289925545599 -21.432449075158395 2000 2001
+2275 (Thu Jan 12 2017 12:52:10 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.55777369248438 -14.167762439874036 2000 2001
+2276 (Thu Jan 12 2017 12:53:08 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -52.62811354416596 -9.73703088136914 2000 2001
+2277 (Thu Jan 12 2017 12:54:03 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -39.37215122706874 -5.388820791069616 2000 2001
+undefined
+2278 (Thu Jan 12 2017 12:54:35 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -45.073398479510395 -19.308345390753246 2000 2001
+2279 (Thu Jan 12 2017 12:55:39 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -47.68451472596791 -24.46656079688152 2000 2001
+2280 (Thu Jan 12 2017 12:56:31 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -42.25439116356385 -4.528696641331194 2000 2001
+2281 (Thu Jan 12 2017 12:57:33 GMT-0200 (BRST)) - Coordinate undefined inserted
+python ./../integration/py/satImageGenExcept.py undefined -51.98786362930242 -10.81042658860223 2000 2001

@@ -25,7 +25,14 @@ import os, csv;
 from PIL import Image
 import shutil
 
-ee.Initialize()
+
+while True:
+	try:
+		ee.Initialize();
+		break;
+	except Exception:	
+		traceback.print_exc();
+		time.sleep(60);
 
 L8_BANDS = ['B5','B6','B4']
 L8_COLLECTION = ee.ImageCollection("LANDSAT/LC8_L1T_TOA")
@@ -142,13 +149,16 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			bufferArea = point.buffer(bufferR).bounds();
 			scene = ee.FeatureCollection(LANDSAT_GRID) \
 					.filterBounds(point) \
-					.first();
+					.first()
+					
+			scene.getInfo();
+
 			break;
 		except Exception:
 			traceback.print_exc();
 			time.sleep(60);
 
-	if(scene.getInfo() != None):
+	if(scene != None):
 
 		tile = scene.get('TILE_T').getInfo();
 		

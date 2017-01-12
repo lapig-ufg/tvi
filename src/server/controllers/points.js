@@ -13,16 +13,16 @@ module.exports = function(app) {
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.landUse.length<5' },
+				{ "$where":'this.landUse.length<3' },
 				{ "campaign": { "$eq": campaign } },
-				{ "underInspection": { $lt: 5 } }
+				{ "underInspection": { $lt: 3 } }
 			]
 		};
 ''
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<5' },
+				{ "$where":'this.userName.length<3' },
 				{ "campaign": { "$eq": campaign } }
 			]
 		};
