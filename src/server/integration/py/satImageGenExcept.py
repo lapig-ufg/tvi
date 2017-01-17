@@ -62,7 +62,7 @@ def parseArguments():
 	parser.add_argument("startYear", help="Ano inicial", type=str);
 	parser.add_argument("endYear", help="Ano final", type=str);
 	parser.add_argument("startChuva", help="Inicio da temporada chuvosa", default='-01-01', nargs='?');
-	parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-04-30', nargs='?');
+	parser.add_argument("endChuva", help="Fim da temporada chuvosa", default='-05-31', nargs='?');
 	parser.add_argument("startSeco", help="Inicio da temporada seca", default='-06-01', nargs='?');
 	parser.add_argument("endSeco", help="Fim da temporada seca", default='-08-31', nargs='?');
 	parser.add_argument("png", help="Fim da temporada seca", default='Y', nargs='?');
@@ -121,14 +121,17 @@ def getLandsatFromYear(year):
 	if dtStartObj >= L8_START:
 		landsatBands = L8_BANDS;
 		landsatCollection = L8_COLLECTION;
+		ld = 'l8'
 	elif dtStartObj >= L7_START:
 		landsatBands = L7_BANDS;
 		landsatCollection = L7_COLLECTION;
+		ld = 'l7'
 	elif dtStartObj >= L5_START:
 		landsatBands = L7_BANDS;
 		landsatCollection = L5_COLLECTION;
+		ld = 'l5'
 	
-	return landsatBands, landsatCollection
+	return landsatBands, landsatCollection, ld
 
 def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
 	longitude = float(longitude)
@@ -158,13 +161,12 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			traceback.print_exc();
 			time.sleep(60);
 
-	if(scene != None):
+	if(scene.getInfo() != None): 
 
 		tile = scene.get('TILE_T').getInfo();
-		
-		path = tile[1:4]
 
-		row = tile[4:7] 
+		path = tile[1:4]
+		row = tile[4:7]
 				 
 		season = [
 			{
@@ -186,7 +188,9 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 				dtStart = str(year)+x['start'];
 				dtEnd = str(year)+x['end'];	
 				
-				landsatBands, landsatCollection = getLandsatFromYear(year);
+				landsatBands, landsatCollection, ld = getLandsatFromYear(year);
+
+				
 
 				imgResult = landsatCollection \
 													.filterDate(dtStart,dtEnd) \
@@ -194,10 +198,27 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 													.filterMetadata('WRS_ROW', 'equals', int(row)) \
 													.sort('CLOUD_COVER', True) \
 													.first();
-
+				
 				try:
-					img = ee.Image(imgResult);
-					dataAcquired = img.get('DATE_ACQUIRED').getInfo();
+
+					while True:
+						try:
+							img = ee.Image(imgResult);
+							if img.getInfo() == None:
+								break;
+							dataAcquired = img.get('DATE_ACQUIRED').getInfo();
+							break;
+						except Exception:
+							traceback.print_exc();
+							time.sleep(15);
+							if ld == 'l5':
+								landsatCollection = L7_COLLECTION
+								imgResult = landsatCollection \
+													.filterDate(dtStart,dtEnd) \
+													.filterMetadata('WRS_PATH', 'equals', int(path)) \
+													.filterMetadata('WRS_ROW', 'equals', int(row)) \
+													.sort('CLOUD_COVER', True) \
+													.first();
 
 					spacecraft = img.get('SPACECRAFT_ID').getInfo();
 
@@ -223,7 +244,8 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 					geofilename = filename
 					
 					filename = filename + '.tif'
-					
+
+										
 					while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
 						time.sleep(GDRIVE_SLEEP_TIME)
 						fileGdriveId = getFileId(gDriveService, filename);
@@ -245,8 +267,9 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 
 					else:
 						pass
+					
 				except:
-					pass
+					pass;
 
 	return imageFiles;
 

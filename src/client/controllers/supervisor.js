@@ -18,7 +18,6 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 		for(var i = 0; i < 5; i++){
 			obj.push({names: data.userName[i], landUse: data.landUse[i], counter:data.counter[i]})
 		}
-		console.log(data);
 		$scope.obj = obj;			
 		$scope.data = data;			
 		requestSupportInfo()
@@ -30,8 +29,9 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 		})
 	}
 
-	$scope.submit = function(longitude, latitude){
-		requester._get(longitude+"/"+latitude, function(data){
+	$scope.submit = function(index){
+		console.log(index)
+		requester._get(index, function(data){
 			dataAdjustment(data);
 		});
 	}
@@ -59,7 +59,7 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 		});
 	}
 	$scope.getKml = function(){
-		console.log('oi')
+		
 		var lon = $scope.data.lon;
 		var lat = $scope.data.lat;
 		var county = $scope.data.county;

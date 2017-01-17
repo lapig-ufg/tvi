@@ -10,7 +10,6 @@ module.exports = function(app) {
 
 	Points.getPoint = function(request, response){
 		var user = request.session.user;
-		console.log('oi', user.campaign);
 		pointsCollection.findOne({"campaign": user.campaign}, function(err, document){
 			response.send(document)
 			response.end();
@@ -20,10 +19,10 @@ module.exports = function(app) {
 
 	Points.getPointWithParam = function(request, response){
 		
-		var coord = request.params.lon+'_'+request.params.lat
 		var campaign = request.session.user.campaign
-	
-		pointsCollection.findOne({ $and: [ { "coord": coord }, { "campaign": campaign } ] }, function(err, obj){			
+		var index = parseInt(request.params.index);
+		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign } ] }, function(err, obj){			
+			console.log(obj)
 			response.send(obj)
 			response.end();
 		});

@@ -31,7 +31,6 @@ module.exports = function(app) {
 		var name = request.param('name');
 		var senha = request.param('senha');
 
-		console.log({"campaign": campaign});
 		pointsCollection.count({"campaign": campaign}, function(err, count) {
 
 			var result = {

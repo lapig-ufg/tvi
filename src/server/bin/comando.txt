@@ -1,1 +1,0 @@
-nohup node import.js pontos_aa_5000_part.geojson "treinamentoLXO60Z" &>> import.out &

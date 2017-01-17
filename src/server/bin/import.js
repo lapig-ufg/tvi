@@ -6,10 +6,9 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27018/tvi';
+var dbUrl = 'mongodb://localhost:27017/tvi';
 var CollectionName = "points"
 var moment = moment();
-
 //var geojsonFile = JSON.parse(geojsonFile)
 
 
@@ -54,6 +53,22 @@ var bitmapDisjoint = function(imgsSeco, imgsChuvoso){
 
 }
 
+var parseDate = function(strings){
+	var dateFromEE = strings.split('_');
+	var date;
+
+	for(var i = 0;i < dateFromEE.length; i++){
+		if(new Date(dateFromEE[i]) != 'Invalid Date'){
+			if(dateFromEE[i].length > 5){
+				var date = new Date(dateFromEE[i]);
+			}
+
+		}
+	}
+
+	return date;
+}
+
 insertPoints = function(dbUrl, CollectionName, points, callback) {
   var MongoClient = mongodb.MongoClient;
   MongoClient.connect(dbUrl, function(err, db) {
@@ -69,7 +84,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 2078;
+var counter = 0;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
 		console.log('erro');
@@ -118,7 +133,6 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				}
 			});
 
-			
 			var seasonBitmap = bitmapDisjoint(imgsSeco, imgsChuvoso);
 
 			var bitmapModis = fs.readFileSync("chart/"+imgModis);
@@ -155,10 +169,14 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 
 			 	var dateSeco;
 			 	var dateChuvoso;
+			 	console.log('oi',imgsSeco, 'ola', imgsChuvoso)
 
-				try {				    
-				 	dateSeco = new Date(imgsSeco[0].split('_')[3]);
-					dateChuvoso = new Date(imgsChuvoso[0].split('_')[3]);
+				try {
+								    
+				 	dateSeco = parseDate(imgsSeco[0])
+					dateChuvoso = parseDate(imgsChuvoso[0]);
+					console.log('oi noavamente', dateSeco, 'ola novamente', dateChuvoso)
+					
 				}
 				catch(err) {
 				  console.log(err)

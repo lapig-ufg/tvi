@@ -1,6 +1,8 @@
 use tvi
 
-var cursor = db.getCollection('points').find({})
+var cursor = db.getCollection('points').find({"campaign": "campanha_2000"})
+
+var count = 1
 
 while(cursor.hasNext()){
 	
