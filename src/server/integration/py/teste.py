@@ -118,25 +118,36 @@ def permanentDeleteFile(gDriveService, fileGdriveId):
 
 
 
-def getLandsatFromYear(year):
-	dtStart = str(year)+'-01-01';
-	dtStartObj = datetime.datetime.strptime(dtStart, '%Y-%m-%d').date()
+def getImageFromLandsat(dtStart, dtEnd, path, row, year):
+	imgResult = 0;
+	#dtStart = str(year)+'-01-01';
+	dtStartObj = datetime.datetime.strptime(str(year)+'-01-01', '%Y-%m-%d').date()
 	if dtStartObj >= L8_START:
 		landsatBands = L8_BANDS;
-		landsatCollection = L8_COLLECTION;
-		ld = 'l8'
+		imgResult = L8_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
 	elif dtStartObj >= L7_START:
 		landsatBands = L7_BANDS;
-		landsatCollection = L7_COLLECTION;
-		ld = 'l7'
+		imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
 	elif dtStartObj >= L5_START:
 		landsatBands = L7_BANDS;
-		landsatCollection = L5_COLLECTION;
-		ld = 'l5'
-	
-	return landsatBands, landsatCollection, ld
+		imgResult = L5_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+		if imgResult.getInfo() == None:
+			imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
 
+	dataAcquiredd = '';
+	spacecraft = '';
+	while True:
+		try:
+			img = ee.Image(imgResult);
+			if img.getInfo() != None: 
+				dataAcquiredd = img.get('DATE_ACQUIRED').getInfo();
+				spacecraft = img.get('SPACECRAFT_ID').getInfo();
+			break;
+		except Exception:
+			traceback.print_exc();
+			time.sleep(1);
 
+	return landsatBands, dataAcquiredd, spacecraft, img;
 
 def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuva, endChuva, startSeco, endSeco, png):
 	longitude = float(longitude)
@@ -164,7 +175,7 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			break;
 		except Exception:
 			traceback.print_exc();
-			time.sleep(60);
+			time.sleep(15);
 
 	if(scene.getInfo() != None): 
 
@@ -191,45 +202,16 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			for x in season:	
 
 				dtStart = str(year)+x['start'];
-				dtEnd = str(year)+x['end'];	
+				dtEnd = str(year)+x['end'];
+
+				landsatBands, dataAcquired, spacecraft, img = getImageFromLandsat(dtStart, dtEnd, path, row, year);
 				
-				landsatBands, landsatCollection, ld = getLandsatFromYear(year)				
-
-				imgResult = landsatCollection \
-													.filterDate(dtStart,dtEnd) \
-													.filterMetadata('WRS_PATH', 'equals', int(path)) \
-													.filterMetadata('WRS_ROW', 'equals', int(row)) \
-													.sort('CLOUD_COVER', True) \
-													.first();
-				
-				try:
-
-					while True:
-						try:
-							img = ee.Image(imgResult);
-							if img.getInfo() == None:
-								break;
-							dataAcquired = img.get('DATE_ACQUIRED').getInfo();
-							print(dataAcquired);
-							break;
-						except Exception:
-							traceback.print_exc();
-							time.sleep(15);
-							if ld == 'l5':
-								landsatCollection = L7_COLLECTION
-								imgResult = landsatCollection \
-													.filterDate(dtStart,dtEnd) \
-													.filterMetadata('WRS_PATH', 'equals', int(path)) \
-													.filterMetadata('WRS_ROW', 'equals', int(row)) \
-													.sort('CLOUD_COVER', True) \
-													.first();
-
-					spacecraft = img.get('SPACECRAFT_ID').getInfo();
+				try:					
 
 					lon = str("%.4f" % longitude);
 					lat = str("%.4f" % latitude);				
 
-					filename = Id+"_"+spacecraft.lower() + '_' + dataAcquired + '_' + x['type'];
+					filename = Id+"_"+dataAcquired+"_"+spacecraft.lower() + '_' + x['type'];
 
 					imgResult = img.clip(bufferArea);
 					img = imgResult.visualize(bands=landsatBands)
@@ -251,8 +233,10 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 
 										
 					while fileGdriveId == None or taskStatus not in (ee.batch.Task.State.FAILED, ee.batch.Task.State.COMPLETED, ee.batch.Task.State.CANCELLED):
+						
 						time.sleep(GDRIVE_SLEEP_TIME)
 						fileGdriveId = getFileId(gDriveService, filename);
+
 						status = task.status()	
 						taskStatus = status['state']
 						taskDescri = task.config['description']
@@ -267,12 +251,14 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 						try:
 							os.remove(filename);
 						except:
+							traceback.print_exc();
 							pass
 
 					else:
 						pass
 					
 				except:
+					traceback.print_exc();
 					pass;
 
 	return imageFiles;
@@ -391,7 +377,7 @@ def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 
 	for imageFile in imageFiles:
 		if 'geo-ref' in imageFile:
-			imgDates.append(imageFile.split('_')[3])
+			imgDates.append(imageFile.split('_')[1])
 
 	imgDatesStr = " ".join(imgDates);
 	os.system("Rscript chart.r "+csvFile+" "+imgDatesStr+" &> /dev/null");
