@@ -18,9 +18,9 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/login.tpl.html',
 			reloadOnSearch: false
 		})
-		.when('/tviSuper', {
-			controller: 'SuperController',
-			templateUrl: 'views/tviSuper.tpl.html',
+		.when('/pontos', {
+			controller: 'pontosController',
+			templateUrl: 'views/pontos.tpl.html',
 			reloadOnSearch: false
 		})
 		.otherwise({

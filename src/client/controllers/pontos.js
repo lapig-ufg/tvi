@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('SuperController', function($rootScope, $scope, $location, $window, requester, util) {
+Application.controller('pontosController', function($rootScope, $scope, $location, $window, requester, util) {
 
 	$scope.index = 0;
 
@@ -59,8 +59,11 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 	var init = function() {
 		var index = $scope.index
 		requester._get('points/get-point/'+index, function(data) {
-			console.log('oi', data);
-			dataAdjustment(data);			
+			requester._get('points/total-points/', function(total){
+				$scope.total = total.count;
+				dataAdjustment(data);			
+				
+			})
 		});
 	}
 	$scope.getKml = function(){

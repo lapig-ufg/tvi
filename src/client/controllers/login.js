@@ -39,7 +39,7 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 			
 			if(result.type == 'supervisor'){
 				
-				$location.path('tviSuper')
+				$location.path('pontos')
 			}else if(result.login){
 				$location.path('tvi');
 			} else {

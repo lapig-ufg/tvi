@@ -12,12 +12,22 @@ module.exports = function(app) {
 		
 		var campaign = request.session.user.campaign;
 		var index = parseInt(request.params.index);
-		console.log(campaign, index);
 		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign } ] }, function(err, document){
 			response.send(document)
 			response.end();
 		});
 
+	}
+
+	Points.getTotal = function(request, response){
+		var campaign = request.session.user.campaign;
+		console.log(campaign);
+		pointsCollection.count({"campaign": campaign}, function(err, count){
+			point = {}
+			point.count = count;
+			response.send(point);
+			response.end();
+		})
 	}
 
 	return Points;

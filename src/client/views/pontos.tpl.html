@@ -21,7 +21,7 @@
         <input type="index" class="form-control" id="index" placeholder="index" ng-model="index">
         <button type="button" class="btn btn-success btn-navbar" ng-click="submit(index)">Buscar</button>
         <button  ng-click="submit(index-1)"  type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
-        <span class="font-index">Ponto {{index}}</span>
+        <span class="font-index">{{index}}/{{total}}</span>
         <button ng-click="submit(index+1)" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
       </form>
     </div> 
