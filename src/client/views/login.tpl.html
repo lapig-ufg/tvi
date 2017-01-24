@@ -1,7 +1,7 @@
 <form ng-show="showForm" class="form-signin">
   <h2 class="form-signin-heading">LAPIG-TVI</h2>
-  <input class="form-control" type="text" placeholder="Nome" ng-model="name">
-  <input name="senha" class="form-control input" type="password" placeholder="Senha" ng-model="senha">
+  <input class="form-control" type="text" placeholder="Nome" ng-model="name" value="admin">
+  <input name="senha" class="form-control input" type="password" placeholder="Senha" ng-model="senha" value="lapigSergio">
   <input class="form-control" type="text" placeholder="Campanha" ng-model="campaign">
   <div ng-show="showMsg" class="alert alert-warning input" role="alert">Falha ao efetuar o login</div>
   <button class="btn btn-lg btn-primary btn-block" ng-click="submit(name, campaign, senha)" type="submit">Entrar</button>

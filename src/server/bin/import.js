@@ -73,7 +73,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 1500;
+var counter = 2347;
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
 		console.log('erro');

@@ -2,6 +2,8 @@
 
 Application.controller('SuperController', function($rootScope, $scope, $location, $window, requester, util) {
 
+	$scope.index = 0;
+
 	requester._get('login/user', function(result) {
 		if(!result.name) {
 			$location.path('login');
@@ -30,8 +32,9 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 	}
 
 	$scope.submit = function(index){
-		console.log(index)
-		requester._get(index, function(data){
+		$scope.suportData = null;
+		$scope.index = parseInt(index);
+		requester._get('points/get-point/'+$scope.index, function(data){
 			dataAdjustment(data);
 		});
 	}
@@ -54,7 +57,9 @@ Application.controller('SuperController', function($rootScope, $scope, $location
 	}
 
 	var init = function() {
-		requester._get('points/get-point', function(data) {
+		var index = $scope.index
+		requester._get('points/get-point/'+index, function(data) {
+			console.log('oi', data);
 			dataAdjustment(data);			
 		});
 	}

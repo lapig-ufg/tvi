@@ -30,6 +30,14 @@
     margin-left: auto;
 }
 
+.font-index {
+  font-size: 20px
+}
+
+.span-margin {
+  margin-top: 10px;
+}
+
 .input {
   margin-bottom: 100px;
 }

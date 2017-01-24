@@ -1,10 +1,6 @@
 <nav class="navbar navbar-inverse container-fluid">  
   <div class="blog-masthead row">          
     <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-    	<form class="form-inline">	            
-	      <input type="index" class="form-control" id="index" placeholder="index" ng-model="index">
-	      <button type="button" class="btn btn-success btn-navbar" ng-click="submit(index)">Buscar</button>
-	    </form>
     </div>    
     <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
       <label class="pull-right">
@@ -19,6 +15,17 @@
   </div>  
 </nav>
 <div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+      <form class="form-inline">              
+        <input type="index" class="form-control" id="index" placeholder="index" ng-model="index">
+        <button type="button" class="btn btn-success btn-navbar" ng-click="submit(index)">Buscar</button>
+        <button  ng-click="submit(index-1)"  type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
+        <span class="font-index">Ponto {{index}}</span>
+        <button ng-click="submit(index+1)" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
+      </form>
+    </div> 
+  </div>
   <div class="row">
     <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
       <div class="row">
