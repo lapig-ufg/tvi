@@ -2,6 +2,7 @@
 
 Application.controller('TviController', function($rootScope, $scope, $location, $window, requester, util, $interval, $timeout) {
 
+
 	requester._get('login/user', function(result) {
 		if(!result.name) {
 			$location.path('login');
@@ -15,7 +16,6 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 
 	$scope.logoff = function(){
 		requester._get('login/logoff', function(result){
-
 		})
 	}
 
@@ -65,7 +65,9 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 
 		requester._get('points/next-point', function(data) {
 			$scope.data = data;
-			console.log(data);
+			$rootScope.total = data.total;
+			$rootScope.current = data.current;
+			$rootScope.count = data.count;
 			requestSupportInfo()
 		});
 	}	
@@ -79,7 +81,6 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		requester._post('points/next-point', { "point": $scope.formData }, function(data) {
 			
 			$scope.data = data;
-			console.log(data)
 			$scope.counter = 0;
 			$scope.isDisabled = false;		
 			$scope.suportData = null;

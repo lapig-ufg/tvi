@@ -1,8 +1,8 @@
 use tvi
 
-var cursor = db.getCollection('points').find({"campaign": "campanha_2000" })
+var cursor = db.getCollection('points').find({"campaign": "campanha_2000" }).sort({'dateImport': 1});
 
-var count = 1
+var count = 0
 
 while(cursor.hasNext()){
 	

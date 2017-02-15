@@ -73,7 +73,8 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 2347;
+var counter = 3099;
+
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
 		console.log('erro');
@@ -125,7 +126,14 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			
 			var seasonBitmap = bitmapDisjoint(imgsSeco, imgsChuvoso);
 
-			var bitmapModis = fs.readFileSync("chart/"+imgModis);
+			var bitmapModis;
+			try{
+				
+				bitmapModis = fs.readFileSync("chart/"+imgModis);
+			}
+			catch(err){
+				bitmapModis = 'undefined';
+			}
 			
 			regions = "REGIONS/regions.shp";
 			sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
@@ -161,7 +169,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			 	var dateChuvoso;
 
 				try {
-								    
+					   
 				 	dateSeco = parseDate(imgsSeco[0])
 					dateChuvoso = parseDate(imgsChuvoso[0]);
 					
@@ -211,8 +219,14 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			  }
 			  
 			  insertPoints(dbUrl, CollectionName, point, function() {
-			  	
-			  	fs.unlinkSync("chart/"+imgModis);
+
+			  	try{
+				
+						fs.unlinkSync("chart/"+imgModis);
+					}
+					catch(err){
+						console.log("Nao teve graficos MODIS.")
+					}
 	
 			  	console.log(counter + " ("+new Date()+") - Coordinate " + coordinate.id + " inserted");
 			  	counter++;

@@ -34,10 +34,12 @@ module.exports = function(app) {
 		pointsCollection.count({"campaign": campaign}, function(err, count) {
 
 			var result = {
-				login: (count > 0)
+				campaign:"",
+				name:"",
+				type :false
 			}
 
-			if(result.login) {
+			if(count > 0) {
 				request.session.user = { 
 					"name": name, 
 					"campaign": campaign,
@@ -46,8 +48,9 @@ module.exports = function(app) {
 
 				if(name == 'admin' && senha == 'lapigSergio') {
 					request.session.user.type = 'supervisor';
-					result.type = 'supervisor';
 				}
+
+				result = request.session.user;
 
 			}
 

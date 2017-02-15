@@ -1,0 +1,41 @@
+<div ng-controller="navController">
+  <nav class="navbar navbar-inverse container-fluid" ng-show="user.type == 'inspector'">  
+    <div class="blog-masthead row">          
+      <div class="col-md-6">            
+          <span class="navbar-brand" style="font-weight: 900;">{{current}}/{{total}} Pontos</span>
+      </div>    
+      <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+        <label class="pull-right">
+          <button type="button" class="btn btn-danger">
+            <span href="#" class="glyphicon glyphicon-off" ng-click="logoff()" style="color:white"> Sair</span>
+          </button>      
+        </label>
+        <label class="user-info pull-right">
+          <b>{{user.name}}</b><br>
+          {{count}} ponto(s) inspecionado(s)
+        </label>
+      </div>  
+    </div>  
+  </nav>
+  <nav class="navbar navbar-inverse container-fluid" ng-show="user.type == 'supervisor'">  
+    <div class="blog-masthead row">
+      <div class="col-md-4">
+        <ul class="nav navbar-nav">
+          <li><a href="#/dashboard">Dashboard</a></li>
+          <li><a href="#/tviSuper">Pontos</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">            
+          <a class="navbar-brand" style="font-weight: 900;"></a>
+      </div>    
+      <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+        <label class="pull-right">
+          <button type="button" class="btn btn-danger">
+            <span href="#" class="glyphicon glyphicon-off" ng-click="logoff()" style="color:white"> Sair</span>
+          </button>      
+        </label>
+      </div>  
+    </div>  
+  </nav>
+</div>
+

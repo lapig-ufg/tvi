@@ -16,20 +16,24 @@
     <![endif]-->
   </head>
   <body ng-app = "application">
-    <div ng-view="view" class="content-main page-view"></div>
     <script src="3thparty/js/jquery-3.1.0.min.js"></script>
+    <script src="3thparty/js/plotly-latest.min.js"></script>
     <script src="3thparty/js/bootstrap.min.js"></script>
     <script src="3thparty/js/angular.min.js"></script>
     <script src="3thparty/js/angular-route.min.js"></script>
     <script src="3thparty/js/ng-magnify.js"></script>
     <script src="app.js"></script>
-    <script src="controllers/tvi.js"></script>
+    <script src="controllers/navbar.js"></script>
     <script src="controllers/login.js"></script>
+    <script src="controllers/tvi.js"></script>
     <script src="controllers/example.js"></script>
-    <script src="controllers/pontos.js"></script>
+    <script src="controllers/tviSupervisor.js"></script>
+    <script src="controllers/dashboard.js"></script>
     <script src="others/directives.js"></script>
     <script src="others/filters.js"></script>
     <script src="others/services.js"></script>
     <script src="socket.io/socket.io.js"></script>
+    <div ng-include="'views/navbar.tpl.html'"></div>
+    <div ng-view="view" class="content-main page-view"></div>
   </body>
 </html>

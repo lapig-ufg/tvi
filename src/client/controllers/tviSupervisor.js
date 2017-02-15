@@ -1,8 +1,8 @@
 'use strict';
 
-Application.controller('pontosController', function($rootScope, $scope, $location, $window, requester, util) {
+Application.controller('tviSuper', function($rootScope, $scope, $location, $window, requester, util) {
 
-	$scope.index = 0;
+	$scope.index = 5;
 
 	requester._get('login/user', function(result) {
 		if(!result.name) {
@@ -20,6 +20,7 @@ Application.controller('pontosController', function($rootScope, $scope, $locatio
 		for(var i = 0; i < 5; i++){
 			obj.push({names: data.userName[i], landUse: data.landUse[i], counter:data.counter[i]})
 		}
+		''
 		$scope.obj = obj;			
 		$scope.data = data;			
 		requestSupportInfo()
@@ -58,12 +59,11 @@ Application.controller('pontosController', function($rootScope, $scope, $locatio
 
 	var init = function() {
 		var index = $scope.index
-		requester._get('points/get-point/'+index, function(data) {
+		requester._get('points/get-point/'+index, function(data){
 			requester._get('points/total-points/', function(total){
 				$scope.total = total.count;
-				dataAdjustment(data);			
-				
-			})
+				dataAdjustment(data);				
+			});
 		});
 	}
 	$scope.getKml = function(){

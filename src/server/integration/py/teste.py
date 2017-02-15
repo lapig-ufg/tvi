@@ -25,13 +25,14 @@ import os, csv;
 from PIL import Image
 import shutil
 
+errorlog = open("./../log/download.log", 'w')
 
 while True:
 	try:
 		ee.Initialize();
 		break;
-	except Exception:	
-		traceback.print_exc();
+	except Exception as e:
+		errorlog.write("\n"+str(e));
 		time.sleep(60);
 
 L8_BANDS = ['B5','B6','B4']
@@ -119,17 +120,25 @@ def getImageFromLandsat(dtStart, dtEnd, path, row, year):
 	imgResult = 0;
 	#dtStart = str(year)+'-01-01';
 	dtStartObj = datetime.datetime.strptime(str(year)+'-01-01', '%Y-%m-%d').date()
-	if dtStartObj >= L8_START:
-		landsatBands = L8_BANDS;
-		imgResult = L8_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
-	elif dtStartObj >= L7_START:
-		landsatBands = L7_BANDS;
-		imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
-	elif dtStartObj >= L5_START:
-		landsatBands = L7_BANDS;
-		imgResult = L5_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
-		if imgResult.getInfo() == None:
-			imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+
+	while True:
+		try:
+			if dtStartObj >= L8_START:
+				landsatBands = L8_BANDS;
+				imgResult = L8_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+			elif dtStartObj >= L7_START:
+				landsatBands = L7_BANDS;
+				imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+			elif dtStartObj >= L5_START:
+				landsatBands = L7_BANDS;
+				imgResult = L5_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+				if imgResult.getInfo() == None:
+					imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
+			break;
+		except Exception as e:
+			errorlog.write("\n"+str(e))
+			time.sleep(60);
+
 
 	dataAcquiredd = '';
 	spacecraft = '';
@@ -140,8 +149,8 @@ def getImageFromLandsat(dtStart, dtEnd, path, row, year):
 				dataAcquiredd = img.get('DATE_ACQUIRED').getInfo();
 				spacecraft = img.get('SPACECRAFT_ID').getInfo();
 			break;
-		except Exception:
-			traceback.print_exc();
+		except Exception as e:
+			errorlog.write("\n"+str(e))
 			time.sleep(1);
 
 	return landsatBands, dataAcquiredd, spacecraft, img;
@@ -165,13 +174,11 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			bufferArea = point.buffer(bufferR).bounds();
 			scene = ee.FeatureCollection(LANDSAT_GRID) \
 					.filterBounds(point) \
-					.first()
-					
+					.first()					
 			scene.getInfo();
-
 			break;
-		except Exception:
-			traceback.print_exc();
+		except Exception as e:
+			errorlog.write("\n"+str(e))
 			time.sleep(15);
 
 	if(scene.getInfo() != None): 

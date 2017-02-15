@@ -18,7 +18,6 @@ module.exports = function(app) {
 				{ "underInspection": { $lt: 3 } }
 			]
 		};
-''
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
@@ -34,6 +33,7 @@ module.exports = function(app) {
 		};
 		
 		pointsCollection.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
+
 			if(String(sessionPointId) != String(point._id)) {
 				point.underInspection += 1;
 			}
@@ -65,6 +65,8 @@ module.exports = function(app) {
 
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
+
+		console.log('user', request.session);
 
 		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
 

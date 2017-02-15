@@ -378,6 +378,7 @@ def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 
 	imgDatesStr = " ".join(imgDates);
 	os.system("Rscript chart.r "+csvFile+" "+imgDatesStr+" &> /dev/null");
+	print('grafico Modis')
 	print(csvFile+".png")
 	os.remove(csvFile+".csv")
 
