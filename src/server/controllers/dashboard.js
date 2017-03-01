@@ -17,8 +17,9 @@ module.exports = function(app){
 		*/
 		
 		pointsCollection.count({"landUse": { "$eq": [] }, "campaign": "treinamentoLXO60Z"}, function(err, notinspect){
-				pointsCollection.count({ "landUse": { "$gt": [] }, "campaign": "treinamentoLXO60Z"}, function(inspect){
+				pointsCollection.count({ "landUse": { "$gt": [] }, "campaign": "treinamentoLXO60Z"}, function(err, inspect){
 				var dashboardData = {};
+				console.log(inspect, notinspect);
 				dashboardData['inspect'] = inspect;
 				dashboardData['not_inspect'] = notinspect;
 				console.log(dashboardData);
