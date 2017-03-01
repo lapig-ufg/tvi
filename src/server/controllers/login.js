@@ -7,6 +7,7 @@ module.exports = function(app) {
 	var pointsCollection = app.repository.collections.points;
 	var usersCollection = app.repository.collections.users;
 	
+	var user;
 
 	var updateUnderInspection = function() {
 
@@ -22,7 +23,8 @@ module.exports = function(app) {
 	}
 
 	Login.getUser = function(request, response) {
-		response.send(request.session.user);
+		user = request.session.user;
+		response.send(user);
 		response.end();
 	}
 

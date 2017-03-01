@@ -8,18 +8,13 @@ module.exports = function(app){
 
 	
 	Dashboard.inspection = function(request, response){
-		/*
-		pointsCollection.count({ "landUse": { $eq: [] } }, {"campaign": "treinamentoLXO60Z"}, function(count){
-			pointsCollection.count({ "landUse": { $gt: [] } }, {"campaign": "treinamentoLXO60Z"}, function(count2){
-				console.log(count, count2)
-			})	
-		})
-		*/
+
+		var campaign = request.param('campaign')
 		
-		pointsCollection.count({"landUse": { "$eq": [] }, "campaign": "treinamentoLXO60Z"}, function(err, notinspect){
-				pointsCollection.count({ "landUse": { "$gt": [] }, "campaign": "treinamentoLXO60Z"}, function(err, inspect){
+		pointsCollection.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err, notinspect){
+				pointsCollection.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err, inspect){
 				var dashboardData = {};
-				console.log(inspect, notinspect);
+				
 				dashboardData['inspect'] = inspect;
 				dashboardData['not_inspect'] = notinspect;
 				console.log(dashboardData);
