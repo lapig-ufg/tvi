@@ -1,45 +1,52 @@
 'use strict';
 
 Application.controller('dashboardController', function($rootScope, $scope, $timeout, requester) {
+	
+	
 
-	var data = [{
-	  values: [16, 15, 12, 6, 5, 4, 42],
-	  labels: ['US', 'China', 'European Union', 'Russian Federation', 'Brazil', 'India', 'Rest of World' ],
-	  domain: {
-	    x: [0, .48]
-	  },
-	  name: 'GHG Emissions',
-	  hoverinfo: 'label+percent+name',
-	  hole: .4,
-	  type: 'pie'
-	}];
+	requester._get('login/user', function(session) {
+		
+		requester._get('points/count/',{'campaign':session.campaign}, function(result) {
 
-	var layout = {
-	  title: 'Global Emissions 1990-2011',
-	  annotations: [
-	    {
-	      font: {
-	        size: 14
-	      },
-	      showarrow: false,
-	      text: 'GHG',
-	      x: 0.17,
-	      y: 0.5
-	    },
-	    {
-	      font: {
-	        size: 14
-	      },
-	      showarrow: false,
-	      text: 'CO2',
-	      x: 0.82,
-	      y: 0.5
-	    }
-	  ],
-	  height: 400,
-	  width: 480
-	};
+			var insp = 'Inspeções da campanha '
 
-	Plotly.newPlot('myDiv', data, layout);
+			console.log(result);
+			var data = [{
+			  values: [result.inspect, result.not_inspect],
+			  labels: ['inspecionado', 'não inspecionado'],
+			  domain: {
+			    x: [0, .48]
+			  },
+			  name: 'Inspeções',
+			 	hoverinfo: 'label+percent+name',
+			  hole: .3,
+			  type: 'pie'
+			}];
+
+			var layout = {
+			  title: insp.concat(session.campaign),
+			  showlegend: true,
+			  annotations: [
+			    {
+			      font: {
+			        size: 14
+			      },
+			      showarrow: false,
+			      text: '',
+			      x: 0.17,
+			      y: 0.5
+			    }
+			  ],
+			  height: 800,
+			  width: 800
+			};
+
+			Plotly.newPlot('myDiv', data, layout, {displayModeBar: false});
+
+		})
+		
+	});
+
+
 
 });
