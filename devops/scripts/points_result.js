@@ -9,7 +9,7 @@ db.getCollection('points').mapReduce(
            
            for (var i=0; i < this.landUse.length; i++) {
                var l = this.landUse[i];
-               var c = this.certaintyIndex[i];
+               var c = this.userName[i];
                if(majority[l] == undefined) {
                    majority[l] = 0;
                    certainty[l] = 0;
@@ -17,9 +17,9 @@ db.getCollection('points').mapReduce(
                majority[l] += 1;
                certainty[l] += c;
            };
-           
+
            for(key in majority) {
-               if (majority[key] >= 3) {
+               if (majority[key] >= 4) {
                    result.class = key;
                    result.votes = majority[key];
                    result.certainty = certainty[key]/majority[key];

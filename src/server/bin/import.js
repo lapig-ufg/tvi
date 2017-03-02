@@ -73,14 +73,14 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 3099;
+var counter = 432;
 
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
 		console.log('erro');
 	}
-	ano1 = 2000
-	ano2 = 2001
+	ano1 = 2008
+	ano2 = 2009
 
 	geojsonData = JSON.parse(geojsonDataStr)
 	

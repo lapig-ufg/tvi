@@ -32,7 +32,8 @@ while True:
 		ee.Initialize();
 		break;
 	except Exception as e:
-		errorlog.write("\n"+str(e));
+		#errorlog.write("\n"+str(e));
+		print(e);
 		time.sleep(60);
 
 L8_BANDS = ['B5','B6','B4']
@@ -136,7 +137,8 @@ def getImageFromLandsat(dtStart, dtEnd, path, row, year):
 					imgResult = L7_COLLECTION.filterDate(dtStart,dtEnd).filterMetadata('WRS_PATH', 'equals', int(path)).filterMetadata('WRS_ROW', 'equals', int(row)).sort('CLOUD_COVER', True).first();
 			break;
 		except Exception as e:
-			errorlog.write("\n"+str(e))
+			#errorlog.write("\n"+str(e))
+			print(e)
 			time.sleep(60);
 
 
@@ -150,7 +152,8 @@ def getImageFromLandsat(dtStart, dtEnd, path, row, year):
 				spacecraft = img.get('SPACECRAFT_ID').getInfo();
 			break;
 		except Exception as e:
-			errorlog.write("\n"+str(e))
+			#errorlog.write("\n"+str(e))
+			print(e)
 			time.sleep(1);
 
 	return landsatBands, dataAcquiredd, spacecraft, img;
@@ -178,7 +181,8 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 			scene.getInfo();
 			break;
 		except Exception as e:
-			errorlog.write("\n"+str(e))
+			#errorlog.write("\n"+str(e))
+			print(e)
 			time.sleep(15);
 
 	if(scene.getInfo() != None): 
