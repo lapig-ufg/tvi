@@ -7,7 +7,9 @@ module.exports = function(app) {
 	var Points = {};
 	var pointSession = [];
 
-	var pointsCollection = app.repository.collections.points;
+	var points = app.repository.collections.points;
+	var pointsImg = app.repository.collections.pointsImg;
+	console.log(points, pointsImg);
 
 	var findPoint = function(name, campaign, sessionPointId, callback){
 		var findOneFilter = { 
@@ -32,30 +34,34 @@ module.exports = function(app) {
 			]
 		};
 		
-		pointsCollection.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
+		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 
 			if(String(sessionPointId) != String(point._id)) {
 				point.underInspection += 1;
 			}
 
-			pointsCollection.save(point, function() {				
-				pointsCollection.count(totalFilter, function(err, total) {
+			points.save(point, function() {				
 
-					/*for (var i in point.images) {
-						point.images[i].imageBase = 'service/points/'+point._id+'/'+point.images[i].period+'/nopoint/image.png';
-						point.images[i].imageBaseRef = 'service/points/'+point._id+'/'+point.images[i].period+'/wpoint/image.png';
-					}*/
-					pointsCollection.count({$and: [
+				points.count(totalFilter, function(err, total) {
+
+					points.count({$and: [
     														{ userName: { $in: [name] } },
     														{"campaign":campaign}]}, function (err, count) {						
 						
-						var result = {};
-						result['point'] = point;
-						result['total'] = total;
-						result['current'] = point.index
-						result['user'] = name;
-						result['count'] = count;
-						callback(result);
+						pointsImg.findOne({"_id": point._id}, function(err, img){
+
+							point.images = img.images;
+							point.modis = img.modis;
+							var result = {};
+							console.log(total, point.index);
+							result['point'] = point;
+							result['total'] = total;
+							result['current'] = point.index
+							result['user'] = name;
+							result['count'] = count;
+							callback(result);
+							
+						})
 					})
 				});				
 			});
@@ -78,41 +84,15 @@ module.exports = function(app) {
 					
 	};
 
-	/*Points.getCurrentPointImage = function(request, response) {
-		
-		var pointId = request.param('id');
-		var pointPeriod = request.param('period');
-		var pointType = request.param('type');
-
-		pointsCollection.findOne({ _id: app.repository.id(pointId) }, function(err, point) {
-			
-			var result = '';
-
-			for (i in point.images) {
-				if(point.images[i].period == pointPeriod) {
-					var imgBase = (pointType == 'wpoint') ? point.images[i].imageBaseRef : point.images[i].imageBase
-					if(imgBase != undefined) {
-						result = new Buffer(imgBase, 'base64');
-						break;
-					}
-				}
-			}
-
-			response.setHeader('content-type', 'image/png');
-			response.write(result);
-			response.end();
-		})
-
-	}*/
-
 	Points.updatePoint = function(request, response) {	
 		
 		var point = request.body.point;
+		console.log(point);
 		var user = request.session.user;
 
-		pointsCollection.update(
+		points.update(
 			{ 
-				 _id: app.repository.id(point._id)
+				 _id: point._id
 			},
 			{
 				$push: {

@@ -187,7 +187,13 @@ def downloadLandsatFromEE(Id, longitude, latitude, startYear, endYear, startChuv
 
 	if(scene.getInfo() != None): 
 
-		tile = scene.get('TILE_T').getInfo();
+		while True:
+			try:
+				tile = scene.get('TILE_T').getInfo();
+				break;
+			except Exception as e:
+				print(e);
+				time.sleep(15);
 
 		path = tile[1:4]
 		row = tile[4:7]
@@ -348,9 +354,18 @@ def generateModisChart(lon, lat, startYear, endYear, imageFiles):
 	def calculateIndex(image):
 		 return image.expression(expression);
 
-	point = ee.Geometry.Point([lon, lat]);
-	timeSeries = ee.ImageCollection(collectionId).filterDate(date1, date2).map(calculateIndex);
-	result = timeSeries.getRegion(point,pixelResolution).getInfo();
+
+	while True:
+		try:		
+			point = ee.Geometry.Point([lon, lat]);
+			timeSeries = ee.ImageCollection(collectionId).filterDate(date1, date2).map(calculateIndex);
+			result = timeSeries.getRegion(point,pixelResolution).getInfo();
+			break;
+		except Exception as e:
+			#errorlog.write("\n"+str(e))
+			print(e)
+			time.sleep(15);
+	
 	csvMatrix = [];
 
 	for line in xrange(0, len(result)):

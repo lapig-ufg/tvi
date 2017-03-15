@@ -2,7 +2,7 @@ db.getCollection('points').mapReduce(
     function() {
         var coord = (String(this.lon) + '-' + String(this.lat));
         var values = {
-            inspections: this.landUse.length,
+            inspection: this.landUse.length,
             count: 1,
             index: this.index,
             ids: this._id,
@@ -17,9 +17,9 @@ db.getCollection('points').mapReduce(
         var notRemove = [];
         
         for(var i=0; i < values.length; i++) {
-            inspections = values[i].inspections;
+            inspectionsNum = values[i].inspection;
             
-            if (inspections == 0) {
+            if (inspectionsNum == 0) {
                 remove.push(values[i].ids);
             } else {
                 notRemove.push(values[i].ids);
@@ -27,7 +27,7 @@ db.getCollection('points').mapReduce(
             
             counts.push(values[i].count);
             indexes.push(values[i].index);
-            inspections.push(values[i].inspections);
+            inspections.push(values[i].inspection);
         }
         
         var countR = Array.sum(counts);
@@ -38,11 +38,11 @@ db.getCollection('points').mapReduce(
             inspection: inspectionsR,
             indexes: indexes,
             notRemove: notRemove,
-            
+            remove: remove
         }
     }
     , {
         out: { merge: "points_duplicate" },
-        query: { campaign: 'campanha_2000' }
+        query: { campaign: 'campanha_2008' }
     }
 )

@@ -3,16 +3,26 @@
 module.exports = function(app){
 	var Dashboard = {}
 
-	var pointsCollection = app.repository.collections.points;
+	var points = app.repository.collections.points;
 	var campanha = "campanha_2000";
 
+	var getNames = function(userNames){
+		var names = {}
+
+		for(var i = 0; i < userNames.length; i++){
+			names[userNames[i]] = 0;
+		}
+
+		return names;
+
+	}
 	
-	Dashboard.inspection = function(request, response){
+	Dashboard.donuts = function(request, response){
 
 		var campaign = request.param('campaign')
 		
-		pointsCollection.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err, notinspect){
-				pointsCollection.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err, inspect){
+		points.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err, notinspect){
+				points.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err, inspect){
 				var dashboardData = {};
 				
 				dashboardData['inspect'] = inspect;
@@ -22,6 +32,13 @@ module.exports = function(app){
 			})	
 		})
 		
+	}
+
+	Dashboard.horizontalBar1 = function(request, response){
+		points.find({"campaign": "campanha_2008"}, {images: 0, modis: 0}).toArray(function(err, result){
+			console.log(err, result)
+			response.send(result)			
+		})
 	}
 	
 	return Dashboard;

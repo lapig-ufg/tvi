@@ -1,4 +1,4 @@
-var fs = require("fs");
+	var fs = require("fs");
 var exec = require('child_process').exec;
 var async = require("async");
 var mongodb = require('mongodb');
@@ -6,8 +6,9 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27018/tvi';
-var CollectionName = "points"
+var dbUrl = 'mongodb://localhost:27017/tvi';
+var CollectionPointsData = "points"
+var CollectionPointsImg = "pointsImg"
 var moment = moment();
 //var geojsonFile = JSON.parse(geojsonFile)
 
@@ -73,7 +74,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 1583;
+var counter = 870;
 
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
@@ -184,9 +185,10 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 
 				console.log(dateSeco, dateChuvoso);
 
-			  var point = { 
-			  	"campaign": campanha,	
-			  	"images": [
+				pointImg = {
+					"_id": counter+'_'+campanha,
+					"index": counter,
+					"images": [
 			  		{
 			  			"date": dateSeco,
 			  			"imageBase": seasonBitmap.imgsSeco,
@@ -199,6 +201,22 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			  			"period": 'chuvoso', 
 			  			"imageBaseRef":seasonBitmap.imgsChuvosoRef,
 		  			}
+		  		],
+		  		"modis": new Buffer(bitmapModis).toString('base64')
+		  	}
+
+			  var point = { 
+			  	"_id": counter+'_'+campanha,
+			  	"campaign": campanha,	
+			  	"images": [
+			  		{
+			  			"date": dateSeco,
+			  			"period": 'seco', 
+		  			},
+		  			{
+			  			"date": dateChuvoso, 
+			  			"period": 'chuvoso'
+		  			}
 			  	],
 			  	"lon": coordinate.X,
 			  	"lat": coordinate.Y,
@@ -206,7 +224,6 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			  	"biome": bioma,
 			  	"uf": uf,
 			  	"county": municipio,
-			  	"modis": new Buffer(bitmapModis).toString('base64'),
 			  	"countyCode": countycode,
 			  	"userName":[],
 				  "landUse":[],
@@ -218,19 +235,20 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				  "coord": coord
 			  }
 			  
-			  insertPoints(dbUrl, CollectionName, point, function() {
-
-			  	try{
-				
-						fs.unlinkSync("chart/"+imgModis);
-					}
-					catch(err){
-						console.log("Nao teve graficos MODIS.")
-					}
-	
-			  	console.log(counter + " ("+new Date()+") - Coordinate " + coordinate.id + " inserted");
-			  	counter++;
-			  	next();
+			  insertPoints(dbUrl, CollectionPointsData, point, function() {
+			  	insertPoints(dbUrl, CollectionPointsImg, pointImg, function() {
+				  	try{
+					
+							fs.unlinkSync("chart/"+imgModis);
+						}
+						catch(err){
+							console.log("Nao teve graficos MODIS.")
+						}
+		
+				  	console.log(counter + " ("+new Date()+") - Coordinate " + coordinate.id + " inserted");
+				  	counter++;
+				  	next();
+				  });
 				});
 			  
 
