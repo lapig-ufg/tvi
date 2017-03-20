@@ -82,7 +82,6 @@ Application.controller('TviController', function($rootScope, $scope, $location, 
 		requester._post('points/next-point', { "point": $scope.formData }, function(data) {
 			
 			$scope.data = data;
-			console.log('oi', data.total, data.current)
 			$rootScope.total = data.total;
 			$rootScope.current = data.current;
 			$rootScope.count = data.count;

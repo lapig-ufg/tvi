@@ -54,7 +54,6 @@ module.exports = function(app){
 			{ out: { inline : 1}, 
 				query: { 'campaign': campaign }
 			}, function(err, collection) {
-				console.log(err, collection);
 				response.send(collection);
 		});
 

@@ -2,7 +2,7 @@
 
 Application.controller('tviSuper', function($rootScope, $scope, $location, $window, requester, util) {
 
-	$scope.index = 5;
+	$scope.index = 0;
 
 	requester._get('login/user', function(result) {
 		if(!result.name) {
@@ -20,7 +20,7 @@ Application.controller('tviSuper', function($rootScope, $scope, $location, $wind
 		for(var i = 0; i < 5; i++){
 			obj.push({names: data.userName[i], landUse: data.landUse[i], counter:data.counter[i]})
 		}
-		''
+		console.log('oi', data);
 		$scope.obj = obj;		
 		$scope.data = data;			
 		requestSupportInfo()
@@ -62,7 +62,6 @@ Application.controller('tviSuper', function($rootScope, $scope, $location, $wind
 		requester._get('points/get-point/'+index, function(data){
 			requester._get('points/total-points/', function(total){
 				$scope.total = total.count;
-				console.log('oi', data);
 				dataAdjustment(data);				
 			});
 		});
