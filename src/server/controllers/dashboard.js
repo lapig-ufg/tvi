@@ -21,13 +21,11 @@ module.exports = function(app){
 
 		var campaign = request.param('campaign')
 		
-		points.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err, notinspect){
-				points.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err, inspect){
+		points.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err1, notinspect){
+				points.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err2, inspect){
 				var dashboardData = {};
-				
 				dashboardData['inspect'] = inspect;
 				dashboardData['not_inspect'] = notinspect;
-				console.log(dashboardData);
 				response.send(dashboardData);
 			})	
 		})
@@ -35,10 +33,31 @@ module.exports = function(app){
 	}
 
 	Dashboard.horizontalBar1 = function(request, response){
-		points.find({"campaign": "campanha_2008"}, {images: 0, modis: 0}).toArray(function(err, result){
-			console.log(err, result)
-			response.send(result)			
-		})
+
+		var campaign = request.param('campaign')
+
+		var mapFunction = function(){
+			for(var un = 0; un < this.userName.length; un++){
+				var value = 1;
+				var key = this.userName[un];
+				emit(key, value);
+			}
+		}
+
+		var reduceFunction = function(key, value){
+			return Array.sum(value);
+		}
+
+		points.mapReduce(
+			mapFunction, 
+			reduceFunction, 
+			{ out: { inline : 1}, 
+				query: { 'campaign': campaign }
+			}, function(err, collection) {
+				console.log(err, collection);
+				response.send(collection);
+		});
+
 	}
 	
 	return Dashboard;

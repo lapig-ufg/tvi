@@ -6,7 +6,7 @@ var moment = require('moment');
 
 var geojsonFile = process.argv[2];
 var campanha = process.argv[3];
-var dbUrl = 'mongodb://localhost:27017/tvi';
+var dbUrl = 'mongodb://localhost:27018/tvi';
 var CollectionPointsData = "points"
 var CollectionPointsImg = "pointsImg"
 var moment = moment();
@@ -74,7 +74,7 @@ insertPoints = function(dbUrl, CollectionName, points, callback) {
   });
 }
 
-var counter = 870;
+var counter = 1386;
 
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	if(error){	
@@ -187,7 +187,6 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 
 				pointImg = {
 					"_id": counter+'_'+campanha,
-					"index": counter,
 					"images": [
 			  		{
 			  			"date": dateSeco,

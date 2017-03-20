@@ -6,6 +6,7 @@ module.exports = function(app) {
 
 	var Points = {};
 	var pointsCollection = app.repository.collections.points;
+	var pointsImg = app.repository.collections.pointsImg;
 
 
 	Points.getPoint = function(request, response){
@@ -13,8 +14,14 @@ module.exports = function(app) {
 		var campaign = request.session.user.campaign;
 		var index = parseInt(request.params.index);
 		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign } ] }, function(err, document){
-			response.send(document)
-			response.end();
+			var id = document._id;
+			pointsImg.findOne({"_id": id}, function(err, imgs){
+				document.images = imgs.images;
+				document.modis = imgs.modis;
+				response.send(document)
+				response.end();
+				
+			})
 		});
 
 	}
