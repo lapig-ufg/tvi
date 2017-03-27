@@ -9,7 +9,6 @@ module.exports = function(app) {
 
 	var points = app.repository.collections.points;
 	var pointsImg = app.repository.collections.pointsImg;
-	console.log(points, pointsImg);
 
 	var findPoint = function(name, campaign, sessionPointId, callback){
 		var findOneFilter = { 
@@ -72,8 +71,6 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
 
-		console.log('user', request.session);
-
 		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
 
 				request.session.currentPointId = result.point._id;
@@ -87,7 +84,6 @@ module.exports = function(app) {
 	Points.updatePoint = function(request, response) {	
 		
 		var point = request.body.point;
-		console.log(point);
 		var user = request.session.user;
 
 		points.update(

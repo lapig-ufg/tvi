@@ -1,8 +1,8 @@
 db.getCollection('points').mapReduce(
     function() {        
            var result = {
-               lon: this.lon,
-               lat: this.lat
+               //lon: this.lon,
+               //lat: this.lat
            }
            var majority = {};
            var certainty = {};
@@ -19,7 +19,7 @@ db.getCollection('points').mapReduce(
            };
 
            for(key in majority) {
-               if (majority[key] >= 4) {
+               if (majority[key] > 1) {
                    result.class = key;
                    result.votes = majority[key];
                    result.certainty = certainty[key]/majority[key];
@@ -29,8 +29,11 @@ db.getCollection('points').mapReduce(
            
            emit(this._id,result);
     },
-    function(key,values) {}
+    function(key,values) {
+        
+    }
     , {
-        out: { merge: "points_result" }
+        out: { inline: "points_result" },
+        query: {campaign: "campanha_2008"}
     }
 )

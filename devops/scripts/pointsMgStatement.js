@@ -3,7 +3,7 @@ db.adminCommand({setParameter: 1, internalQueryExecMaxBlockingSortBytes:10245792
 //Atualizar _id
 
 use tvi
-var cursor = db.getCollection('pointsOriginal').find({"campaign":"campanha_2008"})
+var cursor = db.getCollection('pointsOriginal').find({})
 
 while(cursor.hasNext()) {
 	
