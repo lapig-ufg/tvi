@@ -1,2 +1,2 @@
 #!/bin/bash
-pgrep -f "node app.js"
+kill $(pgrep -f "node app.js")
