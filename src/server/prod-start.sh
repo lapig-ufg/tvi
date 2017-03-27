@@ -1,2 +1,2 @@
 #!/bin/bash
-nohup node app.js &> app.out &
+export NODE_ENV=prod; nohup node app.js &> app.out &
