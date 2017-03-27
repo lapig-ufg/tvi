@@ -48,13 +48,72 @@ module.exports = function(app){
 			return Array.sum(value);
 		}
 
-		points.mapReduce(
-			mapFunction, 
-			reduceFunction, 
-			{ out: { inline : 1}, 
-				query: { 'campaign': campaign }
-			}, function(err, collection) {
+		points.mapReduce(mapFunction, reduceFunction, { out: { inline : 1}, query: { 'campaign': campaign }},
+			function(err, collection) {
+
+				var coordx = [];
+				var coordy = [];
+				var color = []
+
+				for(var key in collection){
+
+					coordx.push(collection[key].value);
+					coordy.push(collection[key]._id);
+					color.push('rgba(222,45,38,0.8)')
+				}
+				
+				collection = {};
+				collection['coordx'] = coordx;
+				collection['coordy'] = coordy;
+				collection['color'] = color;
+
 				response.send(collection);
+		});
+
+	}
+
+	Dashboard.horizontalBar2 = function(request, response){
+
+		var campaign = request.param('campaign')
+
+		var mapFunction = function(){
+			 var majority = {};
+           
+       for (var i=0; i < this.landUse.length; i++) {
+           var l = this.landUse[i];
+           var c = this.userName[i];
+           if(majority[l] == undefined) {
+               majority[l] = 0;
+           }
+           majority[l] += 1;
+       };
+
+       for(key in majority) {
+           if (majority[key] > 1) {
+               emit(key,1);
+               break;
+           }
+       }
+		}
+
+		var reduceFunction = function(key,values){
+			return Array.sum(values);
+		}
+
+		points.mapReduce(mapFunction,reduceFunction,{ out: { inline : 1},	query: { 'campaign': campaign }},
+			function(err, collection) {
+
+				var result = {
+					labels: [],
+					values: []
+				}
+				
+				collection.forEach(function(c) {
+					result.labels.push(c._id);
+					result.values.push(c.value);
+				});
+
+				response.send(result);
 		});
 
 	}

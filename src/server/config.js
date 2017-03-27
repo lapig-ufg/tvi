@@ -8,7 +8,7 @@ module.exports = function(app) {
 		"langDir": appRoot + "/lang",
 		"mongo": {
 			"host": "localhost",
-			"port": "27017",
+			"port": "27018",
 			"dbname": "tvi"
 		},
 		"port": 5000,
