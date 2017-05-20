@@ -134,24 +134,38 @@ legend.scheduler-border {
   margin-bottom: 10px;
 }
 
-.col-fixed-320{
-    width:320px;
-    background:#cccccc;
-    position:fixed;
-    height:100%;
-    z-index:1;
-    padding: 10px;
-    border: 1px solid gray;
+.col-fixed-310{
+  width:310px;
+  /*background:#f1f1f1;*/
+  position:fixed;
+  height:100%;
+  z-index:1;
+  padding-left: 5px;
+  padding-right: 5px;
+  /*border: 1px solid silver;*/
 }
 
 .form-lclu {
-  border-top: 1px solid gray;
-  border-bottom: 1px solid gray;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  border: 1px solid silver;
+  margin-bottom: 5px;
+  margin-top: 15px;
+  background: white;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: #f1f1f1;
 }
 
-.col-offset-320{
-    padding-left:335px;
+.form-label-lclu {
+  margin: 10px;
+}
+
+.form-year-lclu {
+  width: 100px !important;
+  margin-top: 0px;
+}
+
+
+.col-offset-310{
+    padding-left:325px;
     z-index:0;
 }

@@ -25,6 +25,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	}
 
 	fakeRequester.nextPoints(function(data) {
+		console.log(data);
 		var years = [];
 		for(var i = 0; i  < data.point.img.length; i++){
 			var year = new Date(data.point.img[i].image[0].date);	
