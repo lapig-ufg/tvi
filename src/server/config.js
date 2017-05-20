@@ -15,7 +15,7 @@ module.exports = function(app) {
 	};
 
 	if(process.env.NODE_ENV == 'prod') {
-		config["mongo"]["host"] = "27017";
+		config["mongo"]["port"] = "27017";
 	}
 
 	return config;
