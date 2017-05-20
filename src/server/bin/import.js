@@ -1,4 +1,4 @@
-	var fs = require("fs");
+var fs = require("fs");
 var exec = require('child_process').exec;
 var async = require("async");
 var mongodb = require('mongodb');
@@ -118,7 +118,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 
 	async.eachSeries(coordinates, function(coordinate, next) {
 
-		var cmd = 'python ./../integration/py/png.py'+' '+counter+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
+		var cmd = 'python ./../integration/py/teste.py'+' '+counter+' '+coordinate.X+' '+coordinate.Y+' '+ano1+' '+ano2;
 		console.log(cmd);
 		exec(cmd, function(err, stdout, stderr){	
 		  
@@ -232,7 +232,6 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				  	next();
 				  });
 				});
-			  */
 			});	  
 		}); 
 	});
