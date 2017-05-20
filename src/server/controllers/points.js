@@ -46,13 +46,12 @@ module.exports = function(app) {
 					points.count({$and: [
     														{ userName: { $in: [name] } },
     														{"campaign":campaign}]}, function (err, count) {						
-						
-						pointsImg.findOne({"_id": point._id}, function(err, img){
-
-							point.images = img.images;
-							point.modis = img.modis;
+						var pointId = sessionPointId+'_'+campaign;
+						pointsImg.find({"pointId": pointId}).toArray(function(err, img){
+							point.img = img
+							console.log(err, img)
+							//point.modis = img.modis;
 							var result = {};
-							console.log(total, point.index);
 							result['point'] = point;
 							result['total'] = total;
 							result['current'] = point.index
@@ -71,14 +70,14 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
 
-		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
-
+		// user.name = 'jose';
+		//user.campaign = 'campanha_s'
+		// request.session.currentPointId = 0
+		findPoint('jose', 'campanha_s', 0, function(result) {
 				request.session.currentPointId = result.point._id;
 				response.send(result);
-				response.end();
-				
-			})
-					
+				response.end();				
+			})					
 	};
 
 	Points.updatePoint = function(request, response) {	

@@ -1,0 +1,43 @@
+<div class="container-fluid">
+	<div class="row">
+		<fieldset>
+			<legend>Formato:</legend>
+			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+				<span style="margin-bottom:0px"><b>Alterar:</b></span>
+	  		<input style="margin-top: 0px;" ng-click="indexImg = (indexImg == 0) ? 1 : 0;" type="button" class="btn btn-info float-left" value="mudar periodo">
+	  		<input style="margin-top: 0px;" ng-click="size = (size == 3) ? 2 : 3" type="button" class="btn btn-info float-left" value="mudar tamanho">
+	  	</div>
+  	</fieldset>
+  </div>
+  <div class="row">
+		<div ng-repeat="i in data.point.img" ng-class="(size == 3) ? 'col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'col-xs-2 col-sm-2 col-md-2 col-lg-2'">
+				<h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled" >{{i.image[indexImg].date | date:'dd/MM/yyyy'}} <small> - Periodo {{i.image[indexImg].period}}</small></h4>
+			<div class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{i.image[indexImg]['imageBaseRef']}}" ng-show="pointEnabled" >
+			</div>
+			<div class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{i.image[indexImg]['imageBase']}}" ng-hide="pointEnabled">
+			</div>
+		</div>
+	</div>
+	<br>
+	<div class="row">
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<label>Select list:</label>
+			<form class="form-inline" ng-repeat="resposta in answers">				
+				</br>
+				De
+			  <select class="form-inline form-control" ng-model="resposta.initialYear" ng-options="x for x in years"></select>
+			  até
+			  <select class="form-inline form-control" ng-model="resposta.finalYear" ng-options="y for y in years"></select>
+				Uso da terra
+			  <select class="form-inline form-control" ng-model="resposta.firstLandUse" ng-options="z for z in landUse"></select>
+			</form>
+			<input type="button" class="btn btn-info float-left" ng-click="formPlus(years,landUse)" value="+">
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			<input type="button" class="btn btn-info float-left" ng-click="" value="Enviar">
+		</div>
+	</div>
+	<br>
+</div>

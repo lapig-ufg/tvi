@@ -10,22 +10,11 @@ Application.config(function($routeProvider, $locationProvider) {
 		})
 		.when('/tvi', {
 			controller: 'TviController',
-			templateUrl: 'views/tvi.tpl.html',
-			reloadOnSearch: false
+
 		})
-		.when('/login', {
-			controller: 'LoginController',
-			templateUrl: 'views/login.tpl.html',
-			reloadOnSearch: false
-		})
-		.when('/tviSuper', {
-			controller: 'tviSuper',
-			templateUrl: 'views/tviSupervisor.tpl.html',
-			reloadOnSearch: false
-		})
-		.when('/dashboard', {
-			controller: 'dashboardController',
-			templateUrl: 'views/dashboard.tpl.html',
+		.when('/temporal', {
+			controller: 'temporalController',
+			templateUrl: 'views/temporal.tpl.html',
 			reloadOnSearch: false
 		})
 		.otherwise({

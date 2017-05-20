@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LAPIG - Visual Inspection Tool</title>
+  </head>
+  <body ng-app>
+    <div ng-app ng-init="qty=1;cost=2">
+      <b>Invoice:</b>
+      <div>
+        Quantity: <input type="number" min="0" ng-model="qty">
+      </div>
+      <div>
+        Costs: <input type="number" min="0" ng-model="cost">
+      </div>
+      <div>
+        <b>Total:</b> {{qty * cost | currency}}
+      </div>
+    </div>
+    <script src="3thparty/js/angular.min.js"></script>
+    <script src="3thparty/js/angular-route.min.js"></script>
+  </body>
+</html>
