@@ -18,6 +18,10 @@ module.exports = function(app) {
 				, { safe: true }
 		);
 
+		Repository.bin = function(data) {
+			return new mongodb.Binary(data);
+		}
+
 		Repository.id = function(id) {
 			var x = new mongodb.ObjectID(id);
 			console.log(typeof x);

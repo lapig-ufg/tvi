@@ -33,7 +33,12 @@ db.getCollection('points').mapReduce(
         
     }
     , {
+<<<<<<< Updated upstream
         out: { inline: "points_result" },
         query: {campaign: "campanha_2008"}
+=======
+        out: { merge: "points_result" },
+        query:{ "campaign" : "campanha_2008" }
+>>>>>>> Stashed changes
     }
 )
