@@ -133,3 +133,25 @@ legend.scheduler-border {
 .navbar {
   margin-bottom: 10px;
 }
+
+.col-fixed-320{
+    width:320px;
+    background:#cccccc;
+    position:fixed;
+    height:100%;
+    z-index:1;
+    padding: 10px;
+    border: 1px solid gray;
+}
+
+.form-lclu {
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.col-offset-320{
+    padding-left:335px;
+    z-index:0;
+}
