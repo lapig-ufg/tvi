@@ -23,12 +23,17 @@
 				</div>
 		</div>
 		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-			<div ng-repeat="i in data.point.img" ng-class="(size == 3) ? 'col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'col-xs-2 col-sm-2 col-md-2 col-lg-2'">
+			<div class="row">
+				<div ng-repeat="map in maps" ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
+					<span>{{map.year}}</span>
+					<leaflet id="map{{map.year}}" defaults="map" width="100%" height="300px"></leaflet>
+				</div>
+			<!--div ng-repeat="i in data.point.img" ng-class="(size == 3) ? 'col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'col-xs-2 col-sm-2 col-md-2 col-lg-2'">
 				<h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled" >{{i.image[indexImg].date | date:'dd/MM/yyyy'}} <small> - Periodo {{i.image[indexImg].period}}</small></h4>
 			<div class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{i.image[indexImg]['imageBaseRef']}}" ng-show="pointEnabled" >
 			</div>
 			<div class="img-responsive pull-left" data-zoom-factor="5" data-glass-width="200" data-glass-height="200" data-ng-magnify image-src="data:image/png;base64,{{i.image[indexImg]['imageBase']}}" ng-hide="pointEnabled">
-			</div>
+			</div-->
 		</div>
   </div>
 </div>
