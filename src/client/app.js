@@ -1,4 +1,4 @@
-var Application = angular.module('application', ['ngRoute', 'ngMagnify']);
+var Application = angular.module('application', ['ngRoute', 'ngMagnify', 'nemLogging','ui-leaflet']);
 
 Application.config(function($routeProvider, $locationProvider) {
 

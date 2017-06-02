@@ -47,6 +47,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}		
 		)
 
+<<<<<<< HEAD
 		requester._get('spatial/query2',{"longitude":data.point.lon,"latitude": data.point.lat}, function(data) {
 	
 			var date = [];
@@ -64,6 +65,67 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			    margin: { t: 0 } }, {displayModeBar: false} );
 
 		});
+=======
+		$scope.markers = {
+			"mainMarker": {
+        lat: $scope.data.point.lat,
+				lng: $scope.data.point.lon,
+        focus: true,
+        icon: {
+        	iconUrl: 'assets/marker.png',
+        	iconSize: [11, 11]
+        }
+			}
+    };
+
+    $scope.markers = [];
+		$scope.maps = [];
+		$scope.centers = [];
+
+		index=0;
+		for (var year=2000; year <= 2016; year++) {
+
+			sattelite = 'L7';
+			if(year > 2012) { 
+				sattelite = 'L8'
+			} else if(year > 2011) {
+				sattelite = 'L7'
+			} else if(year > 2003) {
+				sattelite = 'L5'
+			}
+
+			marker = {};
+			marker["first"] = {
+	        lat: $scope.data.point.lat,
+					lng: $scope.data.point.lon,
+	        icon: {
+	        	iconUrl: 'assets/marker.png',
+	        	iconSize: [11, 11]
+	        }
+    	};
+
+    	$scope.markers.push(angular.copy(marker));
+
+			$scope.maps.push({
+				tileLayer: '/map/'+sattelite+'_'+year+'_DRY/{z}/{x}/{y}',
+        zoomControl: false,
+        dragging: false,
+        doubleClickZoom: false,
+        center: {
+        	lat: $scope.data.point.lat,
+					lng: $scope.data.point.lon,
+					zoom: 13
+        },
+        year: year
+			});
+
+			$scope.centers.push({
+				lat: $scope.data.point.lat,
+				lng: $scope.data.point.lon,
+				zoom: 13
+			});
+		}
+>>>>>>> 705e1acce2f846dc4bb19138959c32fcf4a3bf11
 
 	});
 
