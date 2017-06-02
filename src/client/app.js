@@ -18,7 +18,9 @@ Application.config(function($routeProvider, $locationProvider) {
 			reloadOnSearch: false
 		})
 		.otherwise({
-			redirectTo: '/login'
+			redirectTo: '/login',
+			controller: 'LoginController',
+			templateUrl:'views/login.tpl.html'
 		});
 
 }).run(function($http) {

@@ -169,3 +169,12 @@ legend.scheduler-border {
     padding-left:325px;
     z-index:0;
 }
+
+input[type='button']
+{
+    margin:5px 5px 5px 5px;
+}
+
+h3{
+  margin:5px 5px 5px 5px; 
+}

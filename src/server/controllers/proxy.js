@@ -32,6 +32,34 @@ module.exports = function(app) {
 	  }).pipe(response)
 	}
 
+	Internal.modisMaps = function(request, response){
+		var latitude = request.param('latitude');
+		var longitude = request.param('longitude');
+		console.log('oi',latitude, longitude);
+		var Url = "http://maps.lapig.iesa.ufg.br/time-series/MOD13Q1_NDVI/values?_dc=1495573383361&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
+
+		requester({
+	  		uri: Url
+	  	,	timeout: 50000
+	  	, headers: {
+	  			'Accept': request.headers['accept']
+	  		,	'User-Agent': request.headers['user-agent']
+	  		,	'X-Requested-With': request.headers['x-requested-with']
+	  		,	'Accept-Language': request.headers['accept-language']
+	  		,	'Accept-Encoding': request.headers['accept-encoding']
+	  	}
+	  }, function(error, proxyResponse, body) {
+	  	
+	  	if(error) {
+	  		console.log(error);
+	  		response.end();	
+	  	}
+
+	  }).pipe(response)	
+
+
+	}
+
 	return Internal;
 
 }
