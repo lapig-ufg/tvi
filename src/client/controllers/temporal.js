@@ -47,7 +47,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}		
 		)
 
-<<<<<<< HEAD
 		requester._get('spatial/query2',{"longitude":data.point.lon,"latitude": data.point.lat}, function(data) {
 	
 			var date = [];
@@ -65,7 +64,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			    margin: { t: 0 } }, {displayModeBar: false} );
 
 		});
-=======
 		$scope.markers = {
 			"mainMarker": {
         lat: $scope.data.point.lat,
@@ -125,7 +123,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				zoom: 13
 			});
 		}
->>>>>>> 705e1acce2f846dc4bb19138959c32fcf4a3bf11
 
 	});
 
