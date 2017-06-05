@@ -62,25 +62,15 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			    x: date,
 			    y: ndvi }], { 
 			    margin: { t: 0 } }, {displayModeBar: false} );
-
 		});
-		$scope.markers = {
-			"mainMarker": {
-        lat: $scope.data.point.lat,
-				lng: $scope.data.point.lon,
-        focus: true,
-        icon: {
-        	iconUrl: 'assets/marker.png',
-        	iconSize: [11, 11]
-        }
-			}
-    };
-
-    $scope.markers = [];
-		$scope.maps = [];
-		$scope.centers = [];
+		
 
 		index=0;
+		
+		$scope.maps = [];
+		$scope.lat = $scope.data.point.lat;
+		$scope.lon = $scope.data.point.lon;
+
 		for (var year=2000; year <= 2016; year++) {
 
 			sattelite = 'L7';
@@ -92,37 +82,33 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				sattelite = 'L5'
 			}
 
-			marker = {};
-			marker["first"] = {
-	        lat: $scope.data.point.lat,
-					lng: $scope.data.point.lon,
-	        icon: {
-	        	iconUrl: 'assets/marker.png',
-	        	iconSize: [11, 11]
-	        }
-    	};
-
-    	$scope.markers.push(angular.copy(marker));
-
+			var url = '/map/'+sattelite+'_'+year+'_DRY/{z}/{x}/{y}';
 			$scope.maps.push({
-				tileLayer: '/map/'+sattelite+'_'+year+'_DRY/{z}/{x}/{y}',
-        zoomControl: false,
+				year: year,
+				url: url
+			})
+			
+		}
+
+		console.log($scope.maps)
+
+		/*
+		var map = new L.map('map', {
+		    layers: [
+		    	new L.TileLayer('http://localhost:5000/map/L8_2015_WET/{z}/{x}/{y}'),
+		    	L.marker([-10.2828, -52.5997], {
+		    		icon: L.icon({
+		        	iconUrl: 'assets/marker.png',
+		        	iconSize: [11, 11]
+		        })
+		    	})
+		    ],
+		    center: [-10.2828, -52.5997], 
+		    zoomControl: false,
         dragging: false,
         doubleClickZoom: false,
-        center: {
-        	lat: $scope.data.point.lat,
-					lng: $scope.data.point.lon,
-					zoom: 13
-        },
-        year: year
-			});
-
-			$scope.centers.push({
-				lat: $scope.data.point.lat,
-				lng: $scope.data.point.lon,
 				zoom: 13
-			});
-		}
+		});*/
 
 	});
 

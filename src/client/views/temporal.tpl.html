@@ -27,7 +27,7 @@
 			<div class="row">
 				<div ng-repeat="map in maps" ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
 					<span>{{map.year}}</span>
-					<leaflet id="map{{map.year}}" defaults="map" width="100%" height="300px"></leaflet>
+					<inspection-map lon="lon" lat="lat" zoom="13" tms-url="{{map.url}}" />
 				</div>
 			<!--div ng-repeat="i in data.point.img" ng-class="(size == 3) ? 'col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'col-xs-2 col-sm-2 col-md-2 col-lg-2'">
 				<h4><input type="checkbox" class="form-check-input" ng-model="pointEnabled" >{{i.image[indexImg].date | date:'dd/MM/yyyy'}} <small> - Periodo {{i.image[indexImg].period}}</small></h4>
@@ -40,5 +40,6 @@
   <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
   	<h3>Gráfico Modis</h3>
   	<div id="modis" style="width:90%;height:250px;"></div>
+  	<modis-chart lon="-52.5997" lat="-10.2828" />
   </div>
 </div>

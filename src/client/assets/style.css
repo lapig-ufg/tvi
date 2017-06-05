@@ -170,7 +170,6 @@ legend.scheduler-border {
     z-index:0;
 }
 
-<<<<<<< HEAD
 input[type='button']
 {
     margin:5px 5px 5px 5px;
@@ -179,8 +178,7 @@ input[type='button']
 h3{
   margin:5px 5px 5px 5px; 
 }
-=======
+
 .leaflet-control-attribution {
   display: none !important;
 };
->>>>>>> 705e1acce2f846dc4bb19138959c32fcf4a3bf11

@@ -85,7 +85,7 @@ PERIODS = [
 	}
 ]
 
-for year in range(2000,2016):
+for year in range(2000,2017):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue;
@@ -97,6 +97,7 @@ for year in range(2000,2016):
 			dtEnd = periodDict['dtEnd']
 
 			mosaicId = satellite + "_" + str(year) + "_" + period;
+			print(mosaicId)
 			existMosaic = db.mosaics.find_one({ "_id": mosaicId });
 
 			if existMosaic == None or datetime.datetime.now() > existMosaic['expiration_date']:

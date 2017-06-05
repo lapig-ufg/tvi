@@ -48,4 +48,37 @@ Application
         });
       }
     }
+  })
+  .directive('inspectionMap', function() {
+    return {
+      template: '<div id="map-{{::$id}}" style="width: 100%; height: 300px;"></div>',
+      scope: {
+        lon: '=',
+        lat: '=',
+        tmsUrl: '@',
+        zoom: '='
+      },
+      controller: function($scope, $element) {
+        $($element).ready(function() {
+          console.log($scope)
+          new L.map('map-'+$scope.$id, {
+              layers: [
+                new L.TileLayer($scope.tmsUrl),
+                L.marker([$scope.lat,$scope.lon], {
+                  icon: L.icon({
+                    iconUrl: 'assets/marker.png',
+                    iconSize: [11, 11]
+                  })
+                })
+              ],
+              center: [$scope.lat, $scope.lon], 
+              zoomControl: false,
+              dragging: false,
+              doubleClickZoom: false,
+              scrollWheelZoom: false,
+              zoom: $scope.zoom
+          });
+        });
+      }
+    }
   });
