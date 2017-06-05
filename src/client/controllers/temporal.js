@@ -90,26 +90,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			
 		}
 
-		console.log($scope.maps)
-
-		/*
-		var map = new L.map('map', {
-		    layers: [
-		    	new L.TileLayer('http://localhost:5000/map/L8_2015_WET/{z}/{x}/{y}'),
-		    	L.marker([-10.2828, -52.5997], {
-		    		icon: L.icon({
-		        	iconUrl: 'assets/marker.png',
-		        	iconSize: [11, 11]
-		        })
-		    	})
-		    ],
-		    center: [-10.2828, -52.5997], 
-		    zoomControl: false,
-        dragging: false,
-        doubleClickZoom: false,
-				zoom: 13
-		});*/
-
 	});
 
 });

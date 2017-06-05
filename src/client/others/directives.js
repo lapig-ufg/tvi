@@ -60,10 +60,18 @@ Application
       },
       controller: function($scope, $element) {
         $($element).ready(function() {
-          console.log($scope)
+          var tmsLayer = new L.TileLayer($scope.tmsUrl);
+          /*tmsLayer.on('tileload', function(evt) {
+            $(evt.tile).addClass('zoom')
+            $(evt.tile).attr('data-magnify-src',evt.tile.src)
+          })*/
+          tmsLayer.on('load', function() {
+            $('map-'+$scope.$id).mouseover(function() {
+              console.log(arguments);
+            })
+          })
           new L.map('map-'+$scope.$id, {
-              layers: [
-                new L.TileLayer($scope.tmsUrl),
+              layers: [tmsLayer,
                 L.marker([$scope.lat,$scope.lon], {
                   icon: L.icon({
                     iconUrl: 'assets/marker.png',
@@ -78,6 +86,7 @@ Application
               scrollWheelZoom: false,
               zoom: $scope.zoom
           });
+         
         });
       }
     }
