@@ -2,52 +2,66 @@
 
 Application.controller('temporalController', function($rootScope, $scope, $location, $window, requester, fakeRequester, util) {
 
-	//requester._get('points/next-point', function(data) {
 	$scope.size = 3;
-	$scope.indexImg = 0;
+	$scope.period = 'DRY';
 	$scope.pointEnabled = true;
-	var count = 0;
-	$scope.answers = [];
-	
-	var landUse = ["Agricultura", "Área urbana", "Água", "Mata de galeria", "Mosaico de ocupação", "Não observado", "Pastagem", "Silvicultura", "Vegetação nativa"];
 
-	$scope.formPlus = function(years, landUse){
+	$scope.config = {
+		initialYear: 2000,
+		finalYear: 2016,
+		zoomLevel: 13,
+		landUse: ["Agricultura", "Área urbana", "Água", "Mata de galeria", "Mosaico de ocupação", "Não observado", "Pastagem", "Silvicultura", "Vegetação nativa"]
+	}
+
+	$scope.optionYears = [];
+
+	$scope.answers = [
+		{
+			initialYear: $scope.config.initialYear,
+			finalYear: $scope.config.finalYear,
+			landUse: $scope.config.landUse[1]
+		}
+	];
+
+	$scope.formPlus = function(){
+		var prevIndex = $scope.answers.length - 1;
+		var initialYear = $scope.answers[prevIndex].finalYear + 1
+		var finalYear = $scope.config.finalYear;
+
+		generateOptionYears(initialYear,finalYear);
+
 		$scope.answers.push(
 			{
-				initialYear: $scope.answers[count].finalYear,
-				finalYear: years[15],
-				firstLandUse: landUse[1]
+				initialYear: initialYear,
+				finalYear: finalYear,
+				landUse: $scope.config.landUse[1]
 			}		
 		)
-
-		count++;
 	}
 
 	$scope.formSubtraction = function(){
 		if($scope.answers.length > 1){
 			$scope.answers.splice(-1,1);
-			count--;
+			$scope.optionYears.splice(-1,1);
 		}
 	}
 
-	fakeRequester.nextPoints(function(data) {
-		var years = [];
-		for(var i = 0; i  < data.point.img.length; i++){
-			var year = new Date(data.point.img[i].image[0].date);	
-			years.push(year.getFullYear());
-		}
-		$scope.landUse = landUse;
-		$scope.years = years;
-		$scope.data = data;
-		$scope.answers.push(
-			{
-				initialYear: years[0],
-				finalYear: years[15],
-				firstLandUse: landUse[1]
-			}		
-		)
+	$scope.changePeriod = function() {
+		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
+		generateMaps();
+	}
 
-		requester._get('spatial/query2',{"longitude":data.point.lon,"latitude": data.point.lat}, function(data) {
+	var generateOptionYears = function(initialYear, finalYear) {
+		var options = [];
+		for (var year = initialYear; year <= finalYear; year++) {
+			options.push(year);
+		}
+
+		$scope.optionYears.push(options);
+	}
+
+	var createModisChart = function() {
+		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 	
 			var date = [];
 			var ndvi = []
@@ -63,16 +77,12 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			    y: ndvi }], { 
 			    margin: { t: 0 } }, {displayModeBar: false} );
 		});
-		
+	}
 
-		index=0;
-		
+	var generateMaps = function() {
 		$scope.maps = [];
-		$scope.lat = $scope.data.point.lat;
-		$scope.lon = $scope.data.point.lon;
 
-		for (var year=2000; year <= 2016; year++) {
-
+		for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
 			sattelite = 'L7';
 			if(year > 2012) { 
 				sattelite = 'L8'
@@ -82,13 +92,28 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				sattelite = 'L5'
 			}
 
-			var url = '/map/'+sattelite+'_'+year+'_DRY/{z}/{x}/{y}';
+			tmsId = sattelite+'_'+year+'_'+$scope.period;
+			var url = '/map/'+tmsId+'/{z}/{x}/{y}';
+
 			$scope.maps.push({
+				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : year,
 				year: year,
 				url: url
-			})
-			
-		}
+			});
+		};
+	}
+
+	//fakeRequester.nextPoints(function(point) {
+	requester._get('points/next-point', function(data) {
+		
+		$scope.point = data.point;
+		$rootScope.total = data.total;
+		$rootScope.current = data.current;
+		$rootScope.count = data.count;
+
+		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+		createModisChart()
+		generateMaps();
 
 	});
 

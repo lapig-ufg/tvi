@@ -61,32 +61,36 @@ Application
       controller: function($scope, $element) {
         $($element).ready(function() {
           var tmsLayer = new L.TileLayer($scope.tmsUrl);
-          /*tmsLayer.on('tileload', function(evt) {
-            $(evt.tile).addClass('zoom')
-            $(evt.tile).attr('data-magnify-src',evt.tile.src)
-          })*/
-          tmsLayer.on('load', function() {
-            $('map-'+$scope.$id).mouseover(function() {
-              console.log(arguments);
-            })
-          })
-          new L.map('map-'+$scope.$id, {
-              layers: [tmsLayer,
-                L.marker([$scope.lat,$scope.lon], {
-                  icon: L.icon({
-                    iconUrl: 'assets/marker.png',
-                    iconSize: [11, 11]
-                  })
-                })
-              ],
+          var marker = L.marker([$scope.lat,$scope.lon], {
+                        icon: L.icon({
+                          iconUrl: 'assets/marker.png',
+                          iconSize: [11, 11]
+                        })
+          });
+
+          var markerInMap = true;
+          var map = new L.map('map-'+$scope.$id, {
+              layers: [tmsLayer,marker],
               center: [$scope.lat, $scope.lon], 
-              zoomControl: false,
+              zoomControl: true,
               dragging: false,
               doubleClickZoom: false,
               scrollWheelZoom: false,
-              zoom: $scope.zoom
+              zoom: $scope.zoom,
+              minZoom: $scope.zoom,
+              maxZoom: $scope.zoom + 1,
           });
-         
+          
+          map.on('click', function() {
+            if(markerInMap) {
+              map.removeLayer(marker);
+              markerInMap = false;
+            } else {
+              map.addLayer(marker);
+              markerInMap = true;
+            }
+          });
+
         });
       }
     }

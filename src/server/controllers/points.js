@@ -8,13 +8,31 @@ module.exports = function(app) {
 	var pointSession = [];
 
 	var points = app.repository.collections.points;
-	var pointsImg = app.repository.collections.pointsImg;
+	var mosaics = app.repository.collections.mosaics;
+
+	var getImageDates = function(path, row, callback) {
+
+		var filterMosaic = {'dates.path': path, 'dates.row': row };
+		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
+
+		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
+			var result = {}
+
+			docs.forEach(function(doc) {
+				if (doc.dates[0]) {
+					result[doc._id] = doc.dates[0]['date']
+				}
+			})
+
+			callback(result)
+		})
+	}
 
 	var findPoint = function(name, campaign, sessionPointId, callback){
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.landUse.length<3' },
+				{ "$where":'this.userName.length<3' },
 				{ "campaign": { "$eq": campaign } },
 				{ "underInspection": { $lt: 3 } }
 			]
@@ -26,6 +44,13 @@ module.exports = function(app) {
 				{ "campaign": { "$eq": campaign } }
 			]
 		};
+
+		var countFilter = {
+			"$and": [
+				{ "userName": { $in: [name] } },
+    		{"campaign":campaign}
+    	]
+   	};
 
 		var totalFilter = { 
 			"$and": [
@@ -40,17 +65,11 @@ module.exports = function(app) {
 			}
 
 			points.save(point, function() {				
-
 				points.count(totalFilter, function(err, total) {
+					points.count(countFilter, function (err, count) {
+						getImageDates(point.path, point.row, function(dates) {
+							point.dates = dates
 
-					points.count({$and: [
-    														{ userName: { $in: [name] } },
-    														{"campaign":campaign}]}, function (err, count) {						
-						var pointId = sessionPointId+'_'+campaign;
-						pointsImg.find({"pointId": pointId}).toArray(function(err, img){
-							point.img = img
-							console.log(err, img)
-							//point.modis = img.modis;
 							var result = {};
 							result['point'] = point;
 							result['total'] = total;
@@ -58,7 +77,6 @@ module.exports = function(app) {
 							result['user'] = name;
 							result['count'] = count;
 							callback(result);
-							
 						})
 					})
 				});				
@@ -70,10 +88,7 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {		
 		var user = request.session.user;
 
-		// user.name = 'jose';
-		//user.campaign = 'campanha_s'
-		// request.session.currentPointId = 0
-		findPoint('jose', 'campanha_s', 0, function(result) {
+		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
 				request.session.currentPointId = result.point._id;
 				response.send(result);
 				response.end();				
