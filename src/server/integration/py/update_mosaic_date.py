@@ -39,17 +39,16 @@ def getBestImg(satellite, year, mDaysStart, mDaysEnd, path, row):
   
   return ee.Image(bestImg);
 
-def getBestMosaic(satellite, year, dtStart, dtEnd):
+def getBestImages(satellite, year, dtStart, dtEnd):
 	images = [];
 	for tile in TILES:
 	  path = int(tile[0:3]);
 	  row = int(tile[3:6]);
 	  bestImg = getBestImg(satellite, year, dtStart, dtEnd, path, row);
 	  
-	  images.append(bestImg);
+	  images.append({'eeObj': bestImg, 'row': row, 'path':path});
 	
-	imageCollection = ee.ImageCollection.fromImages(images);
-	return imageCollection.mosaic();
+	return images;
 
 def publishImg(image):
 
@@ -97,28 +96,13 @@ for year in range(2000,2017):
 			dtEnd = periodDict['dtEnd']
 
 			mosaicId = satellite + "_" + str(year) + "_" + period;
-			print(mosaicId)
-			existMosaic = db.mosaics.find_one({ "_id": mosaicId });
-
-			if existMosaic == None or datetime.datetime.now() > existMosaic['expiration_date']:
-
+			
+			for bestImage in getBestImages(satellite,year,dtStart,dtEnd):
 				try:
-					bestMosaic = getBestMosaic(satellite,year,dtStart,dtEnd);
-					eeToken, eeMapid = publishImg(bestMosaic);
-
-					expirationDate = getExpirationDate();
-
-					mosaic = {
-						"_id": mosaicId,
-						"ee_token": eeToken,
-						"ee_mapid": eeMapid,
-						"expiration_date": expirationDate
-					}
-
-					db.mosaics.update_one({ "_id": mosaicId }, { "$set": mosaic }, True);
-					print(mosaicId,' updated.');
+					date = bestImage['eeObj'].get('DATE_ACQUIRED').getInfo();
+					
+					dt = { "dates": { "row": bestImage['row'], "path":bestImage['path'], "date": date  } }
+					db.mosaics.update_one({ "_id": mosaicId }, { "$push": dt }, True);
+					print(dt);
 				except:
-					print(mosaicId,' no image.');
-
-			else:
-				print(mosaicId,' exists and is valid.');
+					pass;

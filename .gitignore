@@ -25,3 +25,4 @@ src/server/GJSON/pontos_aa_5000.geojson
 src/server/GJSON/pontos_aa_5000_part.geojson
 src/server/bin/nohupCommand.txt
 src/server/log/
+src/server/bin/SHP/*
