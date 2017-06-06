@@ -45,13 +45,13 @@ var getInfoByRegion = function(coordinate, callback) {
 		checkError(error);		
 		
 		var strs = stdout.split("\n");
-	
+		
 		var biome;
 		var uf;
 		var county;
 		var countycode;	  
 		
-		for(var i = 0; i < (strs.length-8); i++){
+		for(var i = 0; i < strs.length; i++){
 			if(strs[i].match(/BIOMA/g)){
 				biome = strs[i].slice(18,strs[i].length);
 				biome = biome.trim();
@@ -62,7 +62,7 @@ var getInfoByRegion = function(coordinate, callback) {
 				county = strs[i].slice(22,strs[i].length);
 				county = county.trim();
 			}else if(strs[i].match(/COD_MUNICI/g)){
-				countycode = strs[i].slice(24,31);
+				countycode = strs[i].slice(26,35);
 				countycode = countycode.trim();
 			}
 		}
@@ -73,7 +73,7 @@ var getInfoByRegion = function(coordinate, callback) {
 			"county": county,
 			"countyCode": countycode
 		};
-
+		
 		callback(result);
 	});
 }
@@ -127,7 +127,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	getDB(dbUrl, function(db) {
 		db.collection(collectionPointsName, function(err, collectionPoints) {
 			
-			var counter = 0;
+			var counter = 1;
 			var eachFn = function(coordinate, next) {
 				getInfoByRegion(coordinate, function(regionInfo) {
 					getInfoByTile(coordinate, function(tileInfo) {
