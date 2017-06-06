@@ -14,12 +14,12 @@
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 						<form class="form-inline form-lclu" ng-repeat="resposta in answers">
 							<label class="form-label-lclu">Entre</label><select class="form-inline form-control form-year-lclu" ng-model="resposta.initialYear" ng-options="x for x in years"></select>
-						  <label class="form-label-lclu">e</label><select class="form-inline form-control form-year-lclu" ng-model="resposta.finalYear" ng-options="y for y in years"></select>
-							<br><label style="margin: 10px;">Classe</label><select class="form-control" ng-model="resposta.firstLandUse" ng-options="z for z in landUse"></select>
+						  <label class="form-label-lclu"></label><select class="form-inline form-control form-year-lclu" ng-model="resposta.finalYear" ng-options="y for y in years"></select>
+							<br><label style="margin: 10px;">Classe</label><select class="form-control" ng-model="resposta.landUse" ng-options="z for z in landUse"></select>
 						</form>
 						<input type="button" style="margin-right:5px" class="btn btn-warning pull-left" ng-click="formPlus(years,landUse)" value="+">
 						<input type="button" class="btn btn-danger pull-left" ng-click="formSubtraction()" value="-">
-						<input type="button" class="btn btn-success pull-right" ng-click="" value="Enviar">
+						<input type="button" class="btn btn-success pull-right" ng-click="submit()" value="Enviar">
 					</div>
 				</div>
 		</div>

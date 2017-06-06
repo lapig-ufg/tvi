@@ -11,6 +11,13 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	
 	var landUse = ["Agricultura", "Área urbana", "Água", "Mata de galeria", "Mosaico de ocupação", "Não observado", "Pastagem", "Silvicultura", "Vegetação nativa"];
 
+	$scope.submit = function() {
+		console.log($scope.answers[0].finalYear);
+		console.log($scope.answers[0].firstLandUse);
+		console.log($scope.answers[0].initialYear);
+	}
+
+
 	$scope.formPlus = function(years, landUse){
 		$scope.answers.push(
 			{
