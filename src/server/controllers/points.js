@@ -29,7 +29,7 @@ module.exports = function(app) {
 		})
 	}
 
-	var findPoint = function(name, campaign, sessionPointId, callback){
+	var findPoint = function(name, campaign, callback){
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
@@ -60,11 +60,7 @@ module.exports = function(app) {
 		};
 		
 		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
-
-			if(String(sessionPointId) != String(point._id)) {
-				point.underInspection += 1;
-			}
-
+			point.underInspection += 1;
 			points.save(point, function() {
 				console.log(point)
 				points.count(totalFilter, function(err, total) {
@@ -90,7 +86,7 @@ module.exports = function(app) {
 	Points.getCurrentPoint = function(request, response) {
 		var user = request.session.user;
 
-		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
+		findPoint(user.name, user.campaign, function(result) {
 				request.session.currentPointId = result.point._id;
 				response.send(result);
 				response.end();
@@ -102,20 +98,20 @@ module.exports = function(app) {
 		var point = request.body.point;
 		var user = request.session.user;
 
+		point.inspection.fillDate = new Date();
+
 		points.update(
 			{ 
 				 _id: point._id
 			},
 			{
 				$push: {
-					"landUse": point.landUse,
-			 		"certaintyIndex": point.certaintyIndex,
+					"inspection": point.inspection,
 			  	"userName": request.session.user.name,
-			  	"counter": point.counter,
 			  }
 			}, 
 			 function(err, item){
-				findPoint(user.name, user.campaign, request.session.currentPointId, function(result){
+				findPoint(user.name, user.campaign, function(result){
 					request.session.currentPointId = result.point._id
 					response.send(result);
 					response.end();

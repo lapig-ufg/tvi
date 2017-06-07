@@ -1,8 +1,9 @@
 'uses trict';
 
-Application.controller('temporalController', function($rootScope, $scope, $location, $window, requester, fakeRequester, util) {
+Application.controller('temporalController', function($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
 
 	$scope.size = 3;
+	$scope.onSubmission = false;
 	$scope.period = 'DRY';
 	$scope.pointEnabled = true;
 
@@ -12,16 +13,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		zoomLevel: 13,
 		landUse: ["Agricultura", "Área urbana", "Água", "Mata de galeria", "Mosaico de ocupação", "Não observado", "Pastagem", "Silvicultura", "Vegetação nativa"]
 	}
-
-	$scope.optionYears = [];
-
-	$scope.answers = [
-		{
-			initialYear: $scope.config.initialYear,
-			finalYear: $scope.config.finalYear,
-			landUse: $scope.config.landUse[1]
-		}
-	];
 
 	$scope.formPlus = function(){
 		var prevIndex = $scope.answers.length - 1;
@@ -46,6 +37,21 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		}
 	}
 
+	$scope.submitForm = function() {
+		var formPoint = {
+			_id: $scope.point._id,
+			inspection: {
+        counter: $scope.counter,
+        form: $scope.answers
+			}
+    }
+		
+    $scope.onSubmission = true;
+
+    requester._post('points/next-point', { "point": formPoint }, loadPoint);
+
+	}
+
 	$scope.changePeriod = function() {
 		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
 		generateMaps();
@@ -61,8 +67,12 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	}
 
 	var createModisChart = function() {
+		
+		MODIS = document.getElementById('modis');
+		Plotly.purge(MODIS);
+
 		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
-	
+
 			var date = [];
 			var ndvi = []
 			for(var i = 0; i < data.values.length; i++){
@@ -70,8 +80,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				ndvi.push(data.values[i][1])
 			}
 			
-			MODIS = document.getElementById('modis');
-
 			Plotly.plot( MODIS, [{
 			    x: date,
 			    y: ndvi }], { 
@@ -103,18 +111,42 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		};
 	}
 
-	//fakeRequester.nextPoints(function(point) {
-	requester._get('points/next-point', function(data) {
+	var startCounter = function() {
+		$scope.counter = 0;
+    $interval(function () {
+			$scope.counter = $scope.counter + 1;
+    }, 1000);
+	}
+
+	var initFormViewVariables = function() {
+		$scope.optionYears = [];
+
+		$scope.answers = [
+			{
+				initialYear: $scope.config.initialYear,
+				finalYear: $scope.config.finalYear,
+				landUse: $scope.config.landUse[1]
+			}
+		];
+	}
+
+	var loadPoint = function(data) {
 		
+		$scope.onSubmission = false;
+
 		$scope.point = data.point;
 		$rootScope.total = data.total;
-		$rootScope.current = data.current;
 		$rootScope.count = data.count;
+		$rootScope.current = data.current;
 
+		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-		createModisChart()
+		createModisChart();
 		generateMaps();
+		startCounter();
 
-	});
+	}
+
+	requester._get('points/next-point', loadPoint);
 
 });

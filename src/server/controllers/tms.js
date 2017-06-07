@@ -62,8 +62,6 @@ module.exports = function(app) {
 							  	if(error) {
 							  		console.log('error',error);
 							  		response.end();	
-							  	} else {
-							  		console.log('url',proxyResponse.statusCode, url);
 							  	}
 
 						  	}).on('data', function(data) {    

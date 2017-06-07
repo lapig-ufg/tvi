@@ -70,8 +70,6 @@ app.middleware.repository.init(function() {
 	app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(multer());
 
-
-
 	io.on('connection', function(socket){
 		console.log('Socket open');
 		socket.on('disconnect', function(){
@@ -96,6 +94,7 @@ app.middleware.repository.init(function() {
 
 	http.listen(app.config.port, function() {
 		console.log('LAPIG-MAPS Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
+		app.middleware.cache.populateCache();
 	});
 
 });
