@@ -60,22 +60,39 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		$scope.optionYears.push(options);
 	}
 
+	var getDateImages = function(){
+		date = []
+		for(var i = 0; i < $scope.maps.length; i++){
+			date.push($scope.maps[i].date)
+		}
+		return date;
+	}
+
 	var createModisChart = function() {
 		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 	
-			var date = [];
-			var ndvi = []
+			var ndvi = [];
+			var date = []
+			console.log(data);
 			for(var i = 0; i < data.values.length; i++){
+				ndvi.push(data.values[i][1]);
 				date.push(data.values[i][0]);
-				ndvi.push(data.values[i][1])
 			}
-			
-			MODIS = document.getElementById('modis');
 
-			Plotly.plot( MODIS, [{
-			    x: date,
-			    y: ndvi }], { 
-			    margin: { t: 0 } }, {displayModeBar: false} );
+			plotlyData = [
+				{
+					x: date,
+			    y: ndvi,
+			    type: 'scatter'
+				}
+			]
+
+			label = {
+				margin: {t:0}
+			}
+
+			Plotly.plot('modis', plotlyData, label, {displayModeBar: false} );
+
 		});
 	}
 
@@ -103,6 +120,15 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		};
 	}
 
+	$scope.getKml = function(){
+		var lon = $scope.point.lon;
+		var lat = $scope.point.lat;
+		var county = $scope.point.county;
+		var url = window.location.origin+window.location.pathname
+		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
+	}
+
+	
 	//fakeRequester.nextPoints(function(point) {
 	requester._get('points/next-point', function(data) {
 		
