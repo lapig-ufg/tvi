@@ -73,9 +73,11 @@ app.middleware.repository.init(function() {
 
 
 	io.on('connection', function(socket){
+		console.log('Socket open');
 		socket.on('disconnect', function(){
 			store.get(socket.request.sessionID, function(error, session) {
 				socket.request.session = session;
+				console.log('socket close');
 				app.emit('socket-disconnect', socket);
 			});
 		})

@@ -143,9 +143,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 							"countyCode": regionInfo.countyCode,
 							"path":tileInfo.path,
 							"row":tileInfo.row,
-							"userName":[],
-							"landUse":[],
-							"counter":[],
+							"userName": [],
+							"inspection" : [],
 							"underInspection": 0,
 							"index": counter++,
 							"cached": false

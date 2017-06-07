@@ -97,7 +97,6 @@ for year in range(2000,2017):
 			dtEnd = periodDict['dtEnd']
 
 			mosaicId = satellite + "_" + str(year) + "_" + period;
-			print(mosaicId)
 			existMosaic = db.mosaics.find_one({ "_id": mosaicId });
 
 			if existMosaic == None or datetime.datetime.now() > existMosaic['expiration_date']:
@@ -109,7 +108,6 @@ for year in range(2000,2017):
 					expirationDate = getExpirationDate();
 
 					mosaic = {
-						"_id": mosaicId,
 						"ee_token": eeToken,
 						"ee_mapid": eeMapid,
 						"expiration_date": expirationDate

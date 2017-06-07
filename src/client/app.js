@@ -25,6 +25,8 @@ Application.config(function($routeProvider, $locationProvider) {
 
 }).run(function($http) {
 	
+	var socket = io.connect('/');
+
 	$http.defaults.headers.post['Content-Type'] = 'application/json';
 	$http.defaults.headers.put['Content-Type'] = 'application/json';
 	delete $http.defaults.headers.common['X-Requested-With'];

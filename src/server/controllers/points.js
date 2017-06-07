@@ -18,8 +18,9 @@ module.exports = function(app) {
 		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
 			var result = {}
 
+
 			docs.forEach(function(doc) {
-				if (doc.dates[0]) {
+				if (doc.dates && doc.dates[0]) {
 					result[doc._id] = doc.dates[0]['date']
 				}
 			})
@@ -64,7 +65,8 @@ module.exports = function(app) {
 				point.underInspection += 1;
 			}
 
-			points.save(point, function() {				
+			points.save(point, function() {
+				console.log(point)
 				points.count(totalFilter, function(err, total) {
 					points.count(countFilter, function (err, count) {
 						getImageDates(point.path, point.row, function(dates) {
@@ -85,17 +87,17 @@ module.exports = function(app) {
 
 	};
 
-	Points.getCurrentPoint = function(request, response) {		
+	Points.getCurrentPoint = function(request, response) {
 		var user = request.session.user;
 
 		findPoint(user.name, user.campaign, request.session.currentPointId, function(result) {
 				request.session.currentPointId = result.point._id;
 				response.send(result);
-				response.end();				
+				response.end();
 			})					
 	};
 
-	Points.updatePoint = function(request, response) {	
+	Points.updatePoint = function(request, response) {
 		
 		var point = request.body.point;
 		var user = request.session.user;
