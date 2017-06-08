@@ -51,6 +51,7 @@ module.exports = function(app) {
 			  		var img = new Buffer([]);
 			  		requester({
 					  		uri: url,
+					  		timeout: 3600 * 1000,
 					  		headers: {
 						  			'Accept': request.headers['accept']
 						  		,	'User-Agent': request.headers['user-agent']
@@ -71,7 +72,9 @@ module.exports = function(app) {
 
 								}).on('end', function(data) {    
 									Internal.enhanceAndResponse(img, response)
-									cache.set(path, img)
+									if(img.length > 0) {
+										cache.set(path, img)
+									}
 								}
 						)
 			 		}

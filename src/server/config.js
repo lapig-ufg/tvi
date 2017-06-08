@@ -21,7 +21,7 @@ module.exports = function(app) {
 			"toRun": [
 				{
 					"name": "publishLayers",
-					"cron": '0 45 12 * * *',
+					"cron": '0 0 0 * * *',
 					"runOnAppStart": true,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
@@ -30,8 +30,8 @@ module.exports = function(app) {
 				},
 				{
 					"name": "populateCache",
-					"cron": '0 05 13 * * *',
-					"runOnAppStart": false,
+					"cron": '0 0 * * * *',
+					"runOnAppStart": true,
 					"params": {}
 				}
 			]

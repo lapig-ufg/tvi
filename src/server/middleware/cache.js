@@ -79,9 +79,15 @@ module.exports = function(app) {
 
 			urls.forEach(function(url) {
 				requestTasks.push(function(next) {
-					request(url, { timeout: 3600 * 1000 }, function(error, response, html) {
-				    next();
-				  });
+					var params = { timeout: 3600 * 1000 };
+					var callback = function(error, response, html) {
+						if(error) {
+							request(url, params, callback);
+						} else {
+				    	next();
+						}
+				  }
+					request(url, params, callback);
 				});
 			});
 

@@ -16,7 +16,7 @@ module.exports = function(app) {
 	}
 
 	var writeLog = function(logStream, msg) {
-		logStream.write(msg + "\n");
+		logStream.write(strDate() + msg + "\n");
 	}
 
 	Jobs.populateCache = function(params, logStream, cacheComplete) {
@@ -58,15 +58,15 @@ module.exports = function(app) {
 
 			new cron.CronJob(job.cron, function() {
 				var logStream = fs.createWriteStream(logFile, {'flags': 'a'});
-				var startLogMsg = strDate() + "Job " + job.name + " start.";
+				var startLogMsg = "Job " + job.name + " start.";
 				
-				console.log(startLogMsg);
+				console.log(strDate() + " " + startLogMsg);
 				writeLog(logStream, startLogMsg);
 
 				Jobs[job.name](job.params,logStream, function() {
 
-					var endLogMsg = strDate() + "Job " + job.name + " end.";
-					console.log(endLogMsg);
+					var endLogMsg = "Job " + job.name + " end.";
+					console.log(strDate() + " " + endLogMsg);
 					writeLog(logStream, endLogMsg);
 					
 					logStream.end();
