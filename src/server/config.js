@@ -21,8 +21,8 @@ module.exports = function(app) {
 			"toRun": [
 				{
 					"name": "publishLayers",
-					"cron": '0 0 0 * * *',
-					"runOnAppStart": true,
+					"cron": '0 0 19 * * *',
+					"runOnAppStart": false,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
 						"eeKey": appRoot + "/integration/py/lapig-ee-09144f43f3b5.pem"
@@ -30,8 +30,8 @@ module.exports = function(app) {
 				},
 				{
 					"name": "populateCache",
-					"cron": '0 0 * * * *',
-					"runOnAppStart": true,
+					"cron": '0 0 20 * * *',
+					"runOnAppStart": false,
 					"params": {}
 				}
 			]
@@ -41,6 +41,8 @@ module.exports = function(app) {
 
 	if(process.env.NODE_ENV == 'prod') {
 		config["mongo"]["port"] = "27017";
+		config.jobs.toRun[0].runOnAppStart = true;
+		config.jobs.toRun[0].runOnAppStart = true;
 	}
 
 	return config;

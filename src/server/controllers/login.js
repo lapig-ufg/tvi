@@ -14,7 +14,7 @@ module.exports = function(app) {
 	}
 
 	Login.autenticateUser = function(request, response, next) {
-		console.log(request.session.user)
+		
 		if(request.session.user && request.session.user.name) {
 			next();
 		} else {
@@ -35,8 +35,6 @@ module.exports = function(app) {
 		var senha = request.param('senha');
 
 		points.count({"campaign": campaign}, function(err, count) {
-
-			console.log(count);
 
 			var result = {
 				campaign:"",
@@ -79,7 +77,7 @@ module.exports = function(app) {
 	app.on('socket-disconnect', function(socket) {
 
 		points.update({"_id": socket.request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-			console.log("disconneect");
+			
 		});
 	});
 

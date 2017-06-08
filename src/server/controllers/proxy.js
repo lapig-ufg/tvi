@@ -35,7 +35,7 @@ module.exports = function(app) {
 	Internal.modisMaps = function(request, response){
 		var latitude = request.param('latitude');
 		var longitude = request.param('longitude');
-		console.log('longitude latitude',latitude, longitude);
+		
 		var Url = "http://maps.lapig.iesa.ufg.br/time-series/MOD13Q1_NDVI/values?_dc=1495573383361&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
 
 		requester({

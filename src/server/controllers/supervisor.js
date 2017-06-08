@@ -28,7 +28,7 @@ module.exports = function(app) {
 
 	Points.getTotal = function(request, response){
 		var campaign = request.session.user.campaign;
-		console.log(campaign);
+		
 		pointsCollection.count({"campaign": campaign}, function(err, count){
 			point = {}
 			point.count = count;

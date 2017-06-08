@@ -62,7 +62,6 @@ module.exports = function(app) {
 		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 			point.underInspection += 1;
 			points.save(point, function() {
-				console.log(point)
 				points.count(totalFilter, function(err, total) {
 					points.count(countFilter, function (err, count) {
 						getImageDates(point.path, point.row, function(dates) {
