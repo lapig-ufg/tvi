@@ -40,7 +40,7 @@ module.exports = function(app) {
 		var initialYear = 2000;
 		var finalYear = 2016;
 		var periods = ['DRY','WET']
-		var parallelRequestsLimit = 12;
+		var parallelRequestsLimit = 8;
 
 		var long2tile = function(lon,zoom) { 
 			return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 

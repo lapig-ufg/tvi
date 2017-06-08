@@ -30,7 +30,7 @@ module.exports = function(app) {
 				},
 				{
 					"name": "populateCache",
-					"cron": '0 0 20 * * *',
+					"cron": '0 0 20 1 * *',
 					"runOnAppStart": false,
 					"params": {}
 				}

@@ -1,6 +1,7 @@
 var 
 		cron = require('cron')
 	,	exec = require('child_process').exec
+	,	dateFormat = require('dateformat')
 	,	fs = require('fs');
 
 module.exports = function(app) {
@@ -10,9 +11,7 @@ module.exports = function(app) {
 	var Jobs = {};
 
 	var strDate = function() {
-		return new Date().toISOString()
-		  .replace(/T/, ' ')
-		  .replace(/\..+/, '') + " # "
+		return dateFormat(now, "yyyy-mm-dd HH:MM:ss");
 	}
 
 	var writeLog = function(logStream, msg) {
