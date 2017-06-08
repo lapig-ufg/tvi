@@ -4,13 +4,13 @@
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 						<legend>Informação de localização</legend>
-						<p>Bioma: {{point.biome}}</p>
-						<span>Municipio: {{point.county}}</span> <span style="margin-left: 5px">UF: {{point.uf}}</span>
-						<p>Latitude: {{point.lat}}</p>
-						<p>Longitude: {{point.lon}}</p>
+						<p><b>Bioma:</b> {{point.biome}}</p>
+						<p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span>
+						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
 						<fieldset>
 							<legend>Uso e Cobertura da Terra:</legend>
 				  		<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn btn-link pull-left" value="Alterar Período">
+				  		<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link pull-left" value="Google Earth">
 						</fieldset>
 			  	</div>
 				</div>
@@ -38,7 +38,6 @@
 						<span style="font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span>
 						<inspection-map lon="point.lon" lat="point.lat" zoom="config.zoomLevel" tms-url="{{map.url}}" />
 					</div>
-					<input style="margin-top: 130px; margin-left: 250px;" ng-click="getKml()" type="button" class="btn btn-info float-left" value="Visualizar no Google Earth">
 				</fieldset>
 		</div>
   </div>

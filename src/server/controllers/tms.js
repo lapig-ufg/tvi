@@ -15,7 +15,8 @@ module.exports = function(app) {
 	var cache = app.middleware.cache;
 
 	Internal.enhanceAndResponse = function(img, response) {
-		convert = spawn('convert', ['-auto-level','-auto-gamma','-','-']);
+		//-channel RGB -contrast-stretch 2x2%
+		convert = spawn('convert', ['-auto-level','-auto-gamma', '-channel', 'RGB', '-contrast-stretch', '0.5x0.5%', '-','-']);
 		convert.stdout.pipe(response);
 		convert.stdin.write(img);
 		convert.stdin.end();

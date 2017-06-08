@@ -7,7 +7,7 @@ module.exports = function(app) {
 
 	var config = app.config;
 
-	var redisClient = redis.createClient(6379, 'localhost');
+	var redisClient = redis.createClient(config.redis.port, config.redis.host);
 	var Cache = {};
 
 	Cache.get = function(cacheKey, callback) {
@@ -34,7 +34,7 @@ module.exports = function(app) {
 		});
 	}
 	
-	Cache.populateCache = function() {
+	Cache.populateCache = function(pointCacheCompĺete, finished) {
 
 		var zoom = 13;
 		var initialYear = 2000;
@@ -70,7 +70,7 @@ module.exports = function(app) {
 
 						for (var x = (xtile-1); x <= (xtile+1); x++) {
 							for (var y = (ytile-1); y <= (ytile+1); y++) {
-								var url = "http://localhost:5000/map/"+satellite+"_"+year+"_"+period+"/"+zoom+"/"+x+"/"+y;
+								var url = "http://localhost:" + config.port + "/map/"+satellite+"_"+year+"_"+period+"/"+zoom+"/"+x+"/"+y;
 								urls.push(url);
 							}
 						}
@@ -79,8 +79,7 @@ module.exports = function(app) {
 
 			urls.forEach(function(url) {
 				requestTasks.push(function(next) {
-					request(url, function(error, response, html) {
-				    //console.log(url,' done.');
+					request(url, { timeout: 3600 * 1000 }, function(error, response, html) {
 				    next();
 				  });
 				});
@@ -91,19 +90,18 @@ module.exports = function(app) {
 
  		var cacheJobCanStopFlag = false;
  		var startCacheJob = function(next) {
- 			console.log(new Date());
 	 		app.repository.collections.points.findOne({ "cached" : false }, { lon:1, lat: 1}, { sort: [['index', 1]] }, function(err, point) {
 	 			if(point) {
 					var requestTasks = getRequestTasks(point);
 					async.parallelLimit(requestTasks, parallelRequestsLimit, function() {
 						app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  });
-						console.log(point, next);
+						pointCacheCompĺete(point._id);
 						next();
 					});
 	 			} else {
 	 				cacheJobCanStopFlag = true;
+	 				next()
 	 			}
-
 	 		});
  		}
 
@@ -111,8 +109,11 @@ module.exports = function(app) {
  			return cacheJobCanStopFlag;
  		}
 
- 		async.doUntil(startCacheJob, cacheJobCanStop);
- 		//startCacheJob();
+ 		var onComplete = function() {
+ 			finished();
+ 		}
+
+ 		async.doUntil(startCacheJob, cacheJobCanStop, onComplete);
 
 	}
 

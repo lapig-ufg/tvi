@@ -12,6 +12,7 @@
     "connect-redis": "^3.0.2",
     "connect-timeout": "~1.4.0",
     "cookie-parser": "~1.4.3",
+    "cron": "^1.2.1",
     "csv-write-stream": "^1.0.0",
     "ejs": "~0.8.5",
     "express": "~4.12.4",

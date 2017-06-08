@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
+import sys
 import ee
 import datetime
 from pymongo import MongoClient
 
 #convert crop.jpg -channel RGB -contrast-stretch 0.1x0.1% crop.png
-EE_PRIVATE_KEY_FILE = 'lapig-ee-09144f43f3b5.pem'
+EE_PRIVATE_KEY_FILE = sys.argv[1]
 EE_ACCOUNT = '163878256934-uorqnep89dmauei9tv8s5cmhcro4s0p9@developer.gserviceaccount.com'
 
 EE_CREDENTIALS = ee.ServiceAccountCredentials(EE_ACCOUNT, EE_PRIVATE_KEY_FILE)
@@ -114,9 +115,9 @@ for year in range(2000,2017):
 					}
 
 					db.mosaics.update_one({ "_id": mosaicId }, { "$set": mosaic }, True);
-					print(mosaicId,' updated.');
+					print(mosaicId + ' updated.');
 				except:
-					print(mosaicId,' no image.');
+					print(mosaicId + ' no image.');
 
 			else:
-				print(mosaicId,' exists and is valid.');
+				print(mosaicId + ' exists and is valid.');

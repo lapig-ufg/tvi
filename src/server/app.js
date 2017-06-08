@@ -14,7 +14,7 @@ var express = require('express')
 , timeout = require('connect-timeout')
 , bodyParser = require('body-parser')
 , multer = require('multer')
-, session = require('express-session')
+, session = require('express-session');
 
 var app = express();
 
@@ -32,7 +32,6 @@ load('config.js', {'verbose': false})
 
 app.middleware.repository.init(function() {
 
-	
 	app.repository = app.middleware.repository;
 
 	app.use(cookie);
@@ -71,11 +70,9 @@ app.middleware.repository.init(function() {
 	app.use(multer());
 
 	io.on('connection', function(socket){
-		console.log('Socket open');
 		socket.on('disconnect', function(){
 			store.get(socket.request.sessionID, function(error, session) {
 				socket.request.session = session;
-				console.log('socket close');
 				app.emit('socket-disconnect', socket);
 			});
 		})
@@ -94,7 +91,7 @@ app.middleware.repository.init(function() {
 
 	http.listen(app.config.port, function() {
 		console.log('LAPIG-MAPS Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
-		app.middleware.cache.populateCache();
+		app.middleware.jobs.start();
 	});
 
 });
