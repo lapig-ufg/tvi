@@ -1,3 +1,17 @@
+body {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+}
+
+.page-view {
+  height: 100%;
+}
+
+.field-login {
+  margin-top: 5px;
+}
+
 .glyphicon-refresh-animate {
     -animation: spin .7s infinite linear;
     -webkit-animation: spin2 .7s infinite linear;
@@ -96,39 +110,29 @@ legend.scheduler-border {
 
 }
 
+.form-panel {
+  background-image: url('tvi-login_backgroud.jpg');
+  height: 100%;
+  width: 100%;
+  margin: 0px;
+
+}
+
 .form-signin {
   max-width: 330px;
   padding: 15px;
   margin: 0 auto;
+  background:rgba(255,255,255,0.85);
+  margin-top: 100px;
+  border: 1px solid gray;
 }
-.form-signin .form-signin-heading,
-.form-signin .checkbox {
+
+.form-signin-heading {
+  text-align: right;
+  color: #4a4a4a;
+  margin-top: 0px;
+  font-size: 17px;
   margin-bottom: 10px;
-}
-.form-signin .checkbox {
-  font-weight: normal;
-}
-.form-signin .form-control {
-  position: relative;
-  height: auto;
-  -webkit-box-sizing: border-box;
-     -moz-box-sizing: border-box;
-          box-sizing: border-box;
-  padding: 10px;
-  font-size: 16px;
-}
-.form-signin .form-control:focus {
-  z-index: 2;
-}
-.form-signin input[type="email"] {
-  margin-bottom: -1px;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-.form-signin input[type="password"] {
-  margin-bottom: 10px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 .navbar {

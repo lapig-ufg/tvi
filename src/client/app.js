@@ -3,15 +3,6 @@ var Application = angular.module('application', ['ngRoute', 'ngMagnify']);
 Application.config(function($routeProvider, $locationProvider) {
 
 	$routeProvider
-		.when('/example', {
-			controller: 'ExampleController',
-			templateUrl: 'views/example.tpl.html',
-			reloadOnSearch: false
-		})
-		.when('/tvi', {
-			controller: 'TviController',
-
-		})
 		.when('/temporal', {
 			controller: 'temporalController',
 			templateUrl: 'views/temporal.tpl.html',

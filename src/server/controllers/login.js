@@ -9,10 +9,6 @@ module.exports = function(app) {
 	
 	var user;
 
-	var updateUnderInspection = function() {
-
-	}
-
 	Login.autenticateUser = function(request, response, next) {
 		
 		if(request.session.user && request.session.user.name) {

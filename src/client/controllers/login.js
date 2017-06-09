@@ -10,7 +10,7 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 			$location.path('tviSuper');
 		}
 		else if(result.name) {
-			$location.path('tvi');
+			$location.path('temporal');
 		} else {
 			$scope.showForm = true;
 		}

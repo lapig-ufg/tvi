@@ -33,15 +33,15 @@ module.exports = function(app) {
 		var findOneFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<3' },
+				{ "$where":'this.userName.length<10' },
 				{ "campaign": { "$eq": campaign } },
-				{ "underInspection": { $lt: 3 } }
+				{ "underInspection": { $lt: 10 } }
 			]
 		};
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<3' },
+				{ "$where":'this.userName.length<10' },
 				{ "campaign": { "$eq": campaign } }
 			]
 		};
