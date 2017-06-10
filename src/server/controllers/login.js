@@ -14,7 +14,6 @@ module.exports = function(app) {
 	}
 
 	Login.autenticateUser = function(request, response, next) {
-		console.log(request.session.user)
 		if(request.session.user && request.session.user.name) {
 			next();
 		} else {
@@ -35,8 +34,6 @@ module.exports = function(app) {
 		var senha = request.param('senha');
 
 		points.count({"campaign": campaign}, function(err, count) {
-
-			console.log(count);
 
 			var result = {
 				campaign:"",

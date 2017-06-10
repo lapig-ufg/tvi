@@ -87,6 +87,12 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	}
 
+	var createPrecipitationChart = function(){
+		requester._get('spatial/precipitation',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+			console.log(data.values);
+		})		
+	}
+
 	var createModisChart = function() {
 		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 	
@@ -126,12 +132,14 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			 	hoverinfo: 'none'
 			};
 
-
 			var layout = {
 			  width: 1100,
 			  height: 500,
-			  xaxis: {tickvals:date,
-			  	ticktext: ['2000', '2001', '2002']}
+			  xaxis: {
+			  	tickmode: 'linear',
+			  	tickvals: getDateImages(),
+			  	ticktext: getDateImages()
+			  }
 			};
 
 			var data = [trace1, trace2];
@@ -188,6 +196,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 		createModisChart()
+		createPrecipitationChart()
 		generateMaps();
 
 	});

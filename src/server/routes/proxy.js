@@ -5,6 +5,7 @@ module.exports = function (app) {
 
 	app.get('/service/spatial/query', login.autenticateUser, proxy.doRequest);
 	app.get('/service/spatial/query2', login.autenticateUser, proxy.modisMaps);
+	app.get('/service/spatial/precipitation', proxy.precipitationMaps);
 
 
 }
