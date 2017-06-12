@@ -224,12 +224,8 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-<<<<<<< HEAD
-		createModisChart();
-=======
 		createModisChart()
 		createPrecipitationChart()
->>>>>>> developer
 		generateMaps();
 		$scope.counter = 0;
 

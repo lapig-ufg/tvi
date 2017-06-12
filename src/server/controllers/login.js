@@ -10,10 +10,6 @@ module.exports = function(app) {
 	var user;
 
 	Login.autenticateUser = function(request, response, next) {
-<<<<<<< HEAD
-		
-=======
->>>>>>> developer
 		if(request.session.user && request.session.user.name) {
 			next();
 		} else {
