@@ -95,7 +95,22 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	var createPrecipitationChart = function(){
 		requester._get('spatial/precipitation',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
-			console.log(data.values);
+			/*
+			var ndvi = [];
+			var date = [];
+			var text = [];
+			var ndviAndDate = {}
+
+			for(var i = 0; i < data.values.length; i++){
+				ndvi.push(data.values[i][1]);
+				date.push(new Date(data.values[i][0]));
+				var dateObj = new Date(data.values[i][0])
+				var month = dateObj.getUTCMonth() + 1;
+				var day = dateObj.getUTCDate();
+				var year = dateObj.getUTCFullYear();
+				text.push(day + "/" + month + "/" + year);
+			}
+			*/
 		})		
 	}
 
@@ -107,27 +122,27 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	
 			var ndvi = [];
 			var date = [];
+			var text = [];
+
 			var ndviAndDate = {}
-			
 			for(var i = 0; i < data.values.length; i++){
 				ndvi.push(data.values[i][1]);
 				date.push(new Date(data.values[i][0]));
+				var dateObj = new Date(data.values[i][0])
+				var month = dateObj.getUTCMonth() + 1;
+				var day = dateObj.getUTCDate();
+				var year = dateObj.getUTCFullYear();
+				text.push(day + "/" + month + "/" + year);
 			}
 
 			var trace1 = {
 			  x: date,
 			  y: ndvi,
+			  text: text,
 			  type: 'scatter',
-			  name:"NDVI"
+			  name:"NDVI",
+			  hoverinfo: "text"
 			};
-
-			/*
-			var trace2 = {
-			  x: getDateImages(),
-			  y: trace2NDVI(data.values, getDateImages()), //saporra nao existe;
-			  type: 'scatter'
-			};
-			*/
 
 			var trace2 = {
 			  x: getDateImages(),
@@ -135,7 +150,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			  mode: 'markers',
 			  marker: {
 			    color: 'rgb(219, 64, 82)',
-			    size: 5
+			    size: 8
 			  },
 			 	name: 'Landsat',
 			 	hoverinfo: 'none'
@@ -145,18 +160,13 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			  width: 1100,
 			  height: 500,
 			  xaxis: {
-			  	tickmode: 'linear',
+			  	tickmode: 'auto',
 			  	tickvals: getDateImages(),
 			  	ticktext: getDateImages()
 			  }
 			};
 
 			var data = [trace1, trace2];
-
-			// mostrar o dia do MODIS no label_data
-			// Remover label_landsat
-			// Remove palavra do MODIS do label_MODIS
-			//fazer com que a bolinha insida na data corretamente;
 
 			Plotly.newPlot('modis', data, layout);
 
