@@ -60,6 +60,31 @@ module.exports = function(app) {
 
 	}
 
+	Internal.precipitationMaps = function(request, response){
+		var latitude = request.param('latitude');
+		var longitude = request.param('longitude');
+		console.log('longitude latitude',latitude, longitude);
+		var Url = "http://maps.lapig.iesa.ufg.br/time-series/TRMM_PRECIPITATION/values?_dc=1497123621159&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
+		
+
+		requester({
+	  		uri: Url
+	  	,	timeout: 50000
+	  	, headers: {
+	  			'Accept': request.headers['accept']
+	  		,	'User-Agent': request.headers['user-agent']
+	  		,	'X-Requested-With': request.headers['x-requested-with']
+	  		,	'Accept-Language': request.headers['accept-language']
+	  		,	'Accept-Encoding': request.headers['accept-encoding']
+	  	}
+	  }, function(error, proxyResponse, body) {	  	
+	  	if(error) {
+	  		console.log(error);
+	  		response.end();	
+	  	}
+	  }).pipe(response)	
+	}
+
 	return Internal;
 
 }

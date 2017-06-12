@@ -5,6 +5,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	$scope.size = 3;
 	$scope.onSubmission = false;
 	$scope.period = 'DRY';
+	$scope.periodo = 'SECO';
 	$scope.pointEnabled = true;
 
 	$scope.config = {
@@ -54,6 +55,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	$scope.changePeriod = function() {
 		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
+		$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
 		generateMaps();
 	}
 
@@ -69,9 +71,32 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	var getDateImages = function(){
 		date = []
 		for(var i = 0; i < $scope.maps.length; i++){
-			date.push($scope.maps[i].date)
+			date.push(new Date($scope.maps[i].date));
 		}
 		return date;
+	}
+
+	var trace2NDVI = function(values, date){
+		ndvi = []
+		for(var i=0; i < date.length;i++){
+			for(var j = 0; j < values.length; j = j +2){
+				var dateFromValues = new Date(values[j][0]);
+				var dateFromDate = new Date(date[i]);				
+				if(((dateFromDate.getUTCMonth() +1) == (dateFromValues.getUTCMonth()+1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())){
+					ndvi.push(values[j][1]);
+				} 
+				
+			}
+		}
+
+		return ndvi;
+
+	}
+
+	var createPrecipitationChart = function(){
+		requester._get('spatial/precipitation',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+			console.log(data.values);
+		})		
 	}
 
 	var createModisChart = function() {
@@ -81,26 +106,59 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 	
 			var ndvi = [];
-			var date = []
-			console.log(data);
+			var date = [];
+			var ndviAndDate = {}
+			
 			for(var i = 0; i < data.values.length; i++){
 				ndvi.push(data.values[i][1]);
-				date.push(data.values[i][0]);
+				date.push(new Date(data.values[i][0]));
 			}
 
-			plotlyData = [
-				{
-					x: date,
-			    y: ndvi,
-			    type: 'scatter'
-				}
-			]
+			var trace1 = {
+			  x: date,
+			  y: ndvi,
+			  type: 'scatter',
+			  name:"NDVI"
+			};
 
-			label = {
-				margin: {t:0}
-			}
+			/*
+			var trace2 = {
+			  x: getDateImages(),
+			  y: trace2NDVI(data.values, getDateImages()), //saporra nao existe;
+			  type: 'scatter'
+			};
+			*/
 
-			Plotly.plot('modis', plotlyData, label, {displayModeBar: false} );
+			var trace2 = {
+			  x: getDateImages(),
+			  y: trace2NDVI(data.values, getDateImages()),
+			  mode: 'markers',
+			  marker: {
+			    color: 'rgb(219, 64, 82)',
+			    size: 5
+			  },
+			 	name: 'Landsat',
+			 	hoverinfo: 'none'
+			};
+
+			var layout = {
+			  width: 1100,
+			  height: 500,
+			  xaxis: {
+			  	tickmode: 'linear',
+			  	tickvals: getDateImages(),
+			  	ticktext: getDateImages()
+			  }
+			};
+
+			var data = [trace1, trace2];
+
+			// mostrar o dia do MODIS no label_data
+			// Remover label_landsat
+			// Remove palavra do MODIS do label_MODIS
+			//fazer com que a bolinha insida na data corretamente;
+
+			Plotly.newPlot('modis', data, layout);
 
 		});
 	}
@@ -120,7 +178,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 			tmsId = sattelite+'_'+year+'_'+$scope.period;
 			var url = '/map/'+tmsId+'/{z}/{x}/{y}';
-
 			$scope.maps.push({
 				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
 				year: year,
@@ -167,7 +224,12 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+<<<<<<< HEAD
 		createModisChart();
+=======
+		createModisChart()
+		createPrecipitationChart()
+>>>>>>> developer
 		generateMaps();
 		$scope.counter = 0;
 

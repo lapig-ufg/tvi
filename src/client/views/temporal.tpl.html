@@ -35,7 +35,7 @@
 				<fieldset>
 				<legend>Imagens Landsat <span style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span></legend>
 					<div ng-repeat="map in maps" ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-						<span style="font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span>
+						<span style="font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span style="margin-left: 132px; font-weight: bold;">{{periodo}}</span>
 						<inspection-map lon="point.lon" lat="point.lat" zoom="config.zoomLevel" tms-url="{{map.url}}" />
 					</div>
 				</fieldset>
@@ -45,6 +45,6 @@
   	<fieldset>
 			<legend>Série temporal MODIS:</legend>
   		<div id="modis" style="width:100%;height:250px;"></div>
-  	</fieldset>
+  	</fieldset> 
   </div>
 </div>
