@@ -12,7 +12,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		initialYear: 2000,
 		finalYear: 2016,
 		zoomLevel: 13,
-		landUse: ["Agricultura", "Área urbana", "Água", "Mata de galeria", "Mosaico de ocupação", "Não observado", "Pastagem", "Silvicultura", "Vegetação nativa"]
+		landUse: ["Agricultura Anual", "Agricultura Perene", "Área urbana", "Água", "Cana-de-açucar", "Mosaico de ocupação", "Não observado", "Pastagem Cultivada", "Pastagem Natural", "Solo Exposto", "Silvicultura", "Vegetação nativa"]
 	}
 
 	$scope.formPlus = function(){

@@ -158,6 +158,7 @@ legend.scheduler-border {
   padding-top: 5px;
   padding-bottom: 5px;
   background-color: #f1f1f1;
+  width: 280px;
 }
 
 .form-label-lclu {
@@ -165,7 +166,7 @@ legend.scheduler-border {
 }
 
 .form-year-lclu {
-  width: 96px !important;
+  width: 85px !important;
   margin-top: 0px;
 }
 
@@ -186,4 +187,13 @@ h3{
 
 .leaflet-control-attribution {
   display: none !important;
-};
+}
+
+.form-lulc-panel {
+  height: 370px;
+  overflow-y: auto;
+  padding-right: 0px;
+  width: 318px;
+  border-bottom: 1px solid silver;
+}
+
