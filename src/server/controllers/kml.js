@@ -17,7 +17,7 @@ module.exports = function(app) {
 		    coordinates: lon+","+lat
 			});
 			response.setHeader('Content-type', 'text/xml')
-			response.setHeader('Content-disposition', 'attachment; filename=aquivo.kml');
+			response.setHeader('Content-disposition', 'attachment; filename=arquivo.kml');
 			response.write(content);
 			response.end()
 		});		

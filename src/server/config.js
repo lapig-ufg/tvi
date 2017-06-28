@@ -7,6 +7,7 @@ module.exports = function(app) {
 		"clientDir": appRoot + "/../client",
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
+		"imgs": appRoot + "/images/",
 		"redis": {
 			"host": "localhost",
 			"port": 6379

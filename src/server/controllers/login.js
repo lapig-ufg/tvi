@@ -71,9 +71,9 @@ module.exports = function(app) {
 
 	app.on('socket-disconnect', function(socket) {
 
-		points.update({"_id": socket.request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-			
-		});
+			points.update({"_id": socket.request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
+				
+			});
 	});
 
 	return Login;

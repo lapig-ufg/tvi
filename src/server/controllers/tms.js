@@ -43,8 +43,7 @@ module.exports = function(app) {
 			  url = url.replace(id,mapid);
 
 				cache.get(path, function(img) {
-					
-					if(img){	 				
+					if(img){ 				
 		 				Internal.enhanceAndResponse(img, response)
 			 		} else {
 			  		var img = new Buffer([]);
@@ -69,7 +68,7 @@ module.exports = function(app) {
 							  	var data = new Buffer(data);
 							  	img = Buffer.concat([img, data])
 
-								}).on('end', function(data) {    
+								}).on('end', function(data) {
 									Internal.enhanceAndResponse(img, response)
 									if(img.length > 0) {
 										cache.set(path, img)

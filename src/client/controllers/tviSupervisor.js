@@ -67,11 +67,12 @@ Application.controller('tviSuper', function($rootScope, $scope, $location, $wind
 		});
 	}
 	$scope.getKml = function(){
-		
+		console.log('oi')
 		var lon = $scope.data.lon;
 		var lat = $scope.data.lat;
 		var county = $scope.data.county;
 		var url = window.location.origin+window.location.pathname
+		console.log('oi')
 		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
 	}	
 

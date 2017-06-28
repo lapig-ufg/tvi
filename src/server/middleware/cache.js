@@ -2,7 +2,10 @@ var util  = require('util')
 	, redis = require('redis')
 	, request = require('request')
 	, async = require('async');
+var fs = require('fs');
+var exec = require('child_process').exec;
 
+var count = 0
 module.exports = function(app) {
 
 	var config = app.config;
@@ -11,6 +14,17 @@ module.exports = function(app) {
 	var Cache = {};
 
 	Cache.get = function(cacheKey, callback) {
+		var path = config.imgs+cacheKey+'/';
+		var img = cacheKey.slice(24, 29);	
+		fs.readFile(path+img, function (err,data) {
+		  if (!err && data) {
+		  	callback(data);	  	
+		  }else{
+		    callback(undefined);
+		  }
+		});
+		
+		/*
 		redisClient.get(cacheKey, function(err, data) {
 			if(!err && data) {
 		    var bitmap = new Buffer(data,'base64');
@@ -19,11 +33,30 @@ module.exports = function(app) {
 		   	callback(undefined);
 		  }
 	  });
+		*/
+
 	};
 
 	Cache.set = function(cacheKey, data){
+		cacheKey = cacheKey.substr(1);
+		exec('mkdir -p '+config.imgs+cacheKey, function(err, stdout, stderr){
+			var path = config.imgs+cacheKey+'/';
+			var img = cacheKey.slice(24, 29);	
+			fs.writeFile(path+img, data, function(err) {
+			  if(err) {
+			    return console.log(err);
+			  }
+			  console.log("The file was saved!");
+			});
+			 			
+		})
+		
+		
+		/*
 		var img = new Buffer(data || '').toString('base64');		
 		redisClient.set(cacheKey, img, function(){});
+		*/
+
 	}
 
 	Cache.del = function(keyPattern, data) {

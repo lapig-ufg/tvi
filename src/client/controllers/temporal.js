@@ -201,6 +201,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		var lat = $scope.point.lat;
 		var county = $scope.point.county;
 		var url = window.location.origin+window.location.pathname
+		console.log(url);
 		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
 	}
 
@@ -234,8 +235,8 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-		createModisChart()
-		createPrecipitationChart()
+		createModisChart();
+		createPrecipitationChart();
 		generateMaps();
 		$scope.counter = 0;
 
