@@ -7,7 +7,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	$scope.period = 'DRY';
 	$scope.periodo = 'SECO';
 	$scope.pointEnabled = true;
-
 	$scope.config = {
 		initialYear: 2000,
 		finalYear: 2016,
@@ -16,25 +15,33 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	}
 
 	$scope.formPlus = function(){
+		
 		var prevIndex = $scope.answers.length - 1;
 		var initialYear = $scope.answers[prevIndex].finalYear + 1
+
+		if($scope.answers[prevIndex].finalYear == $scope.config.finalYear)
+			return;
+
 		var finalYear = $scope.config.finalYear;
-
-		generateOptionYears(initialYear,finalYear);
-
+		
+		generateOptionYears(initialYear,finalYear);		
+		
 		$scope.answers.push(
 			{
 				initialYear: initialYear,
 				finalYear: finalYear,
 				landUse: $scope.config.landUse[1]
 			}		
-		)
+		)						
+		
+
 	}
 
 	$scope.formSubtraction = function(){
-		if($scope.answers.length > 1){
+		if($scope.answers.length >= 1){
 			$scope.answers.splice(-1,1);
 			$scope.optionYears.splice(-1,1);
+			console.log('oi', $scope.optionYears)
 		}
 	}
 
@@ -64,7 +71,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		for (var year = initialYear; year <= finalYear; year++) {
 			options.push(year);
 		}
-
 		$scope.optionYears.push(options);
 	}
 
@@ -201,7 +207,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		var lat = $scope.point.lat;
 		var county = $scope.point.county;
 		var url = window.location.origin+window.location.pathname
-		console.log(url);
 		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
 	}
 

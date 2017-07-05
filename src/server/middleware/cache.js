@@ -23,18 +23,6 @@ module.exports = function(app) {
 		    callback(undefined);
 		  }
 		});
-		
-		/*
-		redisClient.get(cacheKey, function(err, data) {
-			if(!err && data) {
-		    var bitmap = new Buffer(data,'base64');
-		   	callback(bitmap);
-		  } else {
-		   	callback(undefined);
-		  }
-	  });
-		*/
-
 	};
 
 	Cache.set = function(cacheKey, data){
@@ -50,13 +38,6 @@ module.exports = function(app) {
 			});
 			 			
 		})
-		
-		
-		/*
-		var img = new Buffer(data || '').toString('base64');		
-		redisClient.set(cacheKey, img, function(){});
-		*/
-
 	}
 
 	Cache.del = function(keyPattern, data) {
