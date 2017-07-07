@@ -22,7 +22,7 @@ module.exports = function(app) {
 				{
 					"name": "publishLayers",
 					"cron": '0 0 19 * * *',
-					"runOnAppStart": false,
+					"runOnAppStart": true,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
 						"eeKey": appRoot + "/integration/py/lapig-ee-09144f43f3b5.pem"

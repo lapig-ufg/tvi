@@ -6,8 +6,9 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 	$scope.showForm = false;
 
 	requester._get('login/user', function(result) {
-		if(result.name && result.senha){
-			$location.path('tviSuper');
+		console.log()
+		if(result.type == 'supervisor'){
+			$location.path('supervisor');
 		}
 		else if(result.name) {
 			$location.path('temporal');

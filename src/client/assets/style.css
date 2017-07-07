@@ -190,10 +190,11 @@ h3{
 }
 
 .form-lulc-panel {
-  height: 370px;
+  height: 340px;
   overflow-y: auto;
   padding-right: 0px;
   width: 318px;
   border-bottom: 1px solid silver;
+  overflow-x: auto;
 }
 

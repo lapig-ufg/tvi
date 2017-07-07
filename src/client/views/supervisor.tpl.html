@@ -1,0 +1,62 @@
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-fixed-310">
+				<div class="row">
+					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+						<legend>Informação de localização</legend>
+						<p><b>Bioma:</b> {{point.biome}}</p>
+						<p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span>
+						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
+						<fieldset>
+							<legend>Uso e Cobertura da Terra:</legend>
+				  		<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn btn-link pull-left" value="Alterar Período">
+				  		<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link pull-left" value="Google Earth">
+						</fieldset>
+			  	</div>
+				</div>
+				<div class="row">
+					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
+						<table class="table table-condensed">
+						  <thead>
+						  	<tr>
+						  		<th>User</th>
+						  		<th ng-repeat="year in point.years">{{year}}</th>
+						  	</tr>
+						  </thead>
+						  <tbody>
+						  	<tr ng-repeat="inspection in point.inspection">
+						  		<td>{{inspection.userName}}</td>
+						  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
+						  	</tr>
+						  </tbody>
+						</table>
+					</div>
+				</div>
+		</div>
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+			<div class="row">
+				<fieldset>
+				<legend>
+					 <form class="form-inline">              
+		        <input type="index" class="form-control" id="index" placeholder="index" ng-model="point.index">
+		        <button type="button" class="btn btn-success btn-navbar" ng-click="submit(point.index)">Buscar</button>
+		        <button  ng-click="submit(point.index-1)"  type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
+		        <span class="font-index">{{point.index}}/{{total}}</span>
+		        <button ng-click="submit(point.index+1)" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
+						<span class="pull-right">Imagens Landsat <span style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span></span>
+		      </form>
+					</legend>
+					<div ng-repeat="map in maps" ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
+						<span style="font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span style="margin-left: 132px; font-weight: bold;">{{periodo}}</span>
+						<inspection-map lon="point.lon" lat="point.lat" zoom="config.zoomLevel" tms-url="{{map.url}}" />
+					</div>
+				</fieldset>
+		</div>
+  </div>
+  <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+  	<fieldset>
+			<legend>Série temporal MODIS:</legend>
+  		<div id="modis" style="width:100%;height:250px;"></div>
+  	</fieldset> 
+  </div>
+</div>
