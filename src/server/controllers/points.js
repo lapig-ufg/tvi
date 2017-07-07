@@ -82,17 +82,15 @@ module.exports = function(app) {
 			} else {
 				points.count(totalFilter, function(err, total) {
 					points.count(countFilter, function (err, count) {
-						getImageDates(point.path, point.row, function(dates) {
-							point.dates = dates
+						point.dates = dates
 
-							var result = {};
-							result['point'] = {};
-							result['total'] = total;
-							result['current'] = point.index
-							result['user'] = name;
-							result['count'] = count;
-							callback(result);
-						})
+						var result = {};
+						result['point'] = {};
+						result['total'] = total;
+						result['current'] = point.index
+						result['user'] = name;
+						result['count'] = count;
+						callback(result);
 					})
 				});
 			}
