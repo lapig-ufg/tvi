@@ -44,7 +44,7 @@ module.exports = function(app) {
 					"type": 'inspector'
 				};
 
-				if(name == 'admin' && senha == 'lapigSergio') {
+				if(name == 'admin' && senha == 'tviadmintvi') {
 					request.session.user.type = 'supervisor';
 				}
 

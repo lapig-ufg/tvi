@@ -1,5 +1,4 @@
 var util  = require('util')
-	, redis = require('redis')
 	, request = require('request')
 	, async = require('async');
 var fs = require('fs');
@@ -9,8 +8,6 @@ var count = 0
 module.exports = function(app) {
 
 	var config = app.config;
-
-	var redisClient = redis.createClient(config.redis.port, config.redis.host);
 	var Cache = {};
 
 	Cache.get = function(cacheKey, callback) {
@@ -34,18 +31,9 @@ module.exports = function(app) {
 			  if(err) {
 			    return console.log(err);
 			  }
-			  console.log("The file was saved!");
 			});
 			 			
 		})
-	}
-
-	Cache.del = function(keyPattern, data) {
-		redisClient.keys(keyPattern, function(err, keys) {
-			keys.forEach(function(key) {
-				redisClient.del(key);
-			})
-		});
 	}
 	
 	Cache.populateCache = function(pointCacheCompĺete, finished) {
@@ -54,7 +42,7 @@ module.exports = function(app) {
 		var initialYear = 2000;
 		var finalYear = 2016;
 		var periods = ['DRY','WET']
-		var parallelRequestsLimit = 8;
+		var parallelRequestsLimit = config.cache.parallelRequestsLimit;
 
 		var long2tile = function(lon,zoom) { 
 			return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 

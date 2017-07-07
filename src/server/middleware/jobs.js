@@ -11,7 +11,7 @@ module.exports = function(app) {
 	var Jobs = {};
 
 	var strDate = function() {
-		return dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+		return dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss ");
 	}
 
 	var writeLog = function(logStream, msg) {

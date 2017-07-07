@@ -8,9 +8,8 @@ module.exports = function(app) {
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
 		"imgs": appRoot + "/images/",
-		"redis": {
-			"host": "localhost",
-			"port": 6379
+		"cache": {
+			"parallelRequestsLimit": 8
 		},
 		"mongo": {
 			"host": "localhost",
@@ -23,7 +22,7 @@ module.exports = function(app) {
 				{
 					"name": "publishLayers",
 					"cron": '0 0 19 * * *',
-					"runOnAppStart": false,
+					"runOnAppStart": true,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
 						"eeKey": appRoot + "/integration/py/lapig-ee-09144f43f3b5.pem"
@@ -31,7 +30,7 @@ module.exports = function(app) {
 				},
 				{
 					"name": "populateCache",
-					"cron": '0 0 20 1 * *',
+					"cron": '0 0 20 1 0 *',
 					"runOnAppStart": false,
 					"params": {}
 				}
@@ -44,6 +43,7 @@ module.exports = function(app) {
 		config["mongo"]["port"] = "27017";
 		config.jobs.toRun[0].runOnAppStart = true;
 		config.jobs.toRun[1].runOnAppStart = true;
+		config["imgs"] = "/data/cache-tvi/";
 	}
 
 	return config;

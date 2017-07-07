@@ -8,6 +8,11 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/temporal.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/supervisor', {
+			controller: 'supervisorController',
+			templateUrl: 'views/supervisor.tpl.html',
+			reloadOnSearch: false
+		})
 		.otherwise({
 			redirectTo: '/login',
 			controller: 'LoginController',
