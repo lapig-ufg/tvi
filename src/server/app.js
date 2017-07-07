@@ -1,4 +1,5 @@
 var express = require('express')
+, cluster = require('cluster')
 , load = require('express-load')
 , path = require('path')
 , util    = require('util')
@@ -14,32 +15,33 @@ var express = require('express')
 , timeout = require('connect-timeout')
 , bodyParser = require('body-parser')
 , multer = require('multer')
-, session = require('express-session');
+, session = require('express-session')
+, parseCookie = require('cookie-parser');
 
 var app = express();
-
-var parseCookie = require('cookie-parser');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var MongoStore = require('connect-mongo')(session);
 var cookie = parseCookie('LAPIG')
 
-var store = new session.MemoryStore()
-var KEY ="cookie"
 load('config.js', {'verbose': false})
 .then('libs')
 .then('middleware')
 .into(app);
 
 app.middleware.repository.init(function() {
-
+	
 	app.repository = app.middleware.repository;
+	var store = new MongoStore({ url: 'mongodb://' + app.config.mongo.host + ':' + app.config.mongo.port + '/' + app.config.mongo.dbname  });
 
 	app.use(cookie);
-	var middlewareSession = session({ store: store,
-										secret: 'LAPIG',
-										resave: false, 
-										saveUninitialized: true, 
-										key: 'sid' })
+	var middlewareSession = session({ 
+		store: store,
+		secret: 'LAPIG',
+		resave: false, 
+		saveUninitialized: true, 
+		key: 'sid' 
+	})
 
 	io.use(function(socket, next){
 		middlewareSession(socket.request, socket.request.res, next)
@@ -91,7 +93,10 @@ app.middleware.repository.init(function() {
 
 	http.listen(app.config.port, function() {
 		console.log('LAPIG-MAPS Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
-		app.middleware.jobs.start();
+		if(process.env.PRIMARY_WORKER) {
+
+			app.middleware.jobs.start();
+		}
 	});
 
 });

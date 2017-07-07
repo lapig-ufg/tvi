@@ -60,7 +60,7 @@ Application
       },
       controller: function($scope, $element) {
         $($element).ready(function() {
-          var tmsLayer = new L.TileLayer($scope.tmsUrl, { maxNativeZoom: $scope.zoom, maxNativeZoom: $scope.zoom });
+          var tmsLayer = new L.TileLayer($scope.tmsUrl, { subdomains: ['m1','m2','m3','m4'], maxNativeZoom: $scope.zoom, maxNativeZoom: $scope.zoom });
           var marker = L.marker([$scope.lat,$scope.lon], {
                         icon: L.icon({
                           iconUrl: 'assets/marker.png',

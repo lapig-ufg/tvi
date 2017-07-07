@@ -11,7 +11,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		initialYear: 2000,
 		finalYear: 2016,
 		zoomLevel: 13,
-		landUse: ["Agricultura Anual", "Agricultura Perene", "Área urbana", "Água", "Cana-de-açucar", "Mosaico de ocupação", "Não observado", "Pastagem Cultivada", "Pastagem Natural", "Solo Exposto", "Silvicultura", "Vegetação nativa"]
+		landUse: ["Agricultura Anual", "Agricultura Perene", "Área urbana", "Água", "Cana-de-açucar", "Desmatamento", "Em regeneração", "Mosaico de ocupação", "Não observado", "Pastagem Cultivada", "Pastagem Natural", "Solo Exposto", "Silvicultura", "Vegetação nativa"]
 	}
 
 	$scope.formPlus = function(){
@@ -32,9 +32,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				finalYear: finalYear,
 				landUse: $scope.config.landUse[1]
 			}		
-		)						
-		
-
+		)
 	}
 
 	$scope.formSubtraction = function(){
@@ -193,7 +191,13 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}
 
 			tmsId = sattelite+'_'+year+'_'+$scope.period;
-			var url = '/map/'+tmsId+'/{z}/{x}/{y}';
+			
+			var host = location.host;
+			if (host.indexOf('maps.lapig.iesa.ufg.br') !== -1) {
+				host = host.replace('maps.lapig', 'lapig');
+			}
+
+			var url = "http://{s}." + host + '/map/'+tmsId+'/{z}/{x}/{y}';
 			$scope.maps.push({
 				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
 				year: year,
