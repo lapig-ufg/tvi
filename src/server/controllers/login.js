@@ -59,6 +59,7 @@ module.exports = function(app) {
 	}
 
 	Login.logoff = function(request, response){
+		console.log(request.session)
 
 		points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
 			delete request.session.user;

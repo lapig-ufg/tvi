@@ -41,7 +41,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		if($scope.answers.length >= 1){
 			$scope.answers.splice(-1,1);
 			$scope.optionYears.splice(-1,1);
-			console.log('oi', $scope.optionYears)
 		}
 	}
 
@@ -63,7 +62,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	$scope.changePeriod = function() {
 		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
 		$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
-		generateMaps();
 	}
 
 	var generateOptionYears = function(initialYear, finalYear) {
@@ -94,7 +92,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				
 			}
 		}
-
 		return ndvi;
 
 	}
@@ -120,11 +117,25 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		})		
 	}
 
-	var createModisChart = function() {
+	var getDryDate = function(dates, tmsIdList){
+		var dry = [];
+		for(key in dates){
+			for(var i = 0; i < tmsIdList.length; i++){
+				if(key == tmsIdList[i]){
+					dry.push(dates[key])
+				}
+			}
+		}
+		return dry.sort()
+	}
+
+	var createModisChart = function(datesFromService) {
 		
 		Plotly.purge('modis');
 
 		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+
+
 	
 			var ndvi = [];
 			var date = [];
@@ -133,54 +144,93 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			var ndviAndDate = {}
 			for(var i = 0; i < data.values.length; i++){
 				ndvi.push(data.values[i][1]);
-				date.push(new Date(data.values[i][0]));
+				date.push(data.values[i][0]);
 				var dateObj = new Date(data.values[i][0])
 				var month = dateObj.getUTCMonth() + 1;
 				var day = dateObj.getUTCDate();
 				var year = dateObj.getUTCFullYear();
 				text.push(day + "/" + month + "/" + year);
 			}
+			
+			var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
+			var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
+			
+			var d3 = Plotly.d3;
 
+			var WIDTH_IN_PERCENT_OF_PARENT = 100, HEIGHT_IN_PERCENT_OF_PARENT = 100;
+
+			var gd3 = d3.select('#modis')
+					    .append('div')
+					    .style({
+					        width: WIDTH_IN_PERCENT_OF_PARENT + '%',
+					        'margin-left': (100 - WIDTH_IN_PERCENT_OF_PARENT) / 2 + '%',
+
+					        height: HEIGHT_IN_PERCENT_OF_PARENT + 'vh',
+					        'margin-top': (100 - HEIGHT_IN_PERCENT_OF_PARENT) / 2 + 'vh'
+					    });
+
+			var gd = gd3.node();
+			console.log(date);
 			var trace1 = {
 			  x: date,
 			  y: ndvi,
-			  text: text,
-			  type: 'scatter',
-			  name:"NDVI",
-			  hoverinfo: "text"
+			  text: date,
+			  name:"MODIS",
+			  hoverinfo: "text+y"
 			};
-
+			
 			var trace2 = {
-			  x: getDateImages(),
-			  y: trace2NDVI(data.values, getDateImages()),
+			  x: dry,
+			  y: trace2NDVI(data.values, dry),
+			  text: dry,
 			  mode: 'markers',
 			  marker: {
 			    color: 'rgb(219, 64, 82)',
 			    size: 8
 			  },
-			 	name: 'Landsat',
-			 	hoverinfo: 'none'
+			 	name: 'Landsat dry',
+			 	hoverinfo:"none"
 			};
 
+			var trace3 = {
+			  x: wet,
+			  y: trace2NDVI(data.values, wet),
+			  text: wet,
+			  mode: 'markers',
+			  marker: {
+			    color: 'rgb(100, 64, 82)',
+			    size: 8
+			  },
+			 	name: 'Landsat Wet',
+			 	hoverinfo:"none"
+			};
+			
 			var layout = {
 			  width: 1100,
 			  height: 500,
 			  xaxis: {
 			  	tickmode: 'auto',
-			  	tickvals: getDateImages(),
-			  	ticktext: getDateImages()
+			  	nticks: 19
 			  }
 			};
 
-			var data = [trace1, trace2];
+			var data = [trace1, trace2, trace3];
 
-			Plotly.newPlot('modis', data, layout);
+			Plotly.newPlot(gd, data, layout);
+
+			window.onresize = function() {
+			  Plotly.Plots.resize(gd);
+			};
 
 		});
 	}
 
 	var generateMaps = function() {
 		$scope.maps = [];
+		var tmsIdList = [];
+
+		$scope.tmsIdListWet = [];
+		$scope.tmsIdListDry = [];
 
 		for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
 			sattelite = 'L7';
@@ -194,13 +244,36 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 			tmsId = sattelite+'_'+year+'_'+$scope.period;
 			var url = '/map/'+tmsId+'/{z}/{x}/{y}';
+			tmsIdList.push(tmsId);
 			$scope.maps.push({
 				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
 				year: year,
 				url: url
 			});
 		};
+
+		for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
+			sattelite = 'L7';
+			if(year > 2012) { 
+				sattelite = 'L8'
+			} else if(year > 2011) {
+				sattelite = 'L7'
+			} else if(year > 2003) {
+				sattelite = 'L5'
+			}
+
+			tmsIdDry = sattelite+'_'+year+'_DRY';
+			tmsIdWet = sattelite+'_'+year+'_WET';
+
+			$scope.tmsIdListDry.push(tmsIdDry)
+			$scope.tmsIdListWet.push(tmsIdWet)
+			
+		};
+
+		return tmsIdList;
+
 	}
+
 
 	$scope.getKml = function(){
 		var lon = $scope.point.lon;
@@ -237,12 +310,13 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		$rootScope.total = data.total;
 		$rootScope.count = data.count;
 		$rootScope.current = data.current;
+		$scope.datesFromService = data.point.dates;
 
 		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-		createModisChart();
-		createPrecipitationChart();
 		generateMaps();
+		createModisChart(data.point.dates);
+		createPrecipitationChart();
 		$scope.counter = 0;
 
 	}

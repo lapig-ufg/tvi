@@ -35,7 +35,7 @@ module.exports = function(app) {
 				{ "userName": { "$nin": [ name ] } },
 				{ "$where":'this.userName.length<10' },
 				{ "campaign": { "$eq": campaign } },
-				{ "underInspection": { $lt: 10 } }
+				{ "underInspection": { $lt: 1000 } }
 			]
 		};
 		var currentFilter = { 
