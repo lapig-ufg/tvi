@@ -82,7 +82,6 @@ module.exports = function(app) {
 			} else {
 				points.count(totalFilter, function(err, total) {
 					points.count(countFilter, function (err, count) {
-						point.dates = dates
 
 						var result = {};
 						result['point'] = {};
