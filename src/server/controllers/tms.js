@@ -44,7 +44,7 @@ module.exports = function(app) {
 
 				cache.get(path, function(img) {
 					if(img){ 
-						console.log(img)
+						
 		 				Internal.enhanceAndResponse(img, response)
 			 		} else {
 			  		var img = new Buffer([]);

@@ -32,11 +32,12 @@ module.exports = function(app) {
 	  }).pipe(response)
 	}
 
-	Internal.modisMaps = function(request, response){
+	Internal.timeSeries = function(request, response){
+		var serie = request.param('serie')
 		var latitude = request.param('latitude');
 		var longitude = request.param('longitude');
 		
-		var Url = "http://maps.lapig.iesa.ufg.br/time-series/MOD13Q1_NDVI/values?_dc=1495573383361&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
+		var Url = "http://maps.lapig.iesa.ufg.br/time-series/"+serie+"/values?_dc=1495573383361&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
 
 		requester({
 	  		uri: Url
