@@ -40,7 +40,10 @@ app.middleware.repository.init(function() {
 		secret: 'LAPIG',
 		resave: false, 
 		saveUninitialized: true, 
-		key: 'sid' 
+		key: 'sid',
+		cookie: {
+			maxAge: 1000 * 60 * 60 * 24
+		}
 	})
 
 	io.use(function(socket, next){

@@ -9,7 +9,7 @@ module.exports = function(app) {
 		"logDir": appRoot + "/log/",
 		"imgs": appRoot + "/images/",
 		"cache": {
-			"parallelRequestsLimit": 8
+			"parallelRequestsLimit": 10
 		},
 		"mongo": {
 			"host": "localhost",
