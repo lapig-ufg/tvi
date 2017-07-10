@@ -60,6 +60,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 	$scope.changePeriod = function() {
 		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
 		$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
+		generateMaps()
 	}
 
 	var generateOptionYears = function(initialYear, finalYear) {

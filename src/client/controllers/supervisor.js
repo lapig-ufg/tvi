@@ -97,67 +97,138 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 	}
 
-	var createModisChart = function() {
-		
-		Plotly.purge('modis');
+	var getDryDate = function(dates, tmsIdList){
+		var dry = [];
+		for(key in dates){
+			for(var i = 0; i < tmsIdList.length; i++){
+				if(key == tmsIdList[i]){
+					dry.push(dates[key])
+				}
+			}
+		}
+		return dry.sort()
+	}
 
-		requester._get('spatial/query2',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
-	
+	var createModisChart = function(datesFromService) {
+		
+		Plotly.purge('NDVI');
+
+		requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+
 			var ndvi = [];
+			var ndviSg = [];
 			var date = [];
 			var text = [];
 
 			var ndviAndDate = {}
 			for(var i = 0; i < data.values.length; i++){
 				ndvi.push(data.values[i][1]);
-				date.push(new Date(data.values[i][0]));
+				ndviSg.push(data.values[i][3]);
+				date.push(data.values[i][0]);
 				var dateObj = new Date(data.values[i][0])
 				var month = dateObj.getUTCMonth() + 1;
 				var day = dateObj.getUTCDate();
 				var year = dateObj.getUTCFullYear();
 				text.push(day + "/" + month + "/" + year);
 			}
+			
+			var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
+			var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
+			
+			var d3 = Plotly.d3;
 
+			var gd3 = d3.select('#NDVI')
+
+			var gd = gd3.node();
+			
 			var trace1 = {
 			  x: date,
 			  y: ndvi,
-			  text: text,
-			  type: 'scatter',
+			  text: date,
 			  name:"NDVI",
-			  hoverinfo: "text"
-			};
-
-			var trace2 = {
-			  x: getDateImages(),
-			  y: trace2NDVI(data.values, getDateImages()),
-			  mode: 'markers',
-			  marker: {
-			    color: 'rgb(219, 64, 82)',
-			    size: 8
-			  },
-			 	name: 'Landsat',
-			 	hoverinfo: 'none'
-			};
-
-			var layout = {
-			  width: 1100,
-			  height: 500,
-			  xaxis: {
-			  	tickmode: 'auto',
-			  	tickvals: getDateImages(),
-			  	ticktext: getDateImages()
+			  hoverinfo: "text+y",
+			  line: {
+			  	width: 1.5,
+			  	color: '#f6b2b2'
 			  }
 			};
 
-			var data = [trace1, trace2];
+			var trace2 = {
+			  x: date,
+			  y: ndviSg,
+			  text: date,
+			  name:"NDVI (savGol)",
+			  hoverinfo:"none",
+			  line: {
+			  	width: 1,
+			  	color: '#db2828'
+			  }
+			};
+			
+			var trace3 = {
+			  x: dry,
+			  y: trace2NDVI(data.values, dry),
+			  text: dry,
+			  mode: 'markers',
+			  marker: {
+			    color: '#818181',
+			    size: 6
+			  },
+			 	name: 'Landsat (Seco)',
+			 	hoverinfo:"none"
+			};
 
-			Plotly.newPlot('modis', data, layout);
+			var trace4 = {
+			  x: wet,
+			  y: trace2NDVI(data.values, wet),
+			  text: wet,
+			  mode: 'markers',
+			  marker: {
+			    color: '#323232',
+			    size: 6
+			  },
+			 	name: 'Landsat (Chuvoso)',
+			 	hoverinfo:"none"
+			};
+			
+			var layout = {
+			  height: 400,
+			  legend: {
+			  	xanchor:"center",
+    			yanchor:"top",
+			    orientation: "h",
+			  	y: 1.2,
+					x: 0.5
+				},
+			  xaxis: {
+			  	tickmode: 'auto',
+			  	nticks: 19,
+			  	fixedrange: true,
+			  	gridcolor: '#828282',
+    			gridwidth: 1,
+			  },
+			  yaxis: {
+			  	fixedrange: true
+			  }
+			};
+
+			var data = [trace1, trace2, trace3, trace4];
+
+			Plotly.newPlot(gd, data, layout, {displayModeBar: false});
+
+			window.onresize = function() {
+			  Plotly.Plots.resize(gd);
+			};
 
 		});
 	}
 
 	var generateMaps = function() {
 		$scope.maps = [];
+		var tmsIdList = [];
+
+		$scope.tmsIdListWet = [];
+		$scope.tmsIdListDry = [];
 
 		for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
 			sattelite = 'L7';
@@ -170,6 +241,11 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			}
 
 			tmsId = sattelite+'_'+year+'_'+$scope.period;
+			tmsIdDry = sattelite+'_'+year+'_DRY';
+			tmsIdWet = sattelite+'_'+year+'_WET';
+
+			$scope.tmsIdListDry.push(tmsIdDry)
+			$scope.tmsIdListWet.push(tmsIdWet)
 			
 			var host = location.host;
 			if (host.indexOf('maps.lapig.iesa.ufg.br') !== -1) {
@@ -177,12 +253,14 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			}
 
 			var url = "http://{s}." + host + '/map/'+tmsId+'/{z}/{x}/{y}';
+
 			$scope.maps.push({
 				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
 				year: year,
 				url: url
 			});
 		};
+
 	}
 
 	$scope.getKml = function(){
@@ -226,8 +304,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 		initFormViewVariables();
 		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-		createModisChart();
 		generateMaps();
+		createModisChart(data.point.dates);
 		$scope.counter = 0;
 
 		requester._get('points/total-points/', function(total) {
