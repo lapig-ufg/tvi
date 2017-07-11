@@ -21,7 +21,9 @@ Application.config(function($routeProvider, $locationProvider) {
 
 }).run(function($http) {
 	
-	var socket = io.connect('/');
+	var socket = io.connect('/', {
+		transports: [ 'websocket' ]
+	});
 
 	$http.defaults.headers.post['Content-Type'] = 'application/json';
 	$http.defaults.headers.put['Content-Type'] = 'application/json';

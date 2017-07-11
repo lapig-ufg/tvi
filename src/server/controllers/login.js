@@ -59,22 +59,20 @@ module.exports = function(app) {
 	}
 
 	Login.logoff = function(request, response){
-		console.log(request.session)
-
 		points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
 			delete request.session.user;
 			delete request.session.name;
 			response.write("deslogado");
 			response.end();
-			
 		});
 	}
 
 	app.on('socket-disconnect', function(socket) {
-
-			points.update({"_id": socket.request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-				
+		if(socket.handshake.session && socket.handshake.session.currentPointId) {
+			console.log(socket.handshake.session.currentPointId)
+			points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
 			});
+		}
 	});
 
 	return Login;

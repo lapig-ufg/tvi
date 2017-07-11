@@ -23,6 +23,8 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var MongoStore = require('connect-mongo')(session);
 var cookie = parseCookie('LAPIG')
+var mongoAdapter = require('socket.io-adapter-mongo');
+var sharedsession = require("express-socket.io-session");
 
 load('config.js', {'verbose': false})
 .then('libs')
@@ -31,26 +33,30 @@ load('config.js', {'verbose': false})
 
 app.middleware.repository.init(function() {
 	
+	var mongodbUrl = 'mongodb://' + app.config.mongo.host + ':' + app.config.mongo.port + '/' + app.config.mongo.dbname;
+
 	app.repository = app.middleware.repository;
-	var store = new MongoStore({ url: 'mongodb://' + app.config.mongo.host + ':' + app.config.mongo.port + '/' + app.config.mongo.dbname  });
+	var store = new MongoStore({ url: mongodbUrl });
+	io.adapter(mongoAdapter( mongodbUrl ));
 
 	app.use(cookie);
 	var middlewareSession = session({ 
 		store: store,
 		secret: 'LAPIG',
-		resave: false, 
-		saveUninitialized: true, 
+		resave: false,
+    saveUninitialized: true,
 		key: 'sid',
 		cookie: {
 			maxAge: 1000 * 60 * 60 * 24
 		}
 	})
 
-	io.use(function(socket, next){
-		middlewareSession(socket.request, socket.request.res, next)
-	})
-	
 	app.use(middlewareSession);
+
+	io.use(sharedsession(middlewareSession, {
+  	autoSave:true
+	})); 
+	
 	app.use(compression());
 	app.use(express.static(app.config.clientDir));
 	app.set('views', __dirname + '/templates');
@@ -87,7 +93,6 @@ app.middleware.repository.init(function() {
 		console.log('ServerError: ', error.stack);
 		next();
 	});
-
 
 	load('models', {'verbose': false})
 	.then('controllers')

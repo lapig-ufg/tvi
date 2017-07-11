@@ -4,17 +4,15 @@ db.adminCommand({setParameter: 1, internalQueryExecMaxBlockingSortBytes:10245792
 
 use tvi
 
-var cursor = db.getCollection('points').find({"campaign": "campanha_2008"})
+var cursor = db.getCollection('points').find({})
 
 var count = 0
 
 while(cursor.hasNext()){
 	
 	var doc = cursor.next()
-	var newdoc = {"index": count}	
+	var newdoc = {"underInspection": doc.userName.length}	
 	var id = doc._id
-	print(doc)
-	db.getCollection('pointsOriginal').update({"_id":id}, { $set: newdoc })
-	count=count+1;
-	
+	print(doc._id)
+	db.getCollection('points').update({"_id":id}, { $set: newdoc })
 }

@@ -42,7 +42,6 @@ module.exports = function(app) {
 		var initialYear = 2000;
 		var finalYear = 2016;
 		var periods = ['DRY','WET']
-		var parallelRequestsLimit = config.cache.parallelRequestsLimit;
 
 		var long2tile = function(lon,zoom) { 
 			return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 
@@ -101,6 +100,9 @@ module.exports = function(app) {
 	 		app.repository.collections.points.findOne({ "cached" : false }, { lon:1, lat: 1}, { sort: [['index', 1]] }, function(err, point) {
 	 			if(point) {
 					var requestTasks = getRequestTasks(point);
+					var hour = new Date().getHours()
+					var parallelRequestsLimit = (hour >= 8 && hour <= 19 ) ? config.cache.parallelRequestsBusyTime : config.cache.parallelRequestsDawnTime;
+
 					async.parallelLimit(requestTasks, parallelRequestsLimit, function() {
 						app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  });
 						pointCacheCompĺete(point._id);

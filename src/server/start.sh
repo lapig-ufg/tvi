@@ -1,3 +1,3 @@
 #!/bin/bash
 
-NODE_ENV=dev always app.js
+NODE_ENV=dev always app-tvi-cluster.js

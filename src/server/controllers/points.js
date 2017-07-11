@@ -86,7 +86,7 @@ module.exports = function(app) {
 						var result = {};
 						result['point'] = {};
 						result['total'] = total;
-						result['current'] = point.index
+						result['current'] = total
 						result['user'] = name;
 						result['count'] = count;
 						callback(result);
@@ -101,6 +101,7 @@ module.exports = function(app) {
 		var user = request.session.user;
 
 		findPoint(user.name, user.campaign, function(result) {
+			console.log("result.point._id", result.point._id)
 				request.session.currentPointId = result.point._id;
 				response.send(result);
 				response.end();

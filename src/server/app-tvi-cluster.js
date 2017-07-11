@@ -3,6 +3,10 @@ var http = require('http');
 var numCPUs = require('os').cpus().length;
 
 if (cluster.isMaster) {
+  if(process.env.NODE_ENV == 'dev') {
+    var numCPUs = 2
+  }
+
   for (var i = 0; i < numCPUs; i++) {
     var ENV_VAR = {}
     if(i == 0) {

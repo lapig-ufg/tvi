@@ -9,7 +9,8 @@ module.exports = function(app) {
 		"logDir": appRoot + "/log/",
 		"imgs": appRoot + "/images/",
 		"cache": {
-			"parallelRequestsLimit": 10
+			"parallelRequestsBusyTime": 6,
+			"parallelRequestsDawnTime": 12
 		},
 		"mongo": {
 			"host": "localhost",
@@ -22,7 +23,7 @@ module.exports = function(app) {
 				{
 					"name": "publishLayers",
 					"cron": '0 0 19 * * *',
-					"runOnAppStart": true,
+					"runOnAppStart": false,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
 						"eeKey": appRoot + "/integration/py/lapig-ee-09144f43f3b5.pem"
