@@ -13,6 +13,11 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/supervisor.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/dashboard', {
+			controller: 'dashboardController',
+			templateUrl: 'views/dashboard.tpl.html',
+			reloadOnSearch: false
+		})
 		.otherwise({
 			redirectTo: '/login',
 			controller: 'LoginController',

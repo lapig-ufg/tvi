@@ -1,10 +1,7 @@
-
-
 module.exports = function(app){
 	var Dashboard = {}
 
 	var points = app.repository.collections.points;
-	var campanha = "campanha_2000";
 
 	var getNames = function(userNames){
 		var names = {}
@@ -118,6 +115,64 @@ module.exports = function(app){
 
 	}
 	
-	return Dashboard;
+	Dashboard.userInspections = function(request, response) {
+		
+		var counter = {};
+		var cursor = points.find({ "campaign": "Mapbiomas_teste" });
 
+		cursor.toArray(function(error, docs) {
+			
+			docs.forEach(function(doc) {
+			    doc.userName.forEach(function(name) {        
+			         
+			        if(counter[name] == null) {
+			            counter[name] = 0; 
+			        }
+			        
+			        counter[name]++;
+			    })
+			});
+		  
+			var result = {
+				usernames: [],
+				ninspection: []
+			};
+
+			for(var user in counter) {
+				result.usernames.push(user)
+				result.ninspection.push(counter[user])
+			}; 
+
+		  response.send(result);
+			response.end();
+
+		})
+	}
+
+	Dashboard.pointsInspection = function(request, response) {
+
+		request.session.user
+		var cursor = points.find({"campaign" : "Mapbiomas_teste"});
+		
+		var result = {
+			totalPoints: 0,
+			noTotalPoints: 0
+		};
+
+		cursor.toArray(function(error, docs) {
+			docs.forEach(function(doc) {
+				if(doc.userName.length == 5) {
+					result.totalPoints++;
+				} else {
+					result.noTotalPoints++;
+				}
+			})
+
+	  response.send(result);
+		response.end();
+
+		});
+	}
+
+	return Dashboard;
 }

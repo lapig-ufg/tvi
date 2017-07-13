@@ -6,5 +6,6 @@ module.exports = function (app) {
 	app.get('/service/points/horizontal1/', dashboard.horizontalBar1);
 	app.get('/service/points/horizontal2/', dashboard.horizontalBar2)
 
-
+	app.get('/service/dashboard/user-inspections', dashboard.userInspections);
+	app.get('/service/dashboard/points-inspection', dashboard.pointsInspection);
 }
