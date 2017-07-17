@@ -1,11 +1,28 @@
-<div class="container-fluid">
-	<div class="row">
-  	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-  		<h1>Dashboard</h1>
-  		<table>
-	  			<td><div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div></td>
-	  			<td><div id="chart"><!-- Plotly chart will be drawn inside this DIV --></div></td>
-  		</table>
-  	</div>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+  </head>
+  
+  <body>
+ 		<h1>Dashboard</h1>
+  	<div class="container-fluid">
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6" id="pointsInsp"></div>
+				<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6" id="totalInpec"></div>
+			</div>
+			<div class="row">
+				<br>
+				<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6" id="meanTime"></div>
+				<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6" id="cachedPoints"></div>
+			</div>
+		</div>
+  </body>
+</html>
+

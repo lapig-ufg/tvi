@@ -21,7 +21,7 @@
 						  <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.finalYear" ng-change="formPlus()" ng-options="y for y in optionYears[$index]"></select>
 							<br><label style="margin: 10px;">Classe: </label><select style="width: 200px;" class="form-control" ng-model="answer.landUse" ng-options="z for z in config.landUse" ng-click="form-plus"></select>
 						</form>
-						<input style="margin-right: 25px;" type="button" class="btn btn-success pull-right" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear" ng-click="submitForm()" value="Enviar" ng-disabled='onSubmission'>
+						<input style="margin-right: 25px;" type="button" class="btn btn-success pull-right" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
 						<!--
 						<input type="button" style="margin-right:5px" class="btn btn-warning pull-left" ng-disabled="answers[answers.length - 1].finalYear == config.finalYear" ng-click="formPlus()" value="+">
 						-->

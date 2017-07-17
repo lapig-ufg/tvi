@@ -118,7 +118,8 @@ module.exports = function(app){
 	Dashboard.userInspections = function(request, response) {
 		
 		var counter = {};
-		var cursor = points.find({ "campaign": "Mapbiomas_teste" });
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({ "campaign": campaign });
 
 		cursor.toArray(function(error, docs) {
 			
@@ -143,19 +144,19 @@ module.exports = function(app){
 				result.ninspection.push(counter[user])
 			}; 
 
-		  response.send(result);
-			response.end();
-
+			  response.send(result);
+				response.end();
 		})
 	}
 
 	Dashboard.pointsInspection = function(request, response) {
 
-		request.session.user
-		var cursor = points.find({"campaign" : "Mapbiomas_teste"});
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({"campaign" : campaign});
 		
 		var result = {
 			totalPoints: 0,
+			pointsInspection: 0,
 			noTotalPoints: 0
 		};
 
@@ -163,14 +164,67 @@ module.exports = function(app){
 			docs.forEach(function(doc) {
 				if(doc.userName.length == 5) {
 					result.totalPoints++;
+				} else if(doc.userName.length < 5 && doc.userName.length >= 1) {
+					result.pointsInspection++;
 				} else {
 					result.noTotalPoints++;
 				}
 			})
 
-	  response.send(result);
-		response.end();
+		  response.send(result);
+			response.end();
+		});
+	}
 
+	Dashboard.meanTimeInsp = function(request, response) {
+
+		var listInsp = {};
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({"campaign" : campaign});
+
+		cursor.toArray(function(error, docs) {
+			docs.forEach(function(doc) {
+				for(var i=0; i<doc.userName.length; i++) {
+
+	        if(!listInsp[doc.userName[i]]) {
+	          listInsp[doc.userName[i]] = { sum: 0, count: 0  };
+	        }
+	        
+	        listInsp[doc.userName[i]].sum = listInsp[doc.userName[i]].sum + doc.inspection[i].counter;
+	        listInsp[doc.userName[i]].count = listInsp[doc.userName[i]].count + 1
+	    	}
+
+		    for(var key in listInsp) {
+				  listInsp[key].avg = (listInsp[key].sum / listInsp[key].count)
+				}
+			});
+	  
+	  	response.send(listInsp);
+			response.end();
+		});
+	}
+
+	Dashboard.cachedPoints = function(request, response) {
+
+		var result = {
+			pointsCached: 0,
+			pointsNoCached: 0
+		}
+
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({"campaign" : campaign});
+
+		cursor.toArray(function(error, docs) {
+			docs.forEach(function(doc) {
+				if(doc.cached == false) {
+					result.pointsNoCached++;
+				} else {
+					result.pointsCached++
+				}		
+			})
+
+		  response.send(result);
+			response.end();
 		});
 	}
 

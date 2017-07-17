@@ -8,4 +8,6 @@ module.exports = function (app) {
 
 	app.get('/service/dashboard/user-inspections', dashboard.userInspections);
 	app.get('/service/dashboard/points-inspection', dashboard.pointsInspection);
+	app.get('/service/dashboard/meanTime-inspection', dashboard.meanTimeInsp);
+	app.get('/service/dashboard/cachedPoints-inspection', dashboard.cachedPoints);
 }
