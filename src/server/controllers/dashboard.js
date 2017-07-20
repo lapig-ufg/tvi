@@ -195,7 +195,7 @@ module.exports = function(app){
 	    	}
 
 		    for(var key in listInsp) {
-				  listInsp[key].avg = (listInsp[key].sum / listInsp[key].count)
+				  listInsp[key].avg = (listInsp[key].sum / listInsp[key].count).toFixed(0)
 				}
 			});
 	  
@@ -212,7 +212,7 @@ module.exports = function(app){
 		}
 
 		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign" : campaign});
+		var cursor = points.find({"campaign": campaign});
 
 		cursor.toArray(function(error, docs) {
 			docs.forEach(function(doc) {
@@ -227,6 +227,169 @@ module.exports = function(app){
 			response.end();
 		});
 	}
+
+	Dashboard.agreementPoints = function(request, response) {
+		
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({"campaign": campaign});
+
+		cursor.toArray(function(err, points) {
+			var csvResult = [];
+			//Passar o tamanho do array dos anos inspecionados;
+			var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
+
+			points.forEach(function(point) {
+				//Trocar o número 5 pelo número maximo de inspeções por ponto
+				if(point.userName.length == 5) {
+					var csvLines = {
+						'index': point.index,
+						'lon': point.lon,
+						'lat': point.lat,
+					};
+					
+					var landUses = {};
+					
+					for(var i=0; i < point.userName.length; i++) {
+						
+						var userName = point.userName[i];
+						var form = point.inspection[i].form;
+
+						form.forEach(function(f) {
+							
+							for( var year = f.initialYear; year <= f.finalYear; year++) {
+								
+								if(!landUses[year])
+									landUses[year] = [];
+
+								landUses[year].push(f.landUse);
+							}
+						});
+					}
+
+					for(var landUse in landUses) {
+						
+						var votes = {};
+
+						for (var i in landUses[landUse]) {
+							if(!votes[landUses[landUse][i]])
+								votes[landUses[landUse][i]]=0
+
+							votes[landUses[landUse][i]] += 1;
+						}
+
+						for(var i in votes) {
+							
+							if (votes[i] >= Math.ceil(5 / 2)) {
+								csvLines[landUse] = i;
+								csvLines[landUse+"_votes"] = votes[i];
+
+								break;
+							}
+						}
+					}
+
+					csvResult.push(csvLines)
+				}
+			});
+
+			var result = {};
+		
+			for(var i=years[0]; i<=years[years.length - 1]; i++) {
+				
+				if(!result[i+'_pontosConc'])
+					result[i+'_pontosConc'] = 0;
+
+				if(!result[i+'_pontosNaoConc'])
+					result[i+'_pontosNaoConc'] = 0;
+				
+				
+				csvResult.forEach(function(data) {
+					//Trocar o numero 3 pela media dos inspetores
+					if(data[i+"_votes"] >= 3) {
+						result[i+'_pontosConc']++;
+					} else {
+						result[i+'_pontosNaoConc']++;
+					}
+				});
+			}
+
+			response.send(result);
+			response.end();
+
+		});
+	}
+
+	/*Dashboard.agreementPoints = function(request, response){
+		
+		var campaign = request.session.user.campaign;
+		var cursor = points.find({"campaign": campaign});
+
+		cursor.toArray(function(err, points) {
+			var csvResult = [];
+			//Passar o tamanho do array dos anos inspecionados;
+			var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
+
+			points.forEach(function(point) {
+				//Trocar o número 5 pelo número maximo de inspeções por ponto
+
+					var csvLines = {
+						'index': point.index,
+						'lon': point.lon,
+						'lat': point.lat,
+					};
+					
+					var landUses = {};
+					
+					for(var i=0; i < point.userName.length; i++) {
+						
+						var userName = point.userName[i];
+						var form = point.inspection[i].form;
+
+						form.forEach(function(f) {
+							
+							for( var year = f.initialYear; year <= f.finalYear; year++) {
+								
+								if(!landUses[year])
+									landUses[year] = [];
+
+								landUses[year].push(f.landUse);
+							}
+						});
+					}
+
+					for(var landUse in landUses) {
+						
+						var votes = {};
+
+						for (var i in landUses[landUse]) {
+							if(!votes[landUses[landUse][i]])
+								votes[landUses[landUse][i]]=0
+
+							votes[landUses[landUse][i]] += 1;
+						}
+
+						for(var i in votes) {
+							
+							if (votes[i] >= Math.ceil(5 / 2)) {
+								csvLines[landUse] = i;
+								csvLines[landUse+"_votes"] = votes[i];
+
+								break;
+							}
+						}
+					}
+
+					csvResult.push(csvLines)
+				
+			});
+
+			console.log('csv: ',csvResult)
+
+			response.send(csvResult);
+			response.end();
+
+		});
+	}*/
 
 	return Dashboard;
 }
