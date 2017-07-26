@@ -151,29 +151,30 @@ module.exports = function(app){
 
 	Dashboard.pointsInspection = function(request, response) {
 
+		var assert = require('assert');
 		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign" : campaign});
 		
+
 		var result = {
 			totalPoints: 0,
 			pointsInspection: 0,
 			noTotalPoints: 0
 		};
 
-		cursor.toArray(function(error, docs) {
-			docs.forEach(function(doc) {
-				if(doc.userName.length == 5) {
-					result.totalPoints++;
-				} else if(doc.userName.length < 5 && doc.userName.length >= 1) {
-					result.pointsInspection++;
-				} else {
-					result.noTotalPoints++;
-				}
-			})
 
-		  response.send(result);
-			response.end();
-		});
+		points.count({ 'campaign': campaign, 'userName': { '$size': 5} }, function(err, totalPoints) {
+			points.count({ 'campaign': campaign, 'userName': { '$size': 0} }, function(err, noTotalPoints) {
+				points.count({ 'campaign': campaign }, function(err, pointsInspection) {
+
+					result.totalPoints = totalPoints;
+					result.noTotalPoints = noTotalPoints;
+					result.pointsInspection = pointsInspection - (totalPoints + noTotalPoints)
+
+					response.send(result);
+					response.end();
+				});
+			});
+		}); 
 	}
 
 	Dashboard.meanTimeInsp = function(request, response) {
@@ -319,31 +320,29 @@ module.exports = function(app){
 		});
 	}
 
-	/*Dashboard.agreementPoints = function(request, response){
+	Dashboard.landCoverPoints = function(request, response){
 		
 		var campaign = request.session.user.campaign;
 		var cursor = points.find({"campaign": campaign});
+		var csvResult = [];
+		var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
 
-		cursor.toArray(function(err, points) {
-			var csvResult = [];
-			//Passar o tamanho do array dos anos inspecionados;
-			var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
-
-			points.forEach(function(point) {
-				//Trocar o número 5 pelo número maximo de inspeções por ponto
-
+		cursor.toArray(function(err, docs) {
+	
+			docs.forEach(function(doc) {
+				if(doc.userName.length == 5) {
 					var csvLines = {
-						'index': point.index,
-						'lon': point.lon,
-						'lat': point.lat,
+						'index': doc.index,
+						'lon': doc.lon,
+						'lat': doc.lat,
 					};
 					
 					var landUses = {};
 					
-					for(var i=0; i < point.userName.length; i++) {
+					for(var i=0; i < doc.userName.length; i++) {
 						
-						var userName = point.userName[i];
-						var form = point.inspection[i].form;
+						var userName = doc.userName[i];
+						var form = doc.inspection[i].form;
 
 						form.forEach(function(f) {
 							
@@ -380,16 +379,35 @@ module.exports = function(app){
 					}
 
 					csvResult.push(csvLines)
-				
+				}
+			});
+			
+			var landCover = {};
+			var meanCover = {};
+
+			csvResult.forEach(function(data) {
+				for(var i=years[0]; i<=years[years.length - 1]; i++) {
+					if(data[i] != undefined) 
+						if(!landCover[data[i]])
+							landCover[data[i]] = 0
+							landCover['count_'+data[i]] = 0
+				}
 			});
 
-			console.log('csv: ',csvResult)
-
-			response.send(csvResult);
+			csvResult.forEach(function(data) {
+				for(var i=years[0]; i<=years[years.length - 1]; i++) {
+					if(data[i] != undefined) {
+						landCover[data[i]] = landCover[data[i]] + data[i+'_votes'];
+						landCover['count_'+data[i]]++;
+						meanCover[data[i]] = (landCover[data[i]]/landCover['count_'+data[i]]).toFixed(2);
+					}
+				}
+			});
+			
+			response.send(meanCover);
 			response.end();
-
 		});
-	}*/
+	}
 
 	return Dashboard;
 }
