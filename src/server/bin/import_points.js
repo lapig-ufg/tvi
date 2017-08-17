@@ -4,13 +4,18 @@ var mongodb = require('mongodb');
 var exec = require('child_process').exec;
 
 var geojsonFile = process.argv[2];
-var campanha = process.argv[3];
+var campaign = process.argv[3];
+var numInspec = process.argv[4];
+var password = (process.argv[5] == null) ? null : process.argv[5]
+var initialYear = (process.argv[6] == null) ? 2000 : process.argv[6]
+var finalYear = (process.argv[7] == null) ? 2016 : process.argv[7]
 
-var collectionPointsName = "points"
+var collectionPointsName = "points";
+var collectionCampaignName = "campaign";
 var dbUrl = 'mongodb://localhost:27017/tvi';
 
 var checkError = function(error) {
-	if(error){	
+	if(error) {
 		console.error(error);
 		process.exit();
 	}
@@ -20,7 +25,7 @@ var getCoordinates = function(geojsonDataStr) {
 	geojsonData = JSON.parse(geojsonDataStr)
 	
 	var coordinates = []
-	for(var i = 0; i < geojsonData.features.length; i++){
+	for(var i = 0; i < geojsonData.features.length; i++) {
 		coordinates.push(
 			{
 				"id": geojsonData.features[i].properties['id'],
@@ -51,17 +56,17 @@ var getInfoByRegion = function(coordinate, callback) {
 		var county;
 		var countycode;	  
 		
-		for(var i = 0; i < strs.length; i++){
-			if(strs[i].match(/BIOMA/g)){
+		for(var i = 0; i < strs.length; i++) {
+			if(strs[i].match(/BIOMA/g)) {
 				biome = strs[i].slice(18,strs[i].length);
 				biome = biome.trim();
-			}else if(strs[i].match(/UF/g)){
+			}else if(strs[i].match(/UF/g)) {
 				uf = strs[i].slice(15,18);
 				uf = uf.trim();
-			}else if(strs[i].match(/MUNICIPIO/g)){
+			}else if(strs[i].match(/MUNICIPIO/g)) {
 				county = strs[i].slice(22,strs[i].length);
 				county = county.trim();
-			}else if(strs[i].match(/COD_MUNICI/g)){
+			}else if(strs[i].match(/COD_MUNICI/g)) {
 				countycode = strs[i].slice(26,35);
 				countycode = countycode.trim();
 			}
@@ -125,6 +130,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	checkError(error);
 	
 	getDB(dbUrl, function(db) {
+		
 		db.collection(collectionPointsName, function(err, collectionPoints) {
 			
 			var counter = 1;
@@ -132,8 +138,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				getInfoByRegion(coordinate, function(regionInfo) {
 					getInfoByTile(coordinate, function(tileInfo) {
 						var point = { 
-							"_id": counter+'_'+campanha,
-							"campaign": campanha,	
+							"_id": counter+'_'+campaign,
+							"campaign": campaign,	
 							"lon": coordinate.X,
 							"lat": coordinate.Y,
 							"dateImport": new Date(),
@@ -153,18 +159,45 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 						collectionPoints.insert(point, null, function() {
 							console.log("Point " + point._id + " inserted.");
 							next();
-						});
-					
+						});					
 					});
 				});
 			}
 
 			var onComplete = function() {
+				
+				var collectionCampaign = db.collection(collectionCampaignName); 
+			
+				var createCamp = {
+					"_id": campaign,
+					"initialYear": parseInt(initialYear),
+					"finalYear": parseInt(finalYear),
+					"password": password,
+					"landUse": [ 
+			        "Pastagem Natural", 
+			        "Vegetação nativa", 
+			        "Pastagem Cultivada", 
+			        "Não observado", 
+			        "Agricultura Anual", 
+			        "Em regeneração", 
+			        "Agricultura Perene", 
+			        "Mosaico de ocupação", 
+			        "Água", 
+			        "Solo Exposto", 
+			        "Cana-de-açucar", 
+			        "Desmatamento", 
+			        "Área urbana", 
+			        "Silvicultura"
+			    ],
+					"numInspec": parseInt(numInspec)
+				}
+
+				collectionCampaign.insertOne(createCamp);
+				
 				db.close();
 			};
 
 			async.eachSeries(getCoordinates(geojsonDataStr), eachFn, onComplete);
-
 		});
 	});
 });

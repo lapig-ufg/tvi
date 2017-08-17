@@ -9,15 +9,14 @@ module.exports = function(app) {
 	var Points = {};
 	var pointsCollection = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
+	var campaign;
 
 	var getImageDates = function(path, row, callback) {
-
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
 		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
 
 		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
 			var result = {}
-
 
 			docs.forEach(function(doc) {
 				if (doc.dates && doc.dates[0]) {
@@ -29,15 +28,14 @@ module.exports = function(app) {
 		})
 	}
 
-	Points.csv = function(request, response){
-		
-		var campaign = request.session.user.campaign;
+	Points.csv = function(request, response) {
+		campaign = request.session.user.campaign;
 
-		pointsCollection.find({ "campaign": campaign }).sort({ 'index': 1}).toArray(function(err, points){
+		pointsCollection.find({ "campaign": campaign._id }).sort({ 'index': 1}).toArray(function(err, points) {
 			var csvResult = [];
-			
+
 			points.forEach(function(point) {
-				
+
 				var csvLines = {
 					'index': point.index,
 					'lon': point.lon,
@@ -90,12 +88,11 @@ module.exports = function(app) {
 				csvResult.push(csvLines)
 			});
 			
-
 			//response.send(csvResult);
 			//response.end();
 
 			response.set('Content-Type', 'text/csv');
-			response.set('Content-Disposition', 'attachment;filename='+campaign+'.csv');
+			response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
 
 			var writer = csvWriter({
 				separator: ';',
@@ -113,22 +110,20 @@ module.exports = function(app) {
 			}
 
 			writer.on('end', function() {
-				encoder.end()
+				encoder.end();
 				response.end();
 			})
 
 			writer.end();
 			
 		});
-
 	}
 
 	Points.getPoint = function(request, response){
-		
-		var campaign = request.session.user.campaign;
+		campaign = request.session.user.campaign;
 		var index = parseInt(request.params.index);
 
-		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign } ] }, function(err, point){
+		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign._id } ] }, function(err, point){
 			var years = [];
 			var yearlyInspections = [];
 			
@@ -174,15 +169,13 @@ module.exports = function(app) {
 				response.send(result)
 				response.end();
 			});
-
 		});
-
 	}
 
-	Points.getTotal = function(request, response){
-		var campaign = request.session.user.campaign;
-		
-		pointsCollection.count({"campaign": campaign}, function(err, count){
+	Points.getTotal = function(request, response) {
+		campaign = request.session.user.campaign;
+
+		pointsCollection.count({"campaign": campaign._id}, function(err, count) {
 			point = {}
 			point.count = count;
 			response.send(point);
@@ -191,5 +184,4 @@ module.exports = function(app) {
 	}
 
 	return Points;
-
 };

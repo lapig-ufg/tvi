@@ -13,20 +13,19 @@ body {
 }
 
 .glyphicon-refresh-animate {
-    -animation: spin .7s infinite linear;
-    -webkit-animation: spin2 .7s infinite linear;
-     font-size: 20px;
-
+  -animation: spin .7s infinite linear;
+  -webkit-animation: spin2 .7s infinite linear;
+  font-size: 20px;
 }
 
 @-webkit-keyframes spin2 {
-    from { -webkit-transform: rotate(0deg);}
-    to { -webkit-transform: rotate(360deg);}
+  from { -webkit-transform: rotate(0deg);}
+  to { -webkit-transform: rotate(360deg);}
 }
 
 @keyframes spin {
-    from { transform: scale(1) rotate(0deg);}
-    to { transform: scale(1) rotate(360deg);}
+  from { transform: scale(1) rotate(0deg);}
+  to { transform: scale(1) rotate(360deg);}
 }
 
 @media (max-width: 780px){
@@ -37,11 +36,11 @@ body {
 }
 
 .jumbotron {
-    width: 400px;
-    text-align: center;
-    margin-right: auto;
-    margin-top: 100px;
-    margin-left: auto;
+  width: 400px;
+  text-align: center;
+  margin-right: auto;
+  margin-top: 100px;
+  margin-left: auto;
 }
 
 .font-index {
@@ -170,15 +169,14 @@ legend.scheduler-border {
   margin-top: 0px;
 }
 
-
 .col-offset-310{
-    padding-left:325px;
-    z-index:0;
+  padding-left:325px;
+  z-index:0;
 }
 
 input[type='button']
 {
-    margin:5px 5px 5px 5px;
+  margin:5px 5px 5px 5px;
 }
 
 h3{

@@ -5,4 +5,5 @@ module.exports = function (app) {
 	app.get('/service/points/csv', points.csv);
 	app.get('/service/points/get-point/:index', points.getPoint);
 	app.get('/service/points/total-points/', points.getTotal);
+	
 }

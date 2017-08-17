@@ -3,21 +3,9 @@
 Application.controller('LoginController', function($rootScope, $scope, $location, $window, requester, util) {
 
 	$scope.showMsg = false;
-	$scope.showForm = false;
+	$scope.showForm = true;
 
-	requester._get('login/user', function(result) {
-		console.log()
-		if(result.type == 'supervisor'){
-			$location.path('supervisor');
-		}
-		else if(result.name) {
-			$location.path('temporal');
-		} else {
-			$scope.showForm = true;
-		}
-	});
-
-	$scope.submit = function(name, campaign, senha){
+	$scope.submit = function(name, campaign, senha) {
 		$scope.name = name;
 		$scope.campaign = campaign;
 		$scope.senha = senha;
@@ -26,10 +14,8 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 			
 			$rootScope.user = result;
 
-			console.log(result);
-			
 			if($rootScope.user.type == 'supervisor') {
-				$location.path('tviSuper')
+				$location.path('supervisor')
 			}else if($rootScope.user.type == 'inspector') {
 				$location.path('temporal');
 			} else {

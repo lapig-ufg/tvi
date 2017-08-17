@@ -1,23 +1,23 @@
 <div class="container-fluid">
 	<div class="row">
-		<div class="col-fixed-310">
+		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 						<legend>Informação de localização</legend>
 						<p><b>Bioma:</b> {{point.biome}}</p>
 						<p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span>
-						<p><b>Coordenadas:</b> {{point.lon | number:4}} {{point.lat | number:4}} </p>
+						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
 						<fieldset>
 							<legend>Uso e Cobertura da Terra:</legend>
 				  		<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn btn-link pull-left" value="Alterar Período">
 				  		<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link pull-left" value="Google Earth">
 						</fieldset>
 			  	</div>
-				</div>
+				</div>				
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
 						<form class="form-inline form-lclu" ng-repeat="answer in answers">
-							<label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.initialYear" ng-options="x for x in optionYears[$index]"></select>
+							<label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select ng-disabled='answers.length >= ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.initialYear" ng-options="x for x in optionYears[$index]"></select>
 						  <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.finalYear" ng-change="formPlus()" ng-options="y for y in optionYears[$index]"></select>
 							<br><label style="margin: 10px;">Classe: </label><select style="width: 200px;" class="form-control" ng-model="answer.landUse" ng-options="z for z in config.landUse" ng-click="form-plus"></select>
 						</form>
@@ -32,7 +32,7 @@
 					</div>
 				</div>
 		</div>
-		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
 			<div class="row">
 				<fieldset>
 				<legend>Imagens Landsat <span style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span></legend>
@@ -41,12 +41,19 @@
 						<inspection-map lon="point.lon" lat="point.lat" zoom="config.zoomLevel" tms-url="{{map.url}}" />
 					</div>
 				</fieldset>
-		</div>
-  </div>
-  <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-  	<fieldset>
-			<legend>Série temporal MODIS:</legend>
-  		<div id="NDVI"></div>
-  	</fieldset> 
+			</div>
+	  </div>
+		<div ng-show="isObjectEmpty(point) && pointLoaded" class="row">
+			<center>
+				<img class="img-responsive" src="assets/finish.jpg" />
+			</center>
+		</div> 
+  <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+  	<div class="row">
+	  	<fieldset>
+				<legend>Série temporal MODIS:</legend>
+	  		<div id="NDVI"></div>
+	  	</fieldset> 
+  	</div>
   </div>
 </div>

@@ -2,57 +2,54 @@ module.exports = function(app){
 	var Dashboard = {}
 
 	var points = app.repository.collections.points;
+	var campaigns = app.repository.collections.campaign;
 
-	var getNames = function(userNames){
+	var getNames = function(userNames) {
 		var names = {}
 
-		for(var i = 0; i < userNames.length; i++){
+		for(var i = 0; i < userNames.length; i++) {
 			names[userNames[i]] = 0;
 		}
 
 		return names;
-
 	}
 	
-	Dashboard.donuts = function(request, response){
+	Dashboard.donuts = function(request, response) {
+		var campaignId = request.session.user.campaign._id;
 
-		var campaign = request.param('campaign')
-		
-		points.count({"landUse": { "$eq": [] }, "campaign": campaign}, function(err1, notinspect){
-				points.count({ "landUse": { "$gt": [] }, "campaign": campaign}, function(err2, inspect){
+		points.count({"landUse": { "$eq": [] }, "campaign": campaignId}, function(err1, notinspect) {
+			points.count({ "landUse": { "$gt": [] }, "campaign": campaignId}, function(err2, inspect) {
 				var dashboardData = {};
 				dashboardData['inspect'] = inspect;
 				dashboardData['not_inspect'] = notinspect;
 				response.send(dashboardData);
 			})	
 		})
-		
 	}
 
-	Dashboard.horizontalBar1 = function(request, response){
-
-		var campaign = request.param('campaign')
+	Dashboard.horizontalBar1 = function(request, response) {
+		var campaignId = request.session.user.campaign._id;
 
 		var mapFunction = function(){
-			for(var un = 0; un < this.userName.length; un++){
+			for(var un = 0; un < this.userName.length; un++) {
 				var value = 1;
 				var key = this.userName[un];
 				emit(key, value);
 			}
 		}
 
-		var reduceFunction = function(key, value){
+		var reduceFunction = function(key, value) {
 			return Array.sum(value);
 		}
 
-		points.mapReduce(mapFunction, reduceFunction, { out: { inline : 1}, query: { 'campaign': campaign }},
+		points.mapReduce(mapFunction, reduceFunction, { out: { inline : 1}, query: { 'campaign': campaignId }},
 			function(err, collection) {
 
 				var coordx = [];
 				var coordy = [];
 				var color = []
 
-				for(var key in collection){
+				for(var key in collection) {
 
 					coordx.push(collection[key].value);
 					coordy.push(collection[key]._id);
@@ -66,38 +63,38 @@ module.exports = function(app){
 
 				response.send(collection);
 		});
-
 	}
 
-	Dashboard.horizontalBar2 = function(request, response){
+	Dashboard.horizontalBar2 = function(request, response) {
+		var campaignId = request.session.user.campaign._id;
 
-		var campaign = request.param('campaign')
+		var mapFunction = function() {
+			var majority = {};
+         
+     	for (var i=0; i < this.landUse.length; i++) {
+    	  var l = this.landUse[i];
+      	var c = this.userName[i];
+      	
+      	if(majority[l] == undefined) {
+          majority[l] = 0;
+       	}
+       	
+       	majority[l] += 1;
+     	};
 
-		var mapFunction = function(){
-			 var majority = {};
-           
-       for (var i=0; i < this.landUse.length; i++) {
-           var l = this.landUse[i];
-           var c = this.userName[i];
-           if(majority[l] == undefined) {
-               majority[l] = 0;
-           }
-           majority[l] += 1;
-       };
-
-       for(key in majority) {
-           if (majority[key] > 1) {
-               emit(key,1);
-               break;
-           }
-       }
+     	for(key in majority) {
+        if (majority[key] > 1) {
+          emit(key,1);
+          break;
+        }
+     	}
 		}
 
-		var reduceFunction = function(key,values){
+		var reduceFunction = function(key,values) {
 			return Array.sum(values);
 		}
 
-		points.mapReduce(mapFunction,reduceFunction,{ out: { inline : 1},	query: { 'campaign': campaign }},
+		points.mapReduce(mapFunction,reduceFunction,{ out: { inline : 1},	query: { 'campaign': campaignId }},
 			function(err, collection) {
 
 				var result = {
@@ -112,22 +109,19 @@ module.exports = function(app){
 
 				response.send(result);
 		});
-
 	}
 	
 	Dashboard.userInspections = function(request, response) {
-		
 		var counter = {};
-		var campaign = request.session.user.campaign;
-		var cursor = points.find({ "campaign": campaign });
+		var campaignId = request.session.user.campaign._id;
+		var cursor = points.find({ "campaign": campaignId });
 
 		cursor.toArray(function(error, docs) {
-			
 			docs.forEach(function(doc) {
-			    doc.userName.forEach(function(name) {        
+			    doc.userName.forEach(function(name) {
 			         
 			        if(counter[name] == null) {
-			            counter[name] = 0; 
+		            counter[name] = 0; 
 			        }
 			        
 			        counter[name]++;
@@ -150,38 +144,33 @@ module.exports = function(app){
 	}
 
 	Dashboard.pointsInspection = function(request, response) {
-
-		var assert = require('assert');
-		var campaign = request.session.user.campaign;
-		
+		var campaign = request.session.user.campaign;		
 
 		var result = {
-			totalPoints: 0,
-			pointsInspection: 0,
-			noTotalPoints: 0
+			pointsComplet: 0,
+			pointsNoComplet: 0,
+			pointsInspection: 0
 		};
 
+		points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspec} }, function(err, pointsComplet) {
+			points.count({ 'campaign': campaign._id, 'userName': { '$size': 0} }, function(err, pointsNoComplet) {
+				points.count({ 'campaign': campaign._id }, function(err, pointsInspection) {
 
-		points.count({ 'campaign': campaign, 'userName': { '$size': 5} }, function(err, totalPoints) {
-			points.count({ 'campaign': campaign, 'userName': { '$size': 0} }, function(err, noTotalPoints) {
-				points.count({ 'campaign': campaign }, function(err, pointsInspection) {
-
-					result.totalPoints = totalPoints;
-					result.noTotalPoints = noTotalPoints;
-					result.pointsInspection = pointsInspection - (totalPoints + noTotalPoints)
+					result.pointsComplet = pointsComplet;
+					result.pointsNoComplet = pointsNoComplet;
+					result.pointsInspection = pointsInspection - (pointsComplet + pointsNoComplet)
 
 					response.send(result);
 					response.end();
 				});
 			});
-		}); 
+		});
 	}
 
 	Dashboard.meanTimeInsp = function(request, response) {
-
 		var listInsp = {};
-		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign" : campaign});
+		var campaignId = request.session.user.campaign._id;
+		var cursor = points.find({"campaign" : campaignId});
 
 		cursor.toArray(function(error, docs) {
 			docs.forEach(function(doc) {
@@ -206,14 +195,12 @@ module.exports = function(app){
 	}
 
 	Dashboard.cachedPoints = function(request, response) {
-
+		var campaignId = request.session.user.campaign._id;
+		var cursor = points.find({"campaign": campaignId});
 		var result = {
 			pointsCached: 0,
 			pointsNoCached: 0
 		}
-
-		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign": campaign});
 
 		cursor.toArray(function(error, docs) {
 			docs.forEach(function(doc) {
@@ -230,30 +217,26 @@ module.exports = function(app){
 	}
 
 	Dashboard.agreementPoints = function(request, response) {
-		
 		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign": campaign});
+		var cursor = points.find({"campaign": campaign._id});
 
-		cursor.toArray(function(err, points) {
+		cursor.toArray(function(err, docs) {
 			var csvResult = [];
-			//Passar o tamanho do array dos anos inspecionados;
-			var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
 
-			points.forEach(function(point) {
-				//Trocar o número 5 pelo número maximo de inspeções por ponto
-				if(point.userName.length == 5) {
+			docs.forEach(function(doc) {
+				if(doc.userName.length == campaign.numInspec) {
 					var csvLines = {
-						'index': point.index,
-						'lon': point.lon,
-						'lat': point.lat,
+						'index': doc.index,
+						'lon': doc.lon,
+						'lat': doc.lat
 					};
-					
+
 					var landUses = {};
-					
-					for(var i=0; i < point.userName.length; i++) {
+
+					for(var i=0; i < doc.userName.length; i++) {
 						
-						var userName = point.userName[i];
-						var form = point.inspection[i].form;
+						var userName = doc.userName[i];
+						var form = doc.inspection[i].form;
 
 						form.forEach(function(f) {
 							
@@ -273,14 +256,13 @@ module.exports = function(app){
 
 						for (var i in landUses[landUse]) {
 							if(!votes[landUses[landUse][i]])
-								votes[landUses[landUse][i]]=0
+								votes[landUses[landUse][i]] = 0
 
 							votes[landUses[landUse][i]] += 1;
 						}
 
 						for(var i in votes) {
-							
-							if (votes[i] >= Math.ceil(5 / 2)) {
+							if (votes[i] >= Math.ceil(campaign.numInspec / 2)) {
 								csvLines[landUse] = i;
 								csvLines[landUse+"_votes"] = votes[i];
 
@@ -295,7 +277,7 @@ module.exports = function(app){
 
 			var result = {};
 		
-			for(var i=years[0]; i<=years[years.length - 1]; i++) {
+			for(var i=campaign.initialYear; i<=campaign.finalYear; i++) {
 				
 				if(!result[i+'_pontosConc'])
 					result[i+'_pontosConc'] = 0;
@@ -303,10 +285,8 @@ module.exports = function(app){
 				if(!result[i+'_pontosNaoConc'])
 					result[i+'_pontosNaoConc'] = 0;
 				
-				
 				csvResult.forEach(function(data) {
-					//Trocar o numero 3 pela media dos inspetores
-					if(data[i+"_votes"] >= 3) {
+					if(data[i+"_votes"] >= Math.ceil(campaign.numInspec / 2)) {
 						result[i+'_pontosConc']++;
 					} else {
 						result[i+'_pontosNaoConc']++;
@@ -316,25 +296,22 @@ module.exports = function(app){
 
 			response.send(result);
 			response.end();
-
 		});
 	}
 
-	Dashboard.landCoverPoints = function(request, response){
-		
+	Dashboard.landCoverPoints = function(request, response) {
 		var campaign = request.session.user.campaign;
-		var cursor = points.find({"campaign": campaign});
-		var csvResult = [];
-		var years = [2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016];
+		var cursor = points.find({"campaign": campaign._id});
 
 		cursor.toArray(function(err, docs) {
-	
+			var csvResult = [];
+		
 			docs.forEach(function(doc) {
-				if(doc.userName.length == 5) {
+				if(doc.userName.length == campaign.numInspec) {
 					var csvLines = {
 						'index': doc.index,
 						'lon': doc.lon,
-						'lat': doc.lat,
+						'lat': doc.lat
 					};
 					
 					var landUses = {};
@@ -369,7 +346,7 @@ module.exports = function(app){
 
 						for(var i in votes) {
 							
-							if (votes[i] >= Math.ceil(5 / 2)) {
+							if (votes[i] >= Math.ceil(campaign.numInspec / 2)) {
 								csvLines[landUse] = i;
 								csvLines[landUse+"_votes"] = votes[i];
 
@@ -386,7 +363,7 @@ module.exports = function(app){
 			var meanCover = {};
 
 			csvResult.forEach(function(data) {
-				for(var i=years[0]; i<=years[years.length - 1]; i++) {
+				for(var i=campaign.initialYear; i<=campaign.finalYear; i++) {
 					if(data[i] != undefined) 
 						if(!landCover[data[i]])
 							landCover[data[i]] = 0
@@ -395,7 +372,7 @@ module.exports = function(app){
 			});
 
 			csvResult.forEach(function(data) {
-				for(var i=years[0]; i<=years[years.length - 1]; i++) {
+				for(var i=campaign.initialYear; i<=campaign.finalYear; i++) {
 					if(data[i] != undefined) {
 						landCover[data[i]] = landCover[data[i]] + data[i+'_votes'];
 						landCover['count_'+data[i]]++;

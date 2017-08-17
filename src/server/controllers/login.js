@@ -5,9 +5,7 @@ module.exports = function(app) {
 	
 	var Login = {};
 	var points = app.repository.collections.points;
-	var usersCollection = app.repository.collections.users;
-	
-	var user;
+	var campaigns = app.repository.collections.campaign;
 
 	Login.autenticateUser = function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
@@ -19,17 +17,17 @@ module.exports = function(app) {
 	}
 
 	Login.getUser = function(request, response) {
-		user = request.session.user;
+		var user = request.session.user;
 		response.send(user);
 		response.end();
 	}
 
-	Login.enterTvi = function(request, response){
-		var campaign = request.param('campaign');
+	Login.enterTvi = function(request, response) {
+		var campaignId = request.param('campaign');
 		var name = request.param('name');
 		var senha = request.param('senha');
 
-		points.count({"campaign": campaign}, function(err, count) {
+		campaigns.findOne({"_id": campaignId}, function(err, campaign) {
 
 			var result = {
 				campaign:"",
@@ -37,19 +35,23 @@ module.exports = function(app) {
 				type :false
 			}
 
-			if(count > 0) {
-				request.session.user = { 
-					"name": name, 
-					"campaign": campaign,
-					"type": 'inspector'
-				};
+			if(campaign) {
+				if((senha == campaign.password) || (senha == 'tviadmintvi')) {
 
-				if(name == 'admin' && senha == 'tviadmintvi') {
-					request.session.user.type = 'supervisor';
+					request.session.user = { 
+						"name": name,
+						"campaign": campaign._id,
+						"type": 'inspector'
+					};
+
+					if(name == 'admin' && senha == 'tviadmintvi') {
+						request.session.user.type = 'supervisor';
+					}
+
+					request.session.user.campaign = campaign
+
+					result = request.session.user;
 				}
-
-				result = request.session.user;
-
 			}
 
 			response.send(result);
@@ -58,23 +60,33 @@ module.exports = function(app) {
 
 	}
 
-	Login.logoff = function(request, response){
-		points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
+	Login.logoff = function(request, response) {
+		var user = request.session.user;
+
+		if(user.type == 'inspector') {
+			points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
+				delete request.session.user;
+				delete request.session.name;
+				response.write("deslogado");
+				response.end();
+			});
+		} else {
 			delete request.session.user;
 			delete request.session.name;
 			response.write("deslogado");
 			response.end();
-		});
+		}
 	}
 
 	app.on('socket-disconnect', function(socket) {
-		if(socket.handshake.session && socket.handshake.session.currentPointId) {
-			console.log(socket.handshake.session.currentPointId)
-			points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-			});
+
+		if(socket.handshake.session.user.type == 'inspector') {
+			if(socket.handshake.session && socket.handshake.session.currentPointId) {
+				points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
+				});
+			}		
 		}
 	});
 
 	return Login;
-
 }

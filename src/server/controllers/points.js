@@ -9,9 +9,9 @@ module.exports = function(app) {
 
 	var points = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
+	//var campaigns = app.repository.collections.campaign;
 
 	var getImageDates = function(path, row, callback) {
-
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
 		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
 
@@ -29,33 +29,35 @@ module.exports = function(app) {
 		})
 	}
 
-	var findPoint = function(name, campaign, callback){
-		var findOneFilter = { 
+	var findPoint = function(campaign, username, callback) {
+		
+		var findOneFilter = {
 			"$and": [
-				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<5' },
-				{ "campaign": { "$eq": campaign } },
-				{ "underInspection": { $lt: 5 } }
+				{ "userName": { "$nin": [ username ] } },
+				{ "$where":'this.userName.length<'+ campaign.numInspec },
+				{ "campaign": { "$eq":  campaign._id } },
+				{ "underInspection": { $lt:  campaign.numInspec } }
 			]
 		};
+
 		var currentFilter = { 
 			"$and": [
-				{ "userName": { "$nin": [ name ] } },
-				{ "$where":'this.userName.length<5' },
-				{ "campaign": { "$eq": campaign } }
+				{ "userName": { "$nin": [ username ] } },
+				{ "$where":'this.userName.length<'+ campaign.numInspec },
+				{ "campaign": { "$eq":  campaign._id } }
 			]
 		};
 
 		var countFilter = {
 			"$and": [
-				{ "userName": { $in: [name] } },
-    		{"campaign":campaign}
+				{ "userName": { $in: [ username ] } },
+    		{"campaign": campaign._id}
     	]
    	};
 
 		var totalFilter = { 
 			"$and": [
-				{"campaign": { "$eq": campaign }}
+				{"campaign": { "$eq":  campaign._id }}
 			]
 		};
 		
@@ -72,7 +74,7 @@ module.exports = function(app) {
 								result['point'] = point;
 								result['total'] = total;
 								result['current'] = point.index
-								result['user'] = name;
+								result['user'] = username;
 								result['count'] = count;
 								callback(result);
 							})
@@ -87,53 +89,48 @@ module.exports = function(app) {
 						result['point'] = {};
 						result['total'] = total;
 						result['current'] = total
-						result['user'] = name;
+						result['user'] = username;
 						result['count'] = count;
 						callback(result);
 					})
 				});
 			}
 		});
-
 	};
 
 	Points.getCurrentPoint = function(request, response) {
 		var user = request.session.user;
 
-		findPoint(user.name, user.campaign, function(result) {
-			console.log("result.point._id", result.point._id)
-				request.session.currentPointId = result.point._id;
-				response.send(result);
-				response.end();
-			})					
+		findPoint(user.campaign, user.name, function(result) {
+			request.session.currentPointId = result.point._id;
+			response.send(result);
+			response.end();
+		})
 	};
 
-	Points.updatePoint = function(request, response) {
-		
+	Points.updatePoint = function(request, response) {		
 		var point = request.body.point;
 		var user = request.session.user;
 
 		point.inspection.fillDate = new Date();
 
-		points.update(
-			{ 
-				 _id: point._id
-			},
-			{
-				$push: {
-					"inspection": point.inspection,
-			  	"userName": request.session.user.name,
-			  }
-			}, 
-			 function(err, item){
-				findPoint(user.name, user.campaign, function(result){
-					request.session.currentPointId = result.point._id
-					response.send(result);
-					response.end();
-				})			
+		points.update({ 
+			_id: point._id
+		},
+		{
+			$push: {
+				"inspection": point.inspection,
+		  	"userName": user.name,
+		  }
+		}, 
+		function(err, item) {
+			findPoint(user.campaign, user.name, function(result) {
+				request.session.currentPointId = result.point._id;
+				response.send(result);
+				response.end();
+			})			
 		});
 	};
 
 	return Points;
-
 }

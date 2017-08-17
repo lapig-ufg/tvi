@@ -32,7 +32,7 @@ module.exports = function(app) {
 	  }).pipe(response)
 	}
 
-	Internal.timeSeries = function(request, response){
+	Internal.timeSeries = function(request, response) {
 		var serie = request.param('serie')
 		var latitude = request.param('latitude');
 		var longitude = request.param('longitude');
@@ -57,8 +57,6 @@ module.exports = function(app) {
 	  	}
 
 	  }).pipe(response)	
-
-
 	}
 
 	Internal.precipitationMaps = function(request, response){

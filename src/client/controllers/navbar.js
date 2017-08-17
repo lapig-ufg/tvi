@@ -5,8 +5,8 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 	$rootScope.showNavInsp= false;
 	$rootScope.showNavSuper= false;
 
-	$scope.logoff = function(){
-		requester._get('login/logoff', function(result){
+	$scope.logoff = function() {
+		requester._get('login/logoff', function(result) {
 			$scope.data = undefined;
 			$rootScope.user = undefined;
 			$location.path('login');
@@ -18,6 +18,4 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 		$rootScope.user = result;
 		
 	});
-
-
 });

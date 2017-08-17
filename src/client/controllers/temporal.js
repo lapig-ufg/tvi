@@ -2,334 +2,348 @@
 
 Application.controller('temporalController', function($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
 
-	$scope.size = 3;
-	$scope.onSubmission = false;
-	$scope.period = 'DRY';
-	$scope.periodo = 'SECO';
-	$scope.pointEnabled = true;
-	$scope.config = {
-		initialYear: 2000,
-		finalYear: 2016,
-		zoomLevel: 13,
-		landUse: ["Agricultura Anual", "Agricultura Perene", "Área urbana", "Água", "Cana-de-açucar", "Desmatamento", "Em regeneração", "Mosaico de ocupação", "Não observado", "Pastagem Cultivada", "Pastagem Natural", "Solo Exposto", "Silvicultura", "Vegetação nativa"]
-	}
+	$scope.pointLoaded = false;
 
-	$scope.formPlus = function(){
-		
-		var prevIndex = $scope.answers.length - 1;
-		var initialYear = $scope.answers[prevIndex].finalYear + 1
-
-		if($scope.answers[prevIndex].finalYear == $scope.config.finalYear)
-			return;
-
-		var finalYear = $scope.config.finalYear;
-		
-		generateOptionYears(initialYear,finalYear);		
-		
-		$scope.answers.push(
-			{
-				initialYear: initialYear,
-				finalYear: finalYear,
-				landUse: $scope.config.landUse[1]
-			}		
-		)
-	}
-
-	$scope.formSubtraction = function(){
-		if($scope.answers.length >= 1){
-			$scope.answers.splice(-1,1);
-			$scope.optionYears.splice(-1,1);
+	util.waitUserData(function() {
+		$scope.size = 3;
+		$scope.onSubmission = false;
+		$scope.period = 'DRY';
+		$scope.periodo = 'SECO';
+		$scope.pointEnabled = true;
+		$scope.config = {
+			initialYear: $rootScope.user.campaign.initialYear,
+			finalYear: $rootScope.user.campaign.finalYear,
+			zoomLevel: 13,
+			landUse: $rootScope.user.campaign.landUse
 		}
-	}
 
-	$scope.submitForm = function() {
-		var formPoint = {
-			_id: $scope.point._id,
-			inspection: {
-        counter: $scope.counter,
-        form: $scope.answers
+		$scope.isObjectEmpty = function(obj){
+
+			keyCounts = 0;
+			for (key in obj) {
+				keyCounts += 1;
 			}
-    }
-		
-    $scope.onSubmission = true;
+		  
+		  return keyCounts === 0;
 
-    requester._post('points/next-point', { "point": formPoint }, loadPoint);
-
-	}
-
-	$scope.changePeriod = function() {
-		$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
-		$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
-		generateMaps()
-	}
-
-	var generateOptionYears = function(initialYear, finalYear) {
-		var options = [];
-		for (var year = initialYear; year <= finalYear; year++) {
-			options.push(year);
 		}
-		$scope.optionYears.push(options);
-	}
 
-	var getDateImages = function(){
-		date = []
-		for(var i = 0; i < $scope.maps.length; i++){
-			date.push(new Date($scope.maps[i].date));
+		$scope.formPlus = function() {
+			
+			var prevIndex = $scope.answers.length - 1;
+			var initialYear = $scope.answers[prevIndex].finalYear + 1
+
+			if($scope.answers[prevIndex].finalYear == $scope.config.finalYear)
+				return;
+
+			var finalYear = $scope.config.finalYear;
+			
+			generateOptionYears(initialYear,finalYear);		
+			
+
+			$scope.answers.push(
+				{
+					initialYear: initialYear,
+					finalYear: finalYear,
+					landUse: $scope.config.landUse[1]
+				}		
+			)
 		}
-		return date;
-	}
 
-	var trace2NDVI = function(values, date){
-		ndvi = []
-		for(var i=0; i < date.length;i++){
-			for(var j = 0; j < values.length; j = j +2){
-				var dateFromValues = new Date(values[j][0]);
-				var dateFromDate = new Date(date[i]);				
-				if(((dateFromDate.getUTCMonth() +1) == (dateFromValues.getUTCMonth()+1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())){
-					ndvi.push(values[j][1]);
-				} 
-				
+		$scope.formSubtraction = function() {
+			if($scope.answers.length >= 1){
+				$scope.answers.splice(-1,1);
+				$scope.optionYears.splice(-1,1);
 			}
 		}
-		return ndvi;
 
-	}
+		$scope.submitForm = function() {
+			var formPoint = {
+				_id: $scope.point._id,
+				inspection: {
+	        counter: $scope.counter,
+	        form: $scope.answers
+				}
+	    }
+			
+	    $scope.onSubmission = true;
 
-	var createPrecipitationChart = function(){
-		requester._get('spatial/precipitation',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
-			/*
-			var ndvi = [];
-			var date = [];
-			var text = [];
-			var ndviAndDate = {}
+	    requester._post('points/next-point', { "point": formPoint }, loadPoint);
+		}
 
-			for(var i = 0; i < data.values.length; i++){
-				ndvi.push(data.values[i][1]);
-				date.push(new Date(data.values[i][0]));
-				var dateObj = new Date(data.values[i][0])
-				var month = dateObj.getUTCMonth() + 1;
-				var day = dateObj.getUTCDate();
-				var year = dateObj.getUTCFullYear();
-				text.push(day + "/" + month + "/" + year);
+		$scope.changePeriod = function() {
+			$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
+			$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
+			generateMaps();
+		}
+
+		var generateOptionYears = function(initialYear, finalYear) {
+			var options = [];
+			for (var year = initialYear; year <= finalYear; year++) {
+				options.push(year);
 			}
-			*/
-		})		
-	}
+			$scope.optionYears.push(options);
+		}
 
-	var getDryDate = function(dates, tmsIdList){
-		var dry = [];
-		for(key in dates){
-			for(var i = 0; i < tmsIdList.length; i++){
-				if(key == tmsIdList[i]){
-					dry.push(dates[key])
+		var getDateImages = function(){
+			date = []
+			for(var i = 0; i < $scope.maps.length; i++) {
+				date.push(new Date($scope.maps[i].date));
+			}
+			return date;
+		}
+
+		var trace2NDVI = function(values, date){
+			ndvi = []
+
+			for(var i=0; i < date.length;i++){
+				for(var j = 0; j < values.length; j = j +2){
+					var dateFromValues = new Date(values[j][0]);
+					var dateFromDate = new Date(date[i]);				
+					if(((dateFromDate.getUTCMonth() +1) == (dateFromValues.getUTCMonth()+1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())){
+						ndvi.push(values[j][1]);
+					} 
+					
 				}
 			}
+
+			return ndvi;
 		}
-		return dry.sort()
-	}
 
-	var createModisChart = function(datesFromService) {
-		
-		Plotly.purge('NDVI');
+		var createPrecipitationChart = function() {
+			requester._get('spatial/precipitation',{"longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+				/*
+				var ndvi = [];
+				var date = [];
+				var text = [];
+				var ndviAndDate = {}
 
-		requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+				for(var i = 0; i < data.values.length; i++){
+					ndvi.push(data.values[i][1]);
+					date.push(new Date(data.values[i][0]));
+					var dateObj = new Date(data.values[i][0])
+					var month = dateObj.getUTCMonth() + 1;
+					var day = dateObj.getUTCDate();
+					var year = dateObj.getUTCFullYear();
+					text.push(day + "/" + month + "/" + year);
+				}
+				*/
+			})
+		}
 
-			var ndvi = [];
-			var ndviSg = [];
-			var date = [];
-			var text = [];
-
-			var ndviAndDate = {}
-			for(var i = 0; i < data.values.length; i++){
-				ndvi.push(data.values[i][1]);
-				ndviSg.push(data.values[i][3]);
-				date.push(data.values[i][0]);
-				var dateObj = new Date(data.values[i][0])
-				var month = dateObj.getUTCMonth() + 1;
-				var day = dateObj.getUTCDate();
-				var year = dateObj.getUTCFullYear();
-				text.push(day + "/" + month + "/" + year);
+		var getDryDate = function(dates, tmsIdList) {
+			var dry = [];
+			for(key in dates){
+				for(var i = 0; i < tmsIdList.length; i++) {
+					if(key == tmsIdList[i]){
+						dry.push(dates[key])
+					}
+				}
 			}
+			return dry.sort()
+		}
+
+		var createModisChart = function(datesFromService) {
 			
-			var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
-			var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
-			
-			var d3 = Plotly.d3;
+			Plotly.purge('NDVI');
 
-			var gd3 = d3.select('#NDVI')
+			requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 
-			var gd = gd3.node();
-			
-			var trace1 = {
-			  x: date,
-			  y: ndvi,
-			  text: date,
-			  name:"NDVI",
-			  hoverinfo: "text+y",
-			  line: {
-			  	width: 1.5,
-			  	color: '#f6b2b2'
-			  }
-			};
+				var ndvi = [];
+				var ndviSg = [];
+				var date = [];
+				var text = [];
 
-			var trace2 = {
-			  x: date,
-			  y: ndviSg,
-			  text: date,
-			  name:"NDVI (savGol)",
-			  hoverinfo:"none",
-			  line: {
-			  	width: 1,
-			  	color: '#db2828'
-			  }
-			};
-			
-			var trace3 = {
-			  x: dry,
-			  y: trace2NDVI(data.values, dry),
-			  text: dry,
-			  mode: 'markers',
-			  marker: {
-			    color: '#818181',
-			    size: 6
-			  },
-			 	name: 'Landsat (Seco)',
-			 	hoverinfo:"none"
-			};
+				var ndviAndDate = {}
+				for(var i = 0; i < data.values.length; i++){
+					ndvi.push(data.values[i][1]);
+					ndviSg.push(data.values[i][3]);
+					date.push(data.values[i][0]);
+					var dateObj = new Date(data.values[i][0])
+					var month = dateObj.getUTCMonth() + 1;
+					var day = dateObj.getUTCDate();
+					var year = dateObj.getUTCFullYear();
+					text.push(day + "/" + month + "/" + year);
+				}
+				
+				var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
+				var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
+				
+				var d3 = Plotly.d3;
 
-			var trace4 = {
-			  x: wet,
-			  y: trace2NDVI(data.values, wet),
-			  text: wet,
-			  mode: 'markers',
-			  marker: {
-			    color: '#323232',
-			    size: 6
-			  },
-			 	name: 'Landsat (Chuvoso)',
-			 	hoverinfo:"none"
-			};
-			
-			var layout = {
-			  height: 400,
-			  legend: {
-			  	xanchor:"center",
-    			yanchor:"top",
-			    orientation: "h",
-			  	y: 1.2,
-					x: 0.5
-				},
-			  xaxis: {
-			  	tickmode: 'auto',
-			  	nticks: 19,
-			  	fixedrange: true,
-			  	gridcolor: '#828282',
-    			gridwidth: 1,
-			  },
-			  yaxis: {
-			  	fixedrange: true
-			  }
-			};
+				var gd3 = d3.select('#NDVI')
 
-			var data = [trace1, trace2, trace3, trace4];
+				var gd = gd3.node();
+				
+				var trace1 = {
+				  x: date,
+				  y: ndvi,
+				  text: date,
+				  name:"NDVI",
+				  hoverinfo: "text+y",
+				  line: {
+				  	width: 1.5,
+				  	color: '#f6b2b2'
+				  }
+				};
 
-			Plotly.newPlot(gd, data, layout, {displayModeBar: false});
+				var trace2 = {
+				  x: date,
+				  y: ndviSg,
+				  text: date,
+				  name:"NDVI (savGol)",
+				  hoverinfo:"none",
+				  line: {
+				  	width: 1,
+				  	color: '#db2828'
+				  }
+				};
+				
+				var trace3 = {
+				  x: dry,
+				  y: trace2NDVI(data.values, dry),
+				  text: dry,
+				  mode: 'markers',
+				  marker: {
+				    color: '#818181',
+				    size: 6
+				  },
+				 	name: 'Landsat (Seco)',
+				 	hoverinfo:"none"
+				};
 
-			window.onresize = function() {
-			  Plotly.Plots.resize(gd);
-			};
+				var trace4 = {
+				  x: wet,
+				  y: trace2NDVI(data.values, wet),
+				  text: wet,
+				  mode: 'markers',
+				  marker: {
+				    color: '#323232',
+				    size: 6
+				  },
+				 	name: 'Landsat (Chuvoso)',
+				 	hoverinfo:"none"
+				};
+				
+				var layout = {
+				  height: 400,
+				  legend: {
+				  	xanchor:"center",
+	    			yanchor:"top",
+				    orientation: "h",
+				  	y: 1.2,
+						x: 0.5
+					},
+				  xaxis: {
+				  	tickmode: 'auto',
+				  	nticks: 19,
+				  	fixedrange: true,
+				  	gridcolor: '#828282',
+	    			gridwidth: 1,
+				  },
+				  yaxis: {
+				  	fixedrange: true
+				  }
+				};
 
-		});
-	}
+				var data = [trace1, trace2, trace3, trace4];
 
-	var generateMaps = function() {
-		$scope.maps = [];
-		var tmsIdList = [];
+				Plotly.newPlot(gd, data, layout, {displayModeBar: false});
 
-		$scope.tmsIdListWet = [];
-		$scope.tmsIdListDry = [];
+				window.onresize = function() {
+				  Plotly.Plots.resize(gd);
+				};
 
-		for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
-			sattelite = 'L7';
-			if(year > 2012) { 
-				sattelite = 'L8'
-			} else if(year > 2011) {
-				sattelite = 'L7'
-			} else if(year > 2003) {
-				sattelite = 'L5'
-			}
-
-			tmsId = sattelite+'_'+year+'_'+$scope.period;
-			tmsIdDry = sattelite+'_'+year+'_DRY';
-			tmsIdWet = sattelite+'_'+year+'_WET';
-
-			$scope.tmsIdListDry.push(tmsIdDry)
-			$scope.tmsIdListWet.push(tmsIdWet)
-			
-			var host = location.host;
-			if (host.indexOf('maps.lapig.iesa.ufg.br') !== -1) {
-				host = host.replace('maps.lapig', 'lapig');
-			}
-
-			var url = "http://{s}." + host + '/map/'+tmsId+'/{z}/{x}/{y}';
-
-			$scope.maps.push({
-				date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
-				year: year,
-				url: url
 			});
-		};
+		}
 
-	}
+		var generateMaps = function() {
+			$scope.maps = [];
+			var tmsIdList = [];
 
+			$scope.tmsIdListWet = [];
+			$scope.tmsIdListDry = [];
 
-	$scope.getKml = function(){
-		var lon = $scope.point.lon;
-		var lat = $scope.point.lat;
-		var county = $scope.point.county;
-		var url = window.location.origin+window.location.pathname
-		$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
-	}
+			for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
+				sattelite = 'L7';
+				if(year > 2012) { 
+					sattelite = 'L8'
+				} else if(year > 2011) {
+					sattelite = 'L7'
+				} else if(year > 2003) {
+					sattelite = 'L5'
+				}
 
-	var initCounter = function() {
-		$scope.counter = 0;
-    $interval(function () {
-			$scope.counter = $scope.counter + 1;
-    }, 1000);
-	}
+				tmsId = sattelite+'_'+year+'_'+$scope.period;
+				tmsIdDry = sattelite+'_'+year+'_DRY';
+				tmsIdWet = sattelite+'_'+year+'_WET';
 
-	var initFormViewVariables = function() {
-		$scope.optionYears = [];
+				$scope.tmsIdListDry.push(tmsIdDry)
+				$scope.tmsIdListWet.push(tmsIdWet)
+				
+				var host = location.host;
+				if (host.indexOf('maps.lapig.iesa.ufg.br') !== -1) {
+					host = host.replace('maps.lapig', 'lapig');
+				}
 
-		$scope.answers = [
-			{
-				initialYear: $scope.config.initialYear,
-				finalYear: $scope.config.finalYear,
-				landUse: $scope.config.landUse[1]
-			}
-		];
-	}
+				var url = "http://{s}." + host + '/map/'+tmsId+'/{z}/{x}/{y}';
 
-	var loadPoint = function(data) {
-		
-		$scope.onSubmission = false;
+				$scope.maps.push({
+					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
+					year: year,
+					url: url
+				});
+			};
+		}
 
-		$scope.point = data.point;
-		$rootScope.total = data.total;
-		$rootScope.count = data.count;
-		$rootScope.current = data.current;
-		$scope.datesFromService = data.point.dates;
+		$scope.getKml = function(){
+			var lon = $scope.point.lon;
+			var lat = $scope.point.lat;
+			var county = $scope.point.county;
+			var url = window.location.origin+window.location.pathname
+			$window.open(url+"service/kml?longitude="+lon+"&latitude="+lat+"&county="+county);	
+		}
 
-		initFormViewVariables();
-		generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-		generateMaps();
-		createModisChart(data.point.dates);
-		createPrecipitationChart();
-		$scope.counter = 0;
+		var initCounter = function() {
+			$scope.counter = 0;
+	    $interval(function () {
+				$scope.counter = $scope.counter + 1;
+	    }, 1000);
+		}
 
-	}
+		var initFormViewVariables = function() {
+			$scope.optionYears = [];
 
-	initCounter();
-	requester._get('points/next-point', loadPoint);
+			$scope.answers = [
+				{
+					initialYear: $scope.config.initialYear,
+					finalYear: $scope.config.finalYear,
+					landUse: $scope.config.landUse[1]
+				}
+			];
+		}
 
+		var loadPoint = function(data) {
+			
+			$scope.onSubmission = false;
+			$scope.pointLoaded = true;
+			$scope.point = data.point;
+			$rootScope.total = data.total;
+			$rootScope.count = data.count;
+			$rootScope.current = data.current;
+			$scope.datesFromService = data.point.dates;
+
+			initFormViewVariables();
+			generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+			generateMaps();
+			createModisChart(data.point.dates);
+			createPrecipitationChart();
+			$scope.counter = 0;
+
+		}
+
+		initCounter();
+		requester._get('points/next-point', loadPoint);
+	
+	});
 });

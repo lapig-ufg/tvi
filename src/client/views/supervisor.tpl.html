@@ -37,12 +37,12 @@
 			<div class="row">
 				<fieldset>
 				<legend>
-					 <form class="form-inline">              
+					 <form class="form-inline">
 		        <input type="index" class="form-control" id="index" placeholder="index" ng-model="point.index">
 		        <button type="button" class="btn btn-success btn-navbar" ng-click="submit(point.index)">Buscar</button>
-		        <button  ng-click="submit(point.index-1)"  type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
+		        <button  ng-click="submit(point.index-1)" ng-disabled="point.index <= 1" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
 		        <span class="font-index">{{point.index}}/{{total}}</span>
-		        <button ng-click="submit(point.index+1)" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
+		        <button ng-click="submit(point.index+1)" ng-disabled="point.index >= total" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
 						<span class="pull-right">Imagens Landsat <span style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span></span>
 		      </form>
 					</legend>

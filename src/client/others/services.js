@@ -73,7 +73,21 @@ Application
 		}
 
   })
-  .service('util', function () {
+  .service('util', function ($rootScope, $interval) {
+  	
+  	this.waitUserData = function(callback) {
+
+  		var repeatedFn = function() {
+
+  			if($rootScope.user != undefined) {  				
+  				$interval.cancel(loop);
+  				callback();
+  			}
+  		}
+
+  		loop = $interval(repeatedFn, 500, 10);
+  	}
+
   	this._suport = function(pastagem, callback){
   		suportData = {};
   		var totalArea;

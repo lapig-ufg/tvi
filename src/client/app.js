@@ -24,7 +24,7 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl:'views/login.tpl.html'
 		});
 
-}).run(function($http) {
+}).run(function($http, $location, $rootScope, requester) {
 	
 	var socket = io.connect('/', {
 		transports: [ 'websocket' ]
@@ -34,4 +34,20 @@ Application.config(function($routeProvider, $locationProvider) {
 	$http.defaults.headers.put['Content-Type'] = 'application/json';
 	delete $http.defaults.headers.common['X-Requested-With'];
 
+	requester._get('login/user', function(result) {
+		if(!result) {
+			$location.path('login');
+		} else {
+
+			$rootScope.user = result;
+
+			if(result.type == 'supervisor'){
+				$location.path('supervisor');
+			}
+			else if(result.type == 'inspector') {
+				$location.path('temporal');
+			}
+
+		}
+	});
 });
