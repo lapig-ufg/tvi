@@ -28,12 +28,54 @@ body {
   to { transform: scale(1) rotate(360deg);}
 }
 
-@media (max-width: 780px){
-.form-control{
-		font-size: 10px !important;
+/*@media (max-width: 480px) {
+  .respSmallLeft {
+    width: 36%;
+    margin-left: 20px !important;
+  }
+}*/
+
+@media (max-width: 780px) {
+.form-control {
+    font-size: 10px !important;
     margin-top: 5px;
-	}
+  }
 }
+
+@media (max-width: 767px) {
+  .tableSmallLeft {
+    width: 36% !important;
+    margin-left: 20px !important;
+  }
+
+  .tableSmallRight {
+    width: 56% !important;
+  }
+}
+
+@media (max-width: 1149px) {
+  .tableMediumLeft {
+    width: 19%;
+    margin-left: 20px;
+  }
+  .tableMediumRight {
+    width: 54%;
+    margin-left: 0px;
+  }
+}
+
+@media (min-width: 1150px) {
+  .tableLargeLeft {
+    width: 16%;
+    margin-left: 0px;
+  }
+  .tableLargeRight {
+    width: 57%;
+    margin-left: 0px;
+  }
+
+}
+
 
 .jumbotron {
   width: 400px;
@@ -70,7 +112,7 @@ body {
 }
 
 .btn {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 .time {
@@ -114,7 +156,6 @@ legend.scheduler-border {
   height: 100%;
   width: 100%;
   margin: 0px;
-
 }
 
 .form-signin {
@@ -179,7 +220,7 @@ input[type='button']
   margin:5px 5px 5px 5px;
 }
 
-h3{
+h3 {
   margin:5px 5px 5px 5px; 
 }
 
@@ -188,11 +229,52 @@ h3{
 }
 
 .form-lulc-panel {
-  height: 340px;
+  height: 660px;
   overflow-y: auto;
   padding-right: 0px;
   width: 318px;
-  border-bottom: 1px solid silver;
   overflow-x: auto;
 }
 
+.table-users {
+  margin-bottom: 15px;  
+}
+
+.borderPoint {
+  border: 0.1px solid rgba(109, 109, 109, 0.5);
+  border-style: groove;
+  opacity: 0.85;
+  margin-top: auto;
+}
+
+.tab {
+  padding-left: 2em;
+}
+
+.table-years {
+  margin-bottom: 0px;
+  white-space: pre;
+  overflow-x: scroll;
+}
+
+.titleMaps {
+  font-size: 14px;
+  color: gray; 
+};
+
+input[type=button].no-spinnerInspec::-webkit-inner-spin-button, 
+  input[type=button]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input[type=button].disableButton::-webkit-inner-spin-button, 
+  input[type=button]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+
+.bold {
+  font-weight:bold;
+}

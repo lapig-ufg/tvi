@@ -62,8 +62,7 @@ module.exports = function(app) {
 	Internal.precipitationMaps = function(request, response){
 		var latitude = request.param('latitude');
 		var longitude = request.param('longitude');
-		longitude = '-49.6582';
-		latitude = '-16.4382';
+
 		var Url = "http://maps.lapig.iesa.ufg.br/time-series/TRMM_PRECIPITATION/values?_dc=1497123621159&longitude="+longitude+"&latitude="+latitude+"&mode=series&radius="
 		
 		requester({

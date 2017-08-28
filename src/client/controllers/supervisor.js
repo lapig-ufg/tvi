@@ -3,7 +3,7 @@
 Application.controller('supervisorController', function($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
 
 	util.waitUserData(function() {
-		$scope.size = 3;
+		$scope.size = 4;
 		$scope.onSubmission = false;
 		$scope.period = 'DRY';
 		$scope.periodo = 'SECO';
@@ -97,10 +97,37 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			return ndvi;
 		}
 
-		var getDryDate = function(dates, tmsIdList){
+		var getPrecipitationData = function(callback) {
+			requester._get('spatial/precipitation',{"longitude": $scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+
+				var precipit = [];
+				var date = [];
+				var text = [];
+
+				for(var i = 0; i < data.values.length; i++) {
+					precipit.push(data.values[i][1]);
+					date.push(new Date(data.values[i][0]));
+					var dateObj = new Date(data.values[i][0]);
+					var month = dateObj.getUTCMonth() + 1;
+					var day = dateObj.getUTCDate();
+					var year = dateObj.getUTCFullYear();
+					text.push(day + "/" + month + "/" + year);
+				}
+
+				var result = {
+					"precipit": precipit,
+					"date": date,
+					"text": text
+				};
+
+				callback(result);
+			})			
+		}
+
+		var getDryDate = function(dates, tmsIdList) {
 			var dry = [];
 			for(key in dates){
-				for(var i = 0; i < tmsIdList.length; i++){
+				for(var i = 0; i < tmsIdList.length; i++) {
 					if(key == tmsIdList[i]){
 						dry.push(dates[key])
 					}
@@ -113,113 +140,168 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			
 			Plotly.purge('NDVI');
 
+
 			requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
+				getPrecipitationData(function(dataPrecip) {
 
-				var ndvi = [];
-				var ndviSg = [];
-				var date = [];
-				var text = [];
+					var ndvi = [];
+					var ndviSg = [];
+					var date = [];
+					var text = [];
 
-				var ndviAndDate = {}
-				for(var i = 0; i < data.values.length; i++){
-					ndvi.push(data.values[i][1]);
-					ndviSg.push(data.values[i][3]);
-					date.push(data.values[i][0]);
-					var dateObj = new Date(data.values[i][0])
-					var month = dateObj.getUTCMonth() + 1;
-					var day = dateObj.getUTCDate();
-					var year = dateObj.getUTCFullYear();
-					text.push(day + "/" + month + "/" + year);
-				}
-				
-				var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
-				var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
-				
-				var d3 = Plotly.d3;
+					for(var i = 0; i < data.values.length; i++) {
+						ndvi.push(data.values[i][1]);
+						ndviSg.push(data.values[i][3]);
+						date.push(data.values[i][0]);
+						var dateObj = new Date(data.values[i][0])
+						var month = dateObj.getUTCMonth() + 1;
+						var day = dateObj.getUTCDate();
+						var year = dateObj.getUTCFullYear();
+						text.push(day + "/" + month + "/" + year);
+					}
 
-				var gd3 = d3.select('#NDVI')
+					var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
+					var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
+					
+					var d3 = Plotly.d3;
+					var gd3 = d3.select('#NDVI')
+					var gd = gd3.node();
+					
+					var trace1 = {
+					  x: date,
+					  y: ndvi,
+					  text: date,
+					  name:"NDVI",
+					  hoverinfo: "text+y",
+					  line: {
+					  	width: 1.5,
+					  	color: '#f6b2b2'
+					  }
+					};
 
-				var gd = gd3.node();
-				
-				var trace1 = {
-				  x: date,
-				  y: ndvi,
-				  text: date,
-				  name:"NDVI",
-				  hoverinfo: "text+y",
-				  line: {
-				  	width: 1.5,
-				  	color: '#f6b2b2'
-				  }
-				};
+					var trace2 = {
+					  x: date,
+					  y: ndviSg,
+					  text: date,
+					  name:"NDVI (savGol)",
+					  hoverinfo:"none",
+					  line: {
+					  	width: 1,
+					  	color: '#db2828'
+					  }
+					};
 
-				var trace2 = {
-				  x: date,
-				  y: ndviSg,
-				  text: date,
-				  name:"NDVI (savGol)",
-				  hoverinfo:"none",
-				  line: {
-				  	width: 1,
-				  	color: '#db2828'
-				  }
-				};
-				
-				var trace3 = {
-				  x: dry,
-				  y: trace2NDVI(data.values, dry),
-				  text: dry,
-				  mode: 'markers',
-				  marker: {
-				    color: '#818181',
-				    size: 6
-				  },
-				 	name: 'Landsat (Seco)',
-				 	hoverinfo:"none"
-				};
+					var trace3 = {
+					  x: dry,
+					  y: trace2NDVI(data.values, dry),
+					  text: dry,
+					 	name: 'Landsat (Seco)',
+					 	hoverinfo:"none",
+					  mode: 'markers',
+					  marker: {
+					    size: 6,
+				    	color: '#818181'
+					  }
+					};
 
-				var trace4 = {
-				  x: wet,
-				  y: trace2NDVI(data.values, wet),
-				  text: wet,
-				  mode: 'markers',
-				  marker: {
-				    color: '#323232',
-				    size: 6
-				  },
-				 	name: 'Landsat (Chuvoso)',
-				 	hoverinfo:"none"
-				};
-				
-				var layout = {
-				  height: 400,
-				  legend: {
-				  	xanchor:"center",
-	    			yanchor:"top",
-				    orientation: "h",
-				  	y: 1.2,
-						x: 0.5
-					},
-				  xaxis: {
-				  	tickmode: 'auto',
-				  	nticks: 19,
-				  	fixedrange: true,
-				  	gridcolor: '#828282',
-	    			gridwidth: 1,
-				  },
-				  yaxis: {
-				  	fixedrange: true
-				  }
-				};
+					var trace4 = {
+					  x: wet,
+					  y: trace2NDVI(data.values, wet),
+					  text: wet,
+					 	name: 'Landsat (Chuvoso)',
+					 	hoverinfo:"none",
+					  mode: 'markers',
+					  marker: {
+					    color: '#323232',
+					    size: 6
+					  }
+					};
 
-				var data = [trace1, trace2, trace3, trace4];
+					var initDate = date[0].split("-")
+					var initPrec = 0;
+					var precData = [];
+					var precValue = [];
+					var precText = [];
 
-				Plotly.newPlot(gd, data, layout, {displayModeBar: false});
+					for(var i=0; i<dataPrecip.text.length; i++) {
+						dataPrecip.text[i] = dataPrecip.text[i].split("/");
+						dataPrecip.text[i] = dataPrecip.text[i].reverse();
+						dataPrecip.text[i] = dataPrecip.text[i].toString();
+						dataPrecip.text[i] = dataPrecip.text[i].replace(',','-');
+						dataPrecip.text[i] = dataPrecip.text[i].replace(',','-');
+					}
+					
+					var count = 0;
+					for(var i=0; i<dataPrecip.text.length; i++) {					
+						initPrec = dataPrecip.text[i].split("-")
+						
+						if(initPrec[0] >= initDate[0]) {
+							precData[count] = dataPrecip.text[i];
+							precValue[count] = dataPrecip.precipit[i];
+							var temp = dataPrecip.text[i].split("-");
+							precText[count] = temp[0]+'-'+temp[1];
 
-				window.onresize = function() {
-				  Plotly.Plots.resize(gd);
-				};
+							count++;
+						}
+					}
 
+					var trace5 = {
+						x: precData,
+						y: precValue,
+						text: precText,
+						name: 'Precipitação',
+						hoverinfo: 'text+y',
+						opacity: 0.5,
+						mode: 'markers',
+						marker: {
+							size: 6,
+							color: '#0000ff',
+							line: {
+						  	width: 0.1
+			        }
+						},
+						yaxis: 'y5',
+				    type: 'bar'
+					};
+
+					var layout = {
+					  height: 400,
+					  legend: {
+					  	xanchor:"center",
+		    			yanchor:"top",
+					    orientation: "h",
+					  	y: 1.2,
+							x: 0.5
+						},
+					  xaxis: {
+					  	tickmode: 'auto',
+					  	nticks: 19,
+					  	fixedrange: true,
+					  	gridcolor: '#828282',
+		    			gridwidth: 1
+					  },
+					  yaxis: {
+					  	title: 'NDVI',
+					  	fixedrange: true,
+					  	rangemode: "nonnegative"
+					  },
+					   yaxis5: {
+					   	title: 'Precipitação',
+					  	fixedrange: true,
+					    overlaying: 'y',
+					    side: 'right'
+					  }
+					};
+
+					var dataChart = [trace1, trace2, trace3, trace4, trace5];
+
+					Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+
+					window.onresize = function() {
+					  Plotly.Plots.resize(gd);
+					};
+
+				});
 			});
 		}
 
@@ -232,7 +314,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 			for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
 				sattelite = 'L7';
-				if(year > 2012) { 
+				if(year > 2012) {
 					sattelite = 'L8'
 				} else if(year > 2011) {
 					sattelite = 'L7'
@@ -294,12 +376,15 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		}
 
 		var loadPoint = function(data) {
+			
+			$scope.objConsolid = data.classConsolid;
 			$scope.onSubmission = false;
-
+			$scope.pointLoaded = true;
 			$scope.point = data.point;
 			$rootScope.total = data.total;
 			$rootScope.count = data.count;
 			$rootScope.current = data.current;
+			$scope.datesFromService = data.point.dates;
 
 			initFormViewVariables();
 			generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
@@ -317,5 +402,4 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		requester._get('points/get-point/1', loadPoint);
 
 	});
-
 });

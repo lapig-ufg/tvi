@@ -166,6 +166,45 @@ module.exports = function(app) {
 					"point": point
 				}
 
+				var numInsp = result.point.inspection.length;
+				var sizeArrayYears = result.point.years.length;
+				var pointConsolid = [];
+				var count = 0;
+				var points = [];
+				var consolid = [];
+
+				for(var i=0; i<sizeArrayYears; i++) {
+					for(var j=0; j<numInsp; j++) {
+
+						if(!pointConsolid['uso_'+result.point.inspection[j].landUse[i]])
+							pointConsolid['uso_'+result.point.inspection[j].landUse[i]] = 0;
+						
+						pointConsolid['uso_'+result.point.inspection[j].landUse[i]]++;
+						count++;					
+
+						if(count == numInsp) {
+							points[i] = pointConsolid;
+
+							pointConsolid = [];
+							count = 0;
+						}
+					}
+				}
+
+				points.forEach(function(land) {
+					for(key in land) {
+						if(land[key] >= numInsp/2) {
+							consolid.push(key.split("_")[1]);
+						}
+					}
+				})
+
+				var objConsolid = {
+					userName: "ClasseConsolidada",
+					landUse: consolid
+				}
+				
+				result.point.classConsolid = objConsolid
 				response.send(result)
 				response.end();
 			});
@@ -178,6 +217,7 @@ module.exports = function(app) {
 		pointsCollection.count({"campaign": campaign._id}, function(err, count) {
 			point = {}
 			point.count = count;
+
 			response.send(point);
 			response.end();
 		})
