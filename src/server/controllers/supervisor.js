@@ -87,9 +87,6 @@ module.exports = function(app) {
 
 				csvResult.push(csvLines)
 			});
-			
-			//response.send(csvResult);
-			//response.end();
 
 			response.set('Content-Type', 'text/csv');
 			response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
@@ -121,9 +118,17 @@ module.exports = function(app) {
 
 	Points.getPoint = function(request, response){
 		campaign = request.session.user.campaign;
-		var index = parseInt(request.params.index);
+		var index = parseInt(request.param("index"));
+		var landUse = request.param("landUse");
 
-		pointsCollection.findOne({ $and: [ { "index": index }, { "campaign": campaign._id } ] }, function(err, point){
+		var filter = {
+			"campaign": campaign._id
+		};
+
+		if (landUse)
+			filter["inspection.form.landUse"] = landUse;
+
+		pointsCollection.find(filter).sort({ "index": 1 }).skip(index - 1).nextObject(function(err, point){
 			var years = [];
 			var yearlyInspections = [];
 			
@@ -157,70 +162,81 @@ module.exports = function(app) {
 				point = {};
 			}
 
+			point.originalIndex = point.index;
+			point.index = index;
+
 			point.inspection = yearlyInspections;
 			point.years = years;
 
 			getImageDates(point.path, point.row, function(dates) {
 				point.dates = dates
+				
 				var result = {
 					"point": point
 				}
 
 				var numInsp = result.point.inspection.length;
-				var sizeArrayYears = result.point.years.length;
-				var pointConsolid = [];
-				var count = 0;
+				
 				var points = [];
 				var consolid = [];
 
-				for(var i=0; i<sizeArrayYears; i++) {
-					for(var j=0; j<numInsp; j++) {
-
-						if(!pointConsolid['uso_'+result.point.inspection[j].landUse[i]])
-							pointConsolid['uso_'+result.point.inspection[j].landUse[i]] = 0;
+				for(var i=0; i < result.point.years.length; i++) {
+					
+					pointAux = {};
+					for(var j=0; j< result.point.inspection.length; j++) {
+						var key = result.point.inspection[j].landUse[i];
+						if(!pointAux[key])
+							pointAux[key] = 0;
 						
-						pointConsolid['uso_'+result.point.inspection[j].landUse[i]]++;
-						count++;					
+						pointAux[key]++;
+					}
 
-						if(count == numInsp) {
-							points[i] = pointConsolid;
-
-							pointConsolid = [];
-							count = 0;
+					isConsolidate = false;
+					for(var key in pointAux) {
+						if(pointAux[key] >= numInsp/2) {
+							isConsolidate = true;
+							break;
 						}
+					}
+
+					if(isConsolidate) {
+						consolid.push(key);
+					} else {
+						consolid.push("Não consolidado");
 					}
 				}
 
-				points.forEach(function(land) {
-					for(key in land) {
-						if(land[key] >= numInsp/2) {
-							consolid.push(key.split("_")[1]);
-						}
-					}
-				})
-
 				var objConsolid = {
-					userName: "ClasseConsolidada",
+					type: "Classe Consolidada",
 					landUse: consolid
 				}
 				
-				result.point.classConsolid = objConsolid
-				response.send(result)
-				response.end();
+				pointsCollection.count(filter, function(err, count) {
+					
+					result.point.classConsolid = objConsolid
+					result.totalPoint = count
+
+					response.send(result)
+					response.end();
+				})
+
 			});
 		});
 	}
 
-	Points.getTotal = function(request, response) {
-		campaign = request.session.user.campaign;
+	Points.landUseFilter = function(request, response) {
+		var landUses = [];
+		
+		landUses = request.session.user.campaign.landUse
+		response.send(landUses);
+		response.end();
+	}
 
-		pointsCollection.count({"campaign": campaign._id}, function(err, count) {
-			point = {}
-			point.count = count;
+	Points.usersFilter = function(request, response) {
+		var users = request.session.user.campaign;
 
-			response.send(point);
-			response.end();
-		})
+		response.send(users);
+		response.end();
 	}
 
 	return Points;

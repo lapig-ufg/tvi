@@ -372,7 +372,24 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		}
 
 		$scope.submit = function(index) {
-			requester._get('points/get-point/'+index, loadPoint);
+			var filter = {
+				"index": index
+			};
+
+			if($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')
+				filter["landUse"] = $scope.selectedLandUse;
+
+			requester._post('points/get-point', filter, loadPoint);
+		}
+
+		var initFilter = function() {
+			requester._get('points/landUses', function(landUses) {
+				landUses.unshift('Todos');
+
+				$scope.selectedLandUse = "Todos";
+				$scope.landUses = landUses;
+
+			});
 		}
 
 		var loadPoint = function(data) {
@@ -392,14 +409,13 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			createModisChart(data.point.dates);
 			$scope.counter = 0;
 
-			requester._get('points/total-points/', function(total) {
-				$scope.total = total.count;
-			});
+			$scope.total = data.totalPoint;
 
 		}
 
 		initCounter();
-		requester._get('points/get-point/1', loadPoint);
+		initFilter();
+		$scope.submit(1);
 
 	});
 });

@@ -3,7 +3,7 @@ module.exports = function (app) {
 	var points = app.controllers.supervisor;
 
 	app.get('/service/points/csv', points.csv);
-	app.get('/service/points/get-point/:index', points.getPoint);
-	app.get('/service/points/total-points/', points.getTotal);
-	
+	app.post('/service/points/get-point', points.getPoint);
+	app.get('/service/points/landUses/', points.landUseFilter);
+	app.get('/service/points/users/', points.usersFilter);	
 }

@@ -28,13 +28,6 @@ body {
   to { transform: scale(1) rotate(360deg);}
 }
 
-/*@media (max-width: 480px) {
-  .respSmallLeft {
-    width: 36%;
-    margin-left: 20px !important;
-  }
-}*/
-
 @media (max-width: 780px) {
 .form-control {
     font-size: 10px !important;
@@ -96,8 +89,7 @@ body {
 .input {
   margin-bottom: 100px;
 }
-
-
+  
 .form-inline {
   margin-top: 6px;
 }
