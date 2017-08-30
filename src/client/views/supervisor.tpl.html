@@ -40,6 +40,12 @@
     							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectedLandUse" ng-options="landUse for landUse in landUses"></select>
     						</div>
     					</div>
+    					<div class="form-group row">
+    						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Usuários:</label>
+    						<div class="col-sm-4" style="padding-left: 0px;">
+    							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" ng-model="selectUserNames" class="form-control" ng-options="userName for userName in userNames"></select>  
+    						</div>
+    					</div>
     				</form>
 					</div>
 				</legend>
@@ -72,7 +78,7 @@
 					  	</tr>
 				  	</tbody>
 				  	<tfoot class="bold">
-			  			<td>{{point.classConsolid.type}}</td>
+			  			<td>{{objConsolidated.type}}</td>
 			  	</tfoot>
 				</table>
 			</div>
@@ -89,7 +95,7 @@
 				  	</tr>
 			  	</tbody>
 			  	<tfoot class="bold">
-				  	<td ng-repeat="landUse in point.classConsolid.landUse track by $index">{{landUse}}</td>
+				  	<td ng-repeat="landUse in objConsolidated.landUse track by $index">{{landUse}}</td>
 			  	</tfoot>
 				</table>
 			</div>

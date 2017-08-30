@@ -116,22 +116,29 @@ module.exports = function(app) {
 		});
 	}
 
-	Points.getPoint = function(request, response){
+	Points.getPoint = function(request, response) {
 		campaign = request.session.user.campaign;
 		var index = parseInt(request.param("index"));
 		var landUse = request.param("landUse");
+		var userName = request.param("userName");
+		//var pointNull = false;
 
 		var filter = {
 			"campaign": campaign._id
 		};
 
-		if (landUse)
-			filter["inspection.form.landUse"] = landUse;
+		if (userName) {
+			filter["userName"] = userName;
+		}
+
+		if (landUse) {			
+			filter["inspection.form.landUse"] = landUse
+		}
 
 		pointsCollection.find(filter).sort({ "index": 1 }).skip(index - 1).nextObject(function(err, point){
 			var years = [];
 			var yearlyInspections = [];
-			
+
 			if(point) {
 				for(var i=0; i < point.userName.length; i++) {
 					var userName = point.userName[i];
@@ -158,6 +165,7 @@ module.exports = function(app) {
 						}
 					});
 				}
+
 			} else {
 				point = {};
 			}
@@ -213,7 +221,7 @@ module.exports = function(app) {
 				
 				pointsCollection.count(filter, function(err, count) {
 					
-					result.point.classConsolid = objConsolid
+					result.point.classConsolidated = objConsolid
 					result.totalPoint = count
 
 					response.send(result)
@@ -225,18 +233,17 @@ module.exports = function(app) {
 	}
 
 	Points.landUseFilter = function(request, response) {
-		var landUses = [];
-		
-		landUses = request.session.user.campaign.landUse
-		response.send(landUses);
-		response.end();
+		pointsCollection.distinct('inspection.form.landUse', function(err, docs) {
+			response.send(docs);
+			response.end();
+		});
 	}
 
 	Points.usersFilter = function(request, response) {
-		var users = request.session.user.campaign;
-
-		response.send(users);
-		response.end();
+		pointsCollection.distinct('userName', function(err, docs) {
+			response.send(docs);
+			response.end();
+		});
 	}
 
 	return Points;

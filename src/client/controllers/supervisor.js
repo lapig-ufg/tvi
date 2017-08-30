@@ -51,11 +51,10 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 	        form: $scope.answers
 				}
 	    }
-			
+
 	    $scope.onSubmission = true;
 
 	    requester._post('points/next-point', { "point": formPoint }, loadPoint);
-
 		}
 
 		$scope.changePeriod = function() {
@@ -139,7 +138,6 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		var createModisChart = function(datesFromService) {
 			
 			Plotly.purge('NDVI');
-
 
 			requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 				getPrecipitationData(function(dataPrecip) {
@@ -379,6 +377,9 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			if($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')
 				filter["landUse"] = $scope.selectedLandUse;
 
+			if($scope.selectUserNames && $scope.selectUserNames != 'Todos')
+				filter["userName"] = $scope.selectUserNames;
+
 			requester._post('points/get-point', filter, loadPoint);
 		}
 
@@ -388,13 +389,20 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 				$scope.selectedLandUse = "Todos";
 				$scope.landUses = landUses;
+			});
+		}
 
+		var usersFilter = function() {
+			requester._get('points/users', function(userNames) {
+				userNames.unshift('Todos');
+
+				$scope.selectUserNames = "Todos";
+				$scope.userNames = userNames;
 			});
 		}
 
 		var loadPoint = function(data) {
-			
-			$scope.objConsolid = data.classConsolid;
+			$scope.objConsolidated = data.point.classConsolidated;
 			$scope.onSubmission = false;
 			$scope.pointLoaded = true;
 			$scope.point = data.point;
@@ -410,11 +418,11 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			$scope.counter = 0;
 
 			$scope.total = data.totalPoint;
-
 		}
 
 		initCounter();
 		initFilter();
+		usersFilter();
 		$scope.submit(1);
 
 	});
