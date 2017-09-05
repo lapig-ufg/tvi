@@ -2,56 +2,79 @@
 	<div class="row">
 		<div class="row">					
 			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-				<legend>
-					<script>
-					  function maxLengthCheck(object) {
-					    if (object.value.length > object.maxLength)
-					      object.value = object.value.slice(0, object.maxLength)
-					  }
-					    
-					  function isNumeric (evt) {
-					    var theEvent = evt || window.event;
-					    var key = theEvent.keyCode || theEvent.which;
-					    key = String.fromCharCode (key);
-					    var regex = /[0-9]/;
-					    if ( !regex.test(key) ) {
-					      theEvent.returnValue = false;
-					      if(theEvent.preventDefault) theEvent.preventDefault();
-					    }
-					  }
-					</script>
-					<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
-					 	<form class="form-inline" style="margin-top: 0px;">						 	
-			        <input type="index" onkeypress="return isNumeric(event)" oninput="maxLengthCheck(this)"  maxlength = "5" 
-			        min="0" max="99999" style="width: 66px; display: inline-block;" class="form-control" id="index" placeholder="index" ng-model="point.index">
-			        <button type="button" class="btn btn-success btn-navbar" ng-disabled="point.index > total || point.index < 1" ng-click="submit(point.index)">Buscar</button>
-			        <div class="form-inline" style="display: inline-block; margin-top: 0px;">
-				        <button ng-click="submit(point.index-1)" ng-disabled="point.index <= 1 || point.index > total" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
-				        <span>{{point.index}}/{{total}}</span>
-				        <button ng-click="submit(point.index+1)" ng-disabled="point.index >= total || point.index < 1" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
-							</div>
-			      </form>
-			    </div>
-    			<div class="col-xs-6 col-sm-9 col-md-9 col-lg-9">	
-    				<form>
-    					<div class="form-group row">
-    						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Classes:</label>
-    						<div class="col-sm-4" style="padding-left: 0px;">
-    							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectedLandUse" ng-options="landUse for landUse in landUses"></select>
-    						</div>
-    					</div>
-    					<div class="form-group row">
-    						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Usuários:</label>
-    						<div class="col-sm-4" style="padding-left: 0px;">
-    							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" ng-model="selectUserNames" class="form-control" ng-options="userName for userName in userNames"></select>  
-    						</div>
-    					</div>
-    				</form>
-					</div>
-				</legend>
+				<script>
+				  function maxLengthCheck(object) {
+				    if (object.value.length > object.maxLength)
+				      object.value = object.value.slice(0, object.maxLength)
+				  }
+				    
+				  function isNumeric (evt) {
+				    var theEvent = evt || window.event;
+				    var key = theEvent.keyCode || theEvent.which;
+				    key = String.fromCharCode (key);
+				    var regex = /[0-9]/;
+				    if ( !regex.test(key) ) {
+				      theEvent.returnValue = false;
+				      if(theEvent.preventDefault) theEvent.preventDefault();
+				    }
+				  }
+				</script>
+				<div class="col-xs-12 col-sm-12 col-md-3 col-lg-3 filterMediumLeft">
+				 	<form class="form-inline" style="margin-top: 0px;">						 	
+		        <input type="index" onkeypress="return isNumeric(event)" oninput="maxLengthCheck(this)"  maxlength = "5" 
+		        min="0" max="99999" style="width: 66px; display: inline-block;" class="form-control" id="index" placeholder="index" ng-model="point.index">
+		        <button type="button" class="btn btn-success btn-navbar" ng-disabled="point.index > total || point.index < 1" ng-click="submit(point.index)">Buscar</button>
+		        <div class="form-inline" style="display: inline-block; margin-top: 0px;">
+			        <button ng-click="submit(point.index-1)" ng-disabled="point.index <= 1 || point.index > total" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
+			        <span>{{point.index}}/{{total}}</span>
+			        <button ng-click="submit(point.index+1)" ng-disabled="point.index >= total || point.index < 1" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
+						</div>
+		      </form>
+		    </div>
+  			<div class="col-xs-5 col-sm-5 col-md-4 col-lg-4" style="width: auto">	
+  				<form>
+  					<div class="form-group row">
+  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Classes:</label>
+  						<div class="col-sm-4" style="padding-left: 15px">
+  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectedLandUse" ng-options="landUse for landUse in landUses"></select>
+  						</div>
+  					</div>
+  					<div class="form-group row">
+  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Usuários:</label>
+  						<div class="col-sm-4" style="padding-left: 15px;">
+  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control" ng-model="selectUserNames" ng-options="userName for userName in userNames"></select>  
+  						</div>
+  					</div>
+  				</form>
+				</div>
+				<div class="col-xs-5 col-sm-5 col-md-4 col-lg-4" style="width: auto">	
+  				<form>
+  					<div class="form-group row">
+  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Bioma:</label>
+  						<div class="col-sm-4" style="padding-left: 15px;">
+  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
+  						</div>
+  					</div>
+  					<div class="form-group row">
+  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Estado(UF):</label>
+  						<div class="col-sm-4" style="padding-left: 15px;">
+  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectUf" ng-options="uf for uf in stateUF"></select>  
+  						</div>
+  					</div>
+  				</form>
+				</div>
+				<div class="col-xs-2 col-sm-2 col-md-1 col-lg-1" style="width: auto">					
+					<form>
+					  <label>Tempo de inspeção: <input type="checkbox" ng-model="checked1" ng-init="checked1=false"/></label>
+					  <span ng-if="checked1"></span>
+					  <br>
+					  <label>Pontos de concordância: <input type="checkbox" ng-model="checked2" ng-init="checked2=false"/></label>
+					  <span ng-if="checked2"></span>
+				 	</form>
+				</div>
 			</div>
 			<div class="col-xs-11 col-sm-3 col-md-3 col-lg-3" style="margin-left: 5px">
-				<div class="borderPoint" style="margin-bottom: 3px;">
+				<div class="borderPoint" style="margin-bottom: 1px;">
 					<div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
 					<div class="tab"><p><b>Bioma:</b> {{point.biome}}</p></div>
 					<div class="tab"><p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span></div>
@@ -77,7 +100,7 @@
 					  		<td>{{inspection.userName}}</td>
 					  	</tr>
 				  	</tbody>
-				  	<tfoot class="bold">
+				  	<tfoot style="font-size: 13px; font-weight: bold;">
 			  			<td>{{objConsolidated.type}}</td>
 			  	</tfoot>
 				</table>
@@ -94,16 +117,15 @@
 				  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
 				  	</tr>
 			  	</tbody>
-			  	<tfoot class="bold">
+			  	<tfoot style="font-size: 13px; font-weight: bold;">
 				  	<td ng-repeat="landUse in objConsolidated.landUse track by $index">{{landUse}}</td>
 			  	</tfoot>
 				</table>
 			</div>
-
-			<legend></legend>
   		<br>
-			<span class="pull-left" style="font-size: 18px; margin:5px 5px 5px 5px; padding-left: 25px">Imagens Landsat  <span class="titleMaps">RGB(NIR,SWIR,RED)</span></span>
 		</div>
+		<br><br>
+		<span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span class="titleMaps">RGB(NIR,SWIR,RED)</span></span>
 		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 			<div class="row">
 				<fieldset>					
@@ -114,10 +136,10 @@
 				</fieldset>
 		</div>
   </div>
-  <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+  <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 bold">
   	<fieldset>
   		<br><br>
-			<div><h4>Série temporal MODIS:</h4></div>			
+  		<span style="font-size: 18px; font-weight: bold; margin-left: -10px">Série temporal MODIS:</span>
   		<div id="NDVI"></div>
   	</fieldset> 
   </div>

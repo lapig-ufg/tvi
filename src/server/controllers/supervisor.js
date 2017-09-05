@@ -9,7 +9,6 @@ module.exports = function(app) {
 	var Points = {};
 	var pointsCollection = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
-	var campaign;
 
 	var getImageDates = function(path, row, callback) {
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
@@ -29,7 +28,7 @@ module.exports = function(app) {
 	}
 
 	Points.csv = function(request, response) {
-		campaign = request.session.user.campaign;
+		var campaign = request.session.user.campaign;
 
 		pointsCollection.find({ "campaign": campaign._id }).sort({ 'index': 1}).toArray(function(err, points) {
 			var csvResult = [];
@@ -117,25 +116,34 @@ module.exports = function(app) {
 	}
 
 	Points.getPoint = function(request, response) {
-		campaign = request.session.user.campaign;
+		var campaign = request.session.user.campaign;
 		var index = parseInt(request.param("index"));
 		var landUse = request.param("landUse");
 		var userName = request.param("userName");
-		//var pointNull = false;
+		var biome = request.param("biome");
+		var uf = request.param("uf");
 
 		var filter = {
 			"campaign": campaign._id
 		};
-
-		if (userName) {
+		
+		if(userName) {
 			filter["userName"] = userName;
 		}
 
-		if (landUse) {			
-			filter["inspection.form.landUse"] = landUse
+		if(landUse) {			
+			filter["inspection.form.landUse"] = landUse;
 		}
 
-		pointsCollection.find(filter).sort({ "index": 1 }).skip(index - 1).nextObject(function(err, point){
+		if(uf) {
+			filter["uf"] = uf;
+		}
+
+		if(biome) {
+			filter["biome"] = biome;
+		}
+
+		pointsCollection.find(filter).sort({ "index": 1 }).skip(index - 1).nextObject(function(err, point) {
 			var years = [];
 			var yearlyInspections = [];
 
@@ -227,21 +235,182 @@ module.exports = function(app) {
 					response.send(result)
 					response.end();
 				})
-
 			});
 		});
 	}
 
 	Points.landUseFilter = function(request, response) {
-		pointsCollection.distinct('inspection.form.landUse', function(err, docs) {
+		var campaign = request.session.user.campaign;
+		//var landUse = request.param("landUse");
+		var userName = request.param("userName");
+		var biome = request.param("biome");
+		var uf = request.param("uf");
+
+		var filter = {
+			"campaign": campaign._id
+		}
+
+		/*if(landUse) {
+			filter["inspection.form.landUse"] = landUse;
+		}*/
+
+		if(userName) {
+			filter["userName"] = userName;
+		}
+
+		if(biome) {
+			filter["biome"] = biome;
+		}
+
+		if(uf) {
+			filter["uf"] = uf;
+		}
+
+		pointsCollection.distinct('inspection.form.landUse', filter, function(err, docs) {
 			response.send(docs);
 			response.end();
 		});
 	}
 
-	Points.usersFilter = function(request, response) {
-		pointsCollection.distinct('userName', function(err, docs) {
+	Points.usersFilter = function(request, response) {		
+		var campaign = request.session.user.campaign;
+		var landUse = request.param("landUse");
+		//var userName = request.param("userName");
+		var biome = request.param("biome");
+		var uf = request.param("uf");
+
+		var filter = {
+			"campaign": campaign._id
+		}
+
+		if(landUse) {
+			filter["inspection.form.landUse"] = landUse;
+		}
+
+		/*if(userName) {
+			filter["userName"] = userName;
+		}*/
+
+		if(biome) {
+			filter["biome"] = biome;
+		}
+
+		if(uf) {
+			filter["uf"] = uf;
+		}
+
+		pointsCollection.distinct('userName', filter, function(err, docs) {
 			response.send(docs);
+			response.end();
+		});
+	}
+	
+	Points.biomeFilter = function(request, response) {
+		var result = [];	
+		var campaign = request.session.user.campaign;
+		var landUse = request.param("landUse");
+		var userName = request.param("userName");
+		//var biome = request.param("biome");
+		var uf = request.param("uf");
+
+		var filter = {
+			"campaign": campaign._id
+		}
+
+		if(landUse) {
+			filter["inspection.form.landUse"] = landUse;
+		}
+
+		if(userName) {
+			filter["userName"] = userName;
+		}
+
+		/*if(biome) {
+			filter["biome"] = biome;
+		}*/
+
+		if(uf) {
+			filter["uf"] = uf;
+		}
+
+		pointsCollection.distinct('biome', filter, function(err, docs) {
+			
+			result = docs.filter(function(element) {
+				return element != null;
+			})
+
+			response.send(result);
+			response.end();
+		});
+	}
+
+	Points.ufFilter = function(request, response) {
+		var campaign = request.session.user.campaign;
+		var landUse = request.param("landUse");
+		var userName = request.param("userName");
+		var biome = request.param("biome");
+		//var uf = request.param("uf");
+		
+		var filter = {
+			"campaign": campaign._id
+		};
+
+		if(landUse) {
+			filter["inspection.form.landUse"] = landUse;
+		}
+
+		if(userName) {
+			filter["userName"] = userName;
+		}
+
+		if(biome) {
+			filter["biome"] = biome;
+		}
+
+		/*if(uf) {
+			filter["uf"] = uf;
+		}*/
+
+		pointsCollection.distinct('uf', filter, function(err, docs) {
+			
+			result = docs.filter(function(element) {
+				return element != null;
+			})
+
+			response.send(result);
+			response.end();
+		});
+	}
+
+	Points.agreementPoints = function(request, response) {
+		var campaign = request.session.user.campaign;
+		var result = {};
+		var i=0;
+
+		function compararNumeros(a, b) {
+		  return a - b;
+		}
+
+		pointsCollection.find({'campaign': campaign._id}).toArray(function(err, docs) {
+		  docs.forEach(function(doc) {
+		    var lengthArrayPoint = doc.userName.length;
+		    var count = 1;
+		    var total = 0;
+		    
+		    doc.inspection.forEach(function(point) {
+	        if(count < lengthArrayPoint+1) {
+            total = total + point.counter;            
+            count++;
+	        }
+		    });
+
+		    result['index_',i] = doc.index;
+		    result[i] = total;
+		    i++;
+		  });
+
+ 		  //console.log(result)
+			response.send(result)
 			response.end();
 		});
 	}

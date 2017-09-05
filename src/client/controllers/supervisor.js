@@ -374,34 +374,82 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				"index": index
 			};
 
-			if($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')
+			if($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')			
 				filter["landUse"] = $scope.selectedLandUse;
 
 			if($scope.selectUserNames && $scope.selectUserNames != 'Todos')
 				filter["userName"] = $scope.selectUserNames;
 
+			if($scope.selectBiomes && $scope.selectBiomes != 'Todos')
+				filter["biome"] = $scope.selectBiomes;			
+
+			if($scope.selectUf && $scope.selectUf != 'Todos')
+				filter["uf"] = $scope.selectUf;
+
+			landUseFilter(filter);
+			usersFilter(filter);
+			biomeFilter(filter);
+			ufFilter(filter);
+
 			requester._post('points/get-point', filter, loadPoint);
 		}
 
-		var initFilter = function() {
-			requester._get('points/landUses', function(landUses) {
+		var landUseFilter = function(filter) {
+			requester._get('points/landUses', filter, function(landUses) {
 				landUses.unshift('Todos');
 
-				$scope.selectedLandUse = "Todos";
+				if(filter.landUse == undefined)
+					filter.landUse = 'Todos';
+				
+				$scope.selectedLandUse = filter.landUse;
 				$scope.landUses = landUses;
 			});
 		}
 
-		var usersFilter = function() {
-			requester._get('points/users', function(userNames) {
+		var usersFilter = function(filter) {
+			requester._get('points/users', filter, function(userNames) {
 				userNames.unshift('Todos');
 
-				$scope.selectUserNames = "Todos";
+				if(filter.userName == undefined)
+					filter.userName = 'Todos';
+
+				$scope.selectUserNames = filter.userName;
 				$scope.userNames = userNames;
 			});
 		}
 
+		var biomeFilter = function(filter) {
+			requester._get('points/biome', filter, function(biomes) {
+				biomes.unshift('Todos');
+
+				if(filter.biome == undefined)
+					filter.biome = 'Todos';
+
+				$scope.selectBiomes = filter.biome;
+				$scope.biomes = biomes;
+			});
+		}
+
+		var ufFilter = function(filter) {
+			requester._get('points/uf', filter, function(stateUF) {
+				stateUF.unshift('Todos');
+
+				if(filter.uf == undefined)
+					filter.uf = 'Todos';
+
+				$scope.selectUf = filter.uf;
+				$scope.stateUF = stateUF;
+			});
+		}
+
+		var agreementPoints = function() {
+			requester._get('points/agreementPoints', function(agreement) {
+				//console.log(agreement)
+			});
+		}
+
 		var loadPoint = function(data) {
+			$scope.campaign = data.campaign;
 			$scope.objConsolidated = data.point.classConsolidated;
 			$scope.onSubmission = false;
 			$scope.pointLoaded = true;
@@ -420,9 +468,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			$scope.total = data.totalPoint;
 		}
 
+		agreementPoints();
 		initCounter();
-		initFilter();
-		usersFilter();
 		$scope.submit(1);
 
 	});
