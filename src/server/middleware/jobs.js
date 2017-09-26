@@ -19,11 +19,16 @@ module.exports = function(app) {
 	}
 
 	Jobs.populateCache = function(params, logStream, cacheComplete) {
+		
+		var requestPointCache = function(pointId, url) {
+			writeLog(logStream, ' Resquest ' + url + ' for ' + pointId._id)
+		}
+
 		var pointCacheCompĺete = function(pointId) {
 			writeLog(logStream, pointId + ' images cached.')
 		}
 
-		app.middleware.cache.populateCache(pointCacheCompĺete, cacheComplete);
+		app.middleware.cache.populateCache(requestPointCache, pointCacheCompĺete, cacheComplete);
 	}
 
 	Jobs.publishLayers = function(params, logStream, callback) {

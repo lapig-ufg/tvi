@@ -129,7 +129,10 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			for(key in dates){
 				for(var i = 0; i < tmsIdList.length; i++) {
 					if(key == tmsIdList[i]){
-						dry.push(dates[key])
+						var year = parseInt(dates[key].split('-')[0]);
+						if(year >= 2000) {
+							dry.push(dates[key])
+						}
 					}
 				}
 			}
@@ -140,7 +143,6 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			
 			Plotly.purge('NDVI');
 
-
 			requester._get('time-series/MOD13Q1_NDVI',{ "longitude":$scope.point.lon,"latitude": $scope.point.lat}, function(data) {
 				getPrecipitationData(function(dataPrecip) {
 
@@ -150,13 +152,13 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 					var text = [];
 
 					for(var i = 0; i < data.values.length; i++) {
-						ndvi.push(data.values[i][1]);
-						ndviSg.push(data.values[i][3]);
-						date.push(data.values[i][0]);
 						var dateObj = new Date(data.values[i][0])
 						var month = dateObj.getUTCMonth() + 1;
 						var day = dateObj.getUTCDate();
 						var year = dateObj.getUTCFullYear();
+						ndvi.push(data.values[i][1]);
+						ndviSg.push(data.values[i][3]);
+						date.push(data.values[i][0]);
 						text.push(day + "/" + month + "/" + year);
 					}
 
@@ -318,7 +320,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 					sattelite = 'L8'
 				} else if(year > 2011) {
 					sattelite = 'L7'
-				} else if(year > 2003) {
+				} else if(year > 2003  || year < 2000) {
 					sattelite = 'L5'
 				}
 

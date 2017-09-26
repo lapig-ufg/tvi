@@ -84,9 +84,12 @@ PERIODS = [
 	}
 ]
 
-for year in range(2000,2017):
+for year in range(1985,2017):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
+			continue;
+
+		if (satellite == 'L7' and year < 2000):
 			continue;
 
 		for periodDict in PERIODS:
