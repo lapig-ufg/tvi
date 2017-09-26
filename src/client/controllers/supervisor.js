@@ -15,8 +15,26 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			landUse: $rootScope.user.campaign.landUse
 		}
 
+		$scope.dataTab = [
+		  {"name":"Usuários", "checked":true},
+		  {"name":"Pontos", "checked":false}
+		];
+
+		$scope.dataTimePoints = [
+		  {"data":"Tempo de inspeção do ponto (s)"},
+		  {"data":"Tempo médio de todos os pontos (s)"}
+		];
+
+
+		$scope.log = function(element) {
+		  angular.forEach($scope.dataTab, function(elem) {
+		    elem.checked = false;
+		  });
+
+		  element.checked = !element.checked;
+		}
+
 		$scope.formPlus = function() {
-			
 			var prevIndex = $scope.answers.length - 1;
 			var initialYear = $scope.answers[prevIndex].finalYear + 1
 
@@ -342,7 +360,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			};
 		}
 
-		$scope.getKml = function(){
+		$scope.getKml = function() {
 			var lon = $scope.point.lon;
 			var lat = $scope.point.lat;
 			var county = $scope.point.county;
@@ -385,6 +403,12 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 			if($scope.selectUf && $scope.selectUf != 'Todos')
 				filter["uf"] = $scope.selectUf;
+
+			if($scope.timeInspection && $scope.timeInspection != false)
+				filter["timeInspection"] = $scope.timeInspection;
+
+			if($scope.agreementPoint && $scope.agreementPoint != false)
+				filter["agreementPoint"] = $scope.agreementPoint;
 
 			landUseFilter(filter);
 			usersFilter(filter);
@@ -442,12 +466,6 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			});
 		}
 
-		var agreementPoints = function() {
-			requester._get('points/agreementPoints', function(agreement) {
-				//console.log(agreement)
-			});
-		}
-
 		var loadPoint = function(data) {
 			$scope.campaign = data.campaign;
 			$scope.objConsolidated = data.point.classConsolidated;
@@ -458,17 +476,18 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			$rootScope.count = data.count;
 			$rootScope.current = data.current;
 			$scope.datesFromService = data.point.dates;
+			$scope.timeInspectionPoint = data.point.dataPointTime.slice(-1)[0].totalPointTime * data.point.userName.length;
+			console.log(data.point.dataPointTime);
 
 			initFormViewVariables();
-			generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+			//generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 			generateMaps();
 			createModisChart(data.point.dates);
 			$scope.counter = 0;
 
-			$scope.total = data.totalPoint;
+			$scope.total = data.totalPoints;
 		}
 
-		agreementPoints();
 		initCounter();
 		$scope.submit(1);
 

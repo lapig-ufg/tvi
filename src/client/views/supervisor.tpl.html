@@ -58,18 +58,16 @@
   					<div class="form-group row">
   						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Estado(UF):</label>
   						<div class="col-sm-4" style="padding-left: 15px;">
-  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectUf" ng-options="uf for uf in stateUF"></select>  
+  							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control" ng-model="selectUf" ng-options="uf for uf in stateUF"></select>  
   						</div>
   					</div>
   				</form>
 				</div>
 				<div class="col-xs-2 col-sm-2 col-md-1 col-lg-1" style="width: auto">					
 					<form>
-					  <label>Tempo de inspeção: <input type="checkbox" ng-model="checked1" ng-init="checked1=false"/></label>
-					  <span ng-if="checked1"></span>
+					  <label>Tempo de inspeção: <input type="checkbox" ng-change="submit(1)" ng-model="timeInspection" ng-init="timeInspection=false"></label>
+					  <span ng-if="timeInspection"></span>
 					  <br>
-					  <label>Pontos de concordância: <input type="checkbox" ng-model="checked2" ng-init="checked2=false"/></label>
-					  <span ng-if="checked2"></span>
 				 	</form>
 				</div>
 			</div>
@@ -79,6 +77,7 @@
 					<div class="tab"><p><b>Bioma:</b> {{point.biome}}</p></div>
 					<div class="tab"><p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span></div>
 					<div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p></div>
+					<div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
 				</div>
 				<br>
 				<div class="borderPoint">
@@ -87,21 +86,25 @@
 	  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link" value="Google Earth">
 				</div>
 				<br>
-	  	</div>					
-			<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2 tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="margin-left: -5px; border-right: 0px; padding-right: 0px; padding-left: 0px;">
+	  	</div>
+			<button class="btn cal-btn" ng-repeat="element in dataTab" ng-click="log(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
+			<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2 tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="margin-left: -5px; border-right: 0px; padding-right: 0px; padding-left: 0px; top: 44px; padding-bottom: 0px;">
 				<table class="table table-condensed table-users">
-						<thead>
+						<thead style="font-weight: bold;">
 					  	<tr>
-					  		<th>User</th>
+					  		<td>User</td>
 					  	</tr>
 				  	</thead>
 					  <tbody>
-					  	<tr ng-repeat="inspection in point.inspection">
+					  	<tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
 					  		<td>{{inspection.userName}}</td>
 					  	</tr>
+					  	<tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="p in point.dataPointTime track by $index">
+					  		<td>{{p.name}}</td>
+					  	</tr>
 				  	</tbody>
-				  	<tfoot style="font-size: 13px; font-weight: bold;">
-			  			<td>{{objConsolidated.type}}</td>
+				  	<tfoot style="font-size: 14px; font-weight: bold;">
+			  			<td ng-if='dataTab[0].checked'>{{objConsolidated.type}}</td>
 			  	</tfoot>
 				</table>
 			</div>
@@ -109,16 +112,21 @@
 				<table class="table table-condensed table-years">
 					<thead>
 				  	<tr>
-							<th ng-repeat="year in point.years">{{year}}</th>
+							<td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">{{year}}</td>
+							<td style="font-weight: bold;" ng-if='dataTab[1].checked' ng-repeat="point in dataTimePoints">{{point.data}}</td>
 				  	</tr>
 			  	</thead>
 			  	<tbody>
-					  <tr ng-repeat="inspection in point.inspection">
+					  <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
 				  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
 				  	</tr>
+					  <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="pointTime in point.dataPointTime">
+							<td>{{pointTime.totalPointTime}}</td>
+							<td>{{pointTime.meanPointTime | number:2 }}</td>
+				  	</tr>
 			  	</tbody>
-			  	<tfoot style="font-size: 13px; font-weight: bold;">
-				  	<td ng-repeat="landUse in objConsolidated.landUse track by $index">{{landUse}}</td>
+			  	<tfoot style="font-size: 14px; font-weight: bold;">
+				  	<td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated.landUse track by $index">{{landUse}}</td>
 			  	</tfoot>
 				</table>
 			</div>

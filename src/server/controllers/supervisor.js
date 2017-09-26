@@ -115,6 +115,94 @@ module.exports = function(app) {
 		});
 	}
 
+	creatPoint = function(point, callback) {
+		var years = [];
+		var yearlyInspections = [];
+
+		if(point) {
+			for(var i=0; i < point.userName.length; i++) {
+				var userName = point.userName[i];
+				var inspections = point.inspection[i];
+				
+				var yearlyInspection = {
+					userName: userName,
+					landUse: []
+				}
+
+				inspections.form.forEach(function(i) {
+					for( var year = i.initialYear; year <= i.finalYear; year++) {
+						yearlyInspection.landUse.push(i.landUse);
+					}
+				});
+
+				yearlyInspections.push(yearlyInspection)				
+			}
+			
+			if(point.inspection[0]) {
+				point.inspection[0].form.forEach(function(i) {
+					for( var year = i.initialYear; year <= i.finalYear; year++) {
+						years.push(year);
+					}
+				});
+			}
+
+		} else {
+			point = {};
+		}
+
+		point.inspection = yearlyInspections;
+		point.years = years;
+
+		getImageDates(point.path, point.row, function(dates) {
+			point.dates = dates
+			
+			var result = {
+				"point": point
+			}
+
+			var numInsp = result.point.inspection.length;
+			var points = [];
+			var consolid = [];
+
+			for(var i=0; i < result.point.years.length; i++) {
+				
+				pointAux = {};
+				for(var j=0; j< result.point.inspection.length; j++) {
+					var key = result.point.inspection[j].landUse[i];
+					if(!pointAux[key])
+						pointAux[key] = 0;
+					
+					pointAux[key]++;
+				}
+
+				isConsolidate = false;
+				for(var key in pointAux) {
+					if(pointAux[key] >= numInsp/2) {
+						isConsolidate = true;
+						break;
+					}
+				}
+
+				if(isConsolidate) {
+					consolid.push(key);
+				} else {
+					consolid.push("Não consolidado");
+				}
+			}
+
+			console.log('result: ',result)
+
+			var objConsolid = {
+				type: "Classe Consolidada",
+				landUse: consolid
+			}				
+
+			point.classConsolidated = objConsolid
+
+			return callback(result);			
+		});
+	}
+
 	Points.getPoint = function(request, response) {
 		var campaign = request.session.user.campaign;
 		var index = parseInt(request.param("index"));
@@ -122,6 +210,8 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		var biome = request.param("biome");
 		var uf = request.param("uf");
+		var timePoint = request.param("timeInspection");
+		var agreementPoint = request.param("agreementPoint");
 
 		var filter = {
 			"campaign": campaign._id
@@ -143,99 +233,101 @@ module.exports = function(app) {
 			filter["biome"] = biome;
 		}
 
-		pointsCollection.find(filter).sort({ "index": 1 }).skip(index - 1).nextObject(function(err, point) {
-			var years = [];
-			var yearlyInspections = [];
+		if(timePoint) {
+			var pipeline = [
+					{"$match": filter},
+					{"$project": {mean: {"$avg": "$inspection.counter"}}},
+				 	{"$sort": {mean: -1}},
+					{"$skip": index - 1},
+					{"$limit": 1}
+			]
+		} else {
+			var pipeline = [
+					{"$match": filter},
+					{"$project": {mean: {"$avg": "$inspection.counter"}}},
+					{"$skip": index - 1},
+				 	{"$sort": {index: 1}},
+					{"$limit": 1}
+			]
+		}
+	
+		var objPoints = {};
 
-			if(point) {
-				for(var i=0; i < point.userName.length; i++) {
-					var userName = point.userName[i];
-					var inspections = point.inspection[i];
-					
-					var yearlyInspection = {
-						userName: userName,
-						landUse: []
-					}
+		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {	
+			aggregateElem = aggregateElem[0]
+			
+			pointsCollection.findOne({'_id':aggregateElem._id}, function(err, newPoint) {
+				point = newPoint;
+				var pointTimeList = [];
+				var pointTimeTotal = 0;
 
-					inspections.form.forEach(function(i) {
-						for( var year = i.initialYear; year <= i.finalYear; year++) {
-							yearlyInspection.landUse.push(i.landUse);
-						}
-					});
-
-					yearlyInspections.push(yearlyInspection)				
-				}
-				
-				if(point.inspection[0]) {
-					point.inspection[0].form.forEach(function(i) {
-						for( var year = i.initialYear; year <= i.finalYear; year++) {
-							years.push(year);
-						}
-					});
-				}
-
-			} else {
-				point = {};
-			}
-
-			point.originalIndex = point.index;
-			point.index = index;
-
-			point.inspection = yearlyInspections;
-			point.years = years;
-
-			getImageDates(point.path, point.row, function(dates) {
-				point.dates = dates
-				
-				var result = {
-					"point": point
-				}
-
-				var numInsp = result.point.inspection.length;
-				
-				var points = [];
-				var consolid = [];
-
-				for(var i=0; i < result.point.years.length; i++) {
-					
-					pointAux = {};
-					for(var j=0; j< result.point.inspection.length; j++) {
-						var key = result.point.inspection[j].landUse[i];
-						if(!pointAux[key])
-							pointAux[key] = 0;
-						
-						pointAux[key]++;
-					}
-
-					isConsolidate = false;
-					for(var key in pointAux) {
-						if(pointAux[key] >= numInsp/2) {
-							isConsolidate = true;
-							break;
-						}
-					}
-
-					if(isConsolidate) {
-						consolid.push(key);
-					} else {
-						consolid.push("Não consolidado");
-					}
-				}
-
-				var objConsolid = {
-					type: "Classe Consolidada",
-					landUse: consolid
-				}
-				
-				pointsCollection.count(filter, function(err, count) {
-					
-					result.point.classConsolidated = objConsolid
-					result.totalPoint = count
-
-					response.send(result)
-					response.end();
+				newPoint.inspection.forEach(function(timeInspectionUser) {
+					pointTimeList.push(timeInspectionUser.counter)
+					pointTimeTotal += timeInspectionUser.counter;
 				})
-			});
+
+				//var meanPointTotal = pointTimeTotal/newPoint.userName.length;
+				pointTimeTotal = pointTimeTotal/newPoint.userName.length;
+				
+				var map = function() {
+			    for(var i=0; i<this.userName.length; i++) {
+				    emit(this.userName[i], this.inspection[i].counter)
+			    }
+				}
+
+				var reduce = function(keyName, values) {
+					return Array.sum(values) / values.length;
+				}
+
+				pointsCollection.mapReduce(map, reduce, {
+				    out: {inline: 1},
+				    query: {'campaign': filter.campaign}
+				}, function(err, mapReducePoint) {
+					var nameList = [];
+					var meanPointList = [];
+					var meanPointTotal = 0;
+
+					newPoint.userName.forEach(function(nameUser) {
+						mapReducePoint.forEach(function(user) {
+							if(nameUser == user._id) {
+								nameList.push(user._id)
+								meanPointList.push(user.value)
+								meanPointTotal += user.value;
+							}
+						})					
+					})
+
+					point.dataPointTime = [];
+					
+					for(var i=0; i<newPoint.userName.length; i++) {							
+						point.dataPointTime.push({
+							'name': nameList[i],
+							'totalPointTime': pointTimeList[i],
+							'meanPointTime': meanPointList[i]						
+						})
+					}
+					
+					point.dataPointTime.push({
+						'name': 'Tempo médio',
+						'totalPointTime': pointTimeTotal,
+						'meanPointTime': meanPointTotal
+					})
+
+					point.timePoints = point.timePoint;
+					point.originalIndex = point.index;
+					//Usando isso ^;
+					point.index = index;
+
+					creatPoint(point, function(result) {
+						pointsCollection.count(filter, function(err, count) {
+
+							result.totalPoints = count
+							response.send(result)
+							response.end()
+						})
+					})
+				})
+			})
 		});
 	}
 
@@ -245,6 +337,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		var biome = request.param("biome");
 		var uf = request.param("uf");
+		/*var timePoint = request.param("timeInspection");*/
 
 		var filter = {
 			"campaign": campaign._id
@@ -266,6 +359,10 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
+		/*if(timePoint) {
+			filter["timeInspection"] = timePoint;
+		}*/
+
 		pointsCollection.distinct('inspection.form.landUse', filter, function(err, docs) {
 			response.send(docs);
 			response.end();
@@ -278,6 +375,7 @@ module.exports = function(app) {
 		//var userName = request.param("userName");
 		var biome = request.param("biome");
 		var uf = request.param("uf");
+		/*var timePoint = request.param("timeInspection");*/
 
 		var filter = {
 			"campaign": campaign._id
@@ -299,6 +397,10 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
+		/*if(timePoint) {
+			filter["timeInspection"] = timePoint;
+		}*/
+
 		pointsCollection.distinct('userName', filter, function(err, docs) {
 			response.send(docs);
 			response.end();
@@ -312,6 +414,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		//var biome = request.param("biome");
 		var uf = request.param("uf");
+		/*var timePoint = request.param("timeInspection");*/
 
 		var filter = {
 			"campaign": campaign._id
@@ -333,6 +436,10 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
+		/*if(timePoint) {
+			filter["timeInspection"] = timePoint;
+		}*/
+
 		pointsCollection.distinct('biome', filter, function(err, docs) {
 			
 			result = docs.filter(function(element) {
@@ -350,6 +457,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		var biome = request.param("biome");
 		//var uf = request.param("uf");
+		/*var timePoint = request.param("timeInspection");*/
 		
 		var filter = {
 			"campaign": campaign._id
@@ -371,6 +479,10 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}*/
 
+		/*if(timePoint) {
+			filter["timeInspection"] = timePoint;
+		}*/
+
 		pointsCollection.distinct('uf', filter, function(err, docs) {
 			
 			result = docs.filter(function(element) {
@@ -378,39 +490,6 @@ module.exports = function(app) {
 			})
 
 			response.send(result);
-			response.end();
-		});
-	}
-
-	Points.agreementPoints = function(request, response) {
-		var campaign = request.session.user.campaign;
-		var result = {};
-		var i=0;
-
-		function compararNumeros(a, b) {
-		  return a - b;
-		}
-
-		pointsCollection.find({'campaign': campaign._id}).toArray(function(err, docs) {
-		  docs.forEach(function(doc) {
-		    var lengthArrayPoint = doc.userName.length;
-		    var count = 1;
-		    var total = 0;
-		    
-		    doc.inspection.forEach(function(point) {
-	        if(count < lengthArrayPoint+1) {
-            total = total + point.counter;            
-            count++;
-	        }
-		    });
-
-		    result['index_',i] = doc.index;
-		    result[i] = total;
-		    i++;
-		  });
-
- 		  //console.log(result)
-			response.send(result)
 			response.end();
 		});
 	}

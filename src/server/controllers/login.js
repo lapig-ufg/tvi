@@ -79,7 +79,7 @@ module.exports = function(app) {
 	}
 
 	app.on('socket-disconnect', function(socket) {
-
+		//Ver o que esta acontecendo com a condição do socket...
 		if(socket.handshake.session.user.type == 'inspector') {
 			if(socket.handshake.session && socket.handshake.session.currentPointId) {
 				points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
