@@ -28,6 +28,12 @@ body {
   to { transform: scale(1) rotate(360deg);}
 }
 
+@media (max-width: 1240px) {
+  .filterMediumLeft {
+    width: 100% !important;
+  }
+}
+
 @media (max-width: 780px) {
 .form-control {
     font-size: 10px !important;
@@ -42,7 +48,7 @@ body {
   }
 
   .tableSmallRight {
-    width: 56% !important;
+    width: 54% !important;
   }
 }
 
@@ -66,9 +72,7 @@ body {
     width: 57%;
     margin-left: 0px;
   }
-
 }
-
 
 .jumbotron {
   width: 400px;
@@ -137,10 +141,9 @@ body {
 }
 
 legend.scheduler-border {
-    font-size: 1.2em !important;
-    font-weight: bold !important;
-    text-align: left !important;
-
+  font-size: 1.2em !important;
+  font-weight: bold !important;
+  text-align: left !important;
 }
 
 .form-panel {
@@ -233,7 +236,7 @@ h3 {
 }
 
 .borderPoint {
-  border: 0.1px solid rgba(109, 109, 109, 0.5);
+  border: 1px solid rgba(109, 109, 109, 0.5);
   border-style: groove;
   opacity: 0.85;
   margin-top: auto;
@@ -266,7 +269,6 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   margin: 0; 
 }
 
-
-.bold {
-  font-weight:bold;
+.boldElem {
+  font-weight: bold;
 }
