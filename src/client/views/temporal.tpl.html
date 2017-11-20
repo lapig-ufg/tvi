@@ -4,8 +4,8 @@
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 						<legend>Informação de localização</legend>
-						<p><b>Bioma:</b> {{point.biome}}</p>
-						<p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span>
+						<p><b ng-hide="isChaco">Bioma:</b><b ng-show="isChaco">Região:</b> {{point.biome}}</p>
+						<p><b ng-hide="isChaco">Municipio:</b><b ng-show="isChaco">Carta:</b> {{point.county}} {{point.uf}}</p>
 						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
 						<fieldset>
 							<legend>Uso e Cobertura da Terra:</legend>
@@ -49,7 +49,7 @@
 			</center>
 		</div> 
   <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-  	<div class="row">
+  	<div class="row" ng-hide="isChaco">
   	<fieldset>
   		<br><br>
 			<div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>			

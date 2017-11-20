@@ -17,6 +17,8 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			landUse: $rootScope.user.campaign.landUse
 		}
 		
+		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
+
 		$scope.isDisabled=true;
 		$scope.isObjectEmpty = function(obj){
 
@@ -381,11 +383,20 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		var initFormViewVariables = function() {
 			$scope.optionYears = [];
 
+			var landUseIndex = 1;
+			for(var i =0; i < $scope.config.landUse.length; i++) {
+				if($scope.config.landUse[i] == 'Leñosas (forestal)' || $scope.config.landUse[i] ==  'Vegetação nativa"') {
+					landUseIndex = i;
+					break;
+
+				}
+			}
+
 			$scope.answers = [
 				{
 					initialYear: $scope.config.initialYear,
 					finalYear: $scope.config.finalYear,
-					landUse: $scope.config.landUse[1]
+					landUse: $scope.config.landUse[landUseIndex]
 				}
 			];
 		}
@@ -403,7 +414,11 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			initFormViewVariables();
 			generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 			generateMaps();
-			createModisChart(data.point.dates);
+			
+			if(!$scope.isChaco) {
+				createModisChart(data.point.dates);
+			}
+			
 			$scope.counter = 0;
 
 		}

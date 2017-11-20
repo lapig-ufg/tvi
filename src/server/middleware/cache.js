@@ -104,8 +104,12 @@ module.exports = function(app) {
 	 			if(point) {
 	 				app.repository.collections.campaign.findOne({ "_id" : point.campaign }, function(err, campaign) {
 						var requestTasks = getRequestTasks(point, campaign);
+						
 						var hour = new Date().getHours()
-						var parallelRequestsLimit = (hour >= 8 && hour <= 19 ) ? config.cache.parallelRequestsBusyTime : config.cache.parallelRequestsDawnTime;
+						var day = new Date().getDay();
+						var busyTimeCondition = ( (day == 6) || (day == 0) || (hour >= 8 && hour <= 19 ) )
+
+						var parallelRequestsLimit = busyTimeCondition ? config.cache.parallelRequestsBusyTime : config.cache.parallelRequestsDawnTime;
 
 						async.parallelLimit(requestTasks, parallelRequestsLimit, function() {
 							app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  });

@@ -15,6 +15,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			landUse: $rootScope.user.campaign.landUse
 		}
 
+		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
+
 		$scope.dataTab = [
 		  {"name":"Usuários", "checked":true},
 		  {"name":"Pontos", "checked":false}
@@ -485,7 +487,9 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			initFormViewVariables();
 			//generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 			generateMaps();
-			createModisChart(data.point.dates);
+			if(!$scope.isChaco) {
+				createModisChart(data.point.dates);
+			}
 			$scope.counter = 0;
 
 			$scope.total = data.totalPoints;

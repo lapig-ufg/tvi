@@ -31,6 +31,10 @@ var getCoordinates = function(geojsonDataStr) {
 				"id": geojsonData.features[i].properties['id'],
 				"X": geojsonData.features[i].geometry.coordinates[0],
 				"Y": geojsonData.features[i].geometry.coordinates[1],
+				"uf": geojsonData.features[i].properties['uf'],
+				"county": geojsonData.features[i].properties['county'],
+				"biome": geojsonData.features[i].properties['biome'],
+				"countyCode": geojsonData.features[i].properties['countyCode'],
 				"value": geojsonData.features[i].properties.value
 			}
 		);
@@ -143,17 +147,18 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 							"lon": coordinate.X,
 							"lat": coordinate.Y,
 							"dateImport": new Date(),
-							"biome": regionInfo.biome,
-							"uf": regionInfo.uf,
-							"county": regionInfo.county,
-							"countyCode": regionInfo.countyCode,
+							"biome": (coordinate['biome']) ? coordinate['biome'] : regionInfo.biome,
+							"uf": (coordinate['uf']) ? coordinate['uf'] : regionInfo.uf,
+							"county": (coordinate['county']) ? coordinate['county'] : regionInfo.county,
+							"countyCode": (coordinate['countyCode']) ? coordinate['countyCode'] : regionInfo.countyCode,
 							"path":tileInfo.path,
 							"row":tileInfo.row,
 							"userName": [],
 							"inspection" : [],
 							"underInspection": 0,
 							"index": counter++,
-							"cached": false
+							"cached": false,
+							"enhance_in_cache": 1
 						}
 
 						collectionPoints.insert(point, null, function() {

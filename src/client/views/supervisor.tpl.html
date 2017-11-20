@@ -50,12 +50,13 @@
 				<div class="col-xs-5 col-sm-5 col-md-4 col-lg-4" style="width: auto">	
   				<form>
   					<div class="form-group row">
-  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Bioma:</label>
+  						<label ng-hide="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Bioma:</label>
+  						<label ng-show="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Região:</label>
   						<div class="col-sm-4" style="padding-left: 15px;">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
   						</div>
   					</div>
-  					<div class="form-group row">
+  					<div ng-hide="isChaco" class="form-group row">
   						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Estado(UF):</label>
   						<div class="col-sm-4" style="padding-left: 15px;">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control" ng-model="selectUf" ng-options="uf for uf in stateUF"></select>  
@@ -74,8 +75,8 @@
 			<div class="col-xs-11 col-sm-3 col-md-3 col-lg-3" style="margin-left: 5px">
 				<div class="borderPoint" style="margin-bottom: 1px;">
 					<div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
-					<div class="tab"><p><b>Bioma:</b> {{point.biome}}</p></div>
-					<div class="tab"><p><b>Municipio:</b> {{point.county}} - {{point.uf}}</span></div>
+					<div class="tab"><p><b ng-hide="isChaco">Bioma:</b><b ng-show="isChaco">Região:</b> {{point.biome}}</p></div>
+					<div class="tab"><p><b ng-hide="isChaco">Municipio:</b><b ng-show="isChaco">Carta:</b> {{point.county}} {{point.uf}}</span></div>
 					<div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p></div>
 					<div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
 				</div>
@@ -95,7 +96,7 @@
 					  		<td>User</td>
 					  	</tr>
 				  	</thead>
-					  <tbody>
+					  <tbody ng-hide="point.inspection == 0">
 					  	<tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
 					  		<td>{{inspection.userName}}</td>
 					  	</tr>

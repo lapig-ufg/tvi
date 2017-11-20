@@ -14,8 +14,25 @@ module.exports = function(app) {
 	var mosaics = app.repository.collections.mosaics;
 	var cache = app.middleware.cache;
 
+	var ENHANCE_PARAMS = ['-auto-level','-auto-gamma', '-channel', 'RGB', '-contrast-stretch', '0.5x0.5%', '-','-']
+
+	Internal.enhanceImg = function(img, callback) {
+		convert = spawn('convert', ENHANCE_PARAMS);
+		convert.stdin.write(img);
+		convert.stdin.end();
+
+		var result = new Buffer([]);
+		convert.stdout.on('data', function(data) {
+			var data = new Buffer(data);
+			result = Buffer.concat([result, data])
+    });
+    convert.on('close', function(code) {
+        return callback(result);
+    });
+	}
+
 	Internal.enhanceAndResponse = function(img, response) {
-		convert = spawn('convert', ['-auto-level','-auto-gamma', '-channel', 'RGB', '-contrast-stretch', '0.5x0.5%', '-','-']);
+		convert = spawn('convert', ENHANCE_PARAMS);
 		convert.stdout.pipe(response);
 		convert.stdin.write(img);
 		convert.stdin.end();
@@ -26,6 +43,7 @@ module.exports = function(app) {
 	  var path = request.path;
 	  var pathWithOutSlash = path.split('/'); 
 	  var id = pathWithOutSlash[2];
+	  var user = request.session.user;
 
 	  mosaics.findOne({ "_id": id }, function(err, mosaic) {
 	  	if(mosaic != undefined) {
@@ -44,8 +62,14 @@ module.exports = function(app) {
 
 				cache.get(path, function(img) {
 					if(img){ 
-						
-		 				Internal.enhanceAndResponse(img, response)
+		 				
+		 				if(user && user.campaign && user.campaign.enhance_in_cache == 1) {
+		 					response.write(img);
+		 					response.end();
+		 				} else { // Legacy Behavior
+		 					Internal.enhanceAndResponse(img, response);
+		 				}
+
 			 		} else {
 			  		var img = new Buffer([]);
 			  		requester({
@@ -70,9 +94,14 @@ module.exports = function(app) {
 							  	img = Buffer.concat([img, data])
 
 								}).on('end', function(data) {
-									Internal.enhanceAndResponse(img, response)
 									if(img.length > 0) {
-										cache.set(path, img)
+										Internal.enhanceImg(img, function(imgEnhanced) {
+												cache.set(path, imgEnhanced)
+												response.write(imgEnhanced)
+												response.end()
+										});
+									} else {
+										response.end()
 									}
 								}
 						)

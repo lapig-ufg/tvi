@@ -9,8 +9,8 @@ module.exports = function(app) {
 		"logDir": appRoot + "/log/",
 		"imgs": appRoot + "/images/",
 		"cache": {
-			"parallelRequestsBusyTime": 6,
-			"parallelRequestsDawnTime": 12
+			"parallelRequestsBusyTime": 9,
+			"parallelRequestsDawnTime": 18
 		},
 		"mongo": {
 			"host": "localhost",

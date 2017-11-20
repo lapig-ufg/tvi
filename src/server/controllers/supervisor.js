@@ -190,8 +190,6 @@ module.exports = function(app) {
 				}
 			}
 
-			console.log('result: ',result)
-
 			var objConsolid = {
 				type: "Classe Consolidada",
 				landUse: consolid
@@ -244,9 +242,9 @@ module.exports = function(app) {
 		} else {
 			var pipeline = [
 					{"$match": filter},
-					{"$project": {mean: {"$avg": "$inspection.counter"}}},
+					{"$project": { index:1, mean: {"$avg": "$inspection.counter"}}},
+				 	{"$sort": { index: 1}},
 					{"$skip": index - 1},
-				 	{"$sort": {index: 1}},
 					{"$limit": 1}
 			]
 		}
@@ -255,7 +253,7 @@ module.exports = function(app) {
 
 		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {	
 			aggregateElem = aggregateElem[0]
-			
+
 			pointsCollection.findOne({'_id':aggregateElem._id}, function(err, newPoint) {
 				point = newPoint;
 				var pointTimeList = [];
