@@ -87,6 +87,7 @@ module.exports = function(app) {
 				csvResult.push(csvLines)
 			});
 
+			console.log('csv: ',csvResult)
 			response.set('Content-Type', 'text/csv');
 			response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
 

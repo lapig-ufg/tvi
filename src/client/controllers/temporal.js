@@ -384,7 +384,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			$scope.optionYears = [];
 
 			var landUseIndex = 1;
-			for(var i =0; i < $scope.config.landUse.length; i++) {
+			for(var i=0; i < $scope.config.landUse.length; i++) {
 				if($scope.config.landUse[i] == 'Leñosas (forestal)' || $scope.config.landUse[i] ==  'Vegetação nativa"') {
 					landUseIndex = i;
 					break;

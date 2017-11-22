@@ -71,6 +71,11 @@
 					  <br>
 				 	</form>
 				</div>
+				<!-- <div class="col-xs-2 col-sm-2 col-md-1 col-lg-1" style="width: auto">					
+					<form>
+  				  <input class="pull-right" ng-click="downloadCSV()" type="button" value="CSV"></input>
+				 	</form>
+				</div> -->
 			</div>
 			<div class="col-xs-11 col-sm-3 col-md-3 col-lg-3" style="margin-left: 5px">
 				<div class="borderPoint" style="margin-bottom: 1px;">
@@ -89,7 +94,7 @@
 				<br>
 	  	</div>
 			<button class="btn cal-btn" ng-repeat="element in dataTab" ng-click="log(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
-			<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2 tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="margin-left: -5px; border-right: 0px; padding-right: 0px; padding-left: 0px; top: 44px; height: 233px; padding-bottom: 0px;">
+			<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2 tableSmallLeftAdjustHeightMax tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="margin-left: -5px; border-right: 0px; padding-right: 0px; padding-left: 0px; top: 44px; height: auto; padding-bottom: 0px;">
 				<table class="table table-condensed table-users">
 						<thead style="font-weight: bold;">
 					  	<tr>

@@ -41,6 +41,12 @@ body {
   }
 }
 
+@media (max-width: 396px) {
+  .tableSmallLeftAdjustHeightMax {
+    height: 233px !important;
+  }
+}
+
 @media (max-width: 767px) {
   .tableSmallLeft {
     width: 36% !important;

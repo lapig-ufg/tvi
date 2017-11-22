@@ -1,4 +1,4 @@
-'use s trict';
+'uses trict';
 
 Application.controller('LoginController', function($rootScope, $scope, $location, $window, requester, util) {
 
@@ -10,18 +10,22 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 		$scope.campaign = campaign;
 		$scope.senha = senha;
 
-		requester._post('login',{'name':$scope.name, 'campaign':$scope.campaign, 'senha': $scope.senha}, function(result) {
-			
-			$rootScope.user = result;
+		if($scope.name == undefined) {			
+			$scope.showMsg = true;
+		} else {
+			requester._post('login',{'name':$scope.name, 'campaign':$scope.campaign, 'senha': $scope.senha}, function(result) {
+				
+				$rootScope.user = result;
 
-			if($rootScope.user.type == 'supervisor') {
-				$location.path('supervisor')
-			}else if($rootScope.user.type == 'inspector') {
-				$location.path('temporal');
-			} else {
-				$scope.showMsg = true;
-			}				
-		});
+				if($rootScope.user.type == 'supervisor') {
+					$location.path('supervisor')
+				}else if($rootScope.user.type == 'inspector') {
+					$location.path('temporal');
+				} else {
+					$scope.showMsg = true;
+				}				
+			});
+		}
 	}
 
 });

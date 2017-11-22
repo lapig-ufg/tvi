@@ -57,13 +57,13 @@ module.exports = function(app) {
 			response.send(result);
 			response.end();
 		});
-
 	}
 
 	Login.logoff = function(request, response) {
 		var user = request.session.user;
 
 		if(user.type == 'inspector') {
+
 			points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
 				delete request.session.user;
 				delete request.session.name;
@@ -79,12 +79,10 @@ module.exports = function(app) {
 	}
 
 	app.on('socket-disconnect', function(socket) {
-		//Ver o que esta acontecendo com a condição do socket...
-		if(socket.handshake.session.user.type == 'inspector') {
-			if(socket.handshake.session && socket.handshake.session.currentPointId) {
-				points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-				});
-			}		
+		if(socket.handshake.session && socket.handshake.session.currentPointId) {
+			if(socket.handshake.session.user.type == 'inspector') {
+				points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}})
+			} 
 		}
 	});
 

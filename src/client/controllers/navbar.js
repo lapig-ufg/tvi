@@ -1,4 +1,4 @@
-'use strict'
+'uses trict'
 
 Application.controller('navController', function($rootScope, $scope, $location, $window, requester, util) {
 
@@ -13,9 +13,12 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 		})
 	}
 
-	requester._get('login/user', function(result) {
+	$scope.downloadCSV = function() {
+		window.open('service/points/csv')
+		window.close();
+	};
 
+	requester._get('login/user', function(result) {
 		$rootScope.user = result;
-		
 	});
 });
