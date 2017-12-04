@@ -27,8 +27,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		  {"data":"Tempo médio de todos os pontos (s)"}
 		];
 
-
-		$scope.log = function(element) {
+		$scope.sortTimeInspection = function(element) {
 		  angular.forEach($scope.dataTab, function(elem) {
 		    elem.checked = false;
 		  });
@@ -482,7 +481,6 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			$rootScope.current = data.current;
 			$scope.datesFromService = data.point.dates;
 			$scope.timeInspectionPoint = data.point.dataPointTime.slice(-1)[0].totalPointTime * data.point.userName.length;
-			console.log(data.point.dataPointTime);
 
 			initFormViewVariables();
 			//generateOptionYears($scope.config.initialYear, $scope.config.finalYear);

@@ -28,7 +28,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}
 		  
 		  return keyCounts === 0;
-
 		}
 
 		$scope.formPlus = function() {
@@ -50,7 +49,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 					finalYear: finalYear,
 					landUse: $scope.config.landUse[1]
 				}		
-			)
+			)			
 		}
 
 		$scope.formSubtraction = function() {
@@ -60,17 +59,30 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}
 		}
 
+		$scope.pixelBorder = function(checkBoxPixel) {
+
+			if(checkBoxPixel) {
+				$scope.valuePixelBorder = true;
+				checkBoxPixel = false
+			} else {
+				$scope.valuePixelBorder = false;
+				checkBoxPixel = true
+			}
+		}
+		
 		$scope.submitForm = function() {
+
 			var formPoint = {
 				_id: $scope.point._id,
 				inspection: {
 	        counter: $scope.counter,
-	        form: $scope.answers
+	        form: $scope.answers,
+	        pixelBorder: $scope.valuePixelBorder
 				}
 	    }
 			
 	    $scope.onSubmission = true;
-
+	    
 	    requester._post('points/next-point', { "point": formPoint }, loadPoint);
 		}
 
@@ -105,8 +117,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 					var dateFromDate = new Date(date[i]);				
 					if(((dateFromDate.getUTCMonth() +1) == (dateFromValues.getUTCMonth()+1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())){
 						ndvi.push(values[j][1]);
-					} 
-					
+					}
 				}
 			}
 

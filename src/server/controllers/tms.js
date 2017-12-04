@@ -46,6 +46,7 @@ module.exports = function(app) {
 	  var user = request.session.user;
 
 	  mosaics.findOne({ "_id": id }, function(err, mosaic) {
+
 	  	if(mosaic != undefined) {
 	  		var token = mosaic.ee_token;
 				var mapid = mosaic.ee_mapid;

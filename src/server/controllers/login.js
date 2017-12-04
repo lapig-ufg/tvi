@@ -41,7 +41,7 @@ module.exports = function(app) {
 					request.session.user = { 
 						"name": name,
 						"campaign": campaign._id,
-						"type": 'inspector'
+						"type": "inspector"
 					};
 
 					if(name == 'admin' && senha == 'tviadmintvi') {
@@ -49,7 +49,6 @@ module.exports = function(app) {
 					}
 
 					request.session.user.campaign = campaign
-
 					result = request.session.user;
 				}
 			}
@@ -65,26 +64,32 @@ module.exports = function(app) {
 		if(user.type == 'inspector') {
 
 			points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
+				
 				delete request.session.user;
 				delete request.session.name;
+				delete request.session.currentPointId;
+
 				response.write("deslogado");
 				response.end();
 			});
+
 		} else {
+			
 			delete request.session.user;
 			delete request.session.name;
+
 			response.write("deslogado");
 			response.end();
 		}
 	}
 
-	app.on('socket-disconnect', function(socket) {
-		if(socket.handshake.session && socket.handshake.session.currentPointId) {
-			if(socket.handshake.session.user.type == 'inspector') {
-				points.update({"_id": socket.handshake.session.currentPointId}, { $inc: { underInspection: -1}})
-			} 
+
+	app.on('socket-disconnect', function(session) {
+		if(session && session.user && session.user.type == 'inspector') {
+			points.update({"_id": session.currentPointId}, { $inc: { underInspection: -1}}, function(err, result) {
+			})
 		}
-	});
+	})
 
 	return Login;
 }

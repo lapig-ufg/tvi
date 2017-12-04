@@ -5,10 +5,11 @@ var exec = require('child_process').exec;
 
 var geojsonFile = process.argv[2];
 var campaign = process.argv[3];
-var numInspec = process.argv[4];
-var password = (process.argv[5] == null) ? null : process.argv[5]
-var initialYear = (process.argv[6] == null) ? 2000 : process.argv[6]
-var finalYear = (process.argv[7] == null) ? 2016 : process.argv[7]
+var numInspecForPoint = process.argv[4];
+var numInspecTotal = (process.argv[5] == null) ? null : process.argv[5];
+var password = (process.argv[6] == null) ? null : process.argv[6];
+var initialYear = (process.argv[7] == null) ? 2000 : process.argv[7];
+var finalYear = (process.argv[8] == null) ? 2016 : process.argv[8];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
@@ -194,7 +195,8 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			        "Área urbana", 
 			        "Silvicultura"
 			    ],
-					"numInspec": parseInt(numInspec)
+					"numInspecForPoint": parseInt(numInspecForPoint),
+					"numInspecTotal": parseInt(numInspecTotal)
 				}
 
 				collectionCampaign.insertOne(createCamp);

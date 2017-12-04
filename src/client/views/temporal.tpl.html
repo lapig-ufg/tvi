@@ -1,5 +1,5 @@
 <div class="container-fluid">
-	<div class="row">
+	<div class="row" style="margin-top: 50px">
 		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
@@ -13,18 +13,17 @@
 				  		<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link pull-left" value="Google Earth">
 						</fieldset>
 			  	</div>
-				</div>				
+				</div>
 				<div class="row">
 					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
 						<form class="form-inline form-lclu" ng-repeat="answer in answers">
 							<label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select style="-webkit-appearance: none;" ng-disabled='answers.length >= ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.initialYear" ng-options="x for x in optionYears[$index]"></select>
 						  <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.finalYear" ng-change="formPlus()" ng-options="y for y in optionYears[$index]"></select>
 							<br><label style="margin: 10px;">Classe: </label><select style="width: 200px;" class="form-control" ng-model="answer.landUse" ng-options="z for z in config.landUse" ng-click="form-plus"></select>
+	 						<label style="margin: 10px;">Pixel de Borda: <input type="checkbox" ng-model="checkBoxPixel" ng-change="pixelBorder(checkBoxPixel)" ng-init="checkBoxPixel=false"></label>
+	 						<span ng-if="checkBoxPixel"></span>
 						</form>
 						<input style="margin-right: 25px;" type="button" class="btn pull-right btn-success" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
-						<!--
-						<input type="button" style="margin-right:5px" class="btn btn-warning pull-left" ng-disabled="answers[answers.length - 1].finalYear == config.finalYear" ng-click="formPlus()" value="+">
-						-->
 						<input type="button" class="btn btn-danger pull-left" ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
 						<div class="pull-right button-align">
 	            <b>{{counter}} s</b>

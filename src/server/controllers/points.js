@@ -18,7 +18,6 @@ module.exports = function(app) {
 		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
 			var result = {}
 
-
 			docs.forEach(function(doc) {
 				if (doc.dates && doc.dates[0]) {
 					result[doc._id] = doc.dates[0]['date']
@@ -30,20 +29,20 @@ module.exports = function(app) {
 	}
 
 	var findPoint = function(campaign, username, callback) {
-		
+
 		var findOneFilter = {
 			"$and": [
 				{ "userName": { "$nin": [ username ] } },
-				{ "$where":'this.userName.length<'+ campaign.numInspec },
+				{ "$where":'this.userName.length<'+ campaign.numInspecForPoint },
 				{ "campaign": { "$eq":  campaign._id } },
-				{ "underInspection": { $lt:  campaign.numInspec } }
+				{ "underInspection": { $lt:  campaign.numInspecForPoint } }
 			]
 		};
 
 		var currentFilter = { 
 			"$and": [
 				{ "userName": { "$nin": [ username ] } },
-				{ "$where":'this.userName.length<'+ campaign.numInspec },
+				{ "$where":'this.userName.length<'+ campaign.numInspecForPoint },
 				{ "campaign": { "$eq":  campaign._id } }
 			]
 		};
@@ -60,7 +59,7 @@ module.exports = function(app) {
 				{"campaign": { "$eq":  campaign._id }}
 			]
 		};
-		
+
 		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 			if(point) {
 				point.underInspection += 1;
@@ -73,9 +72,10 @@ module.exports = function(app) {
 								var result = {};
 								result['point'] = point;
 								result['total'] = total;
-								result['current'] = point.index
+								result['current'] = point.index;
 								result['user'] = username;
 								result['count'] = count;
+
 								callback(result);
 							})
 						})
@@ -103,6 +103,7 @@ module.exports = function(app) {
 
 		findPoint(user.campaign, user.name, function(result) {
 			request.session.currentPointId = result.point._id;
+
 			response.send(result);
 			response.end();
 		})
