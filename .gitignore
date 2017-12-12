@@ -29,3 +29,5 @@ src/server/bin/SHP/*
 lapig-ee-09144f43f3b5.json
 lapig-ee-09144f43f3b5.pem
 src/server/images/*
+src/server/integration/py/gee-keys/
+db/dump/

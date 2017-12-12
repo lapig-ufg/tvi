@@ -61,24 +61,27 @@ module.exports = function(app) {
 			var finalYear = campaign.finalYear;
 
 			periods.forEach(function(period){
-	 			for (var year = initialYear; year <= finalYear; year++) {
-	 				satellite = 'L7';
-					if(year > 2012) { 
-						satellite = 'L8'
-					} else if(year > 2011) {
-						satellite = 'L7'
-					} else if(year > 2003  || year < 2000) {
-						satellite = 'L5'
-					}
-
-						for (var x = (xtile-1); x <= (xtile+1); x++) {
-							for (var y = (ytile-1); y <= (ytile+1); y++) {
-								var url = "http://localhost:" + config.port + "/map/"+satellite+"_"+year+"_"+period+"/"+zoom+"/"+x+"/"+y;
-								urls.push(url);
+				for (var x = (xtile-1); x <= (xtile+1); x++) {
+					for (var y = (ytile-1); y <= (ytile+1); y++) {
+			 			for (var year = initialYear; year <= finalYear; year++) {
+			 				
+			 				satellite = 'L7';
+							if(year > 2012) { 
+								satellite = 'L8'
+							} else if(year > 2011) {
+								satellite = 'L7'
+							} else if(year > 2003  || year < 2000) {
+								satellite = 'L5'
 							}
+							
+							var url = "http://localhost:" + config.port + "/map/"+satellite+"_"+year+"_"+period+"/"+zoom+"/"+x+"/"+y;
+							urls.push(url);
 						}
+					}
 				}
 			});
+
+			//console.log(urls)
 
 			urls.forEach(function(url) {
 				requestTasks.push(function(next) {
@@ -112,9 +115,10 @@ module.exports = function(app) {
 						var parallelRequestsLimit = busyTimeCondition ? config.cache.parallelRequestsBusyTime : config.cache.parallelRequestsDawnTime;
 
 						async.parallelLimit(requestTasks, parallelRequestsLimit, function() {
-							app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  });
-							pointCacheCompĺete(point._id);
-							next();
+							app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  }, {}, function() {
+								pointCacheCompĺete(point._id);
+								next();
+							});
 						});
 	 				});
 	 			} else {
