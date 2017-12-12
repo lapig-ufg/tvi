@@ -152,7 +152,7 @@ module.exports = function(app){
 			pointsInspection: 0
 		};
 
-		points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspec} }, function(err, pointsComplet) {
+		points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspecForPoint} }, function(err, pointsComplet) {
 			points.count({ 'campaign': campaign._id, 'userName': { '$size': 0} }, function(err, pointsNoComplet) {
 				points.count({ 'campaign': campaign._id }, function(err, pointsInspection) {
 
@@ -224,7 +224,7 @@ module.exports = function(app){
 			var csvResult = [];
 
 			docs.forEach(function(doc) {
-				if(doc.userName.length == campaign.numInspec) {
+				if(doc.userName.length == campaign.numInspecForPoint) {
 					var csvLines = {
 						'index': doc.index,
 						'lon': doc.lon,
@@ -262,7 +262,7 @@ module.exports = function(app){
 						}
 
 						for(var i in votes) {
-							if (votes[i] >= Math.ceil(campaign.numInspec / 2)) {
+							if (votes[i] >= Math.ceil(campaign.numInspecForPoint / 2)) {
 								csvLines[landUse] = i;
 								csvLines[landUse+"_votes"] = votes[i];
 
@@ -286,7 +286,7 @@ module.exports = function(app){
 					result[i+'_pontosNaoConc'] = 0;
 				
 				csvResult.forEach(function(data) {
-					if(data[i+"_votes"] >= Math.ceil(campaign.numInspec / 2)) {
+					if(data[i+"_votes"] >= Math.ceil(campaign.numInspecForPoint / 2)) {
 						result[i+'_pontosConc']++;
 					} else {
 						result[i+'_pontosNaoConc']++;
@@ -307,7 +307,7 @@ module.exports = function(app){
 			var csvResult = [];
 		
 			docs.forEach(function(doc) {
-				if(doc.userName.length == campaign.numInspec) {
+				if(doc.userName.length == campaign.numInspecForPoint) {
 					var csvLines = {
 						'index': doc.index,
 						'lon': doc.lon,
@@ -346,7 +346,7 @@ module.exports = function(app){
 
 						for(var i in votes) {
 							
-							if (votes[i] >= Math.ceil(campaign.numInspec / 2)) {
+							if (votes[i] >= Math.ceil(campaign.numInspecForPoint / 2)) {
 								csvLines[landUse] = i;
 								csvLines[landUse+"_votes"] = votes[i];
 

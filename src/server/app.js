@@ -82,9 +82,8 @@ app.middleware.repository.init(function() {
 
 	io.on('connection', function(socket){
 		socket.on('disconnect', function(){
-			store.get(socket.request.sessionID, function(error, session) {
-				socket.request.session = session;
-				app.emit('socket-disconnect', socket);
+			store.get(socket.handshake.sessionID, function(error, session) {
+				app.emit('socket-disconnect', session);
 			});
 		})
 	})

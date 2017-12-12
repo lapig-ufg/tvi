@@ -87,7 +87,6 @@ module.exports = function(app) {
 				csvResult.push(csvLines)
 			});
 
-			console.log('csv: ',csvResult)
 			response.set('Content-Type', 'text/csv');
 			response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
 
@@ -314,7 +313,6 @@ module.exports = function(app) {
 
 					point.timePoints = point.timePoint;
 					point.originalIndex = point.index;
-					//Usando isso ^;
 					point.index = index;
 
 					creatPoint(point, function(result) {

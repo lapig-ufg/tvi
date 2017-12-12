@@ -5,21 +5,21 @@ Application.controller('LoginController', function($rootScope, $scope, $location
 	$scope.showMsg = false;
 	$scope.showForm = true;
 
-	$scope.submit = function(name, campaign, senha) {
+	$scope.submit = function(name, senha, campaign) {
 		$scope.name = name;
-		$scope.campaign = campaign;
 		$scope.senha = senha;
+		$scope.campaign = campaign;
 
-		if($scope.name == undefined) {			
+		if($scope.name == undefined) {
 			$scope.showMsg = true;
 		} else {
-			requester._post('login',{'name':$scope.name, 'campaign':$scope.campaign, 'senha': $scope.senha}, function(result) {
-				
+			requester._post('login',{'name':$scope.name, 'senha':$scope.senha, 'campaign':$scope.campaign}, function(result) {
+
 				$rootScope.user = result;
 
 				if($rootScope.user.type == 'supervisor') {
 					$location.path('supervisor')
-				}else if($rootScope.user.type == 'inspector') {
+				} else if($rootScope.user.type == 'inspector') {
 					$location.path('temporal');
 				} else {
 					$scope.showMsg = true;
