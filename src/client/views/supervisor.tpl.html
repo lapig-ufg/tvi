@@ -1,6 +1,6 @@
 <div class="container-fluid" style="overflow: hidden;">
 	<div class="row">
-		<div class="row navbar-fixed-top" style="background: white; top: 50px;">					
+		<div class="row navbar-fixed-top" style="background: white; top: 40px; padding-top: 3px";>					
 			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 				<script>
 				  function maxLengthCheck(object) {
@@ -19,120 +19,114 @@
 				    }
 				  }
 				</script>
-				<div class="col-xs-12 col-sm-12 col-md-3 col-lg-3 filterMediumLeft">
-				 	<form class="form-inline" style="margin-top: 0px;">						 	
+				<div class="col-xs-12 col-sm-3 col-md-3 col-lg-3 filterMediumLeft" style="padding-bottom: 5px;">
+				 	<form class="form-inline" style="margin-top: 0px;" ng-submit="submit(point.index)">
 		        <input type="index" onkeypress="return isNumeric(event)" oninput="maxLengthCheck(this)"  maxlength = "5" 
 		        min="0" max="99999" style="width: 66px; display: inline-block;" class="form-control" id="index" placeholder="index" ng-model="point.index">
-		        <button type="button" class="btn btn-success btn-navbar" ng-disabled="point.index > total || point.index < 1" ng-click="submit(point.index)">Buscar</button>
+		        <button type="submit" class="btn btn-success btn-navbar" ng-disabled="point.index > total || point.index < 1" ng-click="submit(point.index)">Buscar</button>
 		        <div class="form-inline" style="display: inline-block; margin-top: 0px;">
 			        <button ng-click="submit(point.index-1)" ng-disabled="point.index <= 1 || point.index > total" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
 			        <span>{{point.index}}/{{total}}</span>
 			        <button ng-click="submit(point.index+1)" ng-disabled="point.index >= total || point.index < 1" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
 						</div>
+						<div style="width: auto">					
+							<input type="radio" ng-change="submit(1)" ng-model="typeSort" value="sortedIndex" ng-checked="true"><label style="font-size: 15px">Indice</label>
+							<input type="radio" ng-change="submit(1)" ng-model="typeSort" value="timeInspection"><label style="font-size: 15px;"> Tempo</label>
+							<input type="radio" ng-change="submit(1)" ng-model="typeSort" value="agreementPoint"><label style="font-size: 15px">Consolidado</label>
+						</div>
 		      </form>
-		    </div>
-  			<div class="col-xs-5 col-sm-5 col-md-4 col-lg-4" style="width: auto">	
+		    </div>		    
+  			<div class="col-xs-12 col-sm-9 col-md-9 col-lg-9" style="width: auto">	
   				<form>
-  					<div class="form-group row">
+  					<div class="form-group" style="display: inline-block">
   						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Classes:</label>
-  						<div class="col-sm-4" style="padding-left: 15px">
+  						<div class="col-sm-3" style="padding-left: 15px">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectedLandUse" ng-options="landUse for landUse in landUses"></select>
   						</div>
   					</div>
-  					<div class="form-group row">
+  					<div class="form-group" style="display: inline-block">
   						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Usuários:</label>
-  						<div class="col-sm-4" style="padding-left: 15px;">
+  						<div class="col-sm-3" style="padding-left: 15px;">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control" ng-model="selectUserNames" ng-options="userName for userName in userNames"></select>  
   						</div>
   					</div>
-  				</form>
-				</div>
-				<div class="col-xs-5 col-sm-5 col-md-4 col-lg-4" style="width: auto">	
-  				<form>
-  					<div class="form-group row">
+  					<div class="form-group" style="display: inline-block">
   						<label ng-hide="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Bioma:</label>
   						<label ng-show="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Região:</label>
-  						<div class="col-sm-4" style="padding-left: 15px;">
+  						<div class="col-sm-3" style="padding-left: 15px;">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control"  ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
   						</div>
   					</div>
-  					<div ng-hide="isChaco" class="form-group row">
+  					<div ng-hide="isChaco" class="form-group" style="display: inline-block">
   						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Estado(UF):</label>
-  						<div class="col-sm-4" style="padding-left: 15px;">
+  						<div class="col-sm-3" style="padding-left: 15px;">
   							<select style="width: auto; padding-left: 0px;" ng-change="submit(1)" class="form-control" ng-model="selectUf" ng-options="uf for uf in stateUF"></select>  
   						</div>
   					</div>
   				</form>
 				</div>
-				<div class="col-xs-2 col-sm-2 col-md-1 col-lg-1" style="width: auto">					
-					<form>
-					  <label>Tempo de inspeção: <input type="checkbox" ng-change="submit(1)" ng-model="timeInspection" ng-init="timeInspection=false"></label>
-					  <span ng-if="timeInspection"></span>
-					  <br>
-				 	</form>
-				</div>
 			</div>
-			<div class="col-xs-11 col-sm-3 col-md-3 col-lg-3" style="margin-left: 5px">
-				<div class="borderPoint" style="margin-bottom: 1px;">
+			<div class="col-xs-6 col-sm-6 col-md-4 col-lg-3">
+				<div class="borderPoint" style="margin-bottom: 1px">
 					<div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
 					<div class="tab"><p><b ng-hide="isChaco">Bioma:</b><b ng-show="isChaco">Região:</b> {{point.biome}}</p></div>
 					<div class="tab"><p><b ng-hide="isChaco">Municipio:</b><b ng-show="isChaco">Carta:</b> {{point.county}} {{point.uf}}</span></div>
 					<div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p></div>
 					<div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
-				</div>
-				<br>
-				<div class="borderPoint">
 					<div style="padding-left: 1em"><h4>Ferramentas de visualização:</h4></div>
-					<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn btn-link" value="Alterar Período">
-	  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link" value="Google Earth">
+					<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning" value="Alterar Período">
+	  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success" value="Google Earth">
 				</div>
-				<br>
 	  	</div>
-			<button class="btn cal-btn" ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
-			<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2 tableSmallLeftAdjustHeightMax tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="margin-left: -5px; border-right: 0px; padding-right: 0px; padding-left: 0px; top: 44px; height: auto; padding-bottom: 0px;">
-				<table class="table table-condensed table-users">
-						<thead style="font-weight: bold;">
+	  	<div class="col-xs-6 col-sm-6 col-md-8 col-lg-9">
+				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+					<button style="float: left;" class="btn cal-btn" ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
+				</div>
+				<div class="col-xs-6 col-sm-3 col-md-3 col-lg-3 tableSmallLeftAdjustHeightMax tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="border-right: 0px; padding-right: 0px; padding-left: 0px; height: auto; padding-bottom: 0px;">
+					<table class="table table-condensed table-users">
+							<thead ng-hide="point.inspection == 0" style="font-weight: bold;">
+						  	<tr>
+						  		<td>User</td>
+						  	</tr>
+					  	</thead>
+						  <tbody ng-hide="point.inspection == 0">
+						  	<tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
+						  		<td>{{inspection.userName}}</td>
+						  	</tr>
+						  	<tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="p in point.dataPointTime track by $index">
+						  		<td>{{p.name}}</td>
+						  	</tr>
+					  	</tbody>
+					  	<tfoot ng-hide="objConsolidated == []" style="font-size: 14px; font-weight: bold;">
+				  			<td ng-if='dataTab[0].checked'>Classe Consolidada</td>
+				  	</tfoot>
+					</table>
+				</div>
+				<div class="col-xs-6 col-sm-9 col-md-9 col-lg-9 tableLargeRight tableMediumRight tableSmallRight borderPoint" style="border-left: 0px; overflow-x: scroll; padding-left: 0px;">
+					<table ng-hide="point.inspection == 0" class="table table-condensed table-years">
+						<thead>
 					  	<tr>
-					  		<td>User</td>
+								<td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">{{year}}</td>
+								<td style="font-weight: bold;" ng-if='dataTab[1].checked' ng-repeat="point in dataTimePoints">{{point.data}}</td>
 					  	</tr>
 				  	</thead>
-					  <tbody ng-hide="point.inspection == 0">
-					  	<tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
-					  		<td>{{inspection.userName}}</td>
+				  	<tbody ng-hide="point.inspection == 0">
+						  <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
+					  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
 					  	</tr>
-					  	<tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="p in point.dataPointTime track by $index">
-					  		<td>{{p.name}}</td>
+						  <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="pointTime in point.dataPointTime">
+								<td>{{pointTime.totalPointTime}}</td>
+								<td>{{pointTime.meanPointTime | number:2 }}</td>
 					  	</tr>
 				  	</tbody>
 				  	<tfoot style="font-size: 14px; font-weight: bold;">
-			  			<td ng-if='dataTab[0].checked'>{{objConsolidated.type}}</td>
-			  	</tfoot>
-				</table>
-			</div>
-			<div class="col-xs-6 col-sm-9 col-md-7 col-lg-7 tableLargeRight tableMediumRight tableSmallRight borderPoint" style="border-left: 0px; overflow-x: scroll; padding-left: 0px;">
-				<table class="table table-condensed table-years">
-					<thead>
-				  	<tr>
-							<td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">{{year}}</td>
-							<td style="font-weight: bold;" ng-if='dataTab[1].checked' ng-repeat="point in dataTimePoints">{{point.data}}</td>
-				  	</tr>
-			  	</thead>
-			  	<tbody>
-					  <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
-				  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
-				  	</tr>
-					  <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="pointTime in point.dataPointTime">
-							<td>{{pointTime.totalPointTime}}</td>
-							<td>{{pointTime.meanPointTime | number:2 }}</td>
-				  	</tr>
-			  	</tbody>
-			  	<tfoot style="font-size: 14px; font-weight: bold;">
-				  	<td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated.landUse track by $index">{{landUse}}</td>
-			  	</tfoot>
-				</table>
+					  	<td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated track by $index">{{landUse}}</td>
+				  	</tfoot>
+					</table>
+				</div>
 			</div>
 		</div>
-		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 450px;">
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 400px;">
 			<div class="row">
 				<span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span class="titleMaps">RGB(NIR,SWIR,RED)</span></span>
 				<br><br>

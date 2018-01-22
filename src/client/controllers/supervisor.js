@@ -51,7 +51,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 					initialYear: initialYear,
 					finalYear: finalYear,
 					landUse: $scope.config.landUse[1]
-				}		
+				}
 			)
 		}
 
@@ -77,6 +77,10 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 		}
 
 		$scope.changePeriod = function() {
+			if($scope.newValue == undefined)
+				$scope.newValue = true;
+
+			$scope.newValue = !$scope.newValue;
 			$scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
 			$scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
 			generateMaps();
@@ -406,13 +410,17 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				filter["biome"] = $scope.selectBiomes;			
 
 			if($scope.selectUf && $scope.selectUf != 'Todos')
-				filter["uf"] = $scope.selectUf;
+				filter["uf"] = $scope.selectUf;			
 
-			if($scope.timeInspection && $scope.timeInspection != false)
-				filter["timeInspection"] = $scope.timeInspection;
 
-			if($scope.agreementPoint && $scope.agreementPoint != false)
-				filter["agreementPoint"] = $scope.agreementPoint;
+
+			if($scope.typeSort == 'timeInspection') {
+				filter["timeInspection"] = true;
+			}
+
+			if($scope.typeSort == 'agreementPoint') {
+				filter["agreementPoint"] = true;
+			}
 
 			landUseFilter(filter);
 			usersFilter(filter);

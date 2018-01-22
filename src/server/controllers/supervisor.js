@@ -145,7 +145,6 @@ module.exports = function(app) {
 					}
 				});
 			}
-
 		} else {
 			point = {};
 		}
@@ -155,49 +154,12 @@ module.exports = function(app) {
 
 		getImageDates(point.path, point.row, function(dates) {
 			point.dates = dates
-			
+
 			var result = {
 				"point": point
 			}
 
-			var numInsp = result.point.inspection.length;
-			var points = [];
-			var consolid = [];
-
-			for(var i=0; i < result.point.years.length; i++) {
-				
-				pointAux = {};
-				for(var j=0; j< result.point.inspection.length; j++) {
-					var key = result.point.inspection[j].landUse[i];
-					if(!pointAux[key])
-						pointAux[key] = 0;
-					
-					pointAux[key]++;
-				}
-
-				isConsolidate = false;
-				for(var key in pointAux) {
-					if(pointAux[key] >= numInsp/2) {
-						isConsolidate = true;
-						break;
-					}
-				}
-
-				if(isConsolidate) {
-					consolid.push(key);
-				} else {
-					consolid.push("Não consolidado");
-				}
-			}
-
-			var objConsolid = {
-				type: "Classe Consolidada",
-				landUse: consolid
-			}				
-
-			point.classConsolidated = objConsolid
-
-			return callback(result);			
+			return callback(result);
 		});
 	}
 
@@ -210,7 +172,8 @@ module.exports = function(app) {
 		var uf = request.param("uf");
 		var timePoint = request.param("timeInspection");
 		var agreementPoint = request.param("agreementPoint");
-
+		//var sortIndex = request.param("sortIndex");
+		
 		var filter = {
 			"campaign": campaign._id
 		};
@@ -235,11 +198,39 @@ module.exports = function(app) {
 			var pipeline = [
 					{"$match": filter},
 					{"$project": {mean: {"$avg": "$inspection.counter"}}},
-				 	{"$sort": {mean: -1}},
+				 	{"$sort": {mean: - 1}},
 					{"$skip": index - 1},
 					{"$limit": 1}
 			]
-		} else {
+		}
+
+		if(agreementPoint) {
+			var pipeline = [
+				{$match: filter},
+		    {$project: {
+		      consolidated: {
+		        $size: {
+		          $ifNull: [
+		            {
+		              $filter: {
+		                input: "$classConsolidated",
+		                as: "consolidated",
+		                cond: { $and: [
+	                    { $eq: ['$$consolidated', 'Não consolidado']}
+		                ]}                
+		              }
+		            },
+		            []
+		          ]
+		        }
+		      }
+		    }},
+		    {$sort: {'consolidated': -1}},
+		    {$skip: index - 1}
+			]
+		}
+
+		if(pipeline == undefined) {
 			var pipeline = [
 					{"$match": filter},
 					{"$project": { index:1, mean: {"$avg": "$inspection.counter"}}},
@@ -248,11 +239,12 @@ module.exports = function(app) {
 					{"$limit": 1}
 			]
 		}
-	
+
 		var objPoints = {};
 
-		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {	
+		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {
 			aggregateElem = aggregateElem[0]
+			console.log('agree: ',aggregateElem)
 
 			pointsCollection.findOne({'_id':aggregateElem._id}, function(err, newPoint) {
 				point = newPoint;
@@ -296,7 +288,7 @@ module.exports = function(app) {
 					})
 
 					point.dataPointTime = [];
-					
+
 					for(var i=0; i<newPoint.userName.length; i++) {							
 						point.dataPointTime.push({
 							'name': nameList[i],
