@@ -2,7 +2,8 @@ var
 		cron = require('cron')
 	,	exec = require('child_process').exec
 	,	dateFormat = require('dateformat')
-	,	fs = require('fs');
+	,	fs = require('fs')
+	,	async = require('async');
 
 module.exports = function(app) {
 
@@ -33,27 +34,32 @@ module.exports = function(app) {
 
 	Jobs.publishLayers = function(params, logStream, callback) {
 		
-		var cmd = params.cmd + " " + params.eeKey;
+		var onEach = function(key, next) {
+			var cmd = params.cmd + " " + key.file + " " + key.startYear + " " + params.keys.length;
+			console.log(cmd)
+			exec(cmd, function (error, stdout, stderr) {
+				  
+				  if(error || stderr) {
+				  	writeLog(logStream, error);
+				  	writeLog(logStream, stderr);
+				  }
 
-		exec(cmd, function (error, stdout, stderr) {
-			  
-			  if(error || stderr) {
-			  	writeLog(logStream, error);
-			  	writeLog(logStream, stderr);
-			  }
+				  if(stdout) {
+				  	var lines = stdout.split("\n");
+				  	
+				  	lines.forEach(function(line) {
+				  		if(line) {
+				  			writeLog(logStream, line);
+				  		}
+				  	});
+				  }
+					
+					next();
+				});
+		}
 
-			  if(stdout) {
-			  	var lines = stdout.split("\n");
-			  	
-			  	lines.forEach(function(line) {
-			  		if(line) {
-			  			writeLog(logStream, line);
-			  		}
-			  	});
-			  }
-				
-				callback();
-			});
+		async.eachSeries(params.keys, onEach, callback)
+
 	}
 	
 	Jobs.start = function() {

@@ -9,8 +9,8 @@ module.exports = function(app) {
 		"logDir": appRoot + "/log/",
 		"imgs": appRoot + "/images/",
 		"cache": {
-			"parallelRequestsBusyTime": 9,
-			"parallelRequestsDawnTime": 18
+			"parallelRequestsBusyTime": 27,
+			"parallelRequestsDawnTime": 54
 		},
 		"mongo": {
 			"host": "localhost",
@@ -26,7 +26,20 @@ module.exports = function(app) {
 					"runOnAppStart": false,
 					"params": {
 						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
-						"eeKey": appRoot + "/integration/py/lapig-ee-09144f43f3b5.pem"
+						"keys": [
+							{
+								"file": appRoot + "/integration/py/gee-keys/key85.json",
+								"startYear": 1985
+							},
+							{
+								"file": appRoot + "/integration/py/gee-keys/key86.json",
+								"startYear": 1986
+							},
+							{
+								"file": appRoot + "/integration/py/gee-keys/key87.json",
+								"startYear": 1987
+							}
+						]
 					}
 				},
 				{
