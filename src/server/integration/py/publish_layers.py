@@ -11,6 +11,7 @@ EE_ACCOUNT = EE_PRIVATE_KEY_FILE[0:len(EE_PRIVATE_KEY_FILE)-5]
 START_YEAR = int(sys.argv[2])
 STRIDE_YEAR = int(sys.argv[3])
 
+print 'values: ',sys.argv[1]
 EE_CREDENTIALS = ee.ServiceAccountCredentials(EE_ACCOUNT, EE_PRIVATE_KEY_FILE)
 ee.Initialize(EE_CREDENTIALS)
 
@@ -121,7 +122,7 @@ def processPeriod(tiles, periods, suffix = ''):
 client = MongoClient('localhost', 27017);
 db = client.tvi;
 
-for year in range(START_YEAR,2018,STRIDE_YEAR):
+for year in range(1985,2018):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue;
