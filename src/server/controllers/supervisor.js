@@ -9,6 +9,7 @@ module.exports = function(app) {
 	var Points = {};
 	var pointsCollection = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
+	var infoCampaign = app.repository.collections.campaign;
 
 	var getImageDates = function(path, row, callback) {
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
@@ -30,88 +31,85 @@ module.exports = function(app) {
 	Points.csv = function(request, response) {
 		var campaign = request.session.user.campaign;
 
-		pointsCollection.find({ "campaign": campaign._id }).sort({ 'index': 1}).toArray(function(err, points) {
-			var csvResult = [];
+		infoCampaign.find({'_id':campaign._id}).forEach(function(data) {
+			var initialYear = data.initialYear;
+			var finalYear = data.finalYear;
 
-			points.forEach(function(point) {
+			pointsCollection.find({ "campaign": campaign._id }).sort({ 'index': 1}).toArray(function(err, points) {
+				var csvResult = [];
+				var objColNames = {};
 
-				var csvLines = {
-					'index': point.index,
-					'lon': point.lon,
-					'lat': point.lat,
-				};
-				
-				var landUses = {};
-				
-				for(var i=0; i < point.userName.length; i++) {
-					
-					var userName = point.userName[i];
-					var form = point.inspection[i].form;
+				points.forEach(function(point) {
+					for(var i=0; i<point.userName.length; i++) {
+						point.inspection[i].form.forEach(function(inspec) {
+							for(var year=initialYear; year<=finalYear; year++) {
+								var colName = year+"_"+point.userName[i];
 
-					form.forEach(function(f) {
-						
-						for( var year = f.initialYear; year <= f.finalYear; year++) {
-							csvLines[year+"_"+userName] = f.landUse
-							
-							if(!landUses[year])
-								landUses[year] = [];
+								if(!objColNames[colName])
+									objColNames[colName] = ''
+							}
+						})
+					}
+				});
 
-							landUses[year].push(f.landUse);
-						}
-					});
-
-				}
-
-				for(var landUse in landUses) {
-					
-					var votes = {};
-
-					for (var i in landUses[landUse]) {
-						if(!votes[landUses[landUse][i]])
-							votes[landUses[landUse][i]]=0
-
-						votes[landUses[landUse][i]] += 1;
+				points.forEach(function (point) {					
+					var csvLines = {
+						'index': point.index,
+						'lon': point.lon,
+						'lat': point.lat
 					}
 
-					for(var i in votes) {
-						
-						if (votes[i] >= Math.ceil(landUses[landUse].length / 2)) {
-							csvLines[landUse+"_majority"] = i;
-							csvLines[landUse+"_majority_votes"] = votes[i];
-							break;
-						}
-
+					for(var colNames in objColNames) {
+						csvLines[colNames] = '-';
 					}
+
+					var count = 0;
+					for(var i=0; i<point.userName.length; i++) {
+						point.inspection[i].form.forEach(function(inspec) {
+							for(var year=initialYear; year<=finalYear; year++) {
+								for(var col in csvLines) {
+									if(col == year+"_"+point.userName[i]) {
+										csvLines[col] = inspec.landUse
+
+										if(!csvLines['consolidated_'+year])
+											csvLines['consolidated_'+year] = point.classConsolidated[count]
+											count++;
+									}
+								}
+							}							
+						})
+					}
+
+					csvResult.push(csvLines)
+				})
+				
+				response.set('Content-Type', 'text/csv');
+				response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
+
+				var writer = csvWriter({
+					separator: ';',
+					newline: '\n',
+
+					sendHeaders: true
+				});
+
+				var encoder = new iconv.Iconv('utf-8', 'latin1');
+
+				writer.pipe(encoder, { end: false });
+				encoder.pipe(response, { end: false });
+
+				for(i in csvResult) {
+					writer.write(csvResult[i])
 				}
 
-				csvResult.push(csvLines)
-			});
+				writer.on('end', function() {
+					encoder.end();
+					response.end();
+				})
 
-			response.set('Content-Type', 'text/csv');
-			response.set('Content-Disposition', 'attachment;filename='+campaign._id+'.csv');
-
-			var writer = csvWriter({
-				separator: ';',
-				newline: '\n',
-				sendHeaders: true
-			});
-
-			var encoder = new iconv.Iconv('utf-8', 'latin1');
-
-			writer.pipe(encoder, { end: false });
-			encoder.pipe(response, { end: false });
-
-			for(i in csvResult) {
-				writer.write(csvResult[i])
-			}
-
-			writer.on('end', function() {
-				encoder.end();
-				response.end();
+				writer.end();
+				
 			})
-
-			writer.end();
-			
 		});
 	}
 
@@ -173,11 +171,11 @@ module.exports = function(app) {
 		var timePoint = request.param("timeInspection");
 		var agreementPoint = request.param("agreementPoint");
 		//var sortIndex = request.param("sortIndex");
-		
+
 		var filter = {
 			"campaign": campaign._id
 		};
-		
+
 		if(userName) {
 			filter["userName"] = userName;
 		}
@@ -244,7 +242,6 @@ module.exports = function(app) {
 
 		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {
 			aggregateElem = aggregateElem[0]
-			console.log('agree: ',aggregateElem)
 
 			pointsCollection.findOne({'_id':aggregateElem._id}, function(err, newPoint) {
 				point = newPoint;
@@ -289,11 +286,11 @@ module.exports = function(app) {
 
 					point.dataPointTime = [];
 
-					for(var i=0; i<newPoint.userName.length; i++) {							
+					for(var i=0; i<newPoint.userName.length; i++) {
 						point.dataPointTime.push({
 							'name': nameList[i],
 							'totalPointTime': pointTimeList[i],
-							'meanPointTime': meanPointList[i]						
+							'meanPointTime': meanPointList[i]
 						})
 					}
 					
@@ -309,15 +306,28 @@ module.exports = function(app) {
 
 					creatPoint(point, function(result) {
 						pointsCollection.count(filter, function(err, count) {
+							//console.log('pointTeste: ',point)
+							//updatedClassConsolidated(point._id, function(err, update) {
 
-							result.totalPoints = count
-							response.send(result)
-							response.end()
+								result.totalPoints = count
+								response.send(result)
+								response.end()
+							//})
 						})
 					})
 				})
 			})
 		});
+	}
+
+	Points.updatedClassConsolidated = function(request, response) {		
+		var classArray = request.param("class");
+		var pointId = request.param("_id")
+
+		pointsCollection.update({'_id': pointId}, {$set:{'classConsolidated': classArray, 'pointEdited': true}})
+
+		//getPoint()
+		response.end()
 	}
 
 	Points.landUseFilter = function(request, response) {
@@ -353,6 +363,7 @@ module.exports = function(app) {
 		}*/
 
 		pointsCollection.distinct('inspection.form.landUse', filter, function(err, docs) {
+
 			response.send(docs);
 			response.end();
 		});

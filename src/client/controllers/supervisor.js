@@ -399,6 +399,12 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			var filter = {
 				"index": index
 			};
+	
+			$scope.changeClass = function(index) {
+				for(var i=index; i<$scope.selectedLandUses.length; i++) {
+					$scope.selectedLandUses[i] = $scope.selectedLandUses[index]
+				}
+			}
 
 			if($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')			
 				filter["landUse"] = $scope.selectedLandUse;
@@ -412,8 +418,6 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			if($scope.selectUf && $scope.selectUf != 'Todos')
 				filter["uf"] = $scope.selectUf;			
 
-
-
 			if($scope.typeSort == 'timeInspection') {
 				filter["timeInspection"] = true;
 			}
@@ -422,6 +426,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				filter["agreementPoint"] = true;
 			}
 
+			updatedClassConsolidated(filter)
+			getClassLandUse(filter);
 			landUseFilter(filter);
 			usersFilter(filter);
 			biomeFilter(filter);
@@ -430,13 +436,66 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			requester._post('points/get-point', filter, loadPoint);
 		}
 
+		var updatedClassConsolidated = function(callback) {
+			$scope.saveClass = function(element) {
+				var result = {}
+				$scope.objConsolidated = $scope.selectedLandUses
+
+				result._id = $scope.point._id
+				result.class = $scope.objConsolidated
+
+				requester._post('points/updatedClassConsolidated', result, function(data) {
+					var aux = 0;
+					var flagError = true
+				
+					for(var i=0; i<$scope.objConsolidated.length; i++) {
+						if($scope.objConsolidated[i] == 'Não consolidado') {
+							if(flagError)
+								window.alert("Falha na operação, preencha todos os campos");
+								flagError = false;
+
+						} else {
+							aux++
+
+							if(aux == $scope.objConsolidated.length) {
+								$scope.submit(1)
+								$scope.modeEdit = false;
+								$scope.buttonEdit = false;
+							}
+						}
+					}
+					
+					aux = 0;	
+				});
+			}
+		}
+
+		var getClassLandUse = function(filter) {
+			requester._get('points/landUses', function(getLandUses) {
+				$scope.getLandUses = getLandUses;
+				$scope.buttonEdit = false;
+	
+				$scope.editClass = function(element) {
+					var arrayConsolid = $scope.objConsolidated
+					$scope.selectedLandUses = []
+					$scope.modeEdit = true;
+
+					for(var i=0; i<arrayConsolid.length; i++) {
+						$scope.selectedLandUses.push(arrayConsolid[i])
+					}
+
+					$scope.buttonEdit = true;
+				}
+			});
+		}
+
 		var landUseFilter = function(filter) {
 			requester._get('points/landUses', filter, function(landUses) {
 				landUses.unshift('Todos');
 
 				if(filter.landUse == undefined)
 					filter.landUse = 'Todos';
-				
+
 				$scope.selectedLandUse = filter.landUse;
 				$scope.landUses = landUses;
 			});
