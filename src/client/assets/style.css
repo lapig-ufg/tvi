@@ -30,7 +30,7 @@ body {
 
 @media (max-width: 1240px) {
   .filterMediumLeft {
-    width: 100% !important;
+    width: auto;
   }
 }
 
@@ -41,41 +41,41 @@ body {
   }
 }
 
-@media (max-width: 396px) {
+/*@media (max-width: 396px) {
   .tableSmallLeftAdjustHeightMax {
     height: 140px !important;
   }
-}
+}*/
 
 @media (max-width: 767px) {
   .tableSmallLeft {
-    width: 36% !important;
-    margin-left: 20px !important;
+    width: 57% !important;
+    /*margin-left: 20px !important;*/
   }
 
   .tableSmallRight {
-    width: 54% !important;
+    width: 43% !important;
   }
 }
 
 @media (max-width: 1149px) {
   .tableMediumLeft {
-    width: 19%;
-    margin-left: 20px;
+    width: 41%;
+    /*margin-left: 20px;*/
   }
   .tableMediumRight {
-    width: 54%;
-    margin-left: 0px;
+    width: 59%;
+    /*margin-left: 0px;*/
   }
 }
 
 @media (min-width: 1150px) {
   .tableLargeLeft {
-    width: 16%;
+    width: 20%;
     margin-left: 0px;
   }
   .tableLargeRight {
-    width: 57%;
+    width: 80%;
     margin-left: 0px;
   }
 }
@@ -104,18 +104,18 @@ body {
   margin-top: 6px;
 }
 
-.btn-navbar {
+/*.btn-navbar {
   margin-bottom: 9px;
-}
+}*/
 
 .button-align {
   margin-top: 12px !important;
   margin-right: 10px;
 }
 
-.btn {
+/*.btn {
   margin-top: 10px;
-}
+}*/
 
 .time {
   margin-top: 15px;
@@ -176,9 +176,9 @@ legend.scheduler-border {
   margin-bottom: 10px;
 }
 
-.navbar {
+/*.navbar {
   margin-bottom: 10px;
-}
+}*/
 
 .col-fixed-310{
   width:310px;
@@ -262,6 +262,14 @@ h3 {
   font-size: 14px;
   color: gray; 
 };
+
+.copy-button.green {
+  color:green;
+}
+
+.copy-button.blue {
+  color:blue;
+}
 
 input[type=button].no-spinnerInspec::-webkit-inner-spin-button, 
   input[type=button]::-webkit-outer-spin-button { 

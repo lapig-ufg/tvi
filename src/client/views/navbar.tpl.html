@@ -17,20 +17,18 @@
   </nav>
   <nav class="navbar navbar-inverse container-fluid" ng-show="user.type == 'supervisor'">
     <div class="blog-masthead row">
-      <div class="col-md-4">
-        <ul class="nav navbar-nav">
-          <a href="#/dashboard" style="color: white">&nbsp;Dashboard</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#/supervisor" style="color: white">Pontos</a>
+      <div class="col-md-12">
+        <ul class="col-md-4 nav navbar-nav" style="float: left;">
+          <a ng-href="#/dashboard" style="color: white">&nbsp;Dashboard</a>&nbsp;&nbsp;&nbsp;&nbsp;<a ng-href="#/supervisor" style="color: white">Pontos</a>
         </ul>
-      </div>
-        <div ng-show="user">
-        <div class="col-md-4">
+        <div class="col-md-4" ng-show="user" style="float: left">
           <h3><center><span style="color: #FFFFFF"> {{user.campaign._id}} </span></center></h3> 
-        </div>
-      <div class="col-md-4">
-        <label class="pull-right">
-          <button type="button" class="btn btn-success" href="#" ng-click="downloadCSV()" style="color:white">Baixar CSV</button>
-          <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">Sair
-          </button>
+        </div>  
+        <label class="col-md-4">
+          <div class="pull-right">
+            <button type="button" class="btn btn-success" href="#" ng-click="downloadCSV()" style="color:white">Baixar CSV</button>
+            <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">Sair</button>
+          </div>
         </label>
       </div>
     </div>

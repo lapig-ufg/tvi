@@ -4,6 +4,18 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	$scope.pointLoaded = false;
 
+	$scope.pixelBorder = function(checkBoxPixel) {
+		if(checkBoxPixel) {
+			$scope.valuePixelBorder = true;
+			//console.log($scope.valuePixelBorder)
+			checkBoxPixel = false
+		} else {
+			$scope.valuePixelBorder = false;
+			//console.log($scope.valuePixelBorder)
+			checkBoxPixel = true
+		}
+	}
+
 	util.waitUserData(function() {
 		$scope.size = 3;
 		$scope.onSubmission = false;
@@ -16,9 +28,8 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			zoomLevel: 13,
 			landUse: $rootScope.user.campaign.landUse
 		}
-		
-		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
 
+		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
 		$scope.isDisabled=true;
 		$scope.isObjectEmpty = function(obj){
 
@@ -31,7 +42,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		}
 
 		$scope.formPlus = function() {
-			
 			var prevIndex = $scope.answers.length - 1;
 			var initialYear = $scope.answers[prevIndex].finalYear + 1
 
@@ -40,15 +50,15 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 			var finalYear = $scope.config.finalYear;
 			
-			generateOptionYears(initialYear,finalYear);		
-			
+			generateOptionYears(initialYear,finalYear);
 
 			$scope.answers.push(
 				{
 					initialYear: initialYear,
 					finalYear: finalYear,
-					landUse: $scope.config.landUse[1]
-				}		
+					landUse: $scope.config.landUse[1],
+					pixelBorder: $scope.valuePixelBorder
+				}
 			)			
 		}
 
@@ -59,30 +69,18 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			}
 		}
 
-		$scope.pixelBorder = function(checkBoxPixel) {
-
-			if(checkBoxPixel) {
-				$scope.valuePixelBorder = true;
-				checkBoxPixel = false
-			} else {
-				$scope.valuePixelBorder = false;
-				checkBoxPixel = true
-			}
-		}
-		
 		$scope.submitForm = function() {
-
 			var formPoint = {
 				_id: $scope.point._id,
 				inspection: {
 	        counter: $scope.counter,
 	        form: $scope.answers,
 	        pixelBorder: $scope.valuePixelBorder
-				}
-	    }
-			
+	      }
+    	}
+
 	    $scope.onSubmission = true;
-	    
+
 	    requester._post('points/next-point', { "point": formPoint }, loadPoint);
 		}
 
@@ -409,13 +407,13 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				{
 					initialYear: $scope.config.initialYear,
 					finalYear: $scope.config.finalYear,
-					landUse: $scope.config.landUse[landUseIndex]
+					landUse: $scope.config.landUse[landUseIndex],
+					pixelBorder: $scope.valuePixelBorder
 				}
 			];
 		}
 
 		var loadPoint = function(data) {
-			
 			$scope.onSubmission = false;
 			$scope.pointLoaded = true;
 			$scope.point = data.point;
@@ -437,7 +435,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 		}
 
 		initCounter();
-		requester._get('points/next-point', loadPoint);
-	
+		requester._get('points/next-point', loadPoint);	
 	});
 });

@@ -10,7 +10,6 @@ module.exports = function(app) {
 	var eetms = "https://earthengine.googleapis.com";
 	var TMS = {};
 	var Internal = {};
-	
 	var mosaics = app.repository.collections.mosaics;
 	var cache = app.middleware.cache;
 

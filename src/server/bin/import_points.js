@@ -5,11 +5,10 @@ var exec = require('child_process').exec;
 
 var geojsonFile = process.argv[2];
 var campaign = process.argv[3];
-var numInspecForPoint = process.argv[4];
-var numInspecTotal = (process.argv[5] == null) ? null : process.argv[5];
-var password = (process.argv[6] == null) ? null : process.argv[6];
-var initialYear = (process.argv[7] == null) ? 2000 : process.argv[7];
-var finalYear = (process.argv[8] == null) ? 2016 : process.argv[8];
+var numInspec = process.argv[4];
+var password = (process.argv[5] == null) ? null : process.argv[5];
+var initialYear = (process.argv[6] == null) ? 2000 : process.argv[6];
+var finalYear = (process.argv[7] == null) ? 2016 : process.argv[7];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
@@ -24,7 +23,7 @@ var checkError = function(error) {
 
 var getCoordinates = function(geojsonDataStr) {
 	geojsonData = JSON.parse(geojsonDataStr)
-	
+
 	var coordinates = []
 	for(var i = 0; i < geojsonData.features.length; i++) {
 		coordinates.push(
@@ -137,12 +136,12 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	getDB(dbUrl, function(db) {
 		
 		db.collection(collectionPointsName, function(err, collectionPoints) {
-			
+
 			var counter = 1;
 			var eachFn = function(coordinate, next) {
 				getInfoByRegion(coordinate, function(regionInfo) {
 					getInfoByTile(coordinate, function(tileInfo) {
-						var point = { 
+						var point = {
 							"_id": counter+'_'+campaign,
 							"campaign": campaign,	
 							"lon": coordinate.X,
@@ -195,8 +194,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			        "Área urbana", 
 			        "Silvicultura"
 			    ],
-					"numInspecForPoint": parseInt(numInspecForPoint),
-					"numInspecTotal": parseInt(numInspecTotal)
+					"numInspec": parseInt(numInspec)
 				}
 
 				collectionCampaign.insertOne(createCamp);

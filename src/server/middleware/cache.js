@@ -12,7 +12,7 @@ module.exports = function(app) {
 
 	Cache.get = function(cacheKey, callback) {
 		var path = config.imgs+cacheKey+'/';
-		var img = cacheKey.slice(24, 29);	
+		var img = cacheKey.slice(24, 29);
 		fs.readFile(path+img, function (err,data) {
 		  if (!err && data) {
 		  	callback(data);	  	
