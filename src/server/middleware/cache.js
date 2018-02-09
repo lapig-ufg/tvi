@@ -22,7 +22,7 @@ module.exports = function(app) {
 		});
 	};
 
-	Cache.set = function(cacheKey, data){
+	Cache.set = function(cacheKey, data, callback){
 		cacheKey = cacheKey.substr(1);
 		exec('mkdir -p '+config.imgs+cacheKey, function(err, stdout, stderr){
 			var path = config.imgs+cacheKey+'/';
@@ -31,6 +31,7 @@ module.exports = function(app) {
 			  if(err) {
 			    return console.log(err);
 			  }
+			  callback()
 			});
 			 			
 		})

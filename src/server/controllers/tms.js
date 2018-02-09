@@ -14,12 +14,11 @@ module.exports = function(app) {
 	var mosaics = app.repository.collections.mosaics;
 	var cache = app.middleware.cache;
 
-	var ENHANCE_PARAMS = ['-auto-level','-auto-gamma', '-channel', 'RGB', '-contrast-stretch', '0.5x0.5%', '-','-']
+	var ENHANCE_PARAMS = ['-', '-auto-level', '-auto-gamma', '-channel', 'RGB', '-contrast-stretch', '0.5x0.5%', '-']
 
 	Internal.enhanceImg = function(img, callback) {
+		
 		convert = spawn('convert', ENHANCE_PARAMS);
-		convert.stdin.write(img);
-		convert.stdin.end();
 
 		var result = new Buffer([]);
 		convert.stdout.on('data', function(data) {
@@ -29,6 +28,13 @@ module.exports = function(app) {
     convert.on('close', function(code) {
         return callback(result);
     });
+
+    convert.stderr.on('data', function(data) {
+		  console.log(data);
+		});
+
+    convert.stdin.write(img);
+		convert.stdin.end();
 	}
 
 	Internal.enhanceAndResponse = function(img, response) {
@@ -97,9 +103,10 @@ module.exports = function(app) {
 								}).on('end', function(data) {
 									if(img.length > 0) {
 										Internal.enhanceImg(img, function(imgEnhanced) {
-												cache.set(path, imgEnhanced)
-												response.write(imgEnhanced)
-												response.end()
+												cache.set(path, imgEnhanced, function() {
+													response.write(imgEnhanced)
+													response.end()
+												})
 										});
 									} else {
 										response.end()
