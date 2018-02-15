@@ -110,94 +110,82 @@ module.exports = function(app) {
 	Points.updatePoint = function(request, response) {
 		var point = request.body.point;
 		var user = request.session.user;
-		var keyObjCount = {};
-		var tempArray = [];
 
 		point.inspection.fillDate = new Date();
 
-		for(var i=0; i<point.inspection.form.length; i++) {
-			for(var j=point.inspection.form[i].initialYear; j<=point.inspection.form[i].finalYear; j++) {				
-				tempArray.push(point.inspection.form[i].landUse)
-			}
-		}
+		var numberOfInspection = user.campaign.numInspec;
 
-		points.find({'campaign':user.campaign._id}).forEach(function(docs) {
-			if(point._id == docs._id) {
-				if(docs.underInspection == user.campaign.numInspec && docs.userName.length == docs.underInspection - 1) {
+		var updateOperation = {
+			'$push': {
+				"inspection": point.inspection,
+		  	"userName": user.name
+		  }
+		};
 
-					docs.arrayLandUse.push(tempArray)
+		points.findOne({ '_id':point._id }, function(err, pointDb) {
+			if(pointDb.userName.length == numberOfInspection - 1) {
 
-					for(var count=0; count<tempArray.length; count++) {
-						var flagConsolid = false;
+				var landUseInspections = {}
+				var classConsolidated = []
 
-						for(var i=0; i<docs.arrayLandUse.length; i++) {
+				pointDb.inspection.push(point.inspection)
 
-							var landUseConsolid = docs.arrayLandUse[i][count]
-							if(!keyObjCount[landUseConsolid])
-								keyObjCount[landUseConsolid] = 0
+				for(var i in pointDb.inspection) {
+					
+					var inspection = pointDb.inspection[i]
+					for(var j in inspection.form) {
 
-							keyObjCount[landUseConsolid]++
+						var form = inspection.form[j]
+						for(var year=form.initialYear; year<= form.finalYear; year++) {
+
+							if(!landUseInspections[year])
+								landUseInspections[year] = [];
+
+							landUseInspections[year].push(form.landUse)
 						}
 
-						var objCount = Object.keys(keyObjCount).length;
-						var countInt = 0;
-
-						for(var key in keyObjCount) {
-							countInt++;
-
-							if(keyObjCount[key] >= user.campaign.numInspec/2) {
-								points.update({_id: point._id}, {$push: {"classConsolidated": key}})
-
-								flagConsolid = true;
-							} else if(flagConsolid == false && objCount == countInt) {
-								points.update({_id: point._id}, {$push: {"classConsolidated": "Não consolidado"}})
-
-								flagConsolid = true;
-							}
-						}
-
-						keyObjCount = {};
 					}
 
-					points.update({
-						_id: point._id
-					},
-					{
-						$push: {
-							"inspection": point.inspection,
-					  	"userName": user.name
-					  }
-					},
-					function(err, item) {
-						findPoint(user.campaign, user.name, function(result) {
-
-							request.session.currentPointId = result.point._id;
-							response.send(result);
-							response.end();
-						})			
-					})
-				} else {
-
-					points.update({
-						_id: point._id
-					},
-					{
-						$push: {
-							"inspection": point.inspection,
-					  	"userName": user.name
-					  }
-					},
-					function(err, item) {
-						findPoint(user.campaign, user.name, function(result) {
-
-							request.session.currentPointId = result.point._id;
-							response.send(result);
-							response.end();
-						})			
-					})
 				}
+
+				for(var year=user.campaign.initialYear; year<= user.campaign.finalYear; year++) {
+					
+					var landUseCount = {}
+
+					for(var i=0; i < landUseInspections[year].length; i++) {
+						var landUse = landUseInspections[year][i]
+						if(!landUseCount[landUse])
+							landUseCount[landUse]=0
+
+						landUseCount[landUse]++
+					}
+
+
+					for(var landUse in landUseCount) {
+						if(landUseCount[landUse] >= numberOfInspection/2) {
+							classConsolidated.push(landUse)
+						} else {
+							classConsolidated.push("Não consolidado")
+						}
+					}
+
+				}
+
+				updateOperation['$set'] = { "classConsolidated": classConsolidated };
+
 			}
-		})
+
+			points.update({ '_id': point._id }, updateOperation, function(err, item) {
+				findPoint(user.campaign, user.name, function(result) {
+
+					request.session.currentPointId = result.point._id;
+					response.send(result);
+					response.end();
+				});
+			});
+
+		});
+
 	};
 
 	return Points;

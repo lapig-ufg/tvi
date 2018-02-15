@@ -29,38 +29,46 @@ db.getCollection('points').find({}).forEach(function(point) {
     var objClassConsolid = {}
     var countInt = 0
     
-    for(var i=0; i<tempObj[1].length; i++) {
-        var flagConsolid = false
+    if (tempObj[1]) {
+        if (point.inspection.length == numInspec[0]) { 
+            print(point._id, 'classConsolidated')
+            for(var i=0; i<tempObj[1].length; i++) {
+                var flagConsolid = false
 
-        for(var key in tempObj) {
-            if(!objClassConsolid[tempObj[key][i]])
-                objClassConsolid[tempObj[key][i]] = 0
+                for(var key in tempObj) {
+                    if(!objClassConsolid[tempObj[key][i]])
+                        objClassConsolid[tempObj[key][i]] = 0
 
-            objClassConsolid[tempObj[key][i]]++
-        }
+                    objClassConsolid[tempObj[key][i]]++
+                }
 
-        var objCount = Object.keys(objClassConsolid).length;
-        var countInt = 0;
+                var objCount = Object.keys(objClassConsolid).length;
+                var countInt = 0;
 
-        for(var key in objClassConsolid) {
-            countInt++
+                for(var key in objClassConsolid) {
+                    countInt++
 
-            //Alterado condição de (>=) para (>), evitando campanhas com numero par dando problema na consolidação
-            if(objClassConsolid[key] > numInspec[0]/2) {
-                flagConsolid = true
-                classConsolidated.push(key)
+                    //Alterado condição de (>=) para (>), evitando campanhas com numero par dando problema na consolidação
+                    if(objClassConsolid[key] > numInspec[0]/2) {
+                        flagConsolid = true
+                        classConsolidated.push(key)
 
-            } else if(objCount == countInt && flagConsolid == false) {
-                flagConsolid = true
-                classConsolidated.push("Não consolidado")
+                    } else if(objCount == countInt && flagConsolid == false) {
+                        flagConsolid = true
+                        classConsolidated.push("Não consolidado")
+                    }
+                }
+
+                countInt++;
+                objClassConsolid = {}
             }
+
+            db.getCollection('points').update({_id: point._id}, {$set: {"classConsolidated": classConsolidated}})
+        } else {
+            print(point._id)
+            db.getCollection('points').update({_id: point._id}, {$unset: {"classConsolidated": ""}})
         }
-
-        countInt++;
-        objClassConsolid = {}
     }
-
-    db.getCollection('points').update({_id: point._id}, {$set: {"classConsolidated": classConsolidated}})
 })
 
 
