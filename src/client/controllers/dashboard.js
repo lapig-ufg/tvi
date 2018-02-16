@@ -154,7 +154,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		});
 
 		requester._get('dashboard/agreementPoints-inspection', function(data) {
-					
+			console.log('what do you have here? ',data)
 			var d3 = Plotly.d3;
 			var gd3 = d3.select('#agreementPoints')
 			var gd = gd3.node();
@@ -170,30 +170,46 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 
 			var yearsSplit = [];
 			var pointsAgree = [];
+			var pointsAgreeAdm = [];
 			var pointsNoAgree = [];
 
-			for(var i=0; i<lengthObj; i=i+2) {
+			for(var i=0; i<lengthObj; i=i+3) {
 				yearsSplit.push(years[i].split("_"))
 			}
 
+			var m=2;
 			var j=1;
 			var l=0;
 			for(var i=0; i<yearsSplit.length; i++) {
 				yearsSplit[i] = yearsSplit[i][0];
 				pointsAgree[i] = points[l];
+				pointsAgreeAdm[i] = points[m];
 				pointsNoAgree[i] = points[j];
 
-				l=l+2;
-				j=j+2;
-			}	
+				m=m+3;
+				l=l+3;
+				j=j+3;
+			}
 
 			var	pointsAgreement = {
-			  x: pointsAgree, 
-			  y: yearsSplit, 
+			  x: pointsAgree,
+			  y: yearsSplit,
 			  marker: {
 			  	color: 'rgba(32,128,72,0.8)'
 			  },
-			  name: 'Pontos com concordância', 
+			  name: 'Pontos com concordância',
+			  type: 'bar',
+		 	  orientation: 'h',
+			  hoverinfo: 'x'
+			};
+
+			var	pointsAgreementAdm = {
+			  x: pointsAgreeAdm,
+			  y: yearsSplit,
+			  marker: {
+			  	color: 'rgba(65,105,225,0.8)'
+			  },
+			  name: 'Pontos alterados',
 			  type: 'bar',
 		 	  orientation: 'h',
 			  hoverinfo: 'x'
@@ -211,7 +227,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			  hoverinfo: 'x'
 			};
 
-			var concordanciaDePontos = [pointsAgreement, pointsNoAgreement];
+			var concordanciaDePontos = [pointsAgreement, pointsAgreementAdm, pointsNoAgreement];
 			var layout = {
 			  height: 500,
 			  margin: {

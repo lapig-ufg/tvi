@@ -98,8 +98,11 @@
 					  		<td>{{p.name}}</td>
 					  	</tr>
 				  	</tbody>
-				  	<tfoot ng-hide="objConsolidated == []" style="font-size: 14px; font-weight: bold;">
-			  			<td ng-if='dataTab[0].checked'>Classe Consolidada</td>
+				  	<tfoot ng-if="objConsolidated.length < point.inspection.length" style="font-size: 14px; font-weight: bold;">
+			  			<td ng-hide='dataTab[0].checked'>Classe Consolidada</td>
+				  	</tfoot>
+				  	<tfoot ng-if="objConsolidated.length >= point.inspection.length" style="font-size: 14px; font-weight: bold;">
+			  			<td ng-show='dataTab[0].checked'>Classe Consolidada</td>
 				  	</tfoot>
 					</table>
 				</div>

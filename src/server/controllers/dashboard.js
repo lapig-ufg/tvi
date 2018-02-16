@@ -219,80 +219,33 @@ module.exports = function(app){
 	Dashboard.agreementPoints = function(request, response) {
 		var campaign = request.session.user.campaign;
 		var cursor = points.find({"campaign": campaign._id});
+		var result = {};
+		var initialYear = campaign.initialYear;
 
 		cursor.toArray(function(err, docs) {
-			var csvResult = [];
-
 			docs.forEach(function(doc) {
+
 				if(doc.userName.length == campaign.numInspec) {
-					var csvLines = {
-						'index': doc.index,
-						'lon': doc.lon,
-						'lat': doc.lat
-					};
+					for(var i=0; i<doc.classConsolidated.length; i++) {
+						if(!result[initialYear+i+'_pontosConc'])
+							result[initialYear+i+'_pontosConc'] = 0;
 
-					var landUses = {};
+						if(!result[initialYear+i+'_pontosConcAdm'])
+							result[initialYear+i+'_pontosConcAdm'] = 0;
 
-					for(var i=0; i < doc.userName.length; i++) {
-						
-						var userName = doc.userName[i];
-						var form = doc.inspection[i].form;
+						if(!result[initialYear+i+'_pontosNaoConc'])
+							result[initialYear+i+'_pontosNaoConc'] = 0;
 
-						form.forEach(function(f) {
-							
-							for( var year = f.initialYear; year <= f.finalYear; year++) {
-								
-								if(!landUses[year])
-									landUses[year] = [];
-
-								landUses[year].push(f.landUse);
-							}
-						});
-					}
-
-					for(var landUse in landUses) {
-						
-						var votes = {};
-
-						for (var i in landUses[landUse]) {
-							if(!votes[landUses[landUse][i]])
-								votes[landUses[landUse][i]] = 0
-
-							votes[landUses[landUse][i]] += 1;
-						}
-
-						for(var i in votes) {
-							if (votes[i] >= Math.ceil(campaign.numInspec / 2)) {
-								csvLines[landUse] = i;
-								csvLines[landUse+"_votes"] = votes[i];
-
-								break;
-							}
+						if(doc.classConsolidated[i] == 'Não consolidado') {
+							result[initialYear+i+'_pontosNaoConc']++;
+						} else if(doc.pointEdited == true) {
+							result[initialYear+i+'_pontosConcAdm']++;
+						} else{
+							result[initialYear+i+'_pontosConc']++;
 						}
 					}
-
-					csvResult.push(csvLines)
 				}
-			});
-
-			var result = {};
-		
-			for(var i=campaign.initialYear; i<=campaign.finalYear; i++) {
-				
-				if(!result[i+'_pontosConc'])
-					result[i+'_pontosConc'] = 0;
-
-				if(!result[i+'_pontosNaoConc'])
-					result[i+'_pontosNaoConc'] = 0;
-				
-				csvResult.forEach(function(data) {
-					if(data[i+"_votes"] >= Math.ceil(campaign.numInspec / 2)) {
-						result[i+'_pontosConc']++;
-					} else {
-						result[i+'_pontosNaoConc']++;
-					}
-				});
-			}
+			})
 
 			response.send(result);
 			response.end();

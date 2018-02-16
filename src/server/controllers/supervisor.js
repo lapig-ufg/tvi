@@ -52,7 +52,7 @@ module.exports = function(app) {
 					}
 				});
 
-				points.forEach(function (point) {					
+				points.forEach(function (point) {
 					var csvLines = {
 						'index': point.index,
 						'lon': point.lon,
@@ -78,6 +78,12 @@ module.exports = function(app) {
 								}
 							}							
 						})
+					}
+
+					if(point.pointEdited == true) {
+						csvLines['pointEdited'] = true
+					} else {
+						csvLines['pointEdited'] = '-'
 					}
 
 					csvResult.push(csvLines)

@@ -124,7 +124,6 @@ module.exports = function(app) {
 
 		points.findOne({ '_id':point._id }, function(err, pointDb) {
 			if(pointDb.userName.length == numberOfInspection - 1) {
-
 				var landUseInspections = {}
 				var classConsolidated = []
 
@@ -149,22 +148,27 @@ module.exports = function(app) {
 				}
 
 				for(var year=user.campaign.initialYear; year<= user.campaign.finalYear; year++) {
-					
 					var landUseCount = {}
 
 					for(var i=0; i < landUseInspections[year].length; i++) {
 						var landUse = landUseInspections[year][i]
+	
 						if(!landUseCount[landUse])
 							landUseCount[landUse]=0
 
 						landUseCount[landUse]++
 					}
 
+					var objCount = Object.keys(landUseCount).length;
+					var countInt = 0;
 
 					for(var landUse in landUseCount) {
-						if(landUseCount[landUse] >= numberOfInspection/2) {
+						countInt++;
+
+						if(landUseCount[landUse] > numberOfInspection/2) {
 							classConsolidated.push(landUse)
-						} else {
+
+						} else if(objCount == countInt) {
 							classConsolidated.push("Não consolidado")
 						}
 					}

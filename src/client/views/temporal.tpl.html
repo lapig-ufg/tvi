@@ -9,8 +9,8 @@ $rootScope.user.campaign.numInspec<div class="container-fluid">
 						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
 						<fieldset>
 							<legend>Uso e Cobertura da Terra:</legend>
-				  		<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn btn-link pull-left" value="Alterar Período">
-				  		<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn btn-link pull-left" value="Google Earth">
+							<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning" value="Alterar Período">
+			  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success" value="Google Earth">
 						</fieldset>
 			  	</div>
 				</div>
@@ -23,8 +23,8 @@ $rootScope.user.campaign.numInspec<div class="container-fluid">
 	 						<label style="margin: 10px;">Pixel de Borda: <input type="checkbox" ng-model="checkBoxPixel" ng-change="pixelBorder(checkBoxPixel)" ng-init="checkBoxPixel=false"></label>
 	 						<span ng-if="checkBoxPixel"></span>
 						</form>
-						<input style="margin-right: 25px;" type="button" class="btn pull-right btn-success" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
-						<input type="button" class="btn btn-danger pull-left" ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
+						<input style="margin-left: 0px;" type="button" class="btn pull-left btn-success" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
+						<input style="margin-right: 23px;" type="button" class="btn btn-danger pull-right" ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
 						<div class="pull-right button-align">
 	            <b>{{counter}} s</b>
 	          </div>
