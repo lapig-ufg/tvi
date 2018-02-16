@@ -177,18 +177,18 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				yearsSplit.push(years[i].split("_"))
 			}
 
-			var m=2;
-			var j=1;
 			var l=0;
+			var j=1;
+			var m=2;
 			for(var i=0; i<yearsSplit.length; i++) {
 				yearsSplit[i] = yearsSplit[i][0];
 				pointsAgree[i] = points[l];
-				pointsAgreeAdm[i] = points[m];
 				pointsNoAgree[i] = points[j];
+				pointsAgreeAdm[i] = points[m];
 
-				m=m+3;
 				l=l+3;
 				j=j+3;
+				m=m+3;
 			}
 
 			var	pointsAgreement = {
@@ -203,31 +203,31 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			  hoverinfo: 'x'
 			};
 
-			var	pointsAgreementAdm = {
-			  x: pointsAgreeAdm,
+			var pointsNoAgreement = {
+			  x: pointsNoAgree,
 			  y: yearsSplit,
 			  marker: {
 			  	color: 'rgba(65,105,225,0.8)'
 			  },
 			  name: 'Pontos alterados',
 			  type: 'bar',
-		 	  orientation: 'h',
-			  hoverinfo: 'x'
-			};
-
-			var pointsNoAgreement = {
-			  x: pointsNoAgree, 
-			  y: yearsSplit,
-			  marker: {
-			  	color: 'rgba(255,127,14,0.8)'
-			  },
-			  name: 'Pontos sem concordância', 
-			  type: 'bar',
 			  orientation: 'h',
 			  hoverinfo: 'x'
 			};
 
-			var concordanciaDePontos = [pointsAgreement, pointsAgreementAdm, pointsNoAgreement];
+			var	pointsAgreementAdm = {
+			  x: pointsAgreeAdm,
+			  y: yearsSplit,
+			  marker: {
+			  	color: 'rgba(255,127,14,0.8)'
+			  },
+			  name: 'Pontos sem concordância',
+			  type: 'bar',
+		 	  orientation: 'h',
+			  hoverinfo: 'x'
+			};
+
+			var concordanciaDePontos = [pointsAgreement, pointsNoAgreement, pointsAgreementAdm];
 			var layout = {
 			  height: 500,
 			  margin: {
