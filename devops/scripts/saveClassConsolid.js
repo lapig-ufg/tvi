@@ -28,7 +28,7 @@ db.getCollection('points').find({}).forEach(function(point) {
 
     var objClassConsolid = {}
     var countInt = 0
-    
+
     if (tempObj[1]) {
         if (point.inspection.length == numInspec[0]) { 
             print(point._id, 'classConsolidated')

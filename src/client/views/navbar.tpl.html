@@ -24,12 +24,10 @@
         <div class="col-md-4" ng-show="user" style="float: left">
           <h3><center><span style="color: #FFFFFF"> {{user.campaign._id}} </span></center></h3> 
         </div>  
-        <label class="col-md-4">
-          <div class="pull-right" style="margin-top: 2px; margin-right: -30px">
-            <button type="button" class="btn btn-success" href="#" ng-click="downloadCSV()" style="color:white">Baixar CSV</button>
-            <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">Sair</button>
-          </div>
-        </label>
+        <div class="col-md-4 rightNavBar" style="float: right; margin-right: -22px; margin-top: 2px;">
+          <button type="button" class="btn btn-success" href="#" ng-click="downloadCSV()" style="color:white">Baixar CSV</button>
+          <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">Sair</button>
+        </div>
       </div>
     </div>
   </nav>

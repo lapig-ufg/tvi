@@ -69,6 +69,42 @@ body {
   }
 }
 
+@media (min-width: 800px) {
+  .rightNavBar {
+    padding-left: 100px !important;
+  }
+}
+
+@media (min-width: 993px) {
+  .rightNavBar {
+    padding-left: 147px !important;
+  }
+}
+
+@media (min-width: 1120px) {
+  .rightNavBar {
+    padding-left: 190px !important;
+  }
+}
+
+@media (min-width: 1430px) {
+  .rightNavBar {
+    padding-left: 293px !important;
+  }
+}
+
+@media (min-width: 1669px) {
+  .rightNavBar {
+    padding-left: 372px !important;
+  }
+}
+
+@media (min-width: 1910px) {
+  .rightNavBar {
+    padding-left: 453px !important;
+  }
+}
+
 @media (min-width: 1150px) {
   .tableLargeLeft {
     width: 20%;

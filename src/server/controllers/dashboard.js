@@ -236,10 +236,10 @@ module.exports = function(app){
 						if(!result[initialYear+i+'_pontosNaoConc'])
 							result[initialYear+i+'_pontosNaoConc'] = 0;
 
-						if(doc.classConsolidated[i] == 'Não consolidado') {
-							result[initialYear+i+'_pontosNaoConc']++;
-						} else if(doc.pointEdited == true) {
+						if(doc.pointEdited == true) {
 							result[initialYear+i+'_pontosConcAdm']++;
+						} else if(doc.classConsolidated[i] == 'Não consolidado') {
+							result[initialYear+i+'_pontosNaoConc']++;
 						} else{
 							result[initialYear+i+'_pontosConc']++;
 						}
