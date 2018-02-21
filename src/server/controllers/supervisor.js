@@ -59,6 +59,7 @@ module.exports = function(app) {
 						'lat': point.lat
 					}
 
+					console.log(point)
 					for(var colNames in objColNames) {
 						csvLines[colNames] = '-';
 					}
@@ -71,9 +72,14 @@ module.exports = function(app) {
 									if(col == year+"_"+point.userName[i]) {
 										csvLines[col] = inspec.landUse
 
-										if(!csvLines['consolidated_'+year])
-											csvLines['consolidated_'+year] = point.classConsolidated[count]
+										if(!csvLines['consolidated_'+year]) {
+											if(point.classConsolidated) {
+												csvLines['consolidated_'+year] = point.classConsolidated[count]
+											} else {
+												csvLines['consolidated_'+year] = '-'
+											}
 											count++;
+										}
 									}
 								}
 							}							

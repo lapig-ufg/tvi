@@ -148,7 +148,8 @@ module.exports = function(app) {
 				}
 
 				for(var year=user.campaign.initialYear; year<= user.campaign.finalYear; year++) {
-					var landUseCount = {}
+					var landUseCount = {};
+					var flagConsolid = false;
 
 					for(var i=0; i < landUseInspections[year].length; i++) {
 						var landUse = landUseInspections[year][i]
@@ -159,20 +160,21 @@ module.exports = function(app) {
 						landUseCount[landUse]++
 					}
 
-					var objCount = Object.keys(landUseCount).length;
-					var countInt = 0;
+					var numElemObj = Object.keys(landUseCount).length;
+					var countNumElem = 0;
 
 					for(var landUse in landUseCount) {
-						countInt++;
+						countNumElem++
 
-						if(landUseCount[landUse] > numberOfInspection/2) {
+						if(landUseCount[landUse] > numberOfInspection/2 && flagConsolid == false) {
+							flagConsolid = true;
 							classConsolidated.push(landUse)
 
-						} else if(objCount == countInt) {
+						} else if(numElemObj == countNumElem && flagConsolid == false) {
+							flagConsolid = true;
 							classConsolidated.push("Não consolidado")
 						}
 					}
-
 				}
 
 				updateOperation['$set'] = { "classConsolidated": classConsolidated };

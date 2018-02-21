@@ -255,6 +255,7 @@ module.exports = function(app){
 	Dashboard.landCoverPoints = function(request, response) {
 		var campaign = request.session.user.campaign;
 		var cursor = points.find({"campaign": campaign._id});
+		//var landUses = campaign.landUse
 
 		cursor.toArray(function(err, docs) {
 			var csvResult = [];
@@ -266,9 +267,9 @@ module.exports = function(app){
 						'lon': doc.lon,
 						'lat': doc.lat
 					};
-					
+
 					var landUses = {};
-					
+
 					for(var i=0; i < doc.userName.length; i++) {
 						
 						var userName = doc.userName[i];
@@ -277,7 +278,7 @@ module.exports = function(app){
 						form.forEach(function(f) {
 							
 							for( var year = f.initialYear; year <= f.finalYear; year++) {
-								
+
 								if(!landUses[year])
 									landUses[year] = [];
 
@@ -287,7 +288,7 @@ module.exports = function(app){
 					}
 
 					for(var landUse in landUses) {
-						
+
 						var votes = {};
 
 						for (var i in landUses[landUse]) {
@@ -334,6 +335,7 @@ module.exports = function(app){
 				}
 			});
 			
+			console.log('akii: ',meanCover)
 			response.send(meanCover);
 			response.end();
 		});

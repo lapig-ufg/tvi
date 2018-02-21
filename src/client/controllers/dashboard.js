@@ -257,6 +257,8 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 
 		requester._get('dashboard/landCoverPoints-inspection', function(data) {
 
+			console.log('data: ',data)
+
 			var d3 = Plotly.d3;
 			var gd3 = d3.select('#coverPoints')
 			var gd = gd3.node();
@@ -281,7 +283,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			}];
 			
 			var layout = {
-			  height: 400,
+			  height: 500,
 			  margin: {
 			  	l: 125,
 			  	pad: 0

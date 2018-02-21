@@ -105,6 +105,12 @@ body {
   }
 }
 
+@media (min-width: 2550px) {
+  .rightNavBar {
+    padding-left: 665px !important;
+  }
+}
+
 @media (min-width: 1150px) {
   .tableLargeLeft {
     width: 20%;
