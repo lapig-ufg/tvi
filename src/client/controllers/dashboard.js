@@ -307,13 +307,16 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		}
 
 		requester._get('dashboard/memberStatus-inspection', function(data) {
-
+			
 			for(var key in data) {
-				var dateTemp = data[key].dateLastPoint.split('T')[0];
-				dateTemp = dateTemp.split('-');
-				var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
 
-				data[key].dateLastPoint = dateFinal
+				if(data[key].dateLastPoint) {					
+					var dateTemp = data[key].dateLastPoint.split('T')[0];
+					dateTemp = dateTemp.split('-');
+					var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
+
+					data[key].dateLastPoint = dateFinal
+				}
 			}
 
 			$scope.tableStatus = data;
@@ -321,13 +324,16 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 
 		$scope.setTable = function() {
 			requester._get('dashboard/memberStatus-inspection', function(data) {
-	
-				for(var key in data) {
-					var dateTemp = data[key].dateLastPoint.split('T')[0];
-					dateTemp = dateTemp.split('-');
-					var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
 
-					data[key].dateLastPoint = dateFinal
+				for(var key in data) {
+
+					if(data[key].dateLastPoint) {	
+						var dateTemp = data[key].dateLastPoint.split('T')[0];
+						dateTemp = dateTemp.split('-');
+						var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
+
+						data[key].dateLastPoint = dateFinal
+					}
 				}
 	
 				$scope.tableStatus = data;

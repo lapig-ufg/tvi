@@ -181,7 +181,6 @@ module.exports = function(app) {
 		var uf = request.param("uf");
 		var timePoint = request.param("timeInspection");
 		var agreementPoint = request.param("agreementPoint");
-		//var sortIndex = request.param("sortIndex");
 
 		var filter = {
 			"campaign": campaign._id
@@ -214,29 +213,55 @@ module.exports = function(app) {
 		}
 
 		if(agreementPoint) {
-			var pipeline = [
-				{$match: filter},
-		    {$project: {
-		      consolidated: {
-		        $size: {
-		          $ifNull: [
-		            {
-		              $filter: {
-		                input: "$classConsolidated",
-		                as: "consolidated",
-		                cond: { $and: [
-	                    { $eq: ['$$consolidated', 'Não consolidado']}
-		                ]}                
-		              }
-		            },
-		            []
-		          ]
-		        }
-		      }
-		    }},
-		    {$sort: {'consolidated': -1}},
-		    {$skip: index - 1}
-			]
+			if(userName || !landUse) {
+				var pipeline = [
+					{$match: filter},
+			    {$project: {
+			      consolidated: {
+			        $size: {
+			          $ifNull: [
+			            {
+			              $filter: {
+			                input: "$classConsolidated",
+			                as: "consolidated",
+			                cond: { $and: [
+		                    { $eq: ['$$consolidated', 'Não consolidado']}
+			                ]}                
+			              }
+			            },
+			            []
+			          ]
+			        }
+			      }
+			    }},
+			    {$sort: {'consolidated': -1}},
+			    {$skip: index - 1}
+				]
+			} else {
+				var pipeline = [
+					{$match: filter},
+			    {$project: {
+			      consolidated: {
+			        $size: {
+			          $ifNull: [
+			            {
+			              $filter: {
+			                input: "$classConsolidated",
+			                as: "consolidated",
+			                cond: { $and: [
+		                    { $eq: ['$$consolidated', landUse]}
+			                ]}                
+			              }
+			            },
+			            []
+			          ]
+			        }
+			      }
+			    }},
+			    {$sort: {'consolidated': -1}},
+			    {$skip: index - 1}
+				]
+			}
 		}
 
 		if(pipeline == undefined) {
@@ -264,7 +289,6 @@ module.exports = function(app) {
 					pointTimeTotal += timeInspectionUser.counter;
 				})
 
-				//var meanPointTotal = pointTimeTotal/newPoint.userName.length;
 				pointTimeTotal = pointTimeTotal/newPoint.userName.length;
 				
 				var map = function() {
@@ -343,8 +367,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		var biome = request.param("biome");
 		var uf = request.param("uf");
-		/*var timePoint = request.param("timeInspection");*/
-
+		
 		var filter = {
 			"campaign": campaign._id
 		}
@@ -365,10 +388,6 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
-		/*if(timePoint) {
-			filter["timeInspection"] = timePoint;
-		}*/
-
 		pointsCollection.distinct('inspection.form.landUse', filter, function(err, docs) {
 
 			response.send(docs);
@@ -382,8 +401,7 @@ module.exports = function(app) {
 		//var userName = request.param("userName");
 		var biome = request.param("biome");
 		var uf = request.param("uf");
-		/*var timePoint = request.param("timeInspection");*/
-
+		
 		var filter = {
 			"campaign": campaign._id
 		}
@@ -404,10 +422,6 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
-		/*if(timePoint) {
-			filter["timeInspection"] = timePoint;
-		}*/
-
 		pointsCollection.distinct('userName', filter, function(err, docs) {
 			response.send(docs);
 			response.end();
@@ -421,8 +435,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		//var biome = request.param("biome");
 		var uf = request.param("uf");
-		/*var timePoint = request.param("timeInspection");*/
-
+		
 		var filter = {
 			"campaign": campaign._id
 		}
@@ -443,10 +456,6 @@ module.exports = function(app) {
 			filter["uf"] = uf;
 		}
 
-		/*if(timePoint) {
-			filter["timeInspection"] = timePoint;
-		}*/
-
 		pointsCollection.distinct('biome', filter, function(err, docs) {
 			
 			result = docs.filter(function(element) {
@@ -464,8 +473,7 @@ module.exports = function(app) {
 		var userName = request.param("userName");
 		var biome = request.param("biome");
 		//var uf = request.param("uf");
-		/*var timePoint = request.param("timeInspection");*/
-		
+				
 		var filter = {
 			"campaign": campaign._id
 		};
@@ -484,10 +492,6 @@ module.exports = function(app) {
 
 		/*if(uf) {
 			filter["uf"] = uf;
-		}*/
-
-		/*if(timePoint) {
-			filter["timeInspection"] = timePoint;
 		}*/
 
 		pointsCollection.distinct('uf', filter, function(err, docs) {
