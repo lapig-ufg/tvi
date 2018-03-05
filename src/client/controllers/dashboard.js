@@ -256,9 +256,6 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		});
 
 		requester._get('dashboard/landCoverPoints-inspection', function(data) {
-
-			console.log('data: ',data)
-
 			var d3 = Plotly.d3;
 			var gd3 = d3.select('#coverPoints')
 			var gd = gd3.node();
@@ -304,5 +301,38 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});	
 			chartsGd.push(gd);
 		});
+
+		function reverse(element) {
+			return (element === '') ? '' : reverse(element.substr(1)) + element.charAt(0);
+		}
+
+		requester._get('dashboard/memberStatus-inspection', function(data) {
+
+			for(var key in data) {
+				var dateTemp = data[key].dateLastPoint.split('T')[0];
+				dateTemp = dateTemp.split('-');
+				var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
+
+				data[key].dateLastPoint = dateFinal
+			}
+
+			$scope.tableStatus = data;
+		})
+
+		$scope.setTable = function() {
+			requester._get('dashboard/memberStatus-inspection', function(data) {
+	
+				for(var key in data) {
+					var dateTemp = data[key].dateLastPoint.split('T')[0];
+					dateTemp = dateTemp.split('-');
+					var dateFinal = dateTemp[2]+'-'+dateTemp[1]+'-'+dateTemp[0];
+
+					data[key].dateLastPoint = dateFinal
+				}
+	
+				$scope.tableStatus = data;
+			})
+		}
+
 	});
 });

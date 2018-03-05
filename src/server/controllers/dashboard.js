@@ -3,6 +3,7 @@ module.exports = function(app){
 
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
+	var status = app.repository.collections.status;
 
 	var getNames = function(userNames) {
 		var names = {}
@@ -250,7 +251,7 @@ module.exports = function(app){
 			response.send(result);
 			response.end();
 		});
-	}
+	}	
 
 	Dashboard.landCoverPoints = function(request, response) {
 		var campaign = request.session.user.campaign;
@@ -335,10 +336,31 @@ module.exports = function(app){
 				}
 			});
 			
-			console.log('akii: ',meanCover)
 			response.send(meanCover);
 			response.end();
 		});
+	}
+
+	Dashboard.memberStatus = function(request, response) {
+		var campaign = request.session.user.campaign;
+		var result = {};
+		var count = 0;
+
+		status.count({'campaign': campaign._id}, function(error, numDocs) {
+			status.find({'campaign': campaign._id}).forEach(function(colStatus) {
+				count++;
+
+				if(count < numDocs) {
+					result[count] = colStatus
+
+				} else {
+					result[count] = colStatus
+
+					response.send(result);
+					response.end();
+				}
+			})
+  	})
 	}
 
 	return Dashboard;

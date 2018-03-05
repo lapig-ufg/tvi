@@ -6,6 +6,7 @@ module.exports = function(app) {
 	var Login = {};
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
+	var statusLogin = app.repository.collections.status;
 
 	Login.autenticateUser = function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
@@ -44,6 +45,10 @@ module.exports = function(app) {
 						"type": "inspector"
 					};
 
+					statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
+						statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Online"}})
+					})
+
 					if(name == 'admin' && senha == 'tviadmintvi') {
 						request.session.user.type = 'supervisor';
 					}
@@ -62,6 +67,10 @@ module.exports = function(app) {
 		var user = request.session.user;
 
 		if(user.type == 'inspector') {
+
+			statusLogin.findOne({"_id": user.name+"_"+user.campaign._id}, function(err, userPoint) {
+				statusLogin.update({"_id": user.name+"_"+user.campaign._id}, {$set:{"status":"Offline"}})
+			})
 
 			points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
 				
@@ -83,10 +92,32 @@ module.exports = function(app) {
 		}
 	}
 
+	app.on('socket-connect', function(session) {
+
+		if(session && session.user && session.user.type == 'inspector') {
+
+			var name = session.user.name;
+			var campaign = session.user.campaign;
+
+			statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
+				statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Online"}})
+			})
+		}
+	})
 
 	app.on('socket-disconnect', function(session) {
+
 		if(session && session.user && session.user.type == 'inspector') {
+			
+			var name = session.user.name;
+			var campaign = session.user.campaign;
+
+			statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
+				statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
+			})
+
 			points.update({"_id": session.currentPointId}, { $inc: { underInspection: -1}}, function(err, result) {
+				//console.log('result: ',result)
 			})
 		}
 	})

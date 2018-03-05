@@ -7,6 +7,7 @@ module.exports = function(app) {
 	var Points = {};
 	var points = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
+	var status = app.repository.collections.status;
 	//var campaigns = app.repository.collections.campaign;
 
 	var getImageDates = function(path, row, callback) {
@@ -178,11 +179,23 @@ module.exports = function(app) {
 				}
 
 				updateOperation['$set'] = { "classConsolidated": classConsolidated };
-
 			}
 
 			points.update({ '_id': point._id }, updateOperation, function(err, item) {
 				findPoint(user.campaign, user.name, function(result) {
+
+					var statsUser = status.findOne({'name': user.name})
+
+
+					status.updateOne({"_id": user.name+"_"+pointDb.campaign}, {$set:{
+						"campaign": pointDb.campaign,
+						"status": "Online",
+						"name": user.name,
+						"atualPoint": result.point._id,
+						"dateLastPoint": point.inspection.fillDate						
+					}}, {
+						upsert: true
+					})
 
 					request.session.currentPointId = result.point._id;
 					response.send(result);

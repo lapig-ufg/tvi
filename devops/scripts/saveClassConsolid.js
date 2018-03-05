@@ -48,7 +48,6 @@ db.getCollection('points').find({}).forEach(function(point) {
                 for(var key in objClassConsolid) {
                     countInt++
 
-                    //Alterado condição de (>=) para (>), evitando campanhas com numero par dando problema na consolidação
                     if(objClassConsolid[key] > numInspec[0]/2) {
                         flagConsolid = true
                         classConsolidated.push(key)
@@ -70,50 +69,3 @@ db.getCollection('points').find({}).forEach(function(point) {
         }
     }
 })
-
-
-
-
-/* ------------ADD LÓGICA PARA CONTAGEM DE NÚMERO DE VOTOS NO SCRIPT-------
-
-    var landUses = {};
-    
-    for(var i=0; i < point.userName.length; i++) {
-        
-        var userName = point.userName[i];
-        var form = point.inspection[i].form;
-
-        form.forEach(function(f) {
-            for( var year = f.initialYear; year <= f.finalYear; year++) {
-                csvLines[year+"_"+userName] = f.landUse
-                
-                if(!landUses[year])
-                    landUses[year] = [];
-
-                landUses[year].push(f.landUse);
-            }
-        });
-    }
-
-    for(var landUse in landUses) {
-        
-        var votes = {};
-
-        for (var i in landUses[landUse]) {
-            if(!votes[landUses[landUse][i]])
-                votes[landUses[landUse][i]]=0
-
-            votes[landUses[landUse][i]] += 1;
-        }
-
-        for(var i in votes) {
-            
-            if (votes[i] >= Math.ceil(landUses[landUse].length / 2)) {
-                csvLines[landUse+"_majority"] = i;
-                csvLines[landUse+"_majority_votes"] = votes[i];
-                break;
-            }
-
-        }
-    }
-*/

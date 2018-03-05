@@ -12,4 +12,5 @@ module.exports = function (app) {
 	app.get('/service/dashboard/cachedPoints-inspection', dashboard.cachedPoints);
 	app.get('/service/dashboard/agreementPoints-inspection', dashboard.agreementPoints);
 	app.get('/service/dashboard/landCoverPoints-inspection', dashboard.landCoverPoints);	
+	app.get('/service/dashboard/memberStatus-inspection', dashboard.memberStatus);
 }

@@ -59,7 +59,6 @@ module.exports = function(app) {
 						'lat': point.lat
 					}
 
-					console.log(point)
 					for(var colNames in objColNames) {
 						csvLines[colNames] = '-';
 					}
@@ -82,7 +81,7 @@ module.exports = function(app) {
 										}
 									}
 								}
-							}							
+							}
 						})
 					}
 
@@ -318,13 +317,10 @@ module.exports = function(app) {
 
 					creatPoint(point, function(result) {
 						pointsCollection.count(filter, function(err, count) {
-							//console.log('pointTeste: ',point)
-							//updatedClassConsolidated(point._id, function(err, update) {
 
-								result.totalPoints = count
-								response.send(result)
-								response.end()
-							//})
+							result.totalPoints = count
+							response.send(result)
+							response.end()
 						})
 					})
 				})
@@ -338,7 +334,6 @@ module.exports = function(app) {
 
 		pointsCollection.update({'_id': pointId}, {$set:{'classConsolidated': classArray, 'pointEdited': true}})
 
-		//getPoint()
 		response.end()
 	}
 
