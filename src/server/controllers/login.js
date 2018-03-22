@@ -72,15 +72,12 @@ module.exports = function(app) {
 				statusLogin.update({"_id": user.name+"_"+user.campaign._id}, {$set:{"status":"Offline"}})
 			})
 
-			points.update({"_id": request.session.currentPointId}, { $inc: { underInspection: -1}}, function(point) {
-				
-				delete request.session.user;
-				delete request.session.name;
-				delete request.session.currentPointId;
+			delete request.session.user;
+			delete request.session.name;
+			delete request.session.currentPointId;
 
-				response.write("deslogado");
-				response.end();
-			});
+			response.write("deslogado");
+			response.end();
 
 		} else {
 			
@@ -114,10 +111,6 @@ module.exports = function(app) {
 
 			statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
 				statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
-			})
-
-			points.update({"_id": session.currentPointId}, { $inc: { underInspection: -1}}, function(err, result) {
-				//console.log('result: ',result)
 			})
 		}
 	})

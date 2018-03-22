@@ -61,7 +61,6 @@ module.exports = function(app) {
 
 		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 			if(point) {
-				point.underInspection += 1;
 				points.save(point, function() {
 					points.count(totalFilter, function(err, total) {
 						points.count(countFilter, function (err, count) {
@@ -82,7 +81,7 @@ module.exports = function(app) {
 				});
 			} else {
 				points.count(totalFilter, function(err, total) {
-					points.count(countFilter, function (err, count) {
+					points.count(countFilter, function(err, count) {
 
 						var result = {};
 						result['point'] = {};
@@ -112,99 +111,120 @@ module.exports = function(app) {
 		var point = request.body.point;
 		var user = request.session.user;
 
-		point.inspection.fillDate = new Date();
+		var splitName = point._id;
+		splitName = splitName.split("_");
+		splitName = splitName[1];
+		var idPoint = user.name+'_'+splitName;
 
-		var numberOfInspection = user.campaign.numInspec;
+		status.updateOne({"_id": user.name+"_"+splitName}, {$set:{
+			"campaign": point._id,
+			"status": "Online",
+			"name": user.name,
+		}}, {
+			upsert: true
+		})
 
-		var updateOperation = {
-			'$push': {
-				"inspection": point.inspection,
-		  	"userName": user.name
-		  }
-		};
+		points.update({'_id': point._id}, function(err, pointAtt) {
+			pointAtt.underInspection += 1;
+		})
 
-		points.findOne({ '_id':point._id }, function(err, pointDb) {
-			if(pointDb.userName.length == numberOfInspection - 1) {
-				var landUseInspections = {}
-				var classConsolidated = []
+		status.findOne({'_id': idPoint}, function(err, infoInspec) {
 
-				pointDb.inspection.push(point.inspection)
-
-				for(var i in pointDb.inspection) {
-					
-					var inspection = pointDb.inspection[i]
-					for(var j in inspection.form) {
-
-						var form = inspection.form[j]
-						for(var year=form.initialYear; year<= form.finalYear; year++) {
-
-							if(!landUseInspections[year])
-								landUseInspections[year] = [];
-
-							landUseInspections[year].push(form.landUse)
-						}
-
-					}
-
-				}
-
-				for(var year=user.campaign.initialYear; year<= user.campaign.finalYear; year++) {
-					var landUseCount = {};
-					var flagConsolid = false;
-
-					for(var i=0; i < landUseInspections[year].length; i++) {
-						var landUse = landUseInspections[year][i]
-	
-						if(!landUseCount[landUse])
-							landUseCount[landUse]=0
-
-						landUseCount[landUse]++
-					}
-
-					var numElemObj = Object.keys(landUseCount).length;
-					var countNumElem = 0;
-
-					for(var landUse in landUseCount) {
-						countNumElem++
-
-						if(landUseCount[landUse] > numberOfInspection/2 && flagConsolid == false) {
-							flagConsolid = true;
-							classConsolidated.push(landUse)
-
-						} else if(numElemObj == countNumElem && flagConsolid == false) {
-							flagConsolid = true;
-							classConsolidated.push("Não consolidado")
-						}
-					}
-				}
-
-				updateOperation['$set'] = { "classConsolidated": classConsolidated };
+			if(infoInspec.atualPoint == null) {
+				infoInspec.atualPoint = point._id
+				points.update({'_id': infoInspec.atualPoint}, {'$inc':{'underInspection': 1}})
 			}
 
-			points.update({ '_id': point._id }, updateOperation, function(err, item) {
-				findPoint(user.campaign, user.name, function(result) {
+			point.inspection.fillDate = new Date();
 
-					var statsUser = status.findOne({'name': user.name})
+			var numberOfInspection = user.campaign.numInspec;
 
+			var updateOperation = {
+				'$push': {
+					"inspection": point.inspection,
+			  	"userName": user.name
+			  }
+			};
 
-					status.updateOne({"_id": user.name+"_"+pointDb.campaign}, {$set:{
-						"campaign": pointDb.campaign,
-						"status": "Online",
-						"name": user.name,
-						"atualPoint": result.point._id,
-						"dateLastPoint": point.inspection.fillDate						
-					}}, {
-						upsert: true
-					})
+			points.findOne({ '_id': infoInspec.atualPoint }, function(err, pointDb) {
+				if(pointDb.userName.length == numberOfInspection - 1) {
+					var landUseInspections = {}
+					var classConsolidated = []
 
-					request.session.currentPointId = result.point._id;
-					response.send(result);
-					response.end();
+					pointDb.inspection.push(point.inspection)
+
+					for(var i in pointDb.inspection) {
+						
+						var inspection = pointDb.inspection[i]
+						for(var j in inspection.form) {
+
+							var form = inspection.form[j]
+							for(var year=form.initialYear; year<= form.finalYear; year++) {
+
+								if(!landUseInspections[year])
+									landUseInspections[year] = [];
+
+								landUseInspections[year].push(form.landUse)
+							}
+
+						}
+
+					}
+
+					for(var year=user.campaign.initialYear; year<= user.campaign.finalYear; year++) {
+						var landUseCount = {};
+						var flagConsolid = false;
+
+						for(var i=0; i < landUseInspections[year].length; i++) {
+							var landUse = landUseInspections[year][i]
+		
+							if(!landUseCount[landUse])
+								landUseCount[landUse]=0
+
+							landUseCount[landUse]++
+						}
+
+						var numElemObj = Object.keys(landUseCount).length;
+						var countNumElem = 0;
+
+						for(var landUse in landUseCount) {
+							countNumElem++
+
+							if(landUseCount[landUse] > numberOfInspection/2 && flagConsolid == false) {
+								flagConsolid = true;
+								classConsolidated.push(landUse)
+
+							} else if(numElemObj == countNumElem && flagConsolid == false) {
+								flagConsolid = true;
+								classConsolidated.push("Não consolidado")
+							}
+						}
+					}
+
+					updateOperation['$set'] = { "classConsolidated": classConsolidated };
+				}
+
+				points.update({ '_id': pointDb._id }, updateOperation, function(err, item) {
+					findPoint(user.campaign, user.name, function(result) {
+
+						status.updateOne({"_id": user.name+"_"+pointDb.campaign}, {$set:{
+							"campaign": pointDb.campaign,
+							"status": "Online",
+							"name": user.name,
+							"atualPoint": result.point._id,
+							"dateLastPoint": point.inspection.fillDate
+						}}, {
+							upsert: true
+						})
+
+						request.session.currentPointId = result.point._id;
+						response.send(result);
+						response.end();
+					});
 				});
+
 			});
-
 		});
-
 	};
 
 	return Points;
