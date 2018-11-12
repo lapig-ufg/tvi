@@ -11,7 +11,7 @@ module.exports = function(app) {
 	var Cache = {};
 
 	Cache.get = function(cacheKey, callback) {
-		var path = config.imgs+cacheKey+'/';
+		var path = config.imgDir+cacheKey+'/';
 		var img = cacheKey.slice(24, 29);
 		fs.readFile(path+img, function (err,data) {
 		  if (!err && data) {
@@ -24,8 +24,8 @@ module.exports = function(app) {
 
 	Cache.set = function(cacheKey, data, callback){
 		cacheKey = cacheKey.substr(1);
-		exec('mkdir -p '+config.imgs+cacheKey, function(err, stdout, stderr){
-			var path = config.imgs+cacheKey+'/';
+		exec('mkdir -p '+config.imgDir+cacheKey, function(err, stdout, stderr){
+			var path = config.imgDir+cacheKey+'/';
 			var img = cacheKey.slice(24, 29);	
 			fs.writeFile(path+img, data, function(err) {
 			  if(err) {
@@ -51,8 +51,6 @@ module.exports = function(app) {
  		}
 
  		var getRequestTasks = function(point, campaign) {
- 			var xtile = long2tile(point.lon, zoom);
- 			var ytile = lat2tile(point.lat, zoom);
 
  			var satellite
  			var requestTasks = [];
@@ -62,27 +60,24 @@ module.exports = function(app) {
 			var finalYear = campaign.finalYear;
 
 			periods.forEach(function(period){
-				for (var x = (xtile-1); x <= (xtile+1); x++) {
-					for (var y = (ytile-1); y <= (ytile+1); y++) {
-			 			for (var year = initialYear; year <= finalYear; year++) {
+				for (var year = initialYear; year <= finalYear; year++) {
 			 				
-			 				satellite = 'L7';
-							if(year > 2012) { 
-								satellite = 'L8'
-							} else if(year > 2011) {
-								satellite = 'L7'
-							} else if(year > 2003  || year < 2000) {
-								satellite = 'L5'
-							}
-							
-							var url = "http://localhost:" + config.port + "/map/"+satellite+"_"+year+"_"+period+"/"+zoom+"/"+x+"/"+y;
-							urls.push(url);
-						}
+	 				satellite = 'L7';
+					if(year > 2012) { 
+						satellite = 'L8'
+					} else if(year > 2011) {
+						satellite = 'L7'
+					} else if(year > 2003  || year < 2000) {
+						satellite = 'L5'
 					}
+
+					layerId = satellite+"_"+year+"_"+period
+					pointId = point._id
+
+					var url = "http://localhost:" + config.port + "/image/"+layerId+"/"+pointId;
+					urls.push(url);
 				}
 			});
-
-			//console.log(urls)
 
 			urls.forEach(function(url) {
 				requestTasks.push(function(next) {

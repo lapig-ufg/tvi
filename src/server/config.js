@@ -7,10 +7,12 @@ module.exports = function(app) {
 		"clientDir": appRoot + "/../client",
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
-		"imgs": appRoot + "/images/",
+		"imgDir": appRoot + "/images/",
+		"imgGDALTmpDir": "/tmp/gdalwmscache/",
+		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"cache": {
-			"parallelRequestsBusyTime": 40,
-			"parallelRequestsDawnTime": 40
+			"parallelRequestsBusyTime": 9,
+			"parallelRequestsDawnTime": 18
 		},
 		"mongo": {
 			"host": "localhost",
@@ -45,7 +47,7 @@ module.exports = function(app) {
 				{
 					"name": "populateCache",
 					"cron": '0 0 20 1 0 *',
-					"runOnAppStart": false,
+					"runOnAppStart": true,
 					"params": {}
 				}
 			]
@@ -57,7 +59,7 @@ module.exports = function(app) {
 		config["mongo"]["port"] = "27017";
 		config.jobs.toRun[0].runOnAppStart = true;
 		config.jobs.toRun[1].runOnAppStart = true;
-		config["imgs"] = "/data/cache-tvi/";
+		config["imgDir"] = "/data/tvi-imgs/";
 	}
 
 	return config;
