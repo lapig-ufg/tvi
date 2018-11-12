@@ -20,8 +20,7 @@ $rootScope.user.campaign.numInspec<div class="container-fluid">
 							<label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select style="-webkit-appearance: none;" ng-disabled='answers.length >= ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.initialYear" ng-options="x for x in optionYears[$index]"></select>
 						  <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.finalYear" ng-change="formPlus()" ng-options="y for y in optionYears[$index]"></select>
 							<br><label style="margin: 10px;">Classe: </label><select style="width: 200px;" class="form-control" ng-model="answer.landUse" ng-options="z for z in config.landUse" ng-click="form-plus"></select>
-	 						<label style="margin: 10px;">Pixel de Borda: <input type="checkbox" ng-model="checkBoxPixel" ng-change="pixelBorder(checkBoxPixel)" ng-init="checkBoxPixel=false"></label>
-	 						<span ng-if="checkBoxPixel"></span>
+	 						<label style="margin: 10px;">Pixel de Borda: <input type="checkbox" ng-model="answer.pixelBorder"></label>
 						</form>
 						<input style="margin-left: 0px;" type="button" class="btn pull-left btn-success" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
 						<input style="margin-right: 23px;" type="button" class="btn btn-danger pull-right" ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">

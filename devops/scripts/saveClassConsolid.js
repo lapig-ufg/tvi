@@ -1,4 +1,4 @@
-db.getCollection('points').find({}).forEach(function(point) {
+db.getCollection('points').find({ 'pointEdited': null }).forEach(function(point) {
     var campaign = db.getCollection('campaign').findOne({_id: point.campaign})
     var initialYear = campaign.initialYear
     var finalYear = campaign.finalYear
@@ -31,7 +31,6 @@ db.getCollection('points').find({}).forEach(function(point) {
 
     if (tempObj[1]) {
         if (point.inspection.length == numInspec[0]) { 
-            print(point._id, 'classConsolidated')
             for(var i=0; i<tempObj[1].length; i++) {
                 var flagConsolid = false
 
@@ -47,7 +46,7 @@ db.getCollection('points').find({}).forEach(function(point) {
 
                 for(var key in objClassConsolid) {
                     countInt++
-
+                    
                     if(objClassConsolid[key] > numInspec[0]/2) {
                         flagConsolid = true
                         classConsolidated.push(key)
@@ -62,9 +61,10 @@ db.getCollection('points').find({}).forEach(function(point) {
                 objClassConsolid = {}
             }
 
+            print(point._id, 'set classConsolidated')
             db.getCollection('points').update({_id: point._id}, {$set: {"classConsolidated": classConsolidated}})
         } else {
-            print(point._id)
+            print(point._id, 'unset classConsolidated')
             db.getCollection('points').update({_id: point._id}, {$unset: {"classConsolidated": ""}})
         }
     }

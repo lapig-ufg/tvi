@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
+import sys
 import ee
 import datetime
+import json
 from pymongo import MongoClient
 
 #convert crop.jpg -channel RGB -contrast-stretch 0.1x0.1% crop.png
@@ -86,7 +88,7 @@ PERIODS = [
 	}
 ]
 
-for year in range(1985,2018):
+for year in range(1985,2018+1):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue;

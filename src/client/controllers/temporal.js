@@ -4,18 +4,6 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	$scope.pointLoaded = false;
 
-	$scope.pixelBorder = function(checkBoxPixel) {
-		if(checkBoxPixel) {
-			$scope.valuePixelBorder = true;
-			//console.log($scope.valuePixelBorder)
-			checkBoxPixel = false
-		} else {
-			$scope.valuePixelBorder = false;
-			//console.log($scope.valuePixelBorder)
-			checkBoxPixel = true
-		}
-	}
-
 	util.waitUserData(function() {
 		$scope.size = 3;
 		$scope.onSubmission = false;
@@ -57,7 +45,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 					initialYear: initialYear,
 					finalYear: finalYear,
 					landUse: $scope.config.landUse[1],
-					pixelBorder: $scope.valuePixelBorder
+					pixelBorder: false
 				}
 			)			
 		}
@@ -74,8 +62,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				_id: $scope.point._id,
 				inspection: {
 	        counter: $scope.counter,
-	        form: $scope.answers,
-	        pixelBorder: $scope.valuePixelBorder
+	        form: $scope.answers
 	      }
     	}
 
@@ -408,7 +395,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 					initialYear: $scope.config.initialYear,
 					finalYear: $scope.config.finalYear,
 					landUse: $scope.config.landUse[landUseIndex],
-					pixelBorder: $scope.valuePixelBorder
+					pixelBorder: false
 				}
 			];
 		}
