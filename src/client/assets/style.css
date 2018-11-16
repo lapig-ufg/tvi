@@ -328,3 +328,7 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 .boldElem {
   font-weight: bold;
 }
+
+.leaflet-container {
+  background: #fff;
+}

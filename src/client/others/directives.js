@@ -56,24 +56,19 @@ Application
         lon: '=',
         lat: '=',
         tmsUrl: '@',
-        zoom: '='
+        zoom: '=',
+        bounds: '='
       },
       controller: function($scope, $element) {
         $($element).ready(function() {
-          var tmsLayer = new L.TileLayer($scope.tmsUrl, { maxNativeZoom: $scope.zoom, maxNativeZoom: $scope.zoom });
-          var marker = L.marker([$scope.lat,$scope.lon], {
+          var tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
+          //var tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds, { maxNativeZoom: $scope.zoom, maxNativeZoom: $scope.zoom });
+          var marker = L.marker([$scope.lat, $scope.lon], {
                         icon: L.icon({
                           iconUrl: 'assets/marker.png',
                           iconSize: [42, 42]
                         })
           });
-
-          /*tmsLayer.on('tileload', function(evt) {
-            console.log($(evt.tile))
-            $(evt.tile).mouseover(function() {
-              console.log(arguments);
-            })
-          })*/
 
           var markerInMap = true;
           var map = new L.map('map-'+$scope.$id, {

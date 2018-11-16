@@ -354,13 +354,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				$scope.tmsIdListWet.push(tmsIdWet)
 				
 				var host = location.host;
-				/*if (host.indexOf('tvi.lapig.iesa.ufg.br') !== -1) {
-					host = host.replace('tvi.lapig', 'lapig');
-				}*/
-
-				//var url = "http://{s}." + host + '/map/'+tmsId+'/{z}/{x}/{y}';
-				var url = "http://" + host + '/map/'+tmsId+'/{z}/{x}/{y}';
-
+				var url = "http://" + host + '/image/'+tmsId+'/'+$scope.point._id;
+				
 				$scope.maps.push({
 					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
 					year: year,
