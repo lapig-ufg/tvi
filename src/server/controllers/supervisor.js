@@ -3,6 +3,7 @@ var fs = require('fs');
 var csvWriter = require('csv-write-stream');
 var schedule = require('node-schedule');
 var iconv = require('iconv');
+var proj4 = require('proj4');
 
 module.exports = function(app) {
 
@@ -122,6 +123,21 @@ module.exports = function(app) {
 				
 			})
 		});
+	}
+
+	getWindow = function(point) {
+		var buffer = 4000
+		var coordinates = proj4('EPSG:4326', 'EPSG:900913', [point.lon, point.lat])
+
+		var ulx = coordinates[0] - buffer
+		var uly = coordinates[1] + buffer
+		var lrx = coordinates[0] + buffer
+		var lry = coordinates[1] - buffer
+
+		var ul = proj4('EPSG:900913', 'EPSG:4326', [ulx, uly])
+		var lr = proj4('EPSG:900913', 'EPSG:4326', [lrx, lry])
+
+		return [[ul[1], ul[0]], [lr[1], lr[0]]]
 	}
 
 	creatPoint = function(point, callback) {
@@ -275,7 +291,7 @@ module.exports = function(app) {
 		}
 
 		var objPoints = {};
-
+		
 		pointsCollection.aggregate(pipeline, function(err, aggregateElem) {
 			aggregateElem = aggregateElem[0]
 
@@ -318,6 +334,8 @@ module.exports = function(app) {
 							}
 						})					
 					})
+
+					point.bounds = getWindow(point)
 
 					point.dataPointTime = [];
 

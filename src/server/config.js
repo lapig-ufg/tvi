@@ -16,7 +16,7 @@ module.exports = function(app) {
 		},
 		"mongo": {
 			"host": "localhost",
-			"port": "27017",
+			"port": "27019",
 			"dbname": "tvi"
 		},
 		"jobs": {
@@ -47,7 +47,7 @@ module.exports = function(app) {
 				{
 					"name": "populateCache",
 					"cron": '0 0 20 1 0 *',
-					"runOnAppStart": true,
+					"runOnAppStart": false,
 					"params": {}
 				}
 			]

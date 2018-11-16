@@ -130,6 +130,36 @@ var getDB = function(dbUrl, callback) {
 	});
 }
 
+var insertCampaing = function() {
+	var collectionCampaign = db.collection(collectionCampaignName); 
+			
+	var createCamp = {
+		"_id": campaign,
+		"initialYear": parseInt(initialYear),
+		"finalYear": parseInt(finalYear),
+		"password": password,
+		"landUse": [ 
+        "Pastagem Natural", 
+        "Vegetação nativa", 
+        "Pastagem Cultivada", 
+        "Não observado", 
+        "Agricultura Anual", 
+        "Em regeneração", 
+        "Agricultura Perene", 
+        "Mosaico de ocupação", 
+        "Água", 
+        "Solo Exposto", 
+        "Cana-de-açucar", 
+        "Desmatamento", 
+        "Área urbana", 
+        "Silvicultura"
+    ],
+		"numInspec": parseInt(numInspec)
+	}
+
+	collectionCampaign.insertOne(createCamp);
+}
+
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	checkError(error);
 	
@@ -170,38 +200,10 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 			}
 
 			var onComplete = function() {
-				
-				var collectionCampaign = db.collection(collectionCampaignName); 
-			
-				var createCamp = {
-					"_id": campaign,
-					"initialYear": parseInt(initialYear),
-					"finalYear": parseInt(finalYear),
-					"password": password,
-					"landUse": [ 
-			        "Pastagem Natural", 
-			        "Vegetação nativa", 
-			        "Pastagem Cultivada", 
-			        "Não observado", 
-			        "Agricultura Anual", 
-			        "Em regeneração", 
-			        "Agricultura Perene", 
-			        "Mosaico de ocupação", 
-			        "Água", 
-			        "Solo Exposto", 
-			        "Cana-de-açucar", 
-			        "Desmatamento", 
-			        "Área urbana", 
-			        "Silvicultura"
-			    ],
-					"numInspec": parseInt(numInspec)
-				}
-
-				collectionCampaign.insertOne(createCamp);
-				
 				db.close();
 			};
 
+			insertCampaing()
 			async.eachSeries(getCoordinates(geojsonDataStr), eachFn, onComplete);
 		});
 	});

@@ -4,6 +4,8 @@ var fs = require('fs')
 module.exports = function(app) {
 	
 	var Login = {};
+	
+	var users = app.repository.collections.users;
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
 	var statusLogin = app.repository.collections.status;
@@ -37,40 +39,48 @@ module.exports = function(app) {
 			}
 
 			if(campaign) {
-				if((senha == campaign.password) || (senha == 'tviadmintvi')) {
 
-					request.session.user = { 
-						"name": name,
-						"campaign": campaign._id,
-						"type": "inspector"
-					};
+				users.findOne({ _id: 'admin'}, function(err, adminUser) {
+					
+					if((senha == campaign.password) || (senha == adminUser.password)) {
 
-					statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
-						statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Online"}})
-					})
+						request.session.user = { 
+							"name": name,
+							"campaign": campaign._id,
+							"type": "inspector"
+						};
 
-					if(name == 'admin' && senha == 'tviadmintvi') {
-						request.session.user.type = 'supervisor';
+						if(name == 'admin' && senha == adminUser.password) {
+							request.session.user.type = 'supervisor';
+						}
+
+						request.session.user.campaign = campaign
+						result = request.session.user;
 					}
+					
+					response.send(result);
+					response.end();
+				})
+				
 
-					request.session.user.campaign = campaign
-					result = request.session.user;
-				}
+			} else {
+				response.send(result);
+				response.end();
 			}
 
-			response.send(result);
-			response.end();
 		});
 	}
 
 	Login.logoff = function(request, response) {
+		
+		var name = request.session.user.name;
 		var user = request.session.user;
+		var campaign = request.session.user.campaign;
 
 		if(user.type == 'inspector') {
 
-			statusLogin.findOne({"_id": user.name+"_"+user.campaign._id}, function(err, userPoint) {
-				statusLogin.update({"_id": user.name+"_"+user.campaign._id}, {$set:{"status":"Offline"}})
-			})
+			statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
+			points.update({'_id': request.session.currentPointId}, {'$inc':{'underInspection': -1}})
 
 			delete request.session.user;
 			delete request.session.name;
@@ -90,16 +100,6 @@ module.exports = function(app) {
 	}
 
 	app.on('socket-connect', function(session) {
-
-		if(session && session.user && session.user.type == 'inspector') {
-
-			var name = session.user.name;
-			var campaign = session.user.campaign;
-
-			statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
-				statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Online"}})
-			})
-		}
 	})
 
 	app.on('socket-disconnect', function(session) {
@@ -109,9 +109,8 @@ module.exports = function(app) {
 			var name = session.user.name;
 			var campaign = session.user.campaign;
 
-			statusLogin.findOne({"_id": name+"_"+campaign._id}, function(err, userPoint) {
-				statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
-			})
+			statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
+			points.update({'_id': session.currentPointId}, {'$inc':{'underInspection': -1}})
 		}
 	})
 
