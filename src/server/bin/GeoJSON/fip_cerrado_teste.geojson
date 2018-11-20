@@ -1,0 +1,16 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4674" } },
+"features": [
+{ "type": "Feature", "properties": { "ID": 4116.0, "REFERENCIA": "prodes00", "Lat": -17.452626, "Lon": -46.13749 }, "geometry": { "type": "Point", "coordinates": [ -46.13749, -17.452626 ] } },
+{ "type": "Feature", "properties": { "ID": 5000.0, "REFERENCIA": "mono4", "Lat": -10.885372, "Lon": -45.105704 }, "geometry": { "type": "Point", "coordinates": [ -45.105704, -10.885372 ] } },
+{ "type": "Feature", "properties": { "ID": 3695.0, "REFERENCIA": "prodes16", "Lat": -8.588885, "Lon": -47.939741 }, "geometry": { "type": "Point", "coordinates": [ -47.939741, -8.588885 ] } },
+{ "type": "Feature", "properties": { "ID": 312.0, "REFERENCIA": "mono2", "Lat": -5.502209, "Lon": -43.424739 }, "geometry": { "type": "Point", "coordinates": [ -43.424739, -5.502209 ] } },
+{ "type": "Feature", "properties": { "ID": 1915.0, "REFERENCIA": "prodes17", "Lat": -14.276714, "Lon": -52.055747 }, "geometry": { "type": "Point", "coordinates": [ -52.055747, -14.276714 ] } },
+{ "type": "Feature", "properties": { "ID": 2596.0, "REFERENCIA": "mono3", "Lat": -16.625297, "Lon": -46.920934 }, "geometry": { "type": "Point", "coordinates": [ -46.920934, -16.625297 ] } },
+{ "type": "Feature", "properties": { "ID": 2715.0, "REFERENCIA": "prodes00", "Lat": -14.515222, "Lon": -49.244977 }, "geometry": { "type": "Point", "coordinates": [ -49.244977, -14.515222 ] } },
+{ "type": "Feature", "properties": { "ID": 48.0, "REFERENCIA": "mono1", "Lat": -16.812074, "Lon": -53.253017 }, "geometry": { "type": "Point", "coordinates": [ -53.253017, -16.812074 ] } },
+{ "type": "Feature", "properties": { "ID": 2598.0, "REFERENCIA": "mono8", "Lat": -6.813388, "Lon": -46.081907 }, "geometry": { "type": "Point", "coordinates": [ -46.081907, -6.813388 ] } },
+{ "type": "Feature", "properties": { "ID": 1120.0, "REFERENCIA": "mono5", "Lat": -17.66761, "Lon": -49.869872 }, "geometry": { "type": "Point", "coordinates": [ -49.869872, -17.66761 ] } }
+]
+}

@@ -29,7 +29,7 @@ module.exports = function(app) {
 			writeLog(logStream, pointId + ' images cached.')
 		}
 
-		app.middleware.cache.populateCache(requestPointCache, pointCacheCompĺete, cacheComplete);
+		app.controllers.image.populateCache(requestPointCache, pointCacheCompĺete, cacheComplete);
 	}
 
 	Jobs.publishLayers = function(params, logStream, callback) {

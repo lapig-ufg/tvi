@@ -7,12 +7,12 @@ var geojsonFile = process.argv[2];
 var campaign = process.argv[3];
 var numInspec = process.argv[4];
 var password = (process.argv[5] == null) ? null : process.argv[5];
-var initialYear = (process.argv[6] == null) ? 2000 : process.argv[6];
-var finalYear = (process.argv[7] == null) ? 2016 : process.argv[7];
+var initialYear = (process.argv[6] == null) ? 1985 : process.argv[6];
+var finalYear = (process.argv[7] == null) ? 2018 : process.argv[7];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
-var dbUrl = 'mongodb://localhost:27017/tvi';
+var dbUrl = 'mongodb://localhost:27019/tvi';
 
 var checkError = function(error) {
 	if(error) {

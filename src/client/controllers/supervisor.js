@@ -354,7 +354,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				$scope.tmsIdListWet.push(tmsIdWet)
 				
 				var host = location.host;
-				var url = "http://" + host + '/image/'+tmsId+'/'+$scope.point._id;
+				var url = "http://" + host + '/image/'+tmsId+'/'+$scope.point._id+"?campaign="+$rootScope.user.campaign._id;
 				
 				$scope.maps.push({
 					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',

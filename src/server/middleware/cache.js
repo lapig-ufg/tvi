@@ -9,46 +9,10 @@ module.exports = function(app) {
 
 	var config = app.config;
 	var Cache = {};
-
-	Cache.get = function(cacheKey, callback) {
-		var path = config.imgDir+cacheKey+'/';
-		var img = cacheKey.slice(24, 29);
-		fs.readFile(path+img, function (err,data) {
-		  if (!err && data) {
-		  	callback(data);	  	
-		  }else{
-		    callback(undefined);
-		  }
-		});
-	};
-
-	Cache.set = function(cacheKey, data, callback){
-		cacheKey = cacheKey.substr(1);
-		exec('mkdir -p '+config.imgDir+cacheKey, function(err, stdout, stderr){
-			var path = config.imgDir+cacheKey+'/';
-			var img = cacheKey.slice(24, 29);	
-			fs.writeFile(path+img, data, function(err) {
-			  if(err) {
-			    return console.log(err);
-			  }
-			  callback()
-			});
-			 			
-		})
-	}
 	
 	Cache.populateCache = function(requestPointCache, pointCacheCompĺete, finished) {
 
-		var zoom = 13;
 		var periods = ['DRY','WET']
-
-		var long2tile = function(lon,zoom) { 
-			return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 
-		}
- 		
- 		var lat2tile = function (lat,zoom) { 
- 			return (Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 *Math.pow(2,zoom))); 
- 		}
 
  		var getRequestTasks = function(point, campaign) {
 

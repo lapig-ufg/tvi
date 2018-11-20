@@ -60,19 +60,19 @@ Application
         bounds: '='
       },
       controller: function($scope, $element) {
-        $($element).ready(function() {
-          var tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
-          //var tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds, { maxNativeZoom: $scope.zoom, maxNativeZoom: $scope.zoom });
-          var marker = L.marker([$scope.lat, $scope.lon], {
-                        icon: L.icon({
-                          iconUrl: 'assets/marker.png',
-                          iconSize: [42, 42]
-                        })
+        angular.element($element).ready(function () {
+
+          $scope.tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
+          $scope.marker = L.marker([$scope.lat, $scope.lon], {
+            icon: L.icon({
+              iconUrl: 'assets/marker.png',
+              iconSize: [42, 42]
+            })
           });
 
-          var markerInMap = true;
-          var map = new L.map('map-'+$scope.$id, {
-              layers: [tmsLayer,marker],
+          $scope.markerInMap = true;
+          $scope.map = new L.map($element[0].childNodes[0], {
+              layers: [$scope.tmsLayer, $scope.marker],
               center: [$scope.lat, $scope.lon], 
               zoomControl: true,
               dragging: false,
@@ -81,19 +81,22 @@ Application
               zoom: $scope.zoom,
               minZoom: $scope.zoom,
               maxZoom: $scope.zoom + 2,
+              controls: [
+                new L.control.scale({ metric:true, imperial: false })
+              ]
           });
           
-          map.on('click', function() {
-            if(markerInMap) {
-              map.removeLayer(marker);
-              markerInMap = false;
+          $scope.map.on('click', function() {
+            if($scope.markerInMap) {
+              $scope.map.removeLayer($scope.marker);
+              $scope.markerInMap = false;
             } else {
-              map.addLayer(marker);
-              markerInMap = true;
+              $scope.map.addLayer($scope.marker);
+              $scope.markerInMap = true;
             }
           });
 
-          var scale = L.control.scale({ metric:true, imperial: false }).addTo(map); 
+          L.control.scale({ metric:true, imperial: false }).addTo($scope.map);
 
         });
       }
