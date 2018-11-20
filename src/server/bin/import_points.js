@@ -130,34 +130,35 @@ var getDB = function(dbUrl, callback) {
 	});
 }
 
-var insertCampaing = function() {
-	var collectionCampaign = db.collection(collectionCampaignName); 
-			
-	var createCamp = {
-		"_id": campaign,
-		"initialYear": parseInt(initialYear),
-		"finalYear": parseInt(finalYear),
-		"password": password,
-		"landUse": [ 
-        "Pastagem Natural", 
-        "Vegetação nativa", 
-        "Pastagem Cultivada", 
-        "Não observado", 
-        "Agricultura Anual", 
-        "Em regeneração", 
-        "Agricultura Perene", 
-        "Mosaico de ocupação", 
-        "Água", 
-        "Solo Exposto", 
-        "Cana-de-açucar", 
-        "Desmatamento", 
-        "Área urbana", 
-        "Silvicultura"
-    ],
-		"numInspec": parseInt(numInspec)
-	}
+var insertCampaing = function(db) {
+	db.collection(collectionCampaignName, function(err, collectionCampaign) {
+		var createCamp = {
+			"_id": campaign,
+			"initialYear": parseInt(initialYear),
+			"finalYear": parseInt(finalYear),
+			"password": password,
+			"landUse": [ 
+	        "Pastagem Natural", 
+	        "Vegetação nativa", 
+	        "Pastagem Cultivada", 
+	        "Não observado", 
+	        "Agricultura Anual", 
+	        "Em regeneração", 
+	        "Agricultura Perene", 
+	        "Mosaico de ocupação", 
+	        "Água", 
+	        "Solo Exposto", 
+	        "Cana-de-açucar", 
+	        "Desmatamento", 
+	        "Área urbana", 
+	        "Silvicultura"
+	    ],
+			"numInspec": parseInt(numInspec)
+		}
 
-	collectionCampaign.insertOne(createCamp);
+		collectionCampaign.insertOne(createCamp);
+	})
+			
 }
 
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
@@ -203,7 +204,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				db.close();
 			};
 
-			insertCampaing()
+			insertCampaing(db)
 			async.eachSeries(getCoordinates(geojsonDataStr), eachFn, onComplete);
 		});
 	});

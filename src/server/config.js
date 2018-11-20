@@ -8,7 +8,7 @@ module.exports = function(app) {
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
 		"imgDir": appRoot + "/images/",
-		"imgGDALTmpDir": "/tmp/gdalwmscache/",
+		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"cache": {
 			"parallelRequestsBusyTime": 9,

@@ -73,39 +73,42 @@ module.exports = function(app) {
 			]
 		};
 
-		points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
+		var findOneSort = [['index', 1]]
+		var findOneUpdate = {'$inc':{'underInspection': 1}}
+
+		//points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
+		points.findAndModify(findOneFilter, findOneSort, findOneUpdate, {}, function(err, object) {
+			point = object.value
 			if(point) {
-				points.update({'_id': point._id}, {'$inc':{'underInspection': 1}}, function() {
-					points.count(totalFilter, function(err, total) {
-						points.count(countFilter, function (err, count) {
-							getImageDates(point.path, point.row, function(dates) {
-								point.dates = dates
+				points.count(totalFilter, function(err, total) {
+					points.count(countFilter, function (err, count) {
+						getImageDates(point.path, point.row, function(dates) {
+							point.dates = dates
 
-								point.bounds = getWindow(point)
+							point.bounds = getWindow(point)
 
-								var statusId = username+"_"+campaign._id
-								status.updateOne({"_id": statusId}, {
-									$set:{
-												"campaign": campaign._id,
-												"status": "Online",
-												"name": username,
-												"atualPoint": point._id,
-												"dateLastPoint": new Date()
-									}}, {
-										upsert: true
-								})
-
-								var result = {};
-								result['point'] = point;
-								result['total'] = total;
-								result['current'] = point.index;
-								result['user'] = username;
-								result['count'] = count;
-
-								callback(result);
+							var statusId = username+"_"+campaign._id
+							status.updateOne({"_id": statusId}, {
+								$set:{
+											"campaign": campaign._id,
+											"status": "Online",
+											"name": username,
+											"atualPoint": point._id,
+											"dateLastPoint": new Date()
+								}}, {
+									upsert: true
 							})
+
+							var result = {};
+							result['point'] = point;
+							result['total'] = total;
+							result['current'] = point.index;
+							result['user'] = username;
+							result['count'] = count;
+
+							callback(result);
 						})
-					});
+					})
 				});
 			} else {
 				points.count(totalFilter, function(err, total) {
