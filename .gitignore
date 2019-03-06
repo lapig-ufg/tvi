@@ -31,3 +31,5 @@ lapig-ee-09144f43f3b5.pem
 src/server/images/*
 src/server/integration/py/gee-keys/
 db/dump/
+src/server/bin/GeoJSON/
+*.out

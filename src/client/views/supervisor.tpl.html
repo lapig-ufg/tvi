@@ -79,7 +79,7 @@
 					<input ng-hide="buttonEdit == false" style="margin-top: 0px;" ng-click="saveClass()" type="button" ng-submit="submit(1)" class="btn btn-primary" value="Salvar">
 				</div>
 	  	</div>
-	  	<div class="col-xs-6 col-sm-6 col-md-8 col-lg-9">
+	  	<div class="col-xs-6 col-sm-6 col-md-8 col-lg-9" style="height: 220px; overflow-y: scroll;">
 				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 					<button style="float: left;" ng-disabled="modeEdit" class="btn cal-btn" ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
 				</div>

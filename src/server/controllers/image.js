@@ -44,7 +44,7 @@ module.exports = function(app) {
 		})
 	}
 
-	Internal.GDALWmsXmlResponse = function(TMSurl) {
+	Internal.GDALWmsXmlResponse = function(mosaicId, campaignId, TMSurl) {
 		return "\
 <GDAL_WMS> \n\
     <Service name=\"TMS\"> \n\
@@ -62,7 +62,7 @@ module.exports = function(app) {
     </DataWindow> \n\
     <Cache> \n\
     	<Expires>1</Expires> \n\
-    	<Path>"+config.imgGDALTmpDir+"</Path> \n\
+    	<Path>"+config.imgGDALTmpDir+"/"+mosaicId+"_"+campaignId+"</Path> \n\
     </Cache> \n\
     <Projection>EPSG:900913</Projection> \n\
     <BlockSizeX>256</BlockSizeX> \n\
@@ -79,7 +79,7 @@ module.exports = function(app) {
 
 		Internal.TMSUrl(mosaicId, campaignId, function(TMSurl) {
 			if(TMSurl != undefined)
-				response.write(Internal.GDALWmsXmlResponse(TMSurl))
+				response.write(Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
 
 			response.end()
 		});
@@ -194,10 +194,10 @@ module.exports = function(app) {
 						var parallelRequestsLimit = busyTimeCondition ? config.cache.parallelRequestsBusyTime : config.cache.parallelRequestsDawnTime;
 
 						async.parallelLimit(requestTasks, parallelRequestsLimit, function() {
-							//app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  }, {}, function() {
+							app.repository.collections.points.update({ _id: point._id}, { '$set': { "cached": true }  }, {}, function() {
 								pointCacheCompĺete(point._id);
 								next();
-							//});
+							});
 						});
 	 				});
 	 			} else {
