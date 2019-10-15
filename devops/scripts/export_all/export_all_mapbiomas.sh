@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for campaign in mapbiomas_100k_amazonia mapbiomas_100k_cerrado mapbiomas_100k_etapa01 mapbiomas_100k_etapa01_1 mapbiomas_100k_etapa02 mapbiomas_100k_etapa03 mapbiomas_100k_etapa04 mapbiomas_100k_etapa05 mapbiomas_100k_etapa06 mapbiomas_100k_etapa07 mapbiomas_100k_etapa08 mapbiomas_100k_etapa09 mapbiomas_100k_reinsp01 mapbiomas_etapa03_treinamento mapbiomas_etapa05_treinamento mapbiomas_etapa06_treinamento mapbiomas_etapa07_treinamento mapbiomas_col3_acc mapbiomas_col3_etapa01 mapbiomas_col3_etapa02 mapbiomas_col3_etapa02_2 mapbiomas_col3_etapa03 mapbiomas_treinamento; do
+  echo "Exporting $campaign"
+  mongo --quiet localhost:27019/tvi --eval "var campaign = '$campaign'" export_mongo.js > $campaign.csv
+done
