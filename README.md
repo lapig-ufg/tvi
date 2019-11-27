@@ -13,5 +13,5 @@ The increasing number of sensors orbiting the earth is systematically producing 
  ```
  2. Start Server
  ```
- node prod-start.sh
+ ./prod-start.sh
  ```
