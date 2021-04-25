@@ -15,8 +15,8 @@ module.exports = function(app) {
 			"parallelRequestsDawnTime": 18
 		},
 		"mongo": {
-			"host": "localhost",
-			"port": "27019",
+			"host": "172.18.0.6",
+			"port": "27017",
 			"dbname": "tvi"
 		},
 		"jobs": {
