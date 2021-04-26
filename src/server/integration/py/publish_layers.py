@@ -122,7 +122,7 @@ def processPeriod(tiles, periods, suffix = ''):
 client = MongoClient('localhost', 27017);
 db = client.tvi;
 
-for year in range(START_YEAR,2018+1,STRIDE_YEAR):
+for year in range(START_YEAR,2019+1,STRIDE_YEAR):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue;
