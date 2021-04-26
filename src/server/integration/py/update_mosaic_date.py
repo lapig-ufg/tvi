@@ -70,7 +70,7 @@ def getExpirationDate():
 	now = datetime.datetime.now();
 	return datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(hours=24);
 
-client = MongoClient('localhost', 27017);
+client = MongoClient('172.18.0.6', 27017);
 db = client.tvi;
 
 SATELLITES = [ 'L8', 'L7', 'L5' ]
