@@ -11,7 +11,7 @@ def deg2num(lat_deg, lon_deg, zoom):
 lat = -15.1209;
 lon = -49.4203;
 zoom = 13;
-host = "localhost:3000";
+host = "localhost:5000";
 
 PERIODS = ['DRY','WET']
 SATELLITES = [ 'L8', 'L7', 'L5' ]

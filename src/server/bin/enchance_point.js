@@ -13,7 +13,7 @@ MongoClient.connect(url, function(err, db) {
   	var lon = result.lon
 		var lat = result.lat
 		
-		var IMG_DIR = '/data/cache-tvi'
+		var IMG_DIR = '/STORAGE/cache-tvi'
 		var zoom = 13;
 		var periods = ['DRY','WET']
 

@@ -67,7 +67,7 @@ module.exports = function(app) {
 					var count = 0;
 					for(var i=0; i<point.userName.length; i++) {
 						point.inspection[i].form.forEach(function(inspec) {
-							for(var year=initialYear; year<=finalYear; year++) {
+							for(var year=inspec.initialYear; year<=inspec.finalYear; year++) {
 								for(var col in csvLines) {
 									if(col == year+"_"+point.userName[i]) {
 										csvLines[col] = inspec.landUse

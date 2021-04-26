@@ -33,3 +33,4 @@ src/server/integration/py/gee-keys/
 db/dump/
 src/server/bin/GeoJSON/
 *.out
+.idea

@@ -215,11 +215,14 @@ module.exports = function(app) {
 			}
 
 			points.update({ '_id': pointDb._id }, updateStruct, function(err, item) {
-				findPoint(user.campaign, user.name, function(result) {
-					request.session.currentPointId = result.point._id;
-					response.send(result);
-					response.end();
-				});
+				//findPoint(user.campaign, user.name, function(result) {
+				//	request.session.currentPointId = result.point._id;
+
+				var result = { "success": (err == null), "err": err }
+
+				response.send(result);
+				response.end();
+				//});
 			});
 
 		});

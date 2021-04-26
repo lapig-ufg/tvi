@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import osr
 import sys
 
 def adjust_gamma(image, gamma=1.0):

@@ -12,7 +12,7 @@ var finalYear = (process.argv[7] == null) ? 2018 : process.argv[7];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
-var dbUrl = 'mongodb://localhost:27017/tvi';
+var dbUrl = 'mongodb://172.18.0.6:27017/tvi';
 
 var checkError = function(error) {
 	if(error) {

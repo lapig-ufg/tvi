@@ -34,7 +34,7 @@ module.exports = function(app) {
 					if(mosaic != undefined) {
 						var token = mosaic.ee_token;
 						var mapid = mosaic.ee_mapid;
-						url = "https://earthengine.googleapis.com/map/" + mapid + "/${z}/${x}/${y}?token=" + token
+						url = "https://earthengine.googleapis.com/v1alpha/" + mapid + "/tiles/${z}/${x}/${y}"
 					}
 
 					callback(url);
@@ -91,7 +91,7 @@ module.exports = function(app) {
 		var pointId = request.param('pointId')
 		var campaignId = request.param('campaign')
 
-		var sourceUrl = 'http://localhost:5000/source/'+layerId+'?campaign='+campaignId
+		var sourceUrl = 'http://localhost:3000/source/'+layerId+'?campaign='+campaignId
 		
 		points.findOne({ _id:pointId }, function(err, point) {
 
