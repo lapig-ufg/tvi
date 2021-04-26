@@ -64,6 +64,7 @@ app.middleware.repository.init(function() {
 
 	var publicDir = path.join(__dirname, '');
 
+	/*
 	app.use(requestTimeout({
 		'timeout': 1000 * 60 * 30,
 		'callback': function(err, options) {
@@ -73,7 +74,7 @@ app.middleware.repository.init(function() {
 			}
 			response.end();
 		}
-	}));
+	}));*/
 
 	app.use(responseTime());
 	app.use(bodyParser.json());
@@ -98,12 +99,14 @@ app.middleware.repository.init(function() {
 	.then('routes')
 	.into(app);
 
-	http.listen(app.config.port, function() {
+	var server = http.listen(app.config.port, function() {
 		console.log('LAPIG-MAPS Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
 		if(process.env.PRIMARY_WORKER) {
 			app.middleware.jobs.start();
 		}
 	});
+
+	server.setTimeout(1000 * 60 * 120);
 
 });
 
