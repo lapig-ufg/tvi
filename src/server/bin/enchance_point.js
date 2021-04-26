@@ -1,7 +1,7 @@
 var MongoClient = require('mongodb').MongoClient;
 var execSync = require('child_process').execSync;
 
-var url = "mongodb://localhost:27017/tvi";
+var url = "mongodb://172.18.0.6:27017/tvi";
 
 var index = process.argv[2]
 var campaign = process.argv[3]
