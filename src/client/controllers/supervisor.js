@@ -357,7 +357,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 				var url = "http://" + host + '/image/'+tmsId+'/'+$scope.point._id+"?campaign="+$rootScope.user.campaign._id;
 				
 				$scope.maps.push({
-					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
+					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/'+year,
 					year: year,
 					url: url
 				});

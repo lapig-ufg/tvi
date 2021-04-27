@@ -68,7 +68,11 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 
 	    $scope.onSubmission = true;
 
-	    requester._post('points/next-point', { "point": formPoint }, loadPoint);
+	    requester._post('points/update-point', { "point": formPoint }, function(data) {
+	    	if (data.success) {
+	    		requester._get('points/next-point', loadPoint);	
+	    	}
+	    });
 		}
 
 		$scope.changePeriod = function() {
@@ -350,7 +354,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 				var url = "http://" + host + '/image/'+tmsId+'/'+$scope.point._id+"?campaign="+$rootScope.user.campaign._id;
 
 				$scope.maps.push({
-					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : 'Sem observação no período',
+					date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/'+year,
 					year: year,
 					url: url
 				});
