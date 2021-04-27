@@ -142,7 +142,7 @@ db = client.tvi;
 
 gee_multi_credentials(CREDENTIALS_DIR)
 
-for year in range(1985,2019+1):
+for year in range(1985,2020+1):
 
 	ee.Initialize()
 
