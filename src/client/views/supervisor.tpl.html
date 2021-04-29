@@ -68,17 +68,21 @@
 			<div class="col-xs-6 col-sm-6 col-md-4 col-lg-3">
 				<div class="borderPoint" style="margin-bottom: 1px">
 					<div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
-					<p>
-						<b ng-hide="isChaco || isRaisg">Bioma:</b>
-						<b ng-show="isChaco">Região:</b>
-						<b ng-show="isRaisg">País:</b>
-						{{point.biome}}
-					</p>
-					<p>
-						<b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
-						<b ng-show="isChaco">Carta: {{point.county}}</b>
-						<b ng-show="isRaisg">Bioma: {{point.county}}</b>
-					</p>
+					<div class="tab">
+						<p>
+							<b ng-hide="isChaco || isRaisg">Bioma:</b>
+							<b ng-show="isChaco">Região:</b>
+							<b ng-show="isRaisg">País:</b>
+							{{point.biome}}
+						</p>
+					</div>
+					<div class="tab">
+						<p>
+							<b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
+							<b ng-show="isChaco">Carta: {{point.county}}</b>
+							<b ng-show="isRaisg">Bioma: {{point.county}}</b>
+						</p>
+					</div>
 					<div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p></div>
 					<div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
 					<div style="padding-left: 1em"><h4>Ferramentas de visualização:</h4></div>
