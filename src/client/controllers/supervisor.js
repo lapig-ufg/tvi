@@ -15,7 +15,8 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 			landUse: $rootScope.user.campaign.landUse
 		}
 
-		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
+		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1 );
+		$scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
 
 		$scope.dataTab = [
 		  {"name":"Usuários", "checked":true},
