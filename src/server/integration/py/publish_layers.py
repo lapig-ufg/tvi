@@ -79,6 +79,7 @@ def getWRS(feature):
     return ee.Feature(feature).get('PR')
 
 def getWrsCodes(countryName):
+    ee.Initialize()
     countries = ee.FeatureCollection("USDOS/LSIB_SIMPLE/2017")
     wrs = ee.FeatureCollection("users/lapig/WRS2")
 
@@ -90,6 +91,8 @@ def getWrsCodes(countryName):
 
     listWrs = list(wrs_list.map(getWRS).getInfo())
     listWrs.sort()
+
+    ee.Reset()
 
     return listWrs
 

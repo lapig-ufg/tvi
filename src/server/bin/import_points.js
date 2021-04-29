@@ -8,7 +8,7 @@ var campaign = process.argv[3];
 var numInspec = process.argv[4];
 var password = (process.argv[5] == null) ? null : process.argv[5];
 var initialYear = (process.argv[6] == null) ? 1985 : process.argv[6];
-var finalYear = (process.argv[7] == null) ? 2018 : process.argv[7];
+var finalYear = (process.argv[7] == null) ? 2020 : process.argv[7];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
