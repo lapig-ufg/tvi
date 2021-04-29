@@ -17,7 +17,7 @@ Application.controller('temporalController', function($rootScope, $scope, $locat
 			landUse: $rootScope.user.campaign.landUse
 		}
 
-		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
+		$scope.isChaco = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
 		$scope.isDisabled=true;
 		$scope.isObjectEmpty = function(obj){
 
