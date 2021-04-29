@@ -16,9 +16,12 @@ src/server/passwords.json
 **/integration/py/chart/
 *.tif
 src/server/bin/*.png
+src/server/integration/py/credentials
+src/server/integration/py/gee-keys
 src/server/integration/py/*.pn	
 devops/scripts/dump/
 src/server/.gitignore
+src/server/.env
 src/server/GJSON/campanha_2000_execution.geojson
 src/server/GJSON/campanha_2000_original.geojson
 src/server/GJSON/pontos_aa_5000.geojson
