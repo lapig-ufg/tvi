@@ -56,12 +56,11 @@ def getBestImg(satellite, year, mDaysStart, mDaysEnd, path, row):
     collection = LANDSAT_7
     bands = ['B4','B5','B3']
 
-#   .select(bands,['NIR','SWIR','RED']) \
   bestImg = collection.filterDate(dtStart,dtEnd) \
                     .filterMetadata('WRS_PATH','equals',path)  \
                     .filterMetadata('WRS_ROW','equals',row) \
                     .sort("CLOUD_COVER") \
-                    .select(bands,['SWIR','NIR','RED']) \
+                    .select(bands,['NIR','SWIR','RED']) \
                     .first()
   
   return ee.Image(bestImg)
