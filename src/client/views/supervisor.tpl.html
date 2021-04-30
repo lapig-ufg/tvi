@@ -151,7 +151,7 @@
 		</div>
 		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 400px;">
 			<div class="row">
-				<span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span class="titleMaps">RGB(NIR,SWIR,RED)</span></span>
+				<span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>  <span ng-show="isRaisg" class="titleMaps">RGB(SWIR,NIR,RED)</span></span>
 				<br><br>
 				<fieldset>					
 					<div ng-repeat="map in maps" ng-class="(size == 4) ? 'ee-mapbox col-xs-12 col-sm-6 col-md-3 col-lg-3' : 'ee-mapbox col-xs-12 col-sm-6 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
