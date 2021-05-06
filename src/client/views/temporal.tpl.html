@@ -12,8 +12,8 @@ $rootScope.user.campaign.numInspec<div class="container-fluid">
 						</p>
 						<p>
 							<b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
-							<b ng-show="isChaco">Carta: {{point.county}}</b>
-							<b ng-show="isRaisg">Bioma: {{point.county}}</b>
+							<b ng-show="isChaco">Carta: {{point.biome}}</b>
+							<b ng-show="isRaisg">Bioma: {{point.biome}}</b>
 						</p>
 						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
 						<fieldset>
