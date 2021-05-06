@@ -1,4 +1,4 @@
-db.getCollection('points').find({'campaign':'raisg_ecuador_val'}).forEach(function(point) {
+db.getCollection('points').find({'campaign':'desmatamento_regeneracao_ce'}).forEach(function(point) {
     var campaign = db.getCollection('campaign').findOne({_id: point.campaign})
     var numInspections = db.getCollection('campaign').distinct('numInspec',{'_id': point.campaign})
     
