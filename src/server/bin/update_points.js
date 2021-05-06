@@ -1,3 +1,4 @@
+var mongodb = require('mongodb');
 const exec = require('child_process').exec;
 
 const checkError = function(error) {
@@ -5,6 +6,15 @@ const checkError = function(error) {
 		console.error(error);
 		process.exit();
 	}
+}
+
+const getDB = function(dbUrl, callback) {
+	var MongoClient = mongodb.MongoClient;
+	MongoClient.connect(dbUrl, function(err, db) {
+		if(err)
+			return console.dir(err);
+		callback(db);
+	});
 }
 
 const getInfoByRegionCmd = function(coordinate) {
@@ -54,11 +64,14 @@ const getInfoByRegion = function(coordinate, callback) {
 	});
 }
 
-const points = db.points.find({"campaign" : 'amazonia_peru_raisg'});
+getDB('mongodb://172.18.0.6:27017/tvi', function(db) {
 
-points.forEach( function(point){
-	const coordinate = {X: point.lon, Y: point.lat};
-	getInfoByRegion(coordinate, function(regionInfo) {
+	const points = db.points.find({"campaign": 'amazonia_peru_raisg'});
 
-	});
-})
+	points.forEach(function (point) {
+		const coordinate = {X: point.lon, Y: point.lat};
+		getInfoByRegion(coordinate, function (regionInfo) {
+
+		});
+	})
+});
