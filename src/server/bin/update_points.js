@@ -17,7 +17,7 @@ const getInfoByRegionCmd = function(coordinate) {
 const getInfoByRegion = function(coordinate, callback) {
 	exec(getInfoByRegionCmd(coordinate), function(error, stdout, stderr) {
 		checkError(error);
-		
+
 		let strs = stdout.split("\n");
 
 		let biome;
@@ -54,7 +54,7 @@ const getInfoByRegion = function(coordinate, callback) {
 			"county": country,
 			"countyCode": countycode
 		};
-		
+
 		callback(result);
 	});
 }
@@ -80,7 +80,8 @@ const url = 'mongodb://172.18.0.6:27017';
 						{ "_id" : data._id },
 						{ $set: { biome: regionInfo.biome, uf: regionInfo.uf } }
 					);
-					console.log(data._id, JSON.stringify(ob), '\n');
+
+					console.log(data._id, JSON.stringify(ob), regionInfo, '\n');
 				} catch (e) {
 					console.log(e);
 				}
