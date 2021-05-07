@@ -16,7 +16,7 @@ const getInfoByRegionCmd = function(coordinate) {
 
 const getInfoByRegion = function(coordinate, callback) {
 	exec(getInfoByRegionCmd(coordinate), function(error, stdout, stderr) {
-		checkError(error);		
+		checkError(error);
 		
 		let strs = stdout.split("\n");
 
@@ -49,7 +49,7 @@ const getInfoByRegion = function(coordinate, callback) {
 			}
 		}
 		var result = {
-			"biome": idRegionC + " - " + county,
+			"biome": idRegionC + " - " + biome,
 			"uf": uf === '(n' ? '' : uf,
 			"county": country,
 			"countyCode": countycode
