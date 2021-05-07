@@ -65,13 +65,19 @@ const getInfoByRegion = function(coordinate, callback) {
 }
 
 getDB('mongodb://172.18.0.6:27017/tvi', function(db) {
+	db.collection('points', function(err, collectionPoints) {
+		const points = collectionPoints.find({"campaign": 'amazonia_peru_raisg'});
 
-	const points = db.points.find({"campaign": 'amazonia_peru_raisg'});
+		points.forEach(function (index, point) {
+			if( index > 1){
+				process.exit();
+			}
+			console.log(JSON.stringify(point))
+			const coordinate = {X: point.lon, Y: point.lat};
+			getInfoByRegion(coordinate, function (regionInfo) {
 
-	points.forEach(function (point) {
-		const coordinate = {X: point.lon, Y: point.lat};
-		getInfoByRegion(coordinate, function (regionInfo) {
+			});
+		})
 
-		});
 	})
 });
