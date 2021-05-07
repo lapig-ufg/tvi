@@ -16,6 +16,7 @@ src/server/passwords.json
 **/integration/py/chart/
 *.tif
 src/server/bin/*.png
+src/server/bin/SHP
 src/server/integration/py/credentials
 src/server/integration/py/gee-keys
 src/server/integration/py/*.pn	

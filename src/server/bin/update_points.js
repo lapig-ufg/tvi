@@ -1,4 +1,4 @@
-var mongodb = require('mongodb');
+let MongoClient = require('mongodb').MongoClient;
 const exec = require('child_process').exec;
 
 const checkError = function(error) {
@@ -8,18 +8,9 @@ const checkError = function(error) {
 	}
 }
 
-const getDB = function(dbUrl, callback) {
-	var MongoClient = mongodb.MongoClient;
-	MongoClient.connect(dbUrl, function(err, db) {
-		if(err)
-			return console.dir(err);
-		callback(db);
-	});
-}
-
 const getInfoByRegionCmd = function(coordinate) {
 	regions = "SHP/regions.shp";
-	sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
+	sql = "select COD_MUNICI,BIOMA,UF,MUNICIPIO, id_regionC as ID_REGION, pais from regions where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4326))"
 	return 'ogrinfo -q -geom=no -dialect sqlite -sql "'+sql+'" '+regions;
 }
 
@@ -34,8 +25,7 @@ const getInfoByRegion = function(coordinate, callback) {
 		let county;
 		let countycode;
 		let idRegionC;
-
-		console.log(strs)
+		let country;
 
 		for(var i = 0; i < strs.length; i++) {
 			if(strs[i].match(/BIOMA/g)) {
@@ -50,13 +40,18 @@ const getInfoByRegion = function(coordinate, callback) {
 			}else if(strs[i].match(/COD_MUNICI/g)) {
 				countycode = strs[i].slice(26,35);
 				countycode = countycode.trim();
+			}else if(strs[i].match(/ID_REGION/g)) {
+				idRegionC = strs[i].slice(26,strs[i].length);
+				idRegionC = idRegionC.trim();
+			}else if(strs[i].match(/pais/g)) {
+				country = strs[i].slice(18,strs[i].length);
+				country = country.trim();
 			}
 		}
-
 		var result = {
-			"biome": biome,
-			"uf": uf,
-			"county": county,
+			"biome": idRegionC + " - " + county,
+			"uf": uf === '(n' ? '' : uf,
+			"county": country,
 			"countyCode": countycode
 		};
 		
@@ -64,20 +59,37 @@ const getInfoByRegion = function(coordinate, callback) {
 	});
 }
 
-getDB('mongodb://172.18.0.6:27017/tvi', function(db) {
-	db.collection('points', function(err, collectionPoints) {
-		const points = collectionPoints.find({"campaign": 'amazonia_peru_raisg'});
+const url = 'mongodb://172.18.0.6:27017';
 
-		points.forEach(function (index, point) {
-			if( index > 1){
-				process.exit();
-			}
-			console.log(JSON.stringify(point))
-			const coordinate = {X: point.lon, Y: point.lat};
-			getInfoByRegion(coordinate, function (regionInfo) {
+(async () => {
+	let client = await MongoClient.connect(url, { useNewUrlParser: true });
 
+	try {
+		const db = client.db("tvi");
+
+		let collection = db.collection('points');
+
+		let points = await collection.find({"campaign": 'amazonia_peru_raisg'});
+
+		for (let data = await points.next(); data != null; data = await points.next()) {
+			const coordinate = {X: data.lon, Y: data.lat};
+			// console.log(data.index, JSON.stringify(coordinate))
+			getInfoByRegion(coordinate, async function (regionInfo) {
+				try {
+					let ob = await collection.updateOne(
+						{ "_id" : data._id },
+						{ $set: { biome: regionInfo.biome, uf: regionInfo.uf } }
+					);
+					console.log(data._id, JSON.stringify(ob), '\n');
+				} catch (e) {
+					console.log(e);
+				}
 			});
-		})
+		}
 
-	})
-});
+	}
+	finally {
+		// client.close();
+	}
+})()
+	.catch(err => console.error(err));
