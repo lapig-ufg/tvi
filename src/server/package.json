@@ -31,7 +31,7 @@
     "mu2": "~0.5.20",
     "multer": "^0.1.8",
     "node-schedule": "~1.2.0",
-    "nodemailer": "^2.0.0",
+    "nodemailer": "^6.4.16",
     "nodepdf": "~1.2.0",
     "proj4": "^2.5.0",
     "request": "~2.58.0",
