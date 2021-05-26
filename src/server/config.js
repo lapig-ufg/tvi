@@ -10,9 +10,10 @@ module.exports = function(app) {
 		"imgDir": appRoot + "/images/",
 		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
+		"currentCampaign": "Bolivia",
 		"cache": {
-			"parallelRequestsBusyTime": 9,
-			"parallelRequestsDawnTime": 18
+			"parallelRequestsBusyTime": 16,
+			"parallelRequestsDawnTime": 24
 		},
 		"mongo": {
 			"host": "172.18.0.6",

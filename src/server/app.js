@@ -106,7 +106,7 @@ app.middleware.repository.init(function() {
 		}
 	});
 
-	server.setTimeout(1000 * 60 * 120);
+	server.setTimeout(1000 * 60 * 240);
 
 });
 

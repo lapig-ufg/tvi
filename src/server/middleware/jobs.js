@@ -35,7 +35,7 @@ module.exports = function(app) {
 	Jobs.publishLayers = function(params, logStream, callback) {
 		
 		var onEach = function(key, next) {
-			var cmd = params.cmd + " " + key.file + " " + key.startYear + " " + params.keys.length;
+			var cmd = params.cmd + " " + key.file + " " +config.currentCampaign + " " + key.startYear + " " + params.keys.length;
 			console.log(cmd)
 			exec(cmd, function (error, stdout, stderr) {
 				  
