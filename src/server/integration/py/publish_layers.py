@@ -78,10 +78,10 @@ def getWRS(feature):
 
 def getWrsCodes(countryName):
     ee.Initialize()
-    countries = ee.FeatureCollection("USDOS/LSIB_SIMPLE/2017")
+    countries = ee.FeatureCollection("users/lapig/countries")
     wrs = ee.FeatureCollection("users/lapig/WRS2")
 
-    selectedCountry = ee.Feature(countries.filter(ee.Filter.eq('country_na', countryName)).first())
+    selectedCountry = ee.Feature(countries.filter(ee.Filter.eq('ISO', countryName)).first())
 
     wrs_filtered = wrs.filterBounds(selectedCountry.geometry())
 
