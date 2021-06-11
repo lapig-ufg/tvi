@@ -25,8 +25,8 @@ def getWRS(feature):
     return ee.Feature(feature).get('PR')
 
 def getWrsCodes(countryName):
-    countries = ee.FeatureCollection("USDOS/LSIB_SIMPLE/2017")
-    wrs = ee.FeatureCollection("users/lapig/countries")
+    countries = ee.FeatureCollection("users/lapig/countries")
+    wrs = ee.FeatureCollection("users/lapig/WRS2")
 
     selectedCountry = ee.Feature(countries.filter(ee.Filter.eq('ISO', countryName)).first())
 
