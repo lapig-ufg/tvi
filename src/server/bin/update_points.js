@@ -49,9 +49,9 @@ const getInfoByRegion = function(coordinate, callback) {
 			}
 		}
 		var result = {
-			"biome": idRegionC + " - " + biome,
+			"biome": idRegionC + " - " + county,
 			"uf": uf === '(n' ? '' : uf,
-			"county": country,
+			"county": country ,
 			"countyCode": countycode
 		};
 
@@ -78,7 +78,7 @@ const url = 'mongodb://172.18.0.6:27017';
 				try {
 					let ob = await collection.updateOne(
 						{ "_id" : data._id },
-						{ $set: { biome: regionInfo.biome, uf: regionInfo.uf } }
+						{ $set: { biome: regionInfo.biome, uf: regionInfo.uf, county: regionInfo.county } }
 					);
 
 					console.log(data._id, JSON.stringify(ob), regionInfo, '\n');
