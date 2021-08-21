@@ -113,7 +113,7 @@ def getBestMosaic(tiles, satellite, year, dtStart, dtEnd):
 
 def publishImg(image):
 
-	mapId = image.getMapId({ "bands": 'SWIR,NIR,RED'})
+	mapId = image.getMapId({ "bands": 'NIR,SWIR,RED'})
 	
 	print(mapId['tile_fetcher'].url_format)
 
@@ -170,7 +170,7 @@ gee_multi_credentials(CREDENTIALS_DIR)
 if len(sys.argv) > 4:
     TILES_BR = getWrsCodes(sys.argv[4])
 
-for year in range(1985,2020+1):
+for year in range(1985,2021+1):
 
 	ee.Initialize()
 

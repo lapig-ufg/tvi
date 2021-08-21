@@ -82,7 +82,7 @@ def getBestImages(satellite, year, dtStart, dtEnd):
 
 def publishImg(image):
 
-	mapId = image.getMapId({ "bands": 'SWIR,NIR,RED'})
+	mapId = image.getMapId({ "bands": 'NIR,SWIR,RED'})
 	for i in mapId:
 		
 		if(i == u'token'):
@@ -114,7 +114,7 @@ PERIODS = [
 	}
 ]
 
-for year in range(1985,2020+1):
+for year in range(1985,2021+1):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue
