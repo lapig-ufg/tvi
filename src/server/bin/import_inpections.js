@@ -83,7 +83,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 				const update = {
 					'$push': {
 						"inspection": inspection,
-						"userName": "Clasificação Anterior"
+						"userName": "Classificação Automática"
 					}
 				};
 
