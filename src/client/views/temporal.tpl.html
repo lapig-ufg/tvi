@@ -1,68 +1,95 @@
 $rootScope.user.campaign.numInspec
 <div class="container-fluid">
-	<div class="row" style="margin-top: 50px">
-		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
-				<div class="row">
-					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-						<legend>Informação de localização</legend>
-						<p>
-							<b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
-							<b ng-show="isChaco">Região: {{point.county}}</b>
-							<b ng-show="isRaisg">País: {{point.county}}</b>
+    <div class="row" style="margin-top: 50px">
+        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <legend>Informação de localização</legend>
+                    <p>
+                        <b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
+                        <b ng-show="isChaco">Região: {{point.county}}</b>
+                        <b ng-show="isRaisg">País: {{point.county}}</b>
 
-						</p>
-						<p>
-							<b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
-							<b ng-show="isChaco">Carta: {{point.biome}}</b>
-							<b ng-show="isRaisg">Bioma: {{point.biome}}</b>
-						</p>
-						<p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
-						<fieldset>
-							<legend>Uso e Cobertura da Terra:</legend>
-							<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning" value="Alterar Período">
-			  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success" value="Google Earth">
-						</fieldset>
-			  	</div>
-				</div>
-				<div class="row">
-					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
-						<form class="form-inline form-lclu" ng-repeat="answer in answers">
-							<label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select style="-webkit-appearance: none;" ng-disabled='answers.length >= ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.initialYear" ng-options="x for x in optionYears[$index]"></select>
-						  <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)' class="form-inline form-control form-year-lclu" ng-model="answer.finalYear" ng-change="formPlus()" ng-options="y for y in optionYears[$index]"></select>
-							<br><label style="margin: 10px;">Classe: </label><select style="width: 200px;" class="form-control" ng-model="answer.landUse" ng-options="z for z in config.landUse" ng-click="form-plus"></select>
-	 						<label style="margin: 10px;">Pixel de Borda: <input type="checkbox" ng-model="answer.pixelBorder"></label>
-						</form>
-						<input style="margin-left: 0px;" type="button" class="btn pull-left btn-success" ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission" ng-click="submitForm()" value="Enviar">
-						<input style="margin-right: 23px;" type="button" class="btn btn-danger pull-right" ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
-						<div class="pull-right button-align">
-	            <b>{{counter}} s</b>
-	          </div>
-					</div>
-				</div>
-		</div>
-		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-			<div class="row">
-				<fieldset>
-				<legend>Imagens Landsat <span ng-hide="isRaisg" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span></legend>
-					<div ng-repeat="map in maps" ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-						<span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
-						<inspection-map lon="point.lon" lat="point.lat" bounds="point.bounds" zoom="config.zoomLevel" tms-url="{{map.url}}" />
-					</div>
-				</fieldset>
-			</div>
-	  </div>
-		<div ng-show="isObjectEmpty(point) && pointLoaded" class="row">
-			<center>
-				<img class="img-responsive" src="assets/finish.jpg" />
-			</center>
-		</div> 
-  <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-<!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
-  	<div class="row">
-		<fieldset>
-			<div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>
-<!--			<iframe src="https://timeseries.lapig.iesa.ufg.br/modis/chart/{{point.lon | number:4}}/{{point.lat | number:4}}" title="Série temporal MODIS"></iframe>-->
-		</fieldset>
-  	</div>
-  </div>
+                    </p>
+                    <p>
+                        <b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
+                        <b ng-show="isChaco">Carta: {{point.biome}}</b>
+                        <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
+                    </p>
+                    <p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
+                    <fieldset>
+                        <legend>Uso e Cobertura da Terra:</legend>
+                        <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
+                               value="Alterar Período">
+                        <input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
+                               value="Google Earth">
+                    </fieldset>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
+                    <form class="form-inline form-lclu" ng-repeat="answer in answers">
+                        <label class="form-label-lclu" style="margin-right: 24px;">Entre</label><select
+                            style="-webkit-appearance: none;" ng-disabled='answers.length >= ($index + 1)'
+                            class="form-inline form-control form-year-lclu" ng-model="answer.initialYear"
+                            ng-options="x for x in optionYears[$index]"></select>
+                        <label class="form-label-lclu">e</label><select ng-disabled='answers.length != ($index + 1)'
+                                                                        class="form-inline form-control form-year-lclu"
+                                                                        ng-model="answer.finalYear"
+                                                                        ng-change="formPlus()"
+                                                                        ng-options="y for y in optionYears[$index]"></select>
+                        <br><label style="margin: 10px;">Classe: </label><select style="width: 200px;"
+                                                                                 class="form-control"
+                                                                                 ng-model="answer.landUse"
+                                                                                 ng-options="z for z in config.landUse"
+                                                                                 ng-click="form-plus"></select>
+                        <label style="margin: 10px;">Pixel de Borda: <input type="checkbox"
+                                                                            ng-model="answer.pixelBorder"></label>
+                    </form>
+                    <input style="margin-left: 0px;" type="button" class="btn pull-left btn-success"
+                           ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
+                           ng-click="submitForm()" value="Enviar">
+                    <input style="margin-right: 23px;" type="button" class="btn btn-danger pull-right"
+                           ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
+                    <div class="pull-right button-align">
+                        <b>{{counter}} s</b>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-hide="isObjectEmpty(point) && pointLoaded"
+             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+            <div class="row">
+                <fieldset>
+                    <legend>Imagens Landsat <span ng-hide="isRaisg" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
+                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span
+                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>
+                    </legend>
+                    <div ng-repeat="map in maps"
+                         ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'"
+                         style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
+                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span
+                            class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
+                        <inspection-map lon="point.lon" lat="point.lat" bounds="point.bounds" zoom="config.zoomLevel"
+                                        tms-url="{{map.url}}"/>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <div ng-show="isObjectEmpty(point) && pointLoaded" class="row">
+            <center>
+                <img class="img-responsive" src="assets/finish.jpg"/>
+            </center>
+        </div>
+        <div ng-hide="isObjectEmpty(point) && pointLoaded"
+             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+            <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
+            <div class="row">
+                <fieldset>
+                    <div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>
+                        <iframe src="https://timeseries.lapig.iesa.ufg.br/modis/chart/{{point.lon}}/{{point.lat}}" title="Série temporal MODIS"></iframe>
+                </fieldset>
+            </div>
+        </div>
+    </div>
 </div>
