@@ -1,170 +1,226 @@
 <div class="container-fluid" style="overflow: hidden;">
-	<div class="row">
-		<div class="row navbar-fixed-top" style="background: white; top: 40px; padding-top: 3px";>					
-			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-				<script>
-				  function maxLengthCheck(object) {
-				    if (object.value.length > object.maxLength)
-				      object.value = object.value.slice(0, object.maxLength)
-				  }
-				    
-				  function isNumeric (evt) {
-				    var theEvent = evt || window.event;
-				    var key = theEvent.keyCode || theEvent.which;
-				    key = String.fromCharCode (key);
-				    var regex = /[0-9]/;
-				    if ( !regex.test(key) ) {
-				      theEvent.returnValue = false;
-				      if(theEvent.preventDefault) theEvent.preventDefault();
-				    }
-				  }
-				</script>
-				<div class="col-xs-12 col-sm-3 col-md-3 col-lg-3 filterMediumLeft" style="padding-bottom: 5px; padding-left: 5px;">
-				 	<form class="form-inline" style="margin-top: 0px;" ng-submit="submit(point.index)">
-		        <input type="index" ng-disabled="modeEdit" onkeypress="return isNumeric(event)" oninput="maxLengthCheck(this)"  maxlength = "5" min="0" max="99999" style="width: 66px; display: inline;" class="form-control" id="index" placeholder="index" ng-model="point.index">
-		        <button type="submit" class="btn btn-success btn-navbar" ng-disabled="point.index > total || point.index < 1 || modeEdit" ng-click="submit(point.index)">Buscar</button>
-		        <div class="form-inline" style="display: inline; margin-top: 0px;">
-			        <button ng-click="submit(point.index-1)" ng-disabled="point.index <= 1 || point.index > total || modeEdit" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
-			        <span>{{point.index}}/{{total}}</span>
-			        <button ng-click="submit(point.index+1)" ng-disabled="point.index >= total || point.index < 1 || modeEdit" type="button" class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
-						</div>
-						<div style="width: auto">					
-							<input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort" value="sortedIndex" ng-checked="true"><label style="font-size: 15px">Indice</label>
-							<input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort" value="timeInspection"><label style="font-size: 15px;"> Tempo</label>
-							<input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort" value="agreementPoint"><label style="font-size: 15px">Consolidado</label>
-						</div>
-		      </form>
-		    </div>		    
-  			<div class="col-xs-12 col-sm-9 col-md-9 col-lg-9" style="width: auto; float: none;">	
-  				<form>
-  					<div class="form-group">
-  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Classes:</label>
-  						<div class="col-sm-3" style="width: auto;">
-  							<select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"  ng-model="selectedLandUse" ng-options="landUse for landUse in landUses"></select>
-  						</div>
-  					</div>
-  					<div class="form-group">
-  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Usuários:</label>
-  						<div class="col-sm-3" style="width: auto;">
-  							<select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control" ng-model="selectUserNames" ng-options="userName for userName in userNames"></select>
-  						</div>
-  					</div>
-  					<div class="form-group">
-  						<label ng-hide="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Bioma:</label>
-  						<label ng-show="isChaco" class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Região:</label>
-  						<div class="col-sm-3" style="width: auto;">
-  							<select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"  ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
-  						</div>
-  					</div>
-  					<div ng-hide="isChaco" class="form-group">
-  						<label class="col-sm-1 col-form-label" style="font-size: 15px; width: auto;">Estado(UF):</label>
-  						<div class="col-sm-3" style="width: auto;">
-  							<select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control" ng-model="selectUf" ng-options="uf for uf in stateUF"></select> 
-  						</div>
-  					</div>
-  				</form>
-				</div>
-			</div>
-			<div class="col-xs-6 col-sm-6 col-md-4 col-lg-3">
-				<div class="borderPoint" style="margin-bottom: 1px">
-					<div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
-					<div class="tab">
-						<p>
-							<b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
-							<b ng-show="isChaco">Região: {{point.county}}</b>
-							<b ng-show="isRaisg">País: {{point.county}} </b>
-						</p>
-					</div>
-					<div class="tab">
-						<p>
-							<b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
-							<b ng-show="isChaco">Carta: {{point.biome}}</b>
-							<b ng-show="isRaisg">Bioma: {{point.biome}}</b>
-						</p>
-					</div>
-					<div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p></div>
-					<div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
-					<div style="padding-left: 1em"><h4>Ferramentas de visualização:</h4></div>
-					<input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning" value="Alterar Período">
-	  			<input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success" value="Google Earth">
-					<input ng-hide="buttonEdit == true" style="margin-top: 0px;" ng-click="editClass()" type="button" class="btn btn-primary" value="Editar">
-					<input ng-hide="buttonEdit == false" style="margin-top: 0px;" ng-click="saveClass()" type="button" ng-submit="submit(1)" class="btn btn-primary" value="Salvar">
-				</div>
-	  	</div>
-	  	<div class="col-xs-6 col-sm-6 col-md-8 col-lg-9" style="height: 220px; overflow-y: scroll;">
-				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-					<button style="float: left;" ng-disabled="modeEdit" class="btn cal-btn" ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)" ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}</button>
-				</div>
-				<div class="col-xs-6 col-sm-3 col-md-3 col-lg-3 tableSmallLeftAdjustHeightMax tableLargeLeft tableMediumLeft tableSmallLeft borderPoint" style="border-right: 0px; padding-right: 0px; padding-left: 0px; height: auto; padding-bottom: 0px;">
-					<table class="table table-condensed table-users">
-						<thead ng-hide="point.inspection == 0" style="font-weight: bold;">
-					  	<tr>
-					  		<td>User</td>
-					  	</tr>
-				  	</thead>
-					  <tbody ng-hide="point.inspection == 0">
-					  	<tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
-					  		<td>{{inspection.userName}}</td>
-					  	</tr>
-					  	<tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="p in point.dataPointTime track by $index">
-					  		<td>{{p.name}}</td>
-					  	</tr>
-				  	</tbody>
-				  	<tfoot ng-if="objConsolidated.length < point.inspection.length" style="font-size: 14px; font-weight: bold;">
-			  			<td ng-hide='dataTab[0].checked'>Classe Consolidada</td>
-				  	</tfoot>
-				  	<tfoot ng-if="objConsolidated.length >= point.inspection.length" style="font-size: 14px; font-weight: bold;">
-			  			<td ng-show='dataTab[0].checked'>Classe Consolidada</td>
-				  	</tfoot>
-					</table>
-				</div>
-				<div class="col-xs-6 col-sm-9 col-md-9 col-lg-9 tableLargeRight tableMediumRight tableSmallRight borderPoint" style="border-left: 0px; overflow-x: scroll; padding-left: 0px;">
-					<table ng-hide="point.inspection == 0" class="table table-condensed table-years">
-						<thead>
-					  	<tr>
-								<td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">{{year}}</td>
-								<td style="font-weight: bold;" ng-if='dataTab[1].checked' ng-repeat="point in dataTimePoints">{{point.data}}</td>
-					  	</tr>
-				  	</thead>
-				  	<tbody ng-hide="point.inspection == 0">
-						  <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
-					  		<td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
-					  	</tr>
-						  <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}" ng-if='dataTab[1].checked' ng-repeat="pointTime in point.dataPointTime">
-								<td>{{pointTime.totalPointTime}}</td>
-								<td>{{pointTime.meanPointTime | number:2 }}</td>
-					  	</tr>
-				  	</tbody>
-				  	<tfoot ng-hide="buttonEdit == false" style="font-size: 14px; font-weight: bold; white-space: normal;">
-					  	<td ng-repeat="x in objConsolidated track by $index">
-						  	<!-- change service here -->
-						  	<select ng-if='dataTab[0].checked' ng-options="landUse for landUse in getLandUses track by landUse" ng-model="selectedLandUses[$index]" ng-change="changeClass($index)"></select>
-					  	</td>
-				  	</tfoot>
-				  	<tfoot ng-hide="buttonEdit == true" style="font-size: 14px; font-weight: bold;">
-					  	<td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated track by $index">{{landUse}}</td>
-				  	</tfoot>
-					</table>
-				</div>
-			</div>
-		</div>
-		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 400px;">
-			<div class="row">
-				<span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>  <span ng-show="isRaisg" class="titleMaps">RGB(SWIR,NIR,RED)</span></span>
-				<br><br>
-				<fieldset>					
-					<div ng-repeat="map in maps" ng-class="(size == 4) ? 'ee-mapbox col-xs-12 col-sm-6 col-md-3 col-lg-3' : 'ee-mapbox col-xs-12 col-sm-6 col-md-2 col-lg-2'" style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-						<span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
-						<inspection-map lon="point.lon" lat="point.lat" bounds="point.bounds" zoom="config.zoomLevel" tms-url="{{map.url}}" />
-					</div>
-				</fieldset>
-		</div>	
-  </div>
-	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 bold" style="margin-top: 420px">
-  	<fieldset>
-  		<br><br>
-  		<span style="font-size: 18px; font-weight: bold; margin-left: -10px">Série temporal MODIS:</span>
-  		<div id="NDVI"></div>
-  	</fieldset> 
-  </div>
+    <div class="row">
+        <div class="row navbar-fixed-top" style="background: white; top: 40px; padding-top: 3px" ;>
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <script>
+                    function maxLengthCheck(object) {
+                        if (object.value.length > object.maxLength)
+                            object.value = object.value.slice(0, object.maxLength)
+                    }
+
+                    function isNumeric(evt) {
+                        var theEvent = evt || window.event;
+                        var key = theEvent.keyCode || theEvent.which;
+                        key = String.fromCharCode(key);
+                        var regex = /[0-9]/;
+                        if (!regex.test(key)) {
+                            theEvent.returnValue = false;
+                            if (theEvent.preventDefault) theEvent.preventDefault();
+                        }
+                    }
+                </script>
+                <div class="col-xs-12 col-sm-3 col-md-3 col-lg-3 filterMediumLeft"
+                     style="padding-bottom: 5px; padding-left: 5px;">
+                    <form class="form-inline" style="margin-top: 0px;" ng-submit="submit(point.index)">
+                        <input type="index" ng-disabled="modeEdit" onkeypress="return isNumeric(event)"
+                               oninput="maxLengthCheck(this)" maxlength="5" min="0" max="99999"
+                               style="width: 66px; display: inline;" class="form-control" id="index" placeholder="index"
+                               ng-model="point.index">
+                        <button type="submit" class="btn btn-success btn-navbar"
+                                ng-disabled="point.index > total || point.index < 1 || modeEdit"
+                                ng-click="submit(point.index)">Buscar
+                        </button>
+                        <div class="form-inline" style="display: inline; margin-top: 0px;">
+                            <button ng-click="submit(point.index-1)"
+                                    ng-disabled="point.index <= 1 || point.index > total || modeEdit" type="button"
+                                    class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-left"></button>
+                            <span>{{point.index}}/{{total}}</span>
+                            <button ng-click="submit(point.index+1)"
+                                    ng-disabled="point.index >= total || point.index < 1 || modeEdit" type="button"
+                                    class="btn btn-primary btn-navbar glyphicon glyphicon-chevron-right"></button>
+                        </div>
+                        <div style="width: auto">
+                            <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
+                                   value="sortedIndex" ng-checked="true"><label style="font-size: 15px">Indice</label>
+                            <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
+                                   value="timeInspection"><label style="font-size: 15px;"> Tempo</label>
+                            <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
+                                   value="agreementPoint"><label style="font-size: 15px">Consolidado</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-xs-12 col-sm-9 col-md-9 col-lg-9" style="width: auto; float: none;">
+                    <form>
+                        <div class="form-group">
+                            <label class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">Classes:</label>
+                            <div class="col-sm-3" style="width: auto;">
+                                <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
+                                        ng-model="selectedLandUse"
+                                        ng-options="landUse for landUse in landUses"></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">Usuários:</label>
+                            <div class="col-sm-3" style="width: auto;">
+                                <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
+                                        ng-model="selectUserNames"
+                                        ng-options="userName for userName in userNames"></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label ng-hide="isChaco" class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">Bioma:</label>
+                            <label ng-show="isChaco" class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">Região:</label>
+                            <div class="col-sm-3" style="width: auto;">
+                                <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
+                                        ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
+                            </div>
+                        </div>
+                        <div ng-hide="isChaco" class="form-group">
+                            <label class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">Estado(UF):</label>
+                            <div class="col-sm-3" style="width: auto;">
+                                <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
+                                        ng-model="selectUf" ng-options="uf for uf in stateUF"></select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-xs-6 col-sm-6 col-md-4 col-lg-3">
+                <div class="borderPoint" style="margin-bottom: 1px">
+                    <div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
+                    <div class="tab">
+                        <p>
+                            <b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
+                            <b ng-show="isChaco">Região: {{point.county}}</b>
+                            <b ng-show="isRaisg">País: {{point.county}} </b>
+                        </p>
+                    </div>
+                    <div class="tab">
+                        <p>
+                            <b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
+                            <b ng-show="isChaco">Carta: {{point.biome}}</b>
+                            <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
+                        </p>
+                    </div>
+                    <div class="tab"><p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
+                    </div>
+                    <div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
+                    <div style="padding-left: 1em"><h4>Ferramentas de visualização:</h4></div>
+                    <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
+                           value="Alterar Período">
+                    <input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
+                           value="Google Earth">
+                    <input ng-hide="buttonEdit == true" style="margin-top: 0px;" ng-click="editClass()" type="button"
+                           class="btn btn-primary" value="Editar">
+                    <input ng-hide="buttonEdit == false" style="margin-top: 0px;" ng-click="saveClass()" type="button"
+                           ng-submit="submit(1)" class="btn btn-primary" value="Salvar">
+                </div>
+            </div>
+            <div class="col-xs-6 col-sm-6 col-md-8 col-lg-9" style="height: 220px; overflow-y: scroll;">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <button style="float: left;" ng-disabled="modeEdit" class="btn cal-btn"
+                            ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)"
+                            ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}
+                    </button>
+                </div>
+                <div class="col-xs-6 col-sm-3 col-md-3 col-lg-3 tableSmallLeftAdjustHeightMax tableLargeLeft tableMediumLeft tableSmallLeft borderPoint"
+                     style="border-right: 0px; padding-right: 0px; padding-left: 0px; height: auto; padding-bottom: 0px;">
+                    <table class="table table-condensed table-users">
+                        <thead ng-hide="point.inspection == 0" style="font-weight: bold;">
+                        <tr>
+                            <td>User</td>
+                        </tr>
+                        </thead>
+                        <tbody ng-hide="point.inspection == 0">
+                        <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
+                            <td>{{inspection.userName}}</td>
+                        </tr>
+                        <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}"
+                            ng-if='dataTab[1].checked' ng-repeat="p in point.dataPointTime track by $index">
+                            <td>{{p.name}}</td>
+                        </tr>
+                        </tbody>
+                        <tfoot ng-if="objConsolidated.length < point.inspection.length"
+                               style="font-size: 14px; font-weight: bold;">
+                        <td ng-hide='dataTab[0].checked'>Classe Consolidada</td>
+                        </tfoot>
+                        <tfoot ng-if="objConsolidated.length >= point.inspection.length"
+                               style="font-size: 14px; font-weight: bold;">
+                        <td ng-show='dataTab[0].checked'>Classe Consolidada</td>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="col-xs-6 col-sm-9 col-md-9 col-lg-9 tableLargeRight tableMediumRight tableSmallRight borderPoint"
+                     style="border-left: 0px; overflow-x: scroll; padding-left: 0px;">
+                    <table ng-hide="point.inspection == 0" class="table table-condensed table-years">
+                        <thead>
+                        <tr>
+                            <td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">
+                                {{year}}
+                            </td>
+                            <td style="font-weight: bold;" ng-if='dataTab[1].checked'
+                                ng-repeat="point in dataTimePoints">{{point.data}}
+                            </td>
+                        </tr>
+                        </thead>
+                        <tbody ng-hide="point.inspection == 0">
+                        <tr ng-if='dataTab[0].checked' ng-repeat="inspection in point.inspection">
+                            <td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
+                        </tr>
+                        <tr ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}"
+                            ng-if='dataTab[1].checked' ng-repeat="pointTime in point.dataPointTime">
+                            <td>{{pointTime.totalPointTime}}</td>
+                            <td>{{pointTime.meanPointTime | number:2 }}</td>
+                        </tr>
+                        </tbody>
+                        <tfoot ng-hide="buttonEdit == false"
+                               style="font-size: 14px; font-weight: bold; white-space: normal;">
+                        <td ng-repeat="x in objConsolidated track by $index">
+                            <!-- change service here -->
+                            <select ng-if='dataTab[0].checked'
+                                    ng-options="landUse for landUse in getLandUses track by landUse"
+                                    ng-model="selectedLandUses[$index]" ng-change="changeClass($index)"></select>
+                        </td>
+                        </tfoot>
+                        <tfoot ng-hide="buttonEdit == true" style="font-size: 14px; font-weight: bold;">
+                        <td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated track by $index">
+                            {{landUse}}
+                        </td>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 400px;">
+            <div class="row">
+                <span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span
+                        ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>  <span ng-show="isRaisg"
+                                                                                            class="titleMaps">RGB(SWIR,NIR,RED)</span></span>
+                <br><br>
+                <fieldset>
+                    <div ng-repeat="map in maps"
+                         ng-class="(size == 4) ? 'ee-mapbox col-xs-12 col-sm-6 col-md-3 col-lg-3' : 'ee-mapbox col-xs-12 col-sm-6 col-md-2 col-lg-2'"
+                         style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
+                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span
+                            class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
+                        <inspection-map lon="point.lon" lat="point.lat" bounds="point.bounds" zoom="config.zoomLevel"
+                                        tms-url="{{map.url}}"/>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 bold" style="margin-top: 420px">
+            <fieldset>
+                <br><br>
+                <span style="font-size: 18px; font-weight: bold; margin-left: -10px">Série temporal MODIS:</span>
+                <iframe src="https://timeseries.lapig.iesa.ufg.br/modis/chart/{{point.lon | number:4}}/{{point.lat | number:4}}"
+                        title="Série temporal MODIS"></iframe>
+            </fieldset>
+        </div>
+    </div>
 </div>

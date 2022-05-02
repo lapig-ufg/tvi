@@ -1,4 +1,5 @@
-$rootScope.user.campaign.numInspec<div class="container-fluid">
+$rootScope.user.campaign.numInspec
+<div class="container-fluid">
 	<div class="row" style="margin-top: 50px">
 		<div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
 				<div class="row">
@@ -58,11 +59,11 @@ $rootScope.user.campaign.numInspec<div class="container-fluid">
   <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
 <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
   	<div class="row">
-  	<fieldset>
-  		<br><br>
-			<div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>			
-  		<div id="NDVI"></div>
-  	</fieldset>
+		<fieldset>
+			<div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>
+			<iframe src="https://timeseries.lapig.iesa.ufg.br/modis/chart/{{point.lon | number:4}}/{{point.lat | number:4}}" title="Série temporal MODIS"></iframe>
+		</fieldset>
   	</div>
   </div>
+</div>
 </div>
