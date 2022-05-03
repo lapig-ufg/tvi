@@ -16,9 +16,9 @@ module.exports = function(app) {
 			"parallelRequestsDawnTime": 24
 		},
 		"mongo": {
-			"host": "172.18.0.6",
-			"port": "27017",
-			"dbname": "tvi"
+			"host": process.env.MONGO_HOST,
+			"port":  process.env.MONGO_PORT,
+			"dbname":  process.env.MONGO_DATABASE
 		},
 		"jobs": {
 			"timezone": 'America/Sao_Paulo',

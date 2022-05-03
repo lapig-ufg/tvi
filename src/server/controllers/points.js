@@ -46,7 +46,7 @@ module.exports = function(app) {
 		var findOneFilter = {
 			"$and": [
 				{ "userName": { "$nin": [ username ] } },
-				{ "$where":'this.userName.length<'+ campaign.numInspec },
+				{ "$where": 'this.userName.length < '+ campaign.numInspec },
 				{ "campaign": { "$eq":  campaign._id } },
 				{ "underInspection": { $lt:  campaign.numInspec } }
 			]
@@ -62,10 +62,10 @@ module.exports = function(app) {
 
 		var countFilter = {
 			"$and": [
-				{ "userName": { $in: [ username ] } },
-    		{"campaign": campaign._id}
-    	]
-   	};
+				{"userName": {$in: [username]}},
+				{"campaign": campaign._id}
+			]
+		};
 
 		var totalFilter = { 
 			"$and": [
@@ -113,7 +113,6 @@ module.exports = function(app) {
 			} else {
 				points.count(totalFilter, function(err, total) {
 					points.count(countFilter, function(err, count) {
-
 						var result = {};
 						result['point'] = {};
 						result['total'] = total;
@@ -189,7 +188,6 @@ module.exports = function(app) {
 
 		findPoint(user.campaign, user.name, function(result) {
 			request.session.currentPointId = result.point._id;
-
 			response.send(result);
 			response.end();
 		})

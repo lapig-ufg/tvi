@@ -160,7 +160,7 @@
                     <table ng-hide="point.inspection == 0" class="table table-condensed table-years">
                         <thead>
                         <tr>
-                            <td style="font-weight: bold;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">
+                            <td style="font-weight: bold; line-height: 6.5px;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">
                                 {{year}}
                             </td>
                             <td style="font-weight: bold;" ng-if='dataTab[1].checked'
@@ -188,7 +188,7 @@
                         </td>
                         </tfoot>
                         <tfoot ng-hide="buttonEdit == true" style="font-size: 14px; font-weight: bold;">
-                        <td ng-if='dataTab[0].checked' ng-repeat="landUse in objConsolidated track by $index">
+                        <td ng-if='dataTab[0].checked' style="line-height: 7.3px;" ng-repeat="landUse in objConsolidated track by $index">
                             {{landUse}}
                         </td>
                         </tfoot>
@@ -215,12 +215,11 @@
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 bold" style="margin-top: 420px">
-            <fieldset>
-                <br><br>
-                <span style="font-size: 18px; font-weight: bold;">Série temporal MODIS:</span>
+            <fieldset >
+                <span  style="font-size: 18px; font-weight: bold;">Série temporal MODIS:</span>
                 <div id="NDVI"></div>
             </fieldset>
-<!--            <iframe frameborder="0" src="https://timeseries.lapig.iesa.ufg.br/modis/chart/{{point.lon}}/{{point.lat}}" title="Série temporal MODIS" width="100%"></iframe>-->
+<!--            <ndvi></ndvi>-->
         </div>
     </div>
 </div>

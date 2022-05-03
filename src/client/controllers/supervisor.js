@@ -1,7 +1,6 @@
 'uses trict';
 
 Application.controller('supervisorController', function($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
-
 	util.waitUserData(function() {
 		$scope.size = 4;
 		$scope.onSubmission = false;
@@ -562,3 +561,16 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 
 	});
 });
+
+Application.directive('ndvi', ['$sce', function($sce) {
+	return {
+		restrict: 'E',
+		template: '<iframe ng-show="scope.point.lon" width="100%" src="{{ trustedUrl }}" frameborder="0" allowfullscreen></iframe>',
+		link: function(scope) {
+			var lon = scope.point.lon;
+			var lat = scope.point.lat;
+			var url = `https//timeseries.lapig.iesa.ufg.br/modis/chart/${lon}/${lat}`
+			scope.trustedUrl = $sce.trustAsResourceUrl(url);
+		}
+	}
+}]);
