@@ -6,7 +6,7 @@
   "dependencies": {
     "app-root-path": "^1.0.0",
     "archiver": "~0.4.10",
-    "async": "~0.2.10",
+    "async": "~2.6.4",
     "body-parser": "^1.12.4",
     "compression": "^1.4.3",
     "connect-mongo": "^0.8.2",
