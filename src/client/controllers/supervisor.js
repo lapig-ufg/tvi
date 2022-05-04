@@ -1,6 +1,7 @@
 'uses trict';
 
 Application.controller('supervisorController', function($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
+	$scope.showCharts = false
 	util.waitUserData(function() {
 		$scope.size = 4;
 		$scope.onSubmission = false;
@@ -172,6 +173,7 @@ Application.controller('supervisorController', function($rootScope, $scope, $loc
 					var ndviSg = [];
 					var date = [];
 					var text = [];
+					$scope.showCharts = data.values.length > 0;
 
 					for(var i = 0; i < data.values.length; i++) {
 						var dateObj = new Date(data.values[i][0])
