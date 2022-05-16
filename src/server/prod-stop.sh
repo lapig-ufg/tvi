@@ -1,2 +1,2 @@
 #!/bin/bash
-kill $(pgrep -f "node app-tvi-cluster.js")
+kill $(pgrep -f "node --no-deprecation /APP/tvi/src/server/app-tvi-cluster.js")

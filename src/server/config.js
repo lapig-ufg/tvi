@@ -10,7 +10,7 @@ module.exports = function(app) {
 		"imgDir": appRoot + "/images/",
 		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
-		"currentCampaign": "Bolivia",
+		"currentCampaign": "Brazil",
 		"cache": {
 			"parallelRequestsBusyTime": 16,
 			"parallelRequestsDawnTime": 24
@@ -58,7 +58,7 @@ module.exports = function(app) {
 
 	if(process.env.NODE_ENV == 'prod') {
 		config["mongo"]["port"] = "27017";
-		config.jobs.toRun[0].runOnAppStart = true;
+		config.jobs.toRun[0].runOnAppStart = false;
 		config.jobs.toRun[1].runOnAppStart = true;
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
 	}
