@@ -41,7 +41,7 @@
     "request-param": "^0.2.0",
     "response-time": "^2.3.0",
     "session-memory-store": "~0.2.2",
-    "socket.io": "^2.4.0",
+    "socket.io": "^2.5.0",
     "socket.io-adapter-mongo": "^2.0.5",
     "stream-concat": "^0.1.0",
     "strftime": "^0.9.2",
