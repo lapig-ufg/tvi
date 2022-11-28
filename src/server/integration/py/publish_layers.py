@@ -174,9 +174,9 @@ for year in range(1985,2021+1):
 
 	ee.Initialize()
 
-	LANDSAT_5 = ee.ImageCollection("LANDSAT/LT05/C01/T1_TOA")
-	LANDSAT_7 = ee.ImageCollection("LANDSAT/LE07/C01/T1_TOA")
-	LANDSAT_8 = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA")
+	LANDSAT_5 = ee.ImageCollection("LANDSAT/LT05/C02/T1_TOA")
+	LANDSAT_7 = ee.ImageCollection("LANDSAT/LE07/C02/T1_TOA")
+	LANDSAT_8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA")
 
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
