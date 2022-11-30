@@ -86,47 +86,68 @@ module.exports = function(app) {
 
 	}
 
+	Image.accessWms = function(request, response, params) {
+		var mosaicId = request.param('id')
+		var campaignId = request.param('campaign')
+
+		Internal.TMSUrl(mosaicId, campaignId, function(TMSurl) {
+			if(TMSurl != undefined)
+				response.write(Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
+
+			response.end()
+		});
+
+	}
+
 	Image.access = function(request, response) {
 		var layerId = request.param('layerId')
 		var pointId = request.param('pointId')
 		var campaignId = request.param('campaign')
 
 		var sourceUrl = 'http://localhost:3000/source/'+layerId+'?campaign='+campaignId
-		
-		points.findOne({ _id:pointId }, function(err, point) {
 
-			if (point) {
-				
-				var imagePath = path.join(config.imgDir, point.campaign, pointId, layerId +'.png')
-
-				fs.exists(imagePath, function(exists) {
-					if (exists) {
-						response.sendFile(imagePath)
-					} else {
-
-						var buffer = 4000
-						var coordinates = proj4('EPSG:4326', 'EPSG:900913', [point.lon, point.lat])
-
-						var ulx = coordinates[0] - buffer
-						var uly = coordinates[1] + buffer
-						var lrx = coordinates[0] + buffer
-						var lry = coordinates[1] - buffer
-						var projwin = ulx + " " + uly + " " + lrx + " " + lry
-
-						var cmd = config.imgDownloadCmd + ' "' + sourceUrl + '" "' + projwin + '" ' + imagePath
-						console.log(cmd)
-
-						exec(cmd, function() {
-							response.sendFile(imagePath)
-						})
-					}
-				})
-
-			} else {
+		campaigns.findOne({ "_id": campaignId }, function(err, campaign) {
+			if(err){
+				console.error(err)
 				response.end()
-			}
+			} else {
+				if(campaign){
+					points.findOne({ _id: pointId }, function(err, point) {
+						if (point) {
+							var imagePath = path.join(config.imgDir, point.campaign, pointId, layerId +'.png')
+							fs.exists(imagePath, function(exists) {
+								if (exists) {
+									response.sendFile(imagePath)
+								} else {
+									let cmd = '';
+									if(campaign != undefined && campaign.customURLs != undefined && campaign.customURLs[layerId] != undefined){
+										cmd = config.imgDownloadWmsCmd + ' ' + point.lon + ' ' + point.lat + ' "' + campaign.customURLs[layerId] + '" "' + imagePath + '"'
+									} else {
+										var buffer = 4000
+										var coordinates = proj4('EPSG:4326', 'EPSG:900913', [point.lon, point.lat])
 
-		})
+										var ulx = coordinates[0] - buffer
+										var uly = coordinates[1] + buffer
+										var lrx = coordinates[0] + buffer
+										var lry = coordinates[1] - buffer
+										var projwin = ulx + " " + uly + " " + lrx + " " + lry
+										cmd = config.imgDownloadCmd + ' "' + sourceUrl + '" "' + projwin + '" ' + imagePath
+									}
+									exec(cmd, function() {
+										response.sendFile(imagePath)
+									})
+								}
+							})
+						} else {
+							response.end()
+						}
+					})
+				} else {
+					console.error("Campaign not found")
+					response.end()
+				}
+			}
+		});
 	}
 
 	Image.populateCache = function(requestPointCache, pointCacheCompĺete, finished) {
