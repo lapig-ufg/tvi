@@ -1,0 +1,9 @@
+#!/bin/bash
+
+node update_points.js amazonia_bolivia_raisg_col2_etapa02
+node update_points.js amazonia_colombia_raisg_col2_etapa02
+node update_points.js amazonia_ecuador_raisg_col2_etapa02
+node update_points.js amazonia_guyanas_raisg_col2_etapa02
+node update_points.js amazonia_venezuela_raisg_col2_etapa02
+
+
