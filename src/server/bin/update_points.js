@@ -60,37 +60,50 @@ const getInfoByRegion = function(coordinate, callback) {
 }
 
 const url = 'mongodb://172.18.0.6:27017';
-
+	
 (async () => {
-	let client = await MongoClient.connect(url, { useNewUrlParser: true });
+	let client = await MongoClient.connect(url);
 
 	try {
+
 		const db = client.db("tvi");
 
 		let collection = db.collection('points');
 
-		let points = await collection.find({"campaign": 'amazonia_peru_raisg'});
+		const campaign = process.argv[2];
+
+		let points = await collection.find({"campaign": campaign });
+
+		const promises = [];
 
 		for (let data = await points.next(); data != null; data = await points.next()) {
-			const coordinate = {X: data.lon, Y: data.lat};
-			// console.log(data.index, JSON.stringify(coordinate))
-			getInfoByRegion(coordinate, async function (regionInfo) {
-				try {
-					let ob = await collection.updateOne(
-						{ "_id" : data._id },
-						{ $set: { biome: regionInfo.biome, uf: regionInfo.uf, county: regionInfo.county } }
-					);
+			promises.push(new Promise((resolve, reject) => {
+			 	const coordinate = {X: data.lon, Y: data.lat};
+				getInfoByRegion(coordinate, async (regionInfo) => {
+					try {
+						let ob = await collection.updateOne(
+							{ "_id" : data._id },
+							{ $set: { biome: regionInfo.biome, uf: regionInfo.uf, county: regionInfo.county } }
+						);
 
-					console.log(data._id, JSON.stringify(ob), regionInfo, '\n');
-				} catch (e) {
-					console.log(e);
-				}
-			});
+						resolve(data._id + ' | ' + JSON.stringify(ob) + ' | ' + JSON.stringify(regionInfo), '\n')
+					} catch (e) {
+						reject(e.message)
+					}
+				});
+			}))
 		}
 
-	}
-	finally {
-		// client.close();
+		Promise.all(promises).then(result => {
+			client.close();
+			console.log(result)	
+		}).catch(err => {
+			client.close();
+			console.error(err)
+		});
+
+	} catch (err){
+		console.error(err)
 	}
 })()
 	.catch(err => console.error(err));

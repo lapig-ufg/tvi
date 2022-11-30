@@ -1,4 +1,4 @@
-db.getCollection('points').find({'campaign':'desmatamento_regeneracao_ce'}).forEach(function(point) {
+db.getCollection('points').find({'campaign':"amazonia_peru_raisg_col2_etapa02"}).forEach(function(point) {
     var campaign = db.getCollection('campaign').findOne({_id: point.campaign})
     var numInspections = db.getCollection('campaign').distinct('numInspec',{'_id': point.campaign})
     
@@ -15,7 +15,7 @@ db.getCollection('points').find({'campaign':'desmatamento_regeneracao_ce'}).forE
         point.inspection = inspection
         point.userName = userName
       }
-      
+        
       point.underInspection = point.inspection.length
       print(' Final number of inspections ' + point.underInspection)
       db.getCollection('points').save(point)

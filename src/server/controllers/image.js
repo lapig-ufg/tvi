@@ -76,11 +76,10 @@ module.exports = function(app) {
 	Image.gdalDefinition = function(request, response) {
 		var mosaicId = request.param('id')
 		var campaignId = request.param('campaign')
-
 		Internal.TMSUrl(mosaicId, campaignId, function(TMSurl) {
 			if(TMSurl != undefined)
 				response.write(Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
-
+				console.log('gdalDefinition', Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
 			response.end()
 		});
 

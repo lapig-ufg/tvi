@@ -15,6 +15,7 @@ src/server/passwords.json
 **/bin/chart/
 **/integration/py/chart/
 *.tif
+**/logs/
 src/server/bin/*.png
 src/server/bin/SHP
 src/server/integration/py/credentials
@@ -37,4 +38,5 @@ src/server/integration/py/gee-keys/
 db/dump/
 src/server/bin/GeoJSON/
 *.out
+*.log
 .idea
