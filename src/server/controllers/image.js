@@ -119,7 +119,7 @@ module.exports = function(app) {
 									response.sendFile(imagePath)
 								} else {
 									let cmd = '';
-									if(campaign != undefined && campaign.customURLs != undefined && campaign.customURLs[layerId] != undefined){
+									if(campaign.hasOwnProperty('serviceType') && campaign.customURLs != undefined && campaign.customURLs[layerId] != undefined){
 										cmd = config.imgDownloadWmsCmd + ' ' + point.lon + ' ' + point.lat + ' "' + campaign.customURLs[layerId] + '" "' + imagePath + '"'
 									} else {
 										var buffer = 4000
