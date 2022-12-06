@@ -24,6 +24,7 @@ src/server/integration/py/*.pn
 devops/scripts/dump/
 src/server/.gitignore
 src/server/.env
+devops/scripts/export_all/csv/
 src/server/GJSON/campanha_2000_execution.geojson
 src/server/GJSON/campanha_2000_original.geojson
 src/server/GJSON/pontos_aa_5000.geojson
@@ -40,3 +41,6 @@ src/server/bin/GeoJSON/
 *.out
 *.log
 .idea
+*.pkl
+*.pkl
+

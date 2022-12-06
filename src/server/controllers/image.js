@@ -79,7 +79,6 @@ module.exports = function(app) {
 		Internal.TMSUrl(mosaicId, campaignId, function(TMSurl) {
 			if(TMSurl != undefined)
 				response.write(Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
-				console.log('gdalDefinition', Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
 			response.end()
 		});
 
@@ -132,7 +131,11 @@ module.exports = function(app) {
 										var projwin = ulx + " " + uly + " " + lrx + " " + lry
 										cmd = config.imgDownloadCmd + ' "' + sourceUrl + '" "' + projwin + '" ' + imagePath
 									}
-									exec(cmd, function() {
+									console.log(cmd)
+									exec(cmd, function(error, stdout, stderr) {
+										if(error || stderr){
+											console.error(error, stderr)
+										}
 										response.sendFile(imagePath)
 									})
 								}
