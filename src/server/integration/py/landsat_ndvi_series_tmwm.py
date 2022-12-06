@@ -17,7 +17,6 @@ def to_date(x):
 
 def get_values(args):    
     points_table, landsat_ndvi_series, cp, col = args
-    logger.info(f"Init Point {col}")
     try:
         ponto = points_table[(points_table['TARGETID'] == int(col.split('_')[1])) & (
                 points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT']].iloc[0]
@@ -49,6 +48,17 @@ def get_values(args):
 @click.option("--cp", help="ID of campaign of TVI")
 def main(tb, ts, cp):   
     try:
+        logger.add(
+            f'logs/{cp}.log',
+            format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
+            rotation='500 MB',
+        )
+        logger.add(
+            f'logs/{cp}_error.log',
+            format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
+            level='WARNING',
+            rotation='500 MB',
+        )
         points_table = pd.read_csv(Path(tb).resolve(), low_memory=False)
         logger.info(f"load points_table {Path(tb).resolve()}")
 
