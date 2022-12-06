@@ -60,7 +60,7 @@ module.exports = function(app) {
 	if(process.env.NODE_ENV == 'prod') {
 		config["mongo"]["port"] = "27017";
 		config.jobs.toRun[0].runOnAppStart = false;
-		config.jobs.toRun[1].runOnAppStart = false;
+		config.jobs.toRun[1].runOnAppStart = true;
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
 	}
 

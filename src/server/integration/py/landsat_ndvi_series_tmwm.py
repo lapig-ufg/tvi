@@ -8,63 +8,55 @@ from multiprocessing import Pool
 from pymongo import MongoClient
 from datetime import timedelta, date
 
+client = MongoClient('172.18.0.6', 27017)
+tvi = client['tvi-timeseries']
+
+def to_date(x):
+    year, days = x.split('-')
+    return (date(int(year), 1, 1) + timedelta(days=int(days) - 1)).isoformat()
+
+def get_values(args):    
+    points_table, landsat_ndvi_series, cp, col = args
+    logger.info(f"Init Point {col}")
+    try:
+        ponto = points_table[(points_table['TARGETID'] == int(col.split('_')[1])) & (
+                points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT']].iloc[0]
+
+        tmp = landsat_ndvi_series[['Date', col]]
+        tmp.loc[:, 'Date'] = tmp['Date'].apply(to_date)
+        tmp.loc[:, 'lon'] = pd.to_numeric(ponto['LON'])
+        tmp.loc[:, 'lat'] = pd.to_numeric(ponto['LAT'])
+        tmp.loc[:, 'geom'] = tmp.apply(lambda x: {'type': 'Point', 'coordinates':(x.lon,x.lat)},axis=1)
+
+        tmp = tmp.drop(['lon', 'lat'], axis=1)
+
+        tmp = tmp.rename(
+            columns={
+                col: 'value',
+                "Date": 'date'}).to_dict(
+            orient="records")
+        result = tvi[cp].insert_many(tmp)
+        logger.info(f"ADD TS {col} {result}")
+
+        return 1
+    except Exception as e:
+        logger.exception(e)
+
+
 @click.command()
 @click.option("--tb", help="CSV with Mapbiomas points")
 @click.option("--ts", help="CSV with Timeseries NDVI TMWM")
 @click.option("--cp", help="ID of campaign of TVI")
-def main(tb, ts, cp):
-    client = MongoClient('172.18.0.6', 27017)
-    db = client.tvi
-    
-    def get_values(col):
-        try:
-            points_table = pd.read_pickle("./tb.pkl")  
-            landsat_ndvi_series = pd.read_pickle("./ts.pkl")  
-            ponto = points_table[(points_table['TARGETID'] == int(col.split('_')[1])) & (
-                    points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT']].iloc[0]
-
-            tmp = landsat_ndvi_series[['Date', col]]
-            tmp['Date'] = tmp['Date'].apply(to_date)
-            tmp['lon'] = float(ponto['LON'])
-            tmp['lat'] = float(ponto['LAT'])
-
-            # tmp['campaign'] = cp
-            # tmp['geom'] = {
-            #     "type": "Point",
-            #     "coordinates": [lon, lat]
-            # }
-
-            tmp = tmp.rename(
-                columns={
-                    col: 'value',
-                    "Date": 'date'}).to_dict(
-                orient="records")
-            rows = []
-            for item in tmp:
-               
-                item['date'] = item['date'].isoformat()
-                item['index'] = 'ndvi-tmwm'
-                item['campaign'] = cp
-                rows.append(item)
-            return db.timeseries.insert_many(rows)
-        except Exception as e:
-            logger.exception(e)
-
-
-    def to_date(x):
-        year, days = x.split('-')
-        return date(int(year), 1, 1) + timedelta(days=int(days) - 1)
-
+def main(tb, ts, cp):   
     try:
         points_table = pd.read_csv(Path(tb).resolve(), low_memory=False)
+        logger.info(f"load points_table {Path(tb).resolve()}")
+
         landsat_ndvi_series = pd.read_csv(Path(ts).resolve(), low_memory=False)
-        cp = cp
-
-        points_table.to_pickle("./tb.pkl") 
-        landsat_ndvi_series.to_pickle("./ts.pkl")
-
+        logger.info(f"load landsat_ndvi_series {Path(ts).resolve()}")
+                
         with Pool(10) as works:
-            result = works.map(get_values,landsat_ndvi_series.columns[1:])
+            works.map(get_values,[(points_table, landsat_ndvi_series, cp, col) for col in landsat_ndvi_series.columns[1:]])
 
     except Exception as e:
         logger.exception(e)
