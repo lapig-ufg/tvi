@@ -18,6 +18,7 @@ def get_values(col):
     try:
         ponto = points_table[(points_table['TARGETID'] == int(col.split('_')[1])) & (
                 points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT']].iloc[0]
+
         tmp = landsat_ndvi_series[['Date', col]]
         tmp['Date'] = tmp['Date'].apply(to_date)
         tmp['lon'] = float(ponto['LON'])
@@ -27,6 +28,7 @@ def get_values(col):
             "type": "Point",
             "coordinates": [float(ponto['LON']), float(ponto['LAT'])]
         }
+
         tmp = tmp.rename(
             columns={
                 col: 'value',
@@ -49,8 +51,8 @@ def to_date(x):
 def main(tb, ts, cp):
     client = MongoClient('172.18.0.6', 27017)
     db = client.tvi
-    points_table = pd.read_csv(Path(tb).resolve())
-    landsat_ndvi_series = pd.read_csv(Path(ts).resolve())
+    points_table = pd.read_csv(Path(tb).resolve(), low_memory=False)
+    landsat_ndvi_series = pd.read_csv(Path(ts).resolve(), low_memory=False)
     cp = cp
     num_cores = int((os.cpu_count() * 2) - 5)
     with Pool(num_cores) as works:
