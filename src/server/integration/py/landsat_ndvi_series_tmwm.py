@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import click
+import pytz
 import pandas as pd
 from pathlib import Path
 from loguru import logger
@@ -13,7 +14,7 @@ tvi = client['tvi-timeseries']
 
 def to_date(x):
     year, days = x.split('-')
-    return (date(int(year), 1, 1) + timedelta(days=int(days) - 1)).isoformat()
+    return (datetime(int(year), 1, 1) + timedelta(days=int(days) - 1)) .astimezone(pytz.utc).isoformat()
 
 def get_values(args):    
     points_table, landsat_ndvi_series, cp, col = args
@@ -25,6 +26,7 @@ def get_values(args):
         tmp.loc[:, 'Date'] = tmp['Date'].apply(to_date)
         tmp.loc[:, 'lon'] = pd.to_numeric(ponto['LON'])
         tmp.loc[:, 'lat'] = pd.to_numeric(ponto['LAT'])
+        tmp.loc[:, 'class'] = ponto['CLASS_2018']
         tmp.loc[:, 'geom'] = tmp.apply(lambda x: {'type': 'Point', 'coordinates':(x.lon,x.lat)},axis=1)
 
         tmp = tmp.drop(['lon', 'lat'], axis=1)
