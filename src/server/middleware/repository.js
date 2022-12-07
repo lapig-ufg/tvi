@@ -1,69 +1,99 @@
-
 var util = require('util')
-	,   mongodb = require('mongodb')
-	,   async = require('async');
+    , mongodb = require('mongodb')
+    , async = require('async');
 
-module.exports = function(app) {
+module.exports = function (app) {
 
-		var Db = mongodb.Db,
-				Connection = mongodb.Connection,
-				Server = mongodb.Server,
-				config = app.config,
-				Repository = {
-					collections: {}
-				};
-		Repository.db = new Db(config.mongo.dbname
-				, new Server(config.mongo.host, config.mongo.port, {'auto_reconnect': true, 'pool_size': 5 })
-				, { safe: true }
-		);
+    var Db = mongodb.Db,
+        Connection = mongodb.Connection,
+        Server = mongodb.Server,
+        config = app.config,
+        Repository = {
+            collections: {},
+            tSCollections: {}
+        };
+    Repository.db = new Db(config.mongo.dbname
+        , new Server(config.mongo.host, config.mongo.port, {'auto_reconnect': true, 'pool_size': 5})
+        , {safe: true}
+    );
 
-		Repository.bin = function(data) {
-			return new mongodb.Binary(data);
-		}
+    Repository.dbTs = new Db('tvi-timeseries'
+        , new Server(config.mongo.host, config.mongo.port, {'auto_reconnect': true, 'pool_size': 5})
+        , {safe: true}
+    )
 
-		Repository.id = function(id) {
-			var x = new mongodb.ObjectID(id);
-			console.log(typeof x);
-				return x;
-		};
+    Repository.bin = function (data) {
+        return new mongodb.Binary(data);
+    }
 
-		Repository.init = function(callback) {
-				
-				Repository.db.open(function(err) {
-						if (err) {
-								return callback(err);
-						}
+    Repository.id = function (id) {
+        var x = new mongodb.ObjectID(id);
+        console.log(typeof x);
+        return x;
+    };
 
-						Repository.db.listCollections({}).toArray(function(err, names) {
+    Repository.init = function (callback) {
+        Repository.db.open(function (err) {
+            if (err) {
+                return callback(err);
+            }
 
-								var forEachOne = function(collection, callback) {
-										var name = collection.name.substr(collection.name.indexOf('\.') + 1);
-										if(name != 'indexes') {
-											Repository.db.collection(name, function(err, repository) {
-												if(err){
-													console.log(err)
-												}
+            Repository.db.listCollections({}).toArray(function (err, names) {
 
-												Repository.collections[name] = repository;
-												callback();
-											});
-										} else {
-											callback();
-										}
-								};
+                var forEachOne = function (collection, callback) {
+                    var name = collection.name.substr(collection.name.indexOf('\.') + 1);
+                    if (name != 'indexes') {
+                        Repository.db.collection(name, function (err, repository) {
+                            if (err) {
+                                console.log(err)
+                            }
 
-								async.each(names, forEachOne, callback)
-						});
-				});
-		};
+                            Repository.collections[name] = repository;
+                            callback();
+                        });
+                    } else {
+                        callback();
+                    }
+                };
 
-		Repository.getSync = function(collectionName) {
-				return Repository.collections[collectionName];
-		};
+                async.each(names, forEachOne, callback)
+            });
+        });
+        Repository.dbTs.open(function (err) {
+            if (err) {
+                return callback(err);
+            }
 
-		Repository.get = function(collectionName, callback) {
-				Repository.db.collection(collectionName, callback);
-		};
+            Repository.dbTs.listCollections({}).toArray(function (err, names) {
 
-		return Repository;
+                var forEachOne = function (collection, callback) {
+                    var name = collection.name.substr(collection.name.indexOf('\.') + 1);
+                    if (name != 'indexes') {
+                        Repository.dbTs.collection(name, function (err, repository) {
+                            if (err) {
+                                console.log(err)
+                            }
+
+                            Repository.tSCollections[name] = repository;
+                            callback();
+                        });
+                    } else {
+                        callback();
+                    }
+                };
+
+                async.each(names, forEachOne, callback)
+            });
+        });
+    };
+
+    Repository.getSync = function (collectionName) {
+        return Repository.collections[collectionName];
+    };
+
+    Repository.get = function (collectionName, callback) {
+        Repository.db.collection(collectionName, callback);
+    };
+
+    return Repository;
 };

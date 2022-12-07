@@ -85,6 +85,10 @@ $rootScope.user.campaign.numInspec
              class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
             <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
             <div class="row">
+                <fieldset  ng-show="showChartsLandsat" >
+                    <span style="font-size: 18px; font-weight: bold;">Série temporal LANDSAT:</span>
+                    <div id="LANDSAT"></div>
+                </fieldset>
                 <fieldset>
                     <div style="margin-bottom: 0px"><h4>Série temporal MODIS:</h4></div>
                     <div id="NDVI"></div>
