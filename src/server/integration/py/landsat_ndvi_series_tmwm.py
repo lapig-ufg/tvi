@@ -6,7 +6,7 @@ from pathlib import Path
 from loguru import logger
 from multiprocessing import Pool
 from pymongo import MongoClient
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 
 client = MongoClient('172.18.0.6', 27017)
 tvi = client['tvi-timeseries']
