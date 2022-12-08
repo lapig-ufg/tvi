@@ -9,12 +9,12 @@ from pymongo import MongoClient
 from datetime import timedelta, date, datetime
 
 logger.add(
-    f'logs/{cp}.log',
+    f'logs/ts.log',
     format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
     rotation='500 MB',
 )
 logger.add(
-    f'logs/{cp}_error.log',
+    f'logs/ts_error.log',
     format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
     level='WARNING',
     rotation='500 MB',
