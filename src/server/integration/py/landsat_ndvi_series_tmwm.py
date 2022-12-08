@@ -8,6 +8,18 @@ from multiprocessing import Pool
 from pymongo import MongoClient
 from datetime import timedelta, date, datetime
 
+logger.add(
+    f'logs/{cp}.log',
+    format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
+    rotation='500 MB',
+)
+logger.add(
+    f'logs/{cp}_error.log',
+    format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
+    level='WARNING',
+    rotation='500 MB',
+)
+
 client = MongoClient('172.18.0.6', 27017)
 tvi = client['tvi-timeseries']
 
@@ -19,7 +31,7 @@ def get_values(args):
     points_table, landsat_ndvi_series, cp, col = args
     try:
         ponto = points_table[(points_table['TARGETID'] == int(col.split('_')[1])) & (
-                points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT']].iloc[0]
+                points_table['CARTA_2'] == col.split('_')[0])][['LON', 'LAT', 'CLASS_2018']].iloc[0]
 
         tmp = landsat_ndvi_series[['Date', col]]
         tmp.loc[:, 'Date'] = tmp['Date'].apply(to_date)
@@ -36,7 +48,7 @@ def get_values(args):
                 "Date": 'date'}).to_dict(
             orient="records")
         result = tvi[cp].insert_many(tmp)
-        logger.info(f"ADD TS {col} {result}")
+        logger.info(f"ADD TS {col}")
 
         return 1
     except Exception as e:
@@ -49,17 +61,6 @@ def get_values(args):
 @click.option("--cp", help="ID of campaign of TVI")
 def main(tb, ts, cp):   
     try:
-        logger.add(
-            f'logs/{cp}.log',
-            format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
-            rotation='500 MB',
-        )
-        logger.add(
-            f'logs/{cp}_error.log',
-            format='[{time} | {level:<6}] {module}.{function}:{line} {message}',
-            level='WARNING',
-            rotation='500 MB',
-        )
         points_table = pd.read_csv(Path(tb).resolve(), low_memory=False)
         logger.info(f"load points_table {Path(tb).resolve()}")
 
