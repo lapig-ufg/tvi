@@ -521,7 +521,7 @@ module.exports = function (app) {
         const {campaign} = request.query;
         if (campaign) {
             const cmd = `mongo ${config.mongo.dbname} --host ${config.mongo.host} --port ${config.mongo.port} --eval "var campaignId='${campaign}'" ${config.currentCampaignCmd}`
-            exec(cmd, function(error, stdout, stderr) {
+	    exec(cmd, function(error, stdout, stderr) {
 
                 if(error || stderr){
                     response.status(400).send('Error ao processar a correção da campanha');
