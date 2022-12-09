@@ -670,5 +670,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             }, true);
 
+        $scope.downloadCSVBorda = function() {
+            window.open('service/campaign/csv-borda', '_blank')
+        };
+
     });
 });

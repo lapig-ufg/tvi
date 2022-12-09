@@ -14,8 +14,7 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 	}
 
 	$scope.downloadCSV = function() {
-		window.open('service/points/csv')
-		window.close();
+		window.open('service/points/csv', '_blank')
 	};
 
 	requester._get('login/user', function(result) {

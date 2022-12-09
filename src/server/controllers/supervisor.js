@@ -521,7 +521,7 @@ module.exports = function (app) {
         const {campaign} = request.query;
         if (campaign) {
             const cmd = `mongo ${config.mongo.dbname} --host ${config.mongo.host} --port ${config.mongo.port} --eval "var campaignId='${campaign}'" ${config.currentCampaignCmd}`
-	    exec(cmd, function(error, stdout, stderr) {
+	        exec(cmd, function(error, stdout, stderr) {
 
                 if(error || stderr){
                     response.status(400).send('Error ao processar a correção da campanha');
@@ -529,6 +529,85 @@ module.exports = function (app) {
                 }
                 response.send(stdout);
             })
+        } else {
+            response.status(400).send('Parameter campaign not found');
+            response.end();
+        }
+    }
+
+    Points.getBorda = async (request, response) => {
+        const campaign = request.session.user.campaign;
+        if (campaign) {
+            // const campaignObj = await infoCampaign.find({ _id: campaign._id }).toArray()
+            const nInspections = campaign.numInspec
+            const initialYear = campaign.initialYear
+            const finalYear =campaign.finalYear
+
+            const colNames = ["id","lat","lon"]
+
+            for(let i=0; i < nInspections; i++) {
+
+                colNames.push('user_' + (i+1))
+                colNames.push('time_' + (i+1))
+
+                for(let y=initialYear; y <= finalYear; y++) {
+                    colNames.push('class_' + y + "_" + (i+1))
+                    colNames.push('border_' + y + "_" + (i+1))
+                }
+            }
+
+            for(let y = initialYear; y <= finalYear; y++) {
+                colNames.push('class_' + y + "_f")
+            }
+
+            colNames.push('edited')
+
+            response.set('Content-Type', 'text/csv');
+            response.set('Content-Disposition', 'attachment;filename=' + campaign._id + '_borda.csv');
+
+            const csvStream = csv.format({
+                headers: colNames,
+                delimiter: ';'
+            });
+
+            const points = await pointsCollection.find({ 'campaign': campaign._id }).toArray()
+
+            points.forEach(point => {
+                const result = [ point._id, point.lon, point.lat ]
+                for(let i=0; i < nInspections; i++) {
+
+                    var inspection = point.inspection[i]
+
+                    if (point.userName[i]) {
+                        result.push(point.userName[i].toLowerCase())
+                        result.push(inspection.counter)
+
+                        for(var j=0; j < inspection.form.length; j++) {
+                            var form = inspection.form[j]
+
+                            for(var y=form.initialYear; y <= form.finalYear; y++) {
+                                result.push(form.landUse)
+                                result.push(form.pixelBorder)
+                            }
+                        }
+                    }
+
+                }
+
+                const consolidated = point.classConsolidated
+
+                if (consolidated) {
+                    for(let i=0; i < consolidated.length; i++) {
+                        result.push(consolidated[i])
+                    }
+
+                    result.push(point.pointEdited)
+                }
+                csvStream.write(result)
+            })
+            csvStream.end();
+
+            csvStream.pipe(response).on('end', () => response.end());
         } else {
             response.status(400).send('Parameter campaign not found');
             response.end();

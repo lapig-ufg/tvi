@@ -508,16 +508,3 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         requester._get('points/next-point', loadPoint);
     });
 });
-
-Application.directive('ndvi', ['$sce', function ($sce) {
-    return {
-        restrict: 'E',
-        template: '<iframe width="100%" src="{{ trustedUrl }}" frameborder="0" allowfullscreen></iframe>',
-        link: function (scope) {
-            console.log(scope)
-            var lon = $scope.point.lon;
-            var lat = $scope.point.lat;
-            scope.trustedUrl = $sce.trustAsResourceUrl(`https://timeseries.lapig.iesa.ufg.br/modis/chart/${lon}/${lat}`);
-        }
-    }
-}]);
