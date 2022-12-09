@@ -12,8 +12,6 @@ module.exports = function(app) {
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",
 		"correct": appRoot + "/bin/download_image_wms.sh",
-		"currentCampaignCmd": appRoot + "/bin/correct_campaign.js",
-		"pixelBordaCmd": appRoot + "/bin/pixel_borda.js",
 		"cache": {
 			"parallelRequestsBusyTime": 16,
 			"parallelRequestsDawnTime": 24

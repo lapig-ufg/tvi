@@ -517,18 +517,31 @@ module.exports = function (app) {
 
     }
 
-    Points.correctCampaign = function (request, response) {
-        const {campaign} = request.query;
+    Points.correctCampaign = async (request, response) => {
+        const campaign = request.session.user.campaign;
         if (campaign) {
-            const cmd = `mongo ${config.mongo.dbname} --host ${config.mongo.host} --port ${config.mongo.port} --eval "var campaignId='${campaign}'" ${config.currentCampaignCmd}`
-	        exec(cmd, function(error, stdout, stderr) {
+            const points = await pointsCollection.find({ 'campaign': campaign._id }).toArray();
+            const numInspections = campaign.numInspec;
+            const msgs = [];
+            for (const [idx, point] of points.entries() ){
+                if(point.inspection.length !== numInspections) {
+                    if(point.inspection.length > numInspections) {
+                        const numExceededInspection = point.inspection.length - numInspections
+                        const inspection = point.inspection.slice(0, -1*numExceededInspection)
+                        const userName = point.userName.slice(0, -1*numExceededInspection)
 
-                if(error || stderr){
-                    response.status(400).send('Error ao processar a correção da campanha');
-                    response.end();
+                        point.inspection = inspection
+                        point.userName = userName
+                    }
+
+                    point.underInspection = point.inspection.length
+                    const result = await pointsCollection.update({ _id: point._id }, { $set: point} )
+                    msgs.push(' Point '+ point._id +' final number of inspections ' + point.underInspection)
                 }
-                response.send(stdout);
-            })
+            }
+            msgs.join("\n")
+            response.status(200).send(msgs);
+            response.end();
         } else {
             response.status(400).send('Parameter campaign not found');
             response.end();
@@ -538,7 +551,6 @@ module.exports = function (app) {
     Points.getBorda = async (request, response) => {
         const campaign = request.session.user.campaign;
         if (campaign) {
-            // const campaignObj = await infoCampaign.find({ _id: campaign._id }).toArray()
             const nInspections = campaign.numInspec
             const initialYear = campaign.initialYear
             const finalYear =campaign.finalYear
