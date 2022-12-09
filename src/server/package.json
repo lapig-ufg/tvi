@@ -38,7 +38,7 @@
     "nodemon": "^2.0.20",
     "nodepdf": "~1.2.0",
     "proj4": "^2.5.0",
-    "request": "~2.58.0",
+    "request": "~2.88.2",
     "request-param": "^0.2.0",
     "response-time": "^2.3.0",
     "session-memory-store": "~0.2.2",
