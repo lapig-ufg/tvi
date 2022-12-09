@@ -42,7 +42,7 @@ app.middleware.repository.init(function() {
 	app.use(middlewareSession);
 
 	io.use(sharedsession(middlewareSession, {
-  	autoSave:true
+  		autoSave:true
 	})); 
 	
 	app.use(compression());
@@ -87,17 +87,23 @@ app.middleware.repository.init(function() {
 	.then('routes')
 	.into(app);
 
-	const server = http.listen(app.config.port, function() {
-		console.log('TVI Server @ [port %s] [pid %s]', app.config.port, process.pid.toString());
-		if(process.env.PRIMARY_WORKER) {
-			app.middleware.jobs.start();
-		}
+
+	const httpServer = http.listen(app.config.port, function () {
+		console.log('%s Server @ [port %s] [pid %s]', 'TVI Server', app.config.port, process.pid.toString());
 	});
 
-	server.setTimeout(1000 * 60 * 240);
+	httpServer.setTimeout(1000 * 60 * 240);
+
+	[`exit`, `uncaughtException`].forEach((event) => {
+		if (event === 'uncaughtException') {
+			process.on(event, (e) => { })
+		} else {
+			process.on(event, (e) => {
+				httpServer.close(() => process.exit())
+			})
+		}
+	})
 
 });
 
-process.on('uncaughtException', function (err) {
-	console.error(err.stack);
-});
+

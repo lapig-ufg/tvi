@@ -34,7 +34,6 @@ module.exports = function (app) {
                 }
             });
         } else{
-            console.error("Campaign not found")
             response.end()
         }
     }
@@ -94,7 +93,6 @@ module.exports = function (app) {
                 }
             });
         } else{
-            console.error("Campaign not found")
             response.end()
         }
     }
