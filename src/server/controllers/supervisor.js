@@ -29,7 +29,6 @@ module.exports = function (app) {
 
     Points.csv = function (request, response) {
         var campaign = request.session.user.campaign;
-        pointsCollection = app.repository.collections.points;
 
         infoCampaign.find({'_id': campaign._id}).forEach(function (data) {
             var initialYear = data.initialYear;
@@ -178,7 +177,6 @@ module.exports = function (app) {
     }
 
     Points.getPoint = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var campaign = request.session.user.campaign;
         var index = parseInt(request.param("index"));
         var landUse = request.param("landUse");
@@ -369,7 +367,6 @@ module.exports = function (app) {
     }
 
     Points.updatedClassConsolidated = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var classArray = request.param("class");
         var pointId = request.param("_id")
 
@@ -379,7 +376,6 @@ module.exports = function (app) {
     }
 
     Points.landUseFilter = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var campaign = request.session.user.campaign;
         //var landUse = request.param("landUse");
         var userName = request.param("userName");
@@ -412,7 +408,6 @@ module.exports = function (app) {
     }
 
     Points.usersFilter = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var campaign = request.session.user.campaign;
         var landUse = request.param("landUse");
         //var userName = request.param("userName");
@@ -446,7 +441,6 @@ module.exports = function (app) {
     }
 
     Points.biomeFilter = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var result = [];
         var campaign = request.session.user.campaign;
         var landUse = request.param("landUse");
@@ -485,7 +479,6 @@ module.exports = function (app) {
     }
 
     Points.ufFilter = function (request, response) {
-        pointsCollection = app.repository.collections.points;
         var campaign = request.session.user.campaign;
         var landUse = request.param("landUse");
         var userName = request.param("userName");

@@ -4,9 +4,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.showCharts = false
     $scope.showChartsLandsat = false
     $scope.showCorrectCampaign = false;
-    $scope.showloadig = true;
+    $scope.showloading = true;
     util.waitUserData(function () {
-        $scope.showloadig = false;
+        $scope.showloading = false;
         $scope.size = 4;
         $scope.onSubmission = false;
         $scope.period = 'DRY';
@@ -480,6 +480,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
 
         $scope.submit = function (index) {
+            $scope.showloading = true;
             var filter = {
                 "index": index
             };
@@ -518,6 +519,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             ufFilter(filter);
 
             requester._post('points/get-point', filter, loadPoint);
+            $scope.showloading = false;
         }
 
         var updatedClassConsolidated = function (callback) {
@@ -650,11 +652,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.submit(1);
 
         var correctCampain = () => {
-            $scope.showloadig = true;
+            $scope.showloading = true;
             requester._get(`campaign/correct`, {
                 "campaign": $rootScope.user.campaign._id
             }, function (data) {
-                $scope.showloadig = false;
+                $scope.showloading = false;
                 $window.alert(data ? `Pontos corrigidos: ${data}` : 'Companha sem problemas com as inspeções.')
             });
         }

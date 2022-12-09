@@ -19,7 +19,6 @@ module.exports = function(app) {
 	var GDAL_PARAMS = ['-of', 'PNG', '-tr', 30, 30 ]
 
 	Internal.TMSUrl = function(mosaicId, campaignId, callback) {
-		campaigns = app.repository.collections.campaign;
 		campaigns.findOne({ "_id": campaignId }, function(err, campaign) {
 			if (campaign != undefined && campaign.customURLs != undefined && campaign.customURLs[mosaicId] != undefined) {
 				callback(campaign.customURLs[mosaicId]);
@@ -81,7 +80,6 @@ module.exports = function(app) {
 	}
 
 	Image.access = function(request, response) {
-		campaigns = app.repository.collections.campaign;
 		var layerId = request.param('layerId')
 		var pointId = request.param('pointId')
 		var campaignId = request.param('campaign')

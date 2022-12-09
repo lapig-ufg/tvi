@@ -47,7 +47,6 @@ module.exports = function (app) {
                             if (err) {
                                 console.log(err)
                             }
-
                             Repository.collections[name] = repository;
                             callback();
                         });
@@ -59,6 +58,9 @@ module.exports = function (app) {
                 async.each(names, forEachOne, callback)
             });
         });
+    };
+
+    Repository.initTimeseriesDb = function (callback){
         Repository.dbTs.open(function (err) {
             if (err) {
                 return callback(err);
@@ -73,7 +75,6 @@ module.exports = function (app) {
                             if (err) {
                                 console.log(err)
                             }
-
                             Repository.tSCollections[name] = repository;
                             callback();
                         });
@@ -81,11 +82,10 @@ module.exports = function (app) {
                         callback();
                     }
                 };
-
                 async.each(names, forEachOne, callback)
             });
         });
-    };
+    }
 
     Repository.getSync = function (collectionName) {
         return Repository.collections[collectionName];
