@@ -11,7 +11,8 @@ module.exports = function(app) {
 		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",
-		"currentCampaign": "Brazil",
+		"correct": appRoot + "/bin/download_image_wms.sh",
+		"currentCampaignCmd": appRoot + "/bin/correct_campaign.js",
 		"cache": {
 			"parallelRequestsBusyTime": 16,
 			"parallelRequestsDawnTime": 24

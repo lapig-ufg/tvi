@@ -1,7 +1,3 @@
-var ejs = require('ejs');
-var fs = require('fs')
-var schedule = require('node-schedule');
-
 module.exports = function(app) {
 
 	var Points = {};
@@ -208,7 +204,7 @@ module.exports = function(app) {
 
 		points.findOne({ '_id': point._id }, function(err, pointDb) {
 			
-			if(pointDb.userName.length == user.campaign.numInspec - 1) {
+			if(pointDb.userName.length === user.campaign.numInspec - 1) {
 				updateStruct['$set'] = classConsolidate(point, pointDb, user);
 			}
 

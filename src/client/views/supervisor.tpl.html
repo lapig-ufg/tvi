@@ -1,4 +1,10 @@
-<div class="container-fluid" style="overflow: hidden;">
+<div class="overlay" ng-show="showloadig">
+    <div class="overlay-inner">
+        <span class="loader overlay-content"></span>
+    </div>
+</div>
+
+<div class="container-fluid" style="overflow: hidden;" >
     <div class="row">
         <div class="row navbar-fixed-top" style="background: white; top: 40px; padding-top: 3px" ;>
             <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
@@ -206,7 +212,7 @@
                     <div ng-repeat="map in maps"
                          ng-class="(size == 4) ? 'ee-mapbox col-xs-12 col-sm-6 col-md-3 col-lg-3' : 'ee-mapbox col-xs-12 col-sm-6 col-md-2 col-lg-2'"
                          style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span
+                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date: 'dd/MM/yyyy'}}</span><span
                             class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
                         <inspection-map lon="point.lon" lat="point.lat" bounds="point.bounds" zoom="config.zoomLevel"
                                         tms-url="{{map.url}}"/>
