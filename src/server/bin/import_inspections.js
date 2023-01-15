@@ -30,9 +30,10 @@ const getInspections = function(geojsonDataStr) {
 		const pointProperties = geojsonData.features[i].properties;
 		let inspections = [];
 		Object.keys(pointProperties).forEach(function(key) {
-			if(key.includes('Cons_')){
+			if(key.includes('Cons_'.toLowerCase())){
+				key = key.toLowerCase()
 				inspections.push({
-					"year": parseInt(key.replace('Cons_','')),
+					"year": parseInt(key.replace('cons_','')),
 					"class": pointProperties[key]
 				})
 			}
@@ -86,7 +87,7 @@ fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 						"userName": "Classificação Automática"
 					}
 				};
-
+			
 				collectionPoints.update({ 'campaign': campaign, 'lon': point.lon, lat: point.lat }, update, function(err, pto) {
 					if(err){
 						console.log("[ERROR] " + JSON.stringify(pto) + " not updated.");
