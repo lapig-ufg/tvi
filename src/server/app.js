@@ -91,6 +91,9 @@ app.middleware.repository.init(() => {
 
 		const httpServer = http.listen(app.config.port, function () {
 			console.log('%s Server @ [port %s] [pid %s]', 'TVI Server', app.config.port, process.pid.toString());
+			if(process.env.PRIMARY_WORKER) {
+				app.middleware.jobs.start();
+			}
 		});
 
 		httpServer.setTimeout(1000 * 60 * 240);
