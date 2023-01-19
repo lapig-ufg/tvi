@@ -16,7 +16,7 @@ $rootScope.user.campaign.numInspec
                         <b ng-show="isChaco">Carta: {{point.biome}}</b>
                         <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
                     </p>
-                    <p><b>Coordenadas:</b> {{point.lon | number:4}}, {{point.lat | number:4}} </p>
+                    <p><b>Coordenadas:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
                     <fieldset>
                         <legend>Uso e Cobertura da Terra:</legend>
                         <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
