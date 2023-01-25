@@ -130,8 +130,8 @@
                 </div>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-8 col-lg-9" style="height: 220px; overflow-y: scroll;">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                    <button style="float: left;" ng-disabled="modeEdit" class="btn cal-btn"
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-bottom: 10px;">
+                    <button style="float: left; margin-right: 5px;" ng-disabled="modeEdit" class="btn cal-btn"
                             ng-repeat="element in dataTab" ng-click="sortTimeInspection(element)"
                             ng-class="{activeButton: element.checked, 'btn-default': !element.checked}">{{element.name}}
                     </button>
@@ -168,7 +168,7 @@
                     <table ng-hide="point.inspection == 0" class="table table-condensed table-years">
                         <thead>
                         <tr>
-                            <td style="font-weight: bold; line-height: 6.5px;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">
+                            <td style="font-weight: bold; line-height: 1.42857143;" ng-if='dataTab[0].checked' ng-repeat="year in point.years">
                                 {{year}}
                             </td>
                             <td style="font-weight: bold;" ng-if='dataTab[1].checked'
@@ -187,7 +187,7 @@
                         </tr>
                         </tbody>
                         <tfoot ng-hide="buttonEdit == false"
-                               style="font-size: 14px; font-weight: bold; white-space: normal;">
+                               style="font-size: 14px; font-weight: bold; white-space: normal; line-height: 1.42857143;">
                         <td ng-repeat="x in objConsolidated track by $index">
                             <!-- change service here -->
                             <select ng-if='dataTab[0].checked'
@@ -196,7 +196,7 @@
                         </td>
                         </tfoot>
                         <tfoot ng-hide="buttonEdit == true" style="font-size: 14px; font-weight: bold;">
-                        <td ng-if='dataTab[0].checked' style="line-height: 7.3px;" ng-repeat="landUse in objConsolidated track by $index">
+                        <td ng-if='dataTab[0].checked' style="line-height: 1.42857143;" ng-repeat="landUse in objConsolidated track by $index">
                             {{landUse}}
                         </td>
                         </tfoot>
