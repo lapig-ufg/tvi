@@ -117,7 +117,7 @@ PERIODS = [
 	}
 ]
 
-for year in range(2021,2022+1):
+for year in range(1985,2022+1):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue
