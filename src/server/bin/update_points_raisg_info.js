@@ -9,26 +9,33 @@ const checkError = function(error) {
 }
 
 const getInfoByRegionCmd = function(coordinate) {
-	regions = "SHP/biomas-peru/region_clasificacion.shp";
-	sql = "select json_group_array(json_object( 'id', id_region, 'biome', reg_clasif, 'country', pais )) from region_clasificacion where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4674))"
+	// regions = "SHP/biomas-peru/region_clasificacion.shp";
+	regions = "SHP/biomas_bolivia/REGIONS_BOLIVIA.shp";
+
+	sql = "select json_group_array(json_object( 'id', id_region, 'biome', reg_clasif, 'country', pais )) from REGIONS_BOLIVIA where ST_INTERSECTS(Geometry,GeomFromText('POINT("+coordinate.X+" "+coordinate.Y+")',4674))"
 	return 'ogrinfo -q -geom=no -dialect sqlite -sql "'+sql+'" '+regions;
 }
 
 const getInfoByRegion = function(coordinate, callback) {
 	exec(getInfoByRegionCmd(coordinate), function(error, stdout, stderr) {
 		checkError(error);
+		let object = JSON.parse(stdout.split("=")[1])[1];
 
-		let object = JSON.parse(stdout.split("=")[1])[0];
-
-
-		var result = {
-			"biome": object.id + " - " + object.biome,
-			"uf": '',
-			"county": object.country,
-			"countyCode": ''
-		};
-
-		callback(result);
+		if(object){
+			callback({
+				"biome": object.id + " - " + object.biome,
+				"uf": '',
+				"county": object.country,
+				"countyCode": ''
+			});
+		}else{
+			callback({
+				"biome":'',
+				"uf": '',
+				"county": '',
+				"countyCode": ''
+			});
+		}		
 	});
 }
 
