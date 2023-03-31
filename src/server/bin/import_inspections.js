@@ -30,14 +30,16 @@ const getInspections = function(geojsonDataStr) {
 		const pointProperties = geojsonData.features[i].properties;
 		let inspections = [];
 		Object.keys(pointProperties).forEach(function(key) {
-			if(key.includes('Cons_'.toLowerCase())){
+			if(key.toLowerCase().includes('CLASS_'.toLowerCase())){
 				key = key.toLowerCase()
 				inspections.push({
-					"year": parseInt(key.replace('cons_','')),
+					"year": parseInt(key.replace('class_','')),
 					"class": pointProperties[key]
 				})
 			}
 		});
+
+
 
 		points.push(
 			{
