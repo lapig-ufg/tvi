@@ -90,7 +90,7 @@ def get_best_image(start_date, end_date):
     # Create a bbox for Brazil.
     # brazil = ee.FeatureCollection('FAO/GAUL_SIMPLIFIED_500m/2015/level0').filter(ee.Filter.eq('ADM0_NAME', 'Brazil'))
     bounds_geometry = ee.Geometry.Rectangle([-73.56, -16.96, -43.99, 4.16])
-    
+    LAPIG_TVI = ['SWIR1','REDEDGE4','RED'] ['B11','B8A','B4']
     # Filter the collection by date
     s2 = s2.filterDate(start_date, end_date).filterBounds(bounds_geometry)
     s2 = s2.select( ['B2','B3','B4','B5','B6','B7','B8','B8A','B11','B12'], ['BLUE','GREEN','RED','REDEDGE1','REDEDGE2','REDEDGE3','NIR','REDEDGE4','SWIR1','SWIR2'])
