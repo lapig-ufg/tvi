@@ -11,4 +11,5 @@ module.exports = function (app) {
 	app.post('/service/points/updatedClassConsolidated/', points.updatedClassConsolidated);
 	app.get('/service/campaign/correct', points.correctCampaign);
 	app.get('/service/campaign/csv-borda', points.getBorda);
+	app.get('/service/campaign/removeInspections', points.removeInspections);
 }

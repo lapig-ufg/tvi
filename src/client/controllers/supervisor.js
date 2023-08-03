@@ -673,6 +673,17 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.downloadCSVBorda = function() {
             window.open('service/campaign/csv-borda', '_blank')
         };
+        $scope.removeInspections = () => {
+            if (confirm(`Are you sure you want to remove the inspections from the point identified as ${$scope.point._id}?
+             Be aware that once the removal is completed, it will no longer be possible to reverse this action.`)) {
+                requester._get(`campaign/removeInspections?pointId=${$scope.point._id}`, function (data) {
+                    if(data) {
+                        alert(`The inspections from point: ${$scope.point._id} were successfully removed.`);
+                        $scope.submit($scope.point.index);
+                    }
+                });
+            }
+        };
 
     });
 });

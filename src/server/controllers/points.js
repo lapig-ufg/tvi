@@ -70,7 +70,7 @@ module.exports = function(app) {
 		};
 
 		var findOneSort = [['index', 1]]
-		var findOneUpdate = {'$inc':{'underInspection': 1}}
+		var findOneUpdate = {'$inc': {'underInspection': 1}}
 
 		//points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
 		points.findAndModify(findOneFilter, findOneSort, findOneUpdate, {}, function(err, object) {

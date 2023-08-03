@@ -97,36 +97,44 @@
                 </div>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-4 col-lg-3">
-                <div class="borderPoint" style="margin-bottom: 1px">
-                    <div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
-                    <div class="tab">
-                        <p>
-                            <b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
-                            <b ng-show="isChaco">Região: {{point.county}}</b>
-                            <b ng-show="isRaisg">País: {{point.county}} </b>
-                        </p>
+                <div class="borderPoint" style="margin-bottom: 1px; display: flex">
+                    <div style="max-height: 222px; overflow: auto; width: 100%;">
+                        <div style="padding-left: 1em"><h4>Informações do ponto {{ point.originalIndex }}:</h4></div>
+                        <div class="tab">
+                            <p>
+                                <b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
+                                <b ng-show="isChaco">Região: {{point.county}}</b>
+                                <b ng-show="isRaisg">País: {{point.county}} </b>
+                            </p>
+                        </div>
+                        <div class="tab">
+                            <p>
+                                <b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
+                                <b ng-show="isChaco">Carta: {{point.biome}}</b>
+                                <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
+                            </p>
+                        </div>
+                        <div class="tab"><p><b>Coordenadas:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
+                        </div>
+                        <div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
                     </div>
-                    <div class="tab">
-                        <p>
-                            <b ng-hide="isChaco || isRaisg">Municipio: {{point.county}} {{point.uf}}</b>
-                            <b ng-show="isChaco">Carta: {{point.biome}}</b>
-                            <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
-                        </p>
+                    <div style="width: 306px;">
+                        <div style="text-align: center;"><h4>Ferramentas de visualização:</h4></div>
+                        <div style="display: flex; justify-content: center;  flex-wrap: wrap">
+                            <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
+                                   value="Alterar Período">
+                            <input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
+                                   value="Google Earth">
+                            <input ng-if="objConsolidated.length > 0" ng-hide="buttonEdit == true" style="margin-top: 0px;" ng-click="editClass()" type="button"
+                                   class="btn btn-primary" value="Editar">
+                            <input ng-hide="buttonEdit == false" style="margin-top: 0px;" ng-click="saveClass()" type="button"
+                                   ng-submit="submit(1)" class="btn btn-primary" value="Salvar">
+                            <input style="margin-top: 0px;" ng-click="downloadCSVBorda()" type="button"
+                                   ng-submit="submit(1)" class="btn btn-info" value="Borda CSV">
+                            <input ng-if="point.inspection.length > 0" ng-click="removeInspections()" type="button"
+                                   ng-submit="submit(1)" class="btn btn-danger" value="Remover Inspeções">
+                        </div>
                     </div>
-                    <div class="tab"><p><b>Coordenadas:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
-                    </div>
-                    <div class="tab"><p><b>Tempo de Inspeção do Ponto:</b> {{timeInspectionPoint}} seg.</p></div>
-                    <div style="padding-left: 1em"><h4>Ferramentas de visualização:</h4></div>
-                    <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
-                           value="Alterar Período">
-                    <input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
-                           value="Google Earth">
-                    <input ng-hide="buttonEdit == true" style="margin-top: 0px;" ng-click="editClass()" type="button"
-                           class="btn btn-primary" value="Editar">
-                    <input ng-hide="buttonEdit == false" style="margin-top: 0px;" ng-click="saveClass()" type="button"
-                           ng-submit="submit(1)" class="btn btn-primary" value="Salvar">
-                    <input style="margin-top: 0px;" ng-click="downloadCSVBorda()" type="button"
-                           ng-submit="submit(1)" class="btn btn-info" value="Borda CSV">
                 </div>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-8 col-lg-9" style="height: 220px; overflow-y: scroll;">

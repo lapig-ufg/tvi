@@ -625,6 +625,23 @@ module.exports = function (app) {
             response.end();
         }
     }
+    Points.removeInspections = async (request, response) => {
+        const {pointId} =  request.query;
+        if (pointId) {
+            const result = await pointsCollection.update({ _id: pointId }, { $set: {
+                    inspection: [],
+                    userName: [],
+                    classConsolidated: [],
+                    underInspection: 0,
+                    updateAt: new Date()
+                }})
+            response.status(200).send(result);
+        } else {
+            response.status(404).send('O identificador: pointerId não foi encontrado.');
+            response.end();
+        }
+    }
+
 
     return Points;
 };
