@@ -111,7 +111,7 @@ def get_mosaic_list():
 
         ee.Initialize(EE_CREDENTIALS)
 
-        for year in range(2022, end_year):
+        for year in range(2019, end_year):
             if year > 2012: 
                 satellite = 'L8'
             elif year > 2011:
