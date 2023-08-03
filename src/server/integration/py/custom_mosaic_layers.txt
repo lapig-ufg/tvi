@@ -1,1 +1,1 @@
-validation_region1_indonesia
+pastagem_50k_sentinel
