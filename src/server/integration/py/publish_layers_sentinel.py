@@ -38,10 +38,10 @@ DRYREGIONS = ['NIR', 'RED', 'GREEN']
 AGRICULTURALAREAS = ['REDEDGE4', 'SWIR1', 'REDEDGE1']
 LAPIG_TVI = ['SWIR1','REDEDGE4','RED']
 
-def update_campaign(campaign_id, mosaics, dates):
+def update_campaign(campaign_id, mosaics, info):
 	try:
-# 		db.campaign.update_one({ "_id": campaign_id }, { "$set": {"customURLs":  mosaics, "dates": infos, "updateAt": datetime.datetime.now()}}, upsert=True)
-		print(campaign_id, mosaics, dates)
+		db.campaign.update_one({ "_id": campaign_id }, { "$set": {"customURLs":  mosaics, "info": info, "updateAt": datetime.datetime.now()}}, upsert=True)
+		print(campaign_id, mosaics)
 	except:
 		traceback.print_exc()
 		print(campaign_id + ' no image.')
@@ -85,25 +85,18 @@ def get_gamma():
 def get_best_image(start_date, end_date):
     print(start_date, end_date)
     # Get the Sentinel-2 collection.
-    s2 = ee.ImageCollection("COPERNICUS/S2")
+    s2 = ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
 
     # Create a bbox for Brazil.
-    # brazil = ee.FeatureCollection('FAO/GAUL_SIMPLIFIED_500m/2015/level0').filter(ee.Filter.eq('ADM0_NAME', 'Brazil'))
     bounds_geometry = ee.Geometry.Rectangle([-73.56, -16.96, -43.99, 4.16])
-    LAPIG_TVI = ['SWIR1','REDEDGE4','RED'] ['B11','B8A','B4']
+    LAPIG_TVI = ['SWIR1','REDEDGE4','RED']
     # Filter the collection by date
     s2 = s2.filterDate(start_date, end_date).filterBounds(bounds_geometry)
+    s2 = s2.sort('CLOUD_COVER', False)
     s2 = s2.select( ['B2','B3','B4','B5','B6','B7','B8','B8A','B11','B12'], ['BLUE','GREEN','RED','REDEDGE1','REDEDGE2','REDEDGE3','NIR','REDEDGE4','SWIR1','SWIR2'])
  
     # Get the best image, based on the cloud cover.
-    best_image = s2.sort("CLOUDY_PIXEL_PERCENTAGE").mosaic()
-
-    # Get the date of the best image.
-#     date_str = best_image.getInfo()['properties']['DATATAKE_IDENTIFIER']
-#     date_string = date_str[5:13]
-#
-#     # Convert the date string to the desired format (YYYY-MM-DD)
-#     formatted_date = f"{date_string[0:4]}-{date_string[4:6]}-{date_string[6:8]}"
+    best_image = s2.mosaic()
 
     image = best_image.getMapId({ "bands": BANDS, "min": get_min(), "max": get_max(), "gamma": get_gamma()})
 
@@ -146,8 +139,8 @@ def get_mosaic_list():
         ee.Reset()
         return dict(zip(keys, values)), dict(zip(dates_keys, dates_values))
 
-# client = MongoClient(MONGO_HOST, MONGO_PORT)
-# db = client['tvi']
+client = MongoClient(MONGO_HOST, MONGO_PORT)
+db = client['tvi']
 
 
 with open(sys.argv[2], 'r') as file:
