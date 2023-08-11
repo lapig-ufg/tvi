@@ -16,5 +16,6 @@ if [ "$TYPE" == "magick" ]; then
 	curl -s $GDALTMS_URL | gdal_translate $GDAL_PARAMS /vsistdin/ /vsistdout/ | convert - $CONVER_PARAMS $IMAGE_FILE
 else
 	curl -s $GDALTMS_URL | gdal_translate $GDAL_PARAMS /vsistdin/ $IMAGE_FILE
+	echo "curl  -s $GDALTMS_URL | gdal_translate $GDAL_PARAMS /vsistdin/ $IMAGE_FILE"
 	python3 $BASEDIR/enhance_img_clahe.py $IMAGE_FILE
 fi
