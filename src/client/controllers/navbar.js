@@ -18,8 +18,11 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 	};
 
 	$scope.downloadFinalReport = function() {
-		console.log($rootScope.user.campaign._id)
-		window.open(`https://timeseries.lapig.iesa.ufg.br/api/analytics/tvi/${$rootScope.user.campaign._id}/csv?direct=true`, '_blank')
+		if($rootScope.campaignFinished){
+			window.open(`https://timeseries.lapig.iesa.ufg.br/api/analytics/tvi/${$rootScope.user.campaign._id}/csv?direct=true`, '_blank')
+		} else {
+			$window.alert(`A campanha não foi finalizada. Ainda há pontos para finalizarem as inspeções.`)
+		}
 	};
 
 	requester._get('login/user', function(result) {

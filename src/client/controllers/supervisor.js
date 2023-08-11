@@ -5,6 +5,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.showChartsLandsat = false
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
+    $rootScope.campaignFinished = false
     util.waitUserData(function () {
         $scope.showloading = false;
         $scope.size = 4;
@@ -638,6 +639,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             initFormViewVariables();
             //generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
             generateMaps();
+            getCampaignMatadata();
             if (!$scope.isChaco) {
                 createModisChart(data.point.dates);
                 createLandsatChart();
@@ -661,6 +663,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
+        const getCampaignMatadata = () => {
+            $scope.showloading = true;
+            requester._get(`dashboard/points-inspection`, function (data) {
+                $scope.showloading = false;
+                $rootScope.campaignFinished = data.pointsInspection === 0 && data.pointsNoComplet === 0;
+            });
+
+        }
         $window.addEventListener("keydown", (event) => {
                 if (event.key !== undefined) {
                     if (event.key === 'F10') {
