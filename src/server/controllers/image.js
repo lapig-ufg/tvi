@@ -94,8 +94,12 @@ module.exports = function(app) {
 				points.findOne({ _id: pointId }, function(err, point) {
 					if (point) {
 						var imagePath = path.join(config.imgDir, point.campaign, pointId, layerId +'.png')
+						if(campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a'){
+							imagePath = path.join(config.imgDir, point.campaign, pointId, layerId +'.jpg')
+						}
 						fs.exists(imagePath, function(exists) {
 							if (exists) {
+								console.log(exists, imagePath)
 								response.sendFile(imagePath)
 							} else {
 								let cmd = '';
@@ -112,12 +116,17 @@ module.exports = function(app) {
 									var projwin = ulx + " " + uly + " " + lrx + " " + lry
 									cmd = config.imgDownloadCmd + ' "' + sourceUrl + '" "' + projwin + '" ' + imagePath
 								}
-								exec(cmd, function(error, stdout, stderr) {
-									if(error || stderr){
-										console.error(error, stderr)
-									}
-									response.sendFile(imagePath)
-								})
+								if(campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a') {
+									response.sendFile(null)
+								} else {
+									exec(cmd, function(error, stdout, stderr) {
+										if(error || stderr){
+											console.error(error, stderr)
+										}
+										response.sendFile(imagePath)
+									})
+								}
+
 							}
 						})
 					} else {

@@ -99,7 +99,7 @@ def get_best_image(start_date, end_date):
     best_image = s2.mosaic()
 
 #     image = best_image.getMapId({ "bands": BANDS, "min": get_min(), "max": get_max(), "gamma": get_gamma()})
-    image = best_image.getMapId({ "bands": ['SWIR1','REDEDGE4','RED'], "min": [600,700,400], "max": [4300,5400,2800], "gamma": get_gamma()})
+    image = best_image.getMapId({ "bands": ['B11','B8A','B4'], "min": [600,700,400], "max": [4300,5400,2800], "gamma": [1.1,1.1,1.1]})
 
     return image, best_image.getInfo()
 

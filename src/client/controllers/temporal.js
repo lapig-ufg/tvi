@@ -436,13 +436,19 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 var host = location.host;
                 var url = "http://" + host + '/image/' + tmsId + '/' + $scope.point._id + "?campaign=" + $rootScope.user.campaign._id;
 
+                let date =  ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/' + year;
+                if( $scope.point.hasOwnProperty('images')){
+                    const image = $scope.point['images'].find(img => img.image_index === tmsId)
+                    date = image.datetime
+                }
+
                 $scope.maps.push({
-                    date: ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/' + year,
+                    date: date,
                     year: year,
-                    url: url
+                    url: url,
+                    bounds: $scope.point.bounds
                 });
             }
-            ;
         }
 
         $scope.getKml = function () {
