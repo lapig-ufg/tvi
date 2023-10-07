@@ -85,7 +85,7 @@ def publishImg(image):
 	# mapId = image.getMapId({ "bands": 'NIR,SWIR,RED'}) - Padrão LAPIG
 	# mapId = image.getMapId({ "bands": 'SWIR,NIR,RED'}) - Padrão RAISG
 
-	mapId = image.getMapId({ "bands": 'NIR,SWIR,RED'})
+	mapId = image.getMapId({ "bands": 'SWIR,NIR,RED'})
 	for i in mapId:
 		
 		if(i == u'token'):
