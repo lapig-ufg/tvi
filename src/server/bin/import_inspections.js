@@ -34,7 +34,7 @@ const getInspections = function(geojsonDataStr) {
 				key = key.toLowerCase()
 				inspections.push({
 					"year": parseInt(key.replace('class_','')),
-					"class": pointProperties[key]
+					"class": pointProperties[key.toUpperCase()]
 				})
 			}
 		});

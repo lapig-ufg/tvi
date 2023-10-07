@@ -13,8 +13,8 @@ module.exports = function(app) {
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",
 		"correct": appRoot + "/bin/download_image_wms.sh",
 		"cache": {
-			"parallelRequestsBusyTime": 16,
-			"parallelRequestsDawnTime": 24
+			"parallelRequestsBusyTime": 36,
+			"parallelRequestsDawnTime": 46
 		},
 		"mongo": {
 			"host": process.env.MONGO_HOST,

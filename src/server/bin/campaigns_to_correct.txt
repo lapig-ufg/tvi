@@ -1,0 +1,4 @@
+mapbiomas_85k_col3_pampa_v2
+mapbiomas_85k_col3_pantanal_v2
+mapbiomas_85k_col3_amazonia_v2
+mapbiomas_85k_col3_mataatlantica_v2
