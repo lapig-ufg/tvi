@@ -214,9 +214,13 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="top: 400px;">
             <div class="row">
-                <span class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">Imagens Landsat  <span
-                        ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>  <span ng-show="isRaisg"
-                                                                                            class="titleMaps">RGB(SWIR,NIR,RED)</span></span>
+                <span ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    Imagens Landsat  <span ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>
+                    <span ng-show="isRaisg"class="titleMaps">RGB(SWIR,NIR,RED)</span>
+                </span>
+                <span  ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    Imagens Sentinel-2 L2A  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
+                </span>
                 <br><br>
                 <fieldset>
                     <div ng-repeat="map in maps"

@@ -20,6 +20,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         $scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
         $scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
+        $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
         $scope.isDisabled = true;
         $scope.isObjectEmpty = function (obj) {
 

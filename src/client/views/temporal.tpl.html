@@ -61,8 +61,12 @@ $rootScope.user.campaign.numInspec
              class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
             <div class="row">
                 <fieldset>
-                    <legend>Imagens Landsat <span ng-hide="isRaisg" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
+                    <legend>Imagens Landsat <span ng-hide="isRaisg && !isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
                             ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span
+                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>
+                    </legend>
+                    <legend>Imagens Sentinel-2 L2A <span ng-hide="isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
+                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR16,NIR,RED)</span><span
                             style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>
                     </legend>
                     <div ng-repeat="map in maps"
