@@ -577,7 +577,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     for (var i = 0; i < arrayConsolid.length; i++) {
                         $scope.selectedLandUses.push(arrayConsolid[i])
                     }
-
                     $scope.buttonEdit = true;
                 }
             });
@@ -586,6 +585,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         var landUseFilter = function (filter) {
             requester._get('points/landUses', filter, function (landUses) {
                 landUses.unshift('Todos');
+                landUses.push('Não Consolidados');
 
                 if (filter.landUse == undefined)
                     filter.landUse = 'Todos';
@@ -632,7 +632,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
 
         var loadPoint = function (data) {
-            console.log(data);
+            if(data.totalPoints === 0){
+                alert('Não foram encontrados pontos não consolidados.');
+                return;
+            }
             $scope.campaign = data.campaign;
             $scope.objConsolidated = data.point.classConsolidated;
             $scope.onSubmission = false;

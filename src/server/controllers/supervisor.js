@@ -195,7 +195,11 @@ module.exports = function (app) {
         }
 
         if (landUse) {
-            filter["inspection.form.landUse"] = landUse;
+            if (landUse === 'Não Consolidados') {
+                filter["classConsolidated"] =  { "$size": 0 };
+            } else {
+                filter["inspection.form.landUse"] = landUse;
+            }
         }
 
         if (uf) {
@@ -289,6 +293,13 @@ module.exports = function (app) {
         var objPoints = {};
 
         pointsCollection.aggregate(pipeline, function (err, aggregateElem) {
+
+            if(aggregateElem.length === 0){
+                response.send({totalPoints: 0})
+                response.end()
+                return;
+            }
+
             aggregateElem = aggregateElem[0]
 
             pointsCollection.findOne({'_id': aggregateElem._id}, function (err, newPoint) {
@@ -419,7 +430,11 @@ module.exports = function (app) {
         }
 
         if (landUse) {
-            filter["inspection.form.landUse"] = landUse;
+            if (landUse === 'Não Consolidados') {
+                filter["classConsolidated"] =  { "$size": 0 };
+            } else {
+                filter["inspection.form.landUse"] = landUse;
+            }
         }
 
         /*if(userName) {
@@ -453,7 +468,11 @@ module.exports = function (app) {
         }
 
         if (landUse) {
-            filter["inspection.form.landUse"] = landUse;
+            if (landUse === 'Não Consolidados') {
+                filter["classConsolidated"] =  { "$size": 0 };
+            } else {
+                filter["inspection.form.landUse"] = landUse;
+            }
         }
 
         if (userName) {
@@ -490,7 +509,11 @@ module.exports = function (app) {
         };
 
         if (landUse) {
-            filter["inspection.form.landUse"] = landUse;
+            if (landUse === 'Não Consolidados') {
+                filter["classConsolidated"] =  { "$size": 0 };
+            } else {
+                filter["inspection.form.landUse"] = landUse;
+            }
         }
 
         if (userName) {
