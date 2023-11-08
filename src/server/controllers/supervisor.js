@@ -196,7 +196,7 @@ module.exports = function (app) {
 
         if (landUse) {
             if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] =  { "$size": 0 };
+                filter["classConsolidated"] = "Não consolidado";
             } else {
                 filter["inspection.form.landUse"] = landUse;
             }
@@ -431,7 +431,7 @@ module.exports = function (app) {
 
         if (landUse) {
             if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] =  { "$size": 0 };
+                filter["classConsolidated"] = "Não consolidado";
             } else {
                 filter["inspection.form.landUse"] = landUse;
             }
@@ -469,7 +469,7 @@ module.exports = function (app) {
 
         if (landUse) {
             if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] =  { "$size": 0 };
+                filter["classConsolidated"] = "Não consolidado";
             } else {
                 filter["inspection.form.landUse"] = landUse;
             }
@@ -510,7 +510,7 @@ module.exports = function (app) {
 
         if (landUse) {
             if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] =  { "$size": 0 };
+                filter["classConsolidated"] = "Não consolidado";
             } else {
                 filter["inspection.form.landUse"] = landUse;
             }
