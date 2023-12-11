@@ -1,1 +1,1 @@
-pastagem_50k_sentinel
+sicredi_ms_pastagem

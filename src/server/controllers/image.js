@@ -117,7 +117,7 @@ module.exports = function(app) {
 									cmd = config.imgDownloadCmd + ' "' + sourceUrl + '" "' + projwin + '" ' + imagePath
 								}
 								if(campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a') {
-									response.sendFile(null)
+									response.sendFile(`${config.imgDir}/no_image.png`)
 								} else {
 									exec(cmd, function(error, stdout, stderr) {
 										if(error || stderr){

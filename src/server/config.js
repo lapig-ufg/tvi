@@ -8,6 +8,7 @@ module.exports = function(app) {
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
 		"imgDir": appRoot + "/images/",
+		// "imgDir": "/home/tharles/tvi-imgs",
 		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",

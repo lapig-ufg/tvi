@@ -61,14 +61,21 @@ $rootScope.user.campaign.numInspec
              class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
             <div class="row">
                 <fieldset>
-                    <legend>Imagens Landsat <span ng-hide="isRaisg && !isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
-                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span
-                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>
+                    <legend ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                        Imagens Landsat  <span ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>
+                        <span ng-show="isRaisg"class="titleMaps">RGB(SWIR,NIR,RED)</span>
                     </legend>
-                    <legend>Imagens Sentinel-2 L2A <span ng-hide="isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span
-                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR16,NIR,RED)</span><span
-                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>
+                    <legend  ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                        Imagens Sentinel-2 L2A  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
                     </legend>
+<!--                    <legend>Imagens Landsat <span ng-hide="isRaisg && !isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span-->
+<!--                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span-->
+<!--                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>-->
+<!--                    </legend>-->
+<!--                    <legend>Imagens Sentinel-2 L2A <span ng-hide="isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span-->
+<!--                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR16,NIR,RED)</span><span-->
+<!--                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>-->
+<!--                    </legend>-->
                     <div ng-repeat="map in maps"
                          ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'"
                          style="border: 1px solid black; padding-left: 0px; padding-right: 0px">

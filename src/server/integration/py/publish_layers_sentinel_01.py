@@ -8,8 +8,11 @@ import traceback
 import numpy as np
 from pymongo import MongoClient
 
-MONGO_HOST = '172.18.0.6'
-MONGO_PORT = 27017
+# MONGO_HOST = '172.18.0.6'
+# MONGO_PORT = 27017
+
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27019
 
 SATELLITES = [ 'L8', 'L7', 'L5' ]
 
@@ -99,7 +102,7 @@ def get_best_image(start_date, end_date):
     best_image = s2.mosaic()
 
 #     image = best_image.getMapId({ "bands": BANDS, "min": get_min(), "max": get_max(), "gamma": get_gamma()})
-    image = best_image.getMapId({ "bands": ['B11','B8A','B4'], "min": [600,700,400], "max": [4300,5400,2800], "gamma": [1.1,1.1,1.1]})
+    image = best_image.getMapId({ "bands": LAPIG_TVI, "min": [600,700,400], "max": [4300,5400,2800], "gamma": [1.1,1.1,1.1]})
 
     return image, best_image.getInfo()
 
@@ -148,4 +151,5 @@ with open(sys.argv[2], 'r') as file:
 	for line in file:
             mosaics, info = get_mosaic_list()
             campaign_id = line.strip()
-            update_campaign(campaign_id, mosaics, info)
+            print(mosaics, info)
+#             update_campaign(campaign_id, mosaics, info)

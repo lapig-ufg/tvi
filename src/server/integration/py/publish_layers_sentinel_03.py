@@ -101,8 +101,7 @@ def get_best_image_point(start_date, end_date, point):
     s2 = s2.select( ['B2','B3','B4','B5','B6','B7','B8','B8A','B11','B12'],
                     ['BLUE','GREEN','RED','REDEDGE1','REDEDGE2','REDEDGE3','NIR','REDEDGE4','SWIR1','SWIR2'])
 
-    LAPIG_TVI = ['SWIR1','REDEDGE4','RED']
-                 B11, B8A, B4
+    LAPIG_TVI = ['SWIR1','REDEDGE4','RED'] #B11, B8A, B4
     # Get the best image, based on the cloud cover.
     best_image = s2.mosaic()
     initial_scale = 156543.03  # meters/pixel at zoom level 0 at the equator
@@ -131,7 +130,7 @@ def get_best_image_point(start_date, end_date, point):
             },
             'crsCode': PROJ['crs'],
         },
-        'visualizationOptions': {'ranges': [{"min": get_min(), "max": get_max()}]},
+        'visualizationOptions': {'ranges': [{"min": [600,700,400], "max": [4300,5400,2800]}]},
     }
 
     image_png = ee.data.computePixels(request)
