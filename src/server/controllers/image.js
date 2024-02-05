@@ -15,6 +15,7 @@ module.exports = function(app) {
 	var points = app.repository.collections.points;
 	
 	var config = app.config;
+	var planetCredentials = app.config.planetCredentials;
 
 	var GDAL_PARAMS = ['-of', 'PNG', '-tr', 30, 30 ]
 
@@ -104,7 +105,12 @@ module.exports = function(app) {
 							} else {
 								let cmd = '';
 								if(campaign.hasOwnProperty('serviceType') && campaign.customURLs != undefined && campaign.customURLs[layerId] != undefined){
-									cmd = config.imgDownloadWmsCmd + ' ' + point.lon + ' ' + point.lat + ' "' + campaign.customURLs[layerId] + '" "' + imagePath + '"'
+									let wmsCredentials = '';
+									if(campaign.hasOwnProperty('serviceType') && campaign.image !== undefined && campaign.image === 'planet'){
+										wmsCredentials = planetCredentials
+									}
+									cmd = `${config.imgDownloadWmsCmd} ${point.lon} ${point.lat} "${campaign.customURLs[layerId]}" "${imagePath}" "${wmsCredentials}"`;
+
 								} else {
 									var buffer = 4000
 									var coordinates = proj4('EPSG:4326', 'EPSG:900913', [point.lon, point.lat])

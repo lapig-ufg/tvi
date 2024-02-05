@@ -13,6 +13,7 @@ module.exports = function(app) {
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",
 		"correct": appRoot + "/bin/download_image_wms.sh",
+		"planetCredentials": process.env.PLANET_CREDENTIALS,
 		"cache": {
 			"parallelRequestsBusyTime": 36,
 			"parallelRequestsDawnTime": 46
