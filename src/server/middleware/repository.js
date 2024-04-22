@@ -17,7 +17,7 @@ module.exports = function (app) {
         , {safe: true}
     );
 
-    Repository.dbTs = new Db('tvi-timeseries'
+    Repository.dbTs = new Db('tvi-americas-timeseries'
         , new Server(config.mongo.host, config.mongo.port, {'auto_reconnect': true, 'pool_size': 5})
         , {safe: true}
     )
@@ -54,7 +54,7 @@ module.exports = function (app) {
                         callback();
                     }
                 };
-
+                console.log('LINE 57: ',names)
                 async.each(names, forEachOne, callback)
             });
         });
