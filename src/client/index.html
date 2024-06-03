@@ -1,46 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LAPIG - Visual Inspection Tool</title>
-    <link href="3thparty/css/bootstrap.min.css" rel="stylesheet">
-    <link href="3thparty/css/ng-magnify.css" rel="stylesheet">
-    <link href="3thparty/css/leaflet.css" rel="stylesheet">
-    <link href="assets/style.css" rel="stylesheet">
-    <link href="https://mark-rolich.github.io/Magnifier.js/magnifier.css" rel="stylesheet">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LAPIG - Visual Inspection Tool</title>
+  <link href="3thparty/css/bootstrap.min.css" rel="stylesheet">
+  <link href="3thparty/css/ng-magnify.css" rel="stylesheet">
+  <link href="3thparty/css/leaflet.css" rel="stylesheet">
+  <link href="assets/style.css" rel="stylesheet">
+  <link href="https://mark-rolich.github.io/Magnifier.js/magnifier.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-csp.css">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-  </head>
-  <body ng-app = "application">
-    <script src="3thparty/js/jquery-3.1.0.min.js"></script>
-    <script src="3thparty/js/plotly-latest.min.js"></script>
-    <script src="3thparty/js/bootstrap.min.js"></script>
-    <script src="3thparty/js/angular.min.js"></script>
-    <script src="3thparty/js/angular-route.min.js"></script>
-    <script src="3thparty/js/ng-magnify.js"></script>
-    <script src="3thparty/js/leaflet.js"></script>
-    <script src="3thparty/js/ui-leaflet.js"></script>
-    <script src="3thparty/js/angular-simple-logger.min.js"></script>
-    <script src="https://mark-rolich.github.io/Magnifier.js/Event.js"></script>
-    <script src="https://mark-rolich.github.io/Magnifier.js/Magnifier.js"></script>
-    <script src="app.js"></script>
-    <script src="controllers/navbar.js"></script>
-    <script src="controllers/login.js"></script>
-    <script src="controllers/supervisor.js"></script>
-    <script src="controllers/dashboard.js"></script>
-    <script src="controllers/temporal.js"></script>
-    <script src="others/directives.js"></script>
-    <script src="others/filters.js"></script>
-    <script src="others/services.js"></script>
-    <script src="socket.io/socket.io.js"></script>
-    <div ng-include="'views/navbar.tpl.html'"></div>
-    <div ng-view="view" class="content-main page-view"></div>
-  </body>
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body ng-app="application">
+<script src="3thparty/js/jquery-3.1.0.min.js"></script>
+<script src="3thparty/js/plotly-latest.min.js"></script>
+<script src="3thparty/js/bootstrap.min.js"></script>
+<script src="3thparty/js/angular.min.js"></script>
+<script src="3thparty/js/angular-route.min.js"></script>
+<script src="3thparty/js/ng-magnify.js"></script>
+<script src="3thparty/js/leaflet.js"></script>
+<script src="3thparty/js/ui-leaflet.js"></script>
+<script src="3thparty/js/angular-simple-logger.min.js"></script>
+<script src="https://mark-rolich.github.io/Magnifier.js/Event.js"></script>
+<script src="https://mark-rolich.github.io/Magnifier.js/Magnifier.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.js"></script>
+<script src="app.js"></script>
+<script src="controllers/navbar.js"></script>
+<script src="controllers/login.js"></script>
+<script src="controllers/supervisor.js"></script>
+<script src="controllers/dashboard.js"></script>
+<script src="controllers/temporal.js"></script>
+<script src="controllers/mosaic-dialog.js"></script>
+<script src="others/directives.js"></script>
+<script src="others/filters.js"></script>
+<script src="others/services.js"></script>
+<script src="socket.io/socket.io.js"></script>
+<div ng-include="'views/navbar.tpl.html'"></div>
+<div ng-view="view" class="content-main page-view"></div>
+</body>
 </html>

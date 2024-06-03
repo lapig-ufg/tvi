@@ -1,0 +1,26 @@
+<div class="modal-header">
+    <h3 class="modal-title text-center">Mosaicos Planet para o ano {{map.date | date: 'yyyy'}}</h3>
+</div>
+<div class="modal-body">
+    <div style="display: flex; justify-content: end">
+        <span>Primeira aquisição da imagem Planet: {{mosaics[selectedMosaicIndex].firstAcquired | dateTimeFormat}}</span>
+    </div>
+    <combined-maps
+            lon="point.lon"
+            lat="point.lat"
+            zoom="config.zoomLevel"
+            tms-url="map.url"
+            bounds="map.bounds"
+            date="mosaics[selectedMosaicIndex].firstAcquired"
+            mosaic-url="currentMosaicUrl"
+            mosaic-size="mosaics.length"
+            update-mosaic="updateMosaic({index: index})">
+    </combined-maps>
+    <div class="slider-container">
+        <label for="mosaicSlider-{{::$id}}">Mosaico</label>
+        <input type="range" min="0" max="{{mosaics.length - 1}}" value="0" class="slider" id="mosaicSlider-{{::$id}}" ng-model="selectedMosaicIndex" ng-change="onSliderChange(selectedMosaicIndex)">
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-secondary" ng-click="close()">Fechar</button>
+</div>

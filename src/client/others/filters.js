@@ -16,6 +16,12 @@ Application
 			});
 		};
 	})
+	.filter('dateTimeFormat', function($filter) {
+		return function(input) {
+			if (!input) return "";
+			return $filter('date')(new Date(input), 'dd/MM/yyyy HH:mm:ss');
+		};
+	})
 	.filter('truncate', function() {
 		return function(text, length, end) {
 

@@ -1,4 +1,4 @@
-var Application = angular.module('application', ['ngRoute', 'ngMagnify']);
+var Application = angular.module('application', ['ngRoute', 'ngMagnify', 'ui.bootstrap']);
 
 Application.config(function($routeProvider, $locationProvider) {
 
@@ -21,11 +21,11 @@ Application.config(function($routeProvider, $locationProvider) {
 		.otherwise({
 			redirectTo: '/login',
 			controller: 'LoginController',
-			templateUrl:'views/login.tpl.html'
+			templateUrl: 'views/login.tpl.html'
 		});
 
 }).run(function($http, $location, $rootScope, requester) {
-	
+
 	var socket = io.connect('/', {
 		transports: [ 'websocket' ]
 	});
