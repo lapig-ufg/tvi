@@ -2,7 +2,6 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     mosaics.sort(function(a, b) {
         return b.firstAcquired - a.firstAcquired;
     });
-    console.log(mosaics);
     $scope.mosaics = mosaics;
     $scope.map = map;
     $scope.point = point;
