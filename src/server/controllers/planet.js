@@ -1,14 +1,36 @@
-const ejs = require('ejs');
-const fs = require('fs');
-const axios = require("axios");
+const https = require('https');
 
 module.exports = function(app) {
 	const planet = {};
 
+	const get = (url) => {
+		return new Promise((resolve, reject) => {
+			const req = https.get(url, (res) => {
+				let data = '';
+				res.on('data', (chunk) => {
+					data += chunk;
+				});
+				res.on('end', () => {
+					try {
+						resolve(JSON.parse(data));
+					} catch (error) {
+						reject(error);
+					}
+				});
+			});
+
+			req.on('error', (error) => {
+				reject(error);
+			});
+
+			req.end();
+		});
+	};
+
 	const getNext = async (url) => {
 		try {
-			const response = await axios.get(url);
-			return response.data.mosaics;
+			const response = await get(url);
+			return response.mosaics;
 		} catch (error) {
 			console.error("Error fetching next page: ", error);
 			throw error;
@@ -24,11 +46,11 @@ module.exports = function(app) {
 		}
 
 		try {
-			const response = await axios.get(`https://api.planet.com/basemaps/v1/mosaics?api_key=${apiKey}`, { timeout: 60000 });
-			let mosaics = response.data.mosaics;
+			const response = await get(`https://api.planet.com/basemaps/v1/mosaics?api_key=${apiKey}`);
+			let mosaics = response.mosaics;
 
-			if (response.data._links && response.data._links._next) {
-				const nextMosaics = await getNext(response.data._links._next);
+			if (response._links && response._links._next) {
+				const nextMosaics = await getNext(response._links._next);
 				mosaics = mosaics.concat(nextMosaics);
 			}
 
