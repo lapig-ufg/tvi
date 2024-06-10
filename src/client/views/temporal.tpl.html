@@ -79,10 +79,20 @@ $rootScope.user.campaign.numInspec
                     <div ng-repeat="map in maps"
                          ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'"
                          style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span><span
-                            class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
-                        <inspection-map lon="point.lon" lat="point.lat" bounds="map.bounds" zoom="config.zoomLevel"
-                                        tms-url="{{map.url}}"/>
+                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span>
+                        <span class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
+                        <span class="planet-button" ng-if="hasPlanetMosaicForYear(map.date | date: 'yyyy')" >
+                            <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
+                                <i class="fa fa-camera"></i>
+                            </button>
+                        </span>
+                        <inspection-map
+                                lon="point.lon"
+                                lat="point.lat"
+                                bounds="map.bounds"
+                                zoom="config.zoomLevel"
+                                tms-url="map.url">
+                        </inspection-map>
                     </div>
                 </fieldset>
             </div>

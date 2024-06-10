@@ -1,9 +1,10 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false
+    $scope.planetMosaics = [];
 
     util.waitUserData(function () {
         $scope.size = 3;
@@ -513,5 +514,51 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         initCounter();
         requester._get('points/next-point', loadPoint);
+        requester._get('planet/mosaics', function(mosaics) {
+            if (mosaics && mosaics.length > 0) {
+                $scope.planetMosaics = mosaics.map(mosaic => ({
+                    tiles: mosaic._links.tiles,
+                    firstAcquired: new Date(mosaic.first_acquired),
+                    lastAcquired: new Date(mosaic.last_acquired)
+                }));
+            }
+        });
+
+        $scope.hasPlanetMosaicForYear = function(year) {
+            return $scope.planetMosaics.some(mosaic => {
+                const firstYear = mosaic.firstAcquired.getFullYear();
+                const lastYear = mosaic.lastAcquired.getFullYear();
+                return year >= firstYear && year <= lastYear;
+            });
+        };
+
+        $scope.openMosaicDialog = function(map, point, config) {
+            const mosaicsForYear = $scope.planetMosaics.filter(mosaic => {
+                const firstYear = new Date(mosaic.firstAcquired).getFullYear();
+                const lastYear = new Date(mosaic.lastAcquired).getFullYear();
+                const mapYear = new Date(map.date).getFullYear();
+                return mapYear >= firstYear && mapYear <= lastYear;
+            });
+
+            $uibModal.open({
+                controller: 'MosaicDialogController',
+                templateUrl: 'views/mosaic-dialog.tpl.html',
+                size: 'lg',
+                resolve: {
+                    mosaics: function() {
+                        return mosaicsForYear;
+                    },
+                    map: function() {
+                        return map;
+                    },
+                    point: function() {
+                        return point;
+                    },
+                    config: function() {
+                        return config;
+                    }
+                }
+            });
+        };
     });
 });
