@@ -6,6 +6,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
+    $scope.tilesCapabilities = [];
 
     $rootScope.campaignFinished = false
     util.waitUserData(function () {
@@ -718,6 +719,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
         });
 
+
         $scope.hasPlanetMosaicForYear = function(year) {
             return $scope.planetMosaics.some(mosaic => {
                 const firstYear = mosaic.firstAcquired.getFullYear();
@@ -725,6 +727,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 return year >= firstYear && year <= lastYear;
             });
         };
+
+        requester._get('sentinel/capabilities', function(capabilities) {
+            $scope.tilesCapabilities = capabilities;
+        });
 
         $scope.openMosaicDialog = function(map, point, config) {
             const mosaicsForYear = $scope.planetMosaics.filter(mosaic => {
@@ -750,6 +756,12 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     },
                     config: function() {
                         return config;
+                    },
+                    tilesCapabilities: function() {
+                        return $scope.tilesCapabilities;
+                    },
+                    period: function() {
+                        return $scope.period;
                     }
                 }
             });

@@ -182,12 +182,105 @@ Application
         }
       }
     })
-    .directive('combinedMaps', function() {
+    .directive('sentinelMap', function($timeout, $http) {
+      return {
+        template: `
+            <div>
+                <h4 style="text-align: center">Imagem COPERNICUS/S2_HARMONIZED {{::period}} - {{::year}}</h4>
+                <div style="text-align: center">
+                    <label ng-repeat="param in visparams" class="radio-visparam">
+                        <input type="radio" ng-model="$parent.selectedVisparam" ng-value="param" ng-change="updateTileLayer()">
+                        {{param}}
+                    </label>
+                </div>
+                <div id="sentinel-map-{{::$id}}" style="width: 100%; height: 300px;"></div>
+            </div>
+        `,
+        scope: {
+          lon: '=',
+          lat: '=',
+          zoom: '=',
+          period: '=',
+          year: '=',
+          visparams: '='
+        },
+        controller: function($scope, $element) {
+          console.log('selectedVisparam', $scope.visparams)
+
+          $scope.selectedVisparam = $scope.visparams[0]; // Seleciona o primeiro visparam por padrão
+          $timeout(function() {
+            var mapElement = $element[0].querySelector(`#sentinel-map-${$scope.$id}`);
+            if (!mapElement) {
+              console.error('Elemento do mapa não encontrado!');
+              return;
+            }
+
+            if (!$scope.period || !$scope.year) {
+              console.error('Parâmetros de período ou ano não disponíveis!');
+              return;
+            }
+
+            $scope.markerInMap = true;
+            $scope.map = L.map(mapElement, {
+              center: [$scope.lat, $scope.lon],
+              zoomControl: true,
+              dragging: true,
+              doubleClickZoom: true,
+              scrollWheelZoom: true,
+              zoom: $scope.zoom,
+              minZoom: $scope.zoom,
+              maxZoom: $scope.zoom + 6,
+            });
+
+            $scope.updateTileLayer = function() {
+              if ($scope.tileLayer) {
+                $scope.map.removeLayer($scope.marker);
+                $scope.map.removeLayer($scope.tileLayer);
+              }
+              $scope.marker = L.marker([$scope.lat, $scope.lon], {
+                icon: L.icon({
+                  iconUrl: 'assets/marker2.png',
+                  iconSize: [42, 42]
+                })
+              }).addTo($scope.map);
+
+              var tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/${$scope.period}/${$scope.year}/{x}/{y}/{z}?visparam=${$scope.selectedVisparam}`;
+              $scope.tileLayer = L.tileLayer(tileUrl, {
+                subdomains: ['1', '2', '3', '4', '5'],
+                attribution: `${$scope.period} - ${$scope.year}`,
+                attributionControl: true,
+              }).addTo($scope.map);
+            };
+
+            $scope.$watchGroup(['period', 'year'], function(newVals) {
+              if (newVals[0] && newVals[1]) {
+                $scope.updateTileLayer();
+              }
+            });
+
+            $scope.map.on('click', function () {
+              if ($scope.markerInMap) {
+                $scope.map.removeLayer($scope.marker);
+                $scope.markerInMap = false;
+              } else {
+                $scope.map.addLayer($scope.marker);
+                $scope.markerInMap = true;
+              }
+            });
+
+            $scope.updateTileLayer();
+
+            L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+          }, 0);
+        }
+      }
+    })
+  .directive('combinedMaps', function() {
       return {
         template: `
                 <div style="display: flex; justify-content: space-between;">
                     <div style="flex: 1; margin-right: 10px;">
-                        <small  class="text-center">Imagem Landsat / Sentinel-2 L2A</small>
+                        <small  class="text-center">Imagem da Campanha</small>
                         <inspection-map lon="lon" lat="lat" tms-url="tmsUrl" zoom="zoom" bounds="bounds"></inspection-map>
                     </div>
                     <div style="flex: 1;">

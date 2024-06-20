@@ -464,3 +464,12 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 .slider::-moz-range-thumb:hover {
   background: #45a049;
 }
+
+.radio-visparam {
+  padding: 5px;
+  text-transform: uppercase;
+}
+
+.radio-visparam:hover{
+  cursor: pointer;
+}

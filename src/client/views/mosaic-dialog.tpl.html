@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h3 class="modal-title text-center">Mosaicos Planet para o ano {{map.date | date: 'yyyy'}}</h3>
+    <h3 class="modal-title text-center">Imagens auxiliares para o ano {{map.date | date: 'yyyy'}}</h3>
 </div>
 <div class="modal-body">
     <div style="display: flex; justify-content: end">
@@ -20,6 +20,9 @@
         <label for="mosaicSlider-{{::$id}}">Mosaico</label>
         <input type="range" min="0" max="{{mosaics.length - 1}}" value="0" class="slider" id="mosaicSlider-{{::$id}}" ng-model="selectedMosaicIndex" ng-change="onSliderChange(selectedMosaicIndex)">
     </div>
+
+    <sentinel-map ng-if="hasSentinelImageForYear(year)" lon="point.lon" lat="point.lat" zoom="config.zoomLevel" period="period" year="year" visparams="visparams"></sentinel-map>
+
 </div>
 <div class="modal-footer">
     <button class="btn btn-secondary" ng-click="close()">Fechar</button>

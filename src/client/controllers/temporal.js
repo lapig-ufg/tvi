@@ -514,6 +514,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         initCounter();
         requester._get('points/next-point', loadPoint);
+
         requester._get('planet/mosaics', function(mosaics) {
             if (mosaics && mosaics.length > 0) {
                 $scope.planetMosaics = mosaics.map(mosaic => ({
@@ -531,6 +532,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 return year >= firstYear && year <= lastYear;
             });
         };
+
+        requester._get('sentinel/capabilities', function(capabilities) {
+            $scope.tilesCapabilities = capabilities;
+        });
 
         $scope.openMosaicDialog = function(map, point, config) {
             const mosaicsForYear = $scope.planetMosaics.filter(mosaic => {
@@ -556,6 +561,12 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     },
                     config: function() {
                         return config;
+                    },
+                    tilesCapabilities: function() {
+                        return $scope.tilesCapabilities;
+                    },
+                    period: function() {
+                        return $scope.period;
                     }
                 }
             });
