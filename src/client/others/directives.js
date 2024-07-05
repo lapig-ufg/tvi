@@ -244,7 +244,7 @@ Application
                 })
               }).addTo($scope.map);
 
-              var tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/${$scope.period}/${$scope.year}/{x}/{y}/{z}?visparam=${$scope.selectedVisparam}`;
+              var tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${$scope.selectedVisparam}&period=${$scope.period}&year=${$scope.year}`;
               $scope.tileLayer = L.tileLayer(tileUrl, {
                 subdomains: ['1', '2', '3', '4', '5'],
                 attribution: `${$scope.period} - ${$scope.year}`,
