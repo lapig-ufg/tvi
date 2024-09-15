@@ -1,0 +1,212 @@
+name: Build and Deploy in Server TVI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+
+      APPLICATION_NAME: ${{ steps.creat_env.outputs.APPLICATION_NAME }}
+      DOCKER_PATH: ${{ steps.creat_env.outputs.DOCKER_PATH }}
+
+      START_TIME: ${{ steps.creat_env.outputs.START_TIME }}
+      LAST_COMMIT_HASH: ${{ steps.creat_env.outputs.LAST_COMMIT_HASH }}
+
+      LAPIG_AUTHOR_NAME: ${{ steps.creat_env.outputs.LAPIG_AUTHOR_NAME }}
+      LAPIG_AUTHOR_EMAIL: ${{ steps.creat_env.outputs.LAPIG_AUTHOR_EMAIL }}
+      LAPIG_AUTHOR_DATE: ${{ steps.creat_env.outputs.LAPIG_AUTHOR_DATE }}
+      LAPIG_PROJECT_NAME: ${{ steps.creat_env.outputs.LAPIG_PROJECT_NAME }}
+      LAPIG_COMMIT_DATE: ${{ steps.creat_env.outputs.LAPIG_COMMIT_DATE }}
+
+      CREATE_STATUS: ${{steps.deploy_container.outputs.CREATE_STATUS}}
+      DELETE_STATUS: ${{steps.delete_container.outputs.DELETE_STATUS}}
+      START_STATUS: ${{steps.start_container.outputs.START_STATUS}}
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+
+      - name: Define a variável application_name
+        id: creat_env
+        run: |
+          echo "START_TIME=$(date -u +%s)" >> "$GITHUB_OUTPUT"
+          echo "DOCKER_PATH=prod" >> $GITHUB_ENV
+          echo "DOCKER_PATH=prod" >> $GITHUB_OUTPUT
+          repo_full_name=$GITHUB_REPOSITORY
+          repo_name=${repo_full_name##*/}
+          echo "Nome do repositório: $repo_name"
+
+          echo "application_name=app_tvi" >> $GITHUB_ENV
+          echo "APPLICATION_NAME=app_tvi" >> $GITHUB_OUTPUT
+
+          echo "LAST_COMMIT_HASH=$(git log --pretty=format:%h -n 1)" >> $GITHUB_ENV
+          
+          echo "LAST_COMMIT_HASH=$(git log --pretty=format:%h -n 1)" >> "$GITHUB_OUTPUT"
+          
+          echo "LAPIG_AUTHOR_NAME=$(git show -s --pretty=%an)" >> "$GITHUB_OUTPUT"
+          echo "LAPIG_AUTHOR_EMAIL=$(git show -s --pretty=%ae)" >> "$GITHUB_OUTPUT"
+          echo "LAPIG_AUTHOR_DATE=$(git log -1 --format=%cd --date=local)" >> "$GITHUB_OUTPUT"
+          echo "LAPIG_PROJECT_NAME=$repo_name" >> "$GITHUB_OUTPUT"
+          echo "LAPIG_COMMIT_DATE=$(git show -s --format=%ci)" >> "$GITHUB_OUTPUT"
+          
+          
+          echo "NODE_OPTIONS=--max-old-space-size=8096"  >> $GITHUB_ENV
+
+      - name: Create version.json
+        run: echo "{\"commitId\":\"$LAST_COMMIT_HASH\"}" > version.json
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.22.2'
+
+      - name: Build Server and client
+        run: |
+          npm set progress=false
+          cd ${{ github.workspace }}/src/server && npm install
+          
+      - name: Build Docker
+        run: |
+          docker build -t lapig/$application_name:${DOCKER_PATH}_${LAST_COMMIT_HASH} -t lapig/$application_name:${DOCKER_PATH}_latest  -f docker/$DOCKER_PATH/Dockerfile . --no-cache
+
+      - name: Login to Docker Registry
+        run: echo "${{ secrets.DOCKERHUB_PASS }}" | docker login -u "lapig" --password-stdin
+
+      - name: Push Image to Registry
+        run: |
+          docker push lapig/$application_name:${DOCKER_PATH}_${LAST_COMMIT_HASH}
+          docker push lapig/$application_name:${DOCKER_PATH}_latest
+
+      - name: Remove image locally
+        run: |
+          docker rmi lapig/$application_name:${DOCKER_PATH}_${LAST_COMMIT_HASH}
+          docker rmi lapig/$application_name:${DOCKER_PATH}_latest
+
+  deploy:
+     needs: build
+     runs-on: self-hosted
+     
+     steps:
+      - name: Load env
+        run: |
+          echo "application_name=${{needs.build.outputs.APPLICATION_NAME}}" >> $GITHUB_ENV
+          echo "DOCKER_PATH=${{needs.build.outputs.DOCKER_PATH}}" >> $GITHUB_ENV
+
+      - name: Pull Image on Server
+        run: |
+          docker pull lapig/$application_name:${DOCKER_PATH}_latest
+
+      - name: Delete Container
+        id: delete_container
+        continue-on-error: true
+        run: |
+          delete_status=$(curl -v -X DELETE -w "%{http_code}"  http://$DOCKER_HOST/containers/$application_name?force=true  2>/dev/null)  
+          case $delete_status in
+            204) delete_status_text="OK";;
+            *) delete_status_text="ERROR";;
+          esac
+          echo "del $delete_status"
+          echo "DELETE_STATUS=$delete_status_text" >> "$GITHUB_OUTPUT"
+  
+            
+      - name: Deploy Container
+        id: deploy_container
+        run: |
+          create_status=$(curl -v -X POST -H 'Content-Type: application/json' -d @/compose/$application_name.json -s -o /dev/null -w "%{http_code}"  http://$DOCKER_HOST/containers/create?name=$application_name  2>/dev/null)  
+          
+          case $create_status in
+            201) create_status_text="OK";;
+            *) create_status_text="ERROR";;
+          esac
+          echo "creat $create_status"
+          echo "CREATE_STATUS=$create_status_text" >> "$GITHUB_OUTPUT"
+
+      - name: Start Container
+        id: start_container
+        run: |
+          start_status=$(curl -v -X POST -s -o /dev/null -w "%{http_code}"   http://$DOCKER_HOST/containers/$application_name/start  2>/dev/null) 
+          case $start_status in
+            204) start_status_text="OK";;
+            *) start_status_text="ERROR";;
+          esac
+          echo $start_status
+          
+          echo "START_STATUS=$start_status_text" >> "$GITHUB_OUTPUT"
+  
+
+  post-deploy:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: ${{ always() || needs.build.result == 'failure' ||needs.deploy.result == 'failure'  }}
+    steps:
+      - name: Load env
+        run: |
+          echo "LAST_COMMIT_HASH=${{needs.build.outputs.LAST_COMMIT_HASH}}" >> $GITHUB_ENV
+          
+          echo "LAPIG_AUTHOR_NAME=${{needs.build.outputs.LAPIG_AUTHOR_NAME}}" >> $GITHUB_ENV
+          echo "LAPIG_AUTHOR_EMAIL=${{needs.build.outputs.LAPIG_AUTHOR_EMAIL}}" >> $GITHUB_ENV
+          echo "LAPIG_AUTHOR_DATE=${{needs.build.outputs.LAPIG_AUTHOR_DATE}}" >> $GITHUB_ENV
+          echo "LAPIG_PROJECT_NAME=${{needs.build.outputs.LAPIG_PROJECT_NAME}}" >> $GITHUB_ENV
+          echo "LAPIG_COMMIT_DATE=${{needs.build.outputs.LAPIG_COMMIT_DATE}}" >> $GITHUB_ENV
+          echo "CREATE_STATUS=${{needs.deploy.outputs.CREATE_STATUS}}" >> $GITHUB_ENV
+          echo "DELETE_STATUS=${{needs.deploy.outputs.DELETE_STATUS}}" >> $GITHUB_ENV
+          echo "START_STATUS=${{needs.deploy.outputs.START_STATUS}}" >> $GITHUB_ENV
+
+      - name: Send message to Telegram
+        run: |
+          end_time=$(date -u +%s)
+          echo "LAPIG_DURATION=$((end_time - $START_TIME))" >> $GITHUB_ENV
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_API_KEY }}/sendMessage" -d "chat_id=${{ secrets.CHAT_ID }}" -d "parse_mode=markdown" -d "text=*Project*: *${LAPIG_PROJECT_NAME}*\
+          *Status:*${{ needs.deploy.result }}\
+          *Branch*: ${LAPIG_BRANCH_NAME}\
+          *Author*: *${LAPIG_AUTHOR_NAME}*\
+          *Author_Email*: *${LAPIG_AUTHOR_EMAIL}*\
+          *Commit_ID*: *${LAST_COMMIT_HASH}*\
+          *Date_Commit*: *${LAPIG_COMMIT_DATE}*\
+          *Duration*: *${LAPIG_DURATION}*"
+
+      - name: creat message to Discord
+        run: |
+          if [[ "${{ needs.deploy.result }}" == "success" && "$START_STATUS" == "OK" && "$DELETE_STATUS" == "OK" && "$CREATE_STATUS" == "OK"  ]]; then
+            echo "avatar_url=${{vars.LAPIG_SUCCESS}}" >> $GITHUB_ENV
+            status_geral="Sucesso"
+          else
+            echo "avatar_url=${{vars.LAPIG_ERROR}}" >> $GITHUB_ENV
+            status_geral="Falhou"
+          fi
+          
+          case $START_STATUS in
+            "OK") START_STATUS_D="{ \"title\": \"DOCKER START OK!\",\"color\": 65280},";;
+            *) START_STATUS_D="{ \"title\": \"DOCKER START ERROR!\",\"color\": 16711680},";;
+          esac
+          
+          case $DELETE_STATUS in
+            "OK") DELETE_STATUS_D="{ \"title\": \"DOCKER DELETE OK!\",\"color\": 65280},";;
+            *) DELETE_STATUS_D="{ \"title\": \"DOCKER DELETE ERROR!\",\"color\": 16711680},";;
+          esac
+          
+          case $CREATE_STATUS in
+            "OK") CREATE_STATUS_D="{ \"title\": \"DOCKER CREATE OK!\",\"color\": 65280},";;
+            *) CREATE_STATUS_D="{ \"title\": \"DOCKER CREATE ERROR!\",\"color\": 16711680},";;
+          esac
+          
+          echo "EMBEDS_STATUS=$DELETE_STATUS_D $CREATE_STATUS_D $START_STATUS_D" >> $GITHUB_ENV
+          
+          
+          echo "discordDesc=Result: $status_geral\nProject: $LAPIG_PROJECT_NAME\nCommit: $LAST_COMMIT_HASH\nAuthor: $LAPIG_AUTHOR_NAME\nAuthor_Email: $LAPIG_AUTHOR_EMAIL\nDate: $LAPIG_COMMIT_DATE\nDuration: $LAPIG_DURATION seconds" >> $GITHUB_ENV
+
+          echo "discordFooter=${{ github.workflow }} (#${{ github.run_number }})" >> $GITHUB_ENV
+          echo "discordTitle=${{ github.workflow }} (build #${{ github.run_number }})" >> $GITHUB_ENV
+
+      - name: Send menssage to Discord
+        run: |
+          echo "{\"content\": \"$discordTitle\", \"embeds\": [ { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }, $EMBEDS_STATUS] ], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }"
+          
+          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$discordTitle\", \"embeds\": [ $EMBEDS_STATUS { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }" https://discord.com/api/webhooks/${{ secrets.DISCORD_KEY }}
+            
