@@ -1,4 +1,4 @@
-name: Build and Deploy in Server TVI
+name: Build and Deploy in Server TVI Indonesia
 
 on:
   push:
@@ -42,8 +42,8 @@ jobs:
           repo_name=${repo_full_name##*/}
           echo "Nome do repositório: $repo_name"
 
-          echo "application_name=app_tvi" >> $GITHUB_ENV
-          echo "APPLICATION_NAME=app_tvi" >> $GITHUB_OUTPUT
+          echo "application_name=app_tvi_indonesia" >> $GITHUB_ENV
+          echo "APPLICATION_NAME=app_tvi_indonesia" >> $GITHUB_OUTPUT
 
           echo "LAST_COMMIT_HASH=$(git log --pretty=format:%h -n 1)" >> $GITHUB_ENV
           
@@ -70,7 +70,7 @@ jobs:
         run: |
           npm set progress=false
           cd ${{ github.workspace }}/src/server && npm install
-          
+
       - name: Build Docker
         run: |
           docker build -t lapig/$application_name:${DOCKER_PATH}_${LAST_COMMIT_HASH} -t lapig/$application_name:${DOCKER_PATH}_latest  -f docker/$DOCKER_PATH/Dockerfile . --no-cache
@@ -89,10 +89,10 @@ jobs:
           docker rmi lapig/$application_name:${DOCKER_PATH}_latest
 
   deploy:
-     needs: build
-     runs-on: self-hosted
-     
-     steps:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
       - name: Load env
         run: |
           echo "application_name=${{needs.build.outputs.APPLICATION_NAME}}" >> $GITHUB_ENV
@@ -113,8 +113,8 @@ jobs:
           esac
           echo "del $delete_status"
           echo "DELETE_STATUS=$delete_status_text" >> "$GITHUB_OUTPUT"
-  
-            
+
+
       - name: Deploy Container
         id: deploy_container
         run: |
