@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import sys
 import ee
 import json
@@ -7,6 +8,8 @@ import datetime
 import traceback
 import glob
 from pymongo import MongoClient
+
+MONGO_URL = os.getenv('MONGO_URL')
 
 CREDENTIALS_DIR = sys.argv[1]
 MONGO_HOST = sys.argv[2]
@@ -164,7 +167,7 @@ def processPeriod(tiles, periods, suffix = ''):
 		else:
 			print(mosaicId + ' exists and is valid.')
 
-client = MongoClient(MONGO_HOST, MONGO_PORT)
+client = MongoClient(MONGO_URL)
 db = client.tvi
 
 gee_multi_credentials(CREDENTIALS_DIR)

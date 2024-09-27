@@ -1,10 +1,12 @@
 #!/usr/bin/python
-
+import os
 import sys
 import ee
 import datetime
 import json
 from pymongo import MongoClient
+
+MONGO_URL = os.getenv('MONGO_URL')
 
 #convert crop.jpg -channel RGB -contrast-stretch 0.1x0.1% crop.png
 EE_PRIVATE_KEY_FILE = sys.argv[1]
@@ -99,7 +101,7 @@ def getExpirationDate():
 	now = datetime.datetime.now()
 	return datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(hours=24)
 
-client = MongoClient('172.18.0.6', 27017)
+client = MongoClient(MONGO_URL)
 db = client.tvi
 
 SATELLITES = [ 'L8', 'L7', 'L5' ]
