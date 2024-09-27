@@ -12,7 +12,7 @@ var finalYear = (process.argv[7] == null) ? 2020 : process.argv[7];
 
 var collectionPointsName = "points";
 var collectionCampaignName = "campaign";
-var dbUrl = 'mongodb://172.18.0.6:27017/tvi';
+var dbUrl = process.env.MONGO_URL;
 
 var checkError = function(error) {
 	if(error) {
@@ -163,6 +163,11 @@ var insertCampaing = function(db) {
 
 fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
 	checkError(error);
+
+	if(dbUrl === '' || dbUrl === undefined || !dbUrl){
+		console.error("informe a URL do banco de dados.")
+		return;
+	}
 	
 	getDB(dbUrl, function(db) {
 		
