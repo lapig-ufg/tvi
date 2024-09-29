@@ -16,6 +16,5 @@ RUN chmod +x /usr/bin/bbox
 
 ADD ./src/server/node_modules /APP/tvi/src/server/node_modules  
 
-CMD [ "/bin/bash", "-c", "/APP/tvi/src/server/prod-start.sh; tail -f /APP/tvi/src/server/app.out /APP/tvi_monitor.log"]
-
-ENTRYPOINT [ "/APP/monitor.sh"]
+# Remove o CMD anterior e combine a execução dos scripts no ENTRYPOINT
+ENTRYPOINT ["/bin/bash", "-c", "/APP/monitor.sh"]
