@@ -1,4 +1,4 @@
-name: Build and Deploy in Server TVI Indonesia
+name: Build and Deploy in Server TVI Brasil
 
 on:
   push:
