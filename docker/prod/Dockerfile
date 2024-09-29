@@ -15,9 +15,7 @@ ADD ./src/server/bin/bbox.py /usr/bin/bbox
 RUN chmod +x /usr/bin/bbox
 
 ADD ./src/server/node_modules /APP/tvi/src/server/node_modules  
-#ADD ./src/client/dist/client /APP/tvi/src/client/dist/client
-#COPY ./version.jso* /APP/tvi/src/client/dist/client/assets/
 
-CMD [ "/bin/bash", "-c", "/APP/tvi/src/server/prod-start.sh; tail -f /APP/tvi/src/server/app.out"]
+CMD [ "/bin/bash", "-c", "/APP/tvi/src/server/prod-start.sh; tail -f /APP/tvi/src/server/app.out /APP/tvi_monitor.log"]
 
 ENTRYPOINT [ "/APP/monitor.sh"]
