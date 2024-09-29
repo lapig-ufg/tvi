@@ -8,7 +8,7 @@ module.exports = function(app) {
 		"langDir": appRoot + "/lang",
 		"logDir": appRoot + "/log/",
 		"imgDir": appRoot + "/images/",
-		"imgGDALTmpDir": "/var/tmp/gdalwmscache",
+		"imgGDALTmpDir": process.env.IMG_GDAL_TMP_DIR,
 		"imgDownloadCmd": appRoot + "/bin/download_image.sh",
 		"imgDownloadWmsCmd": appRoot + "/bin/download_image_wms.sh",
 		"correct": appRoot + "/bin/download_image_wms.sh",

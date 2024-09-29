@@ -20,4 +20,4 @@ ADD ./src/server/node_modules /APP/tvi/src/server/node_modules
 
 CMD [ "/bin/bash", "-c", "/APP/tvi/src/server/prod-start.sh; tail -f /APP/tvi/src/server/app.out"]
 
-ENTRYPOINT [ "/APP/Monitora.sh"]
+ENTRYPOINT [ "/APP/monitor.sh"]
