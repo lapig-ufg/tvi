@@ -172,10 +172,13 @@ db = client.tvi
 
 gee_multi_credentials(CREDENTIALS_DIR)
 
+now = datetime.datetime.now()
+current_year = now.year
+
 if len(sys.argv) > 4:
     TILES_BR = getWrsCodes(sys.argv[4])
 
-for year in range(1985,2023+1):
+for year in range(1985, current_year):
 
 	ee.Initialize()
 

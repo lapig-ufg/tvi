@@ -118,8 +118,10 @@ PERIODS = [
 		"dtEnd": '-10-30'
 	}
 ]
+now = datetime.datetime.now()
+current_year = now.year
 
-for year in range(1985,2023+1):
+for year in range(1985, current_year):
 	for satellite in SATELLITES:
 		if (satellite == 'L8' and year < 2013) or (satellite == 'L5' and year > 2011):
 			continue
