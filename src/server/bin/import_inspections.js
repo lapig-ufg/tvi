@@ -13,7 +13,7 @@ const geojsonFile = process.argv[2];
 const campaign = process.argv[3];
 
 const collectionPointsName = "points";
-const dbUrl = 'mongodb://172.18.0.6:27017/tvi';
+const dbUrl = 'mongodb://172.16.106.2:27017/tvi';
 
 const checkError = function(error) {
 	if(error) {
