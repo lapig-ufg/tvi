@@ -348,46 +348,52 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var createLandsatChart = function () {
             Plotly.purge('LANDSAT');
+
             requester._get(`timeseries/landsat/ndvi`, {
                 "lon": $scope.point.lon,
-                "lat": $scope.point.lat,
-                "campaign": $rootScope.user.campaign._id
+                "lat": $scope.point.lat
             }, function (data) {
-                if (data) {
-                    let ndvi = [];
-                    let date = [];
-                    let text = [];
+                if (data && data.length > 0) {
+                    $scope.showChartsLandsat = true;
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#LANDSAT');
+                    let gd = gd3.node();
 
-                    $scope.showChartsLandsat = data.length > 0;
-
-                    ndvi = data.map(item => item.value);
-                    date = data.map(item => item.date);
-                    text = data.map(item => {
-                        const dateObj = new Date(item.date)
-                        const month = dateObj.getUTCMonth() + 1;
-                        const day = dateObj.getUTCDate();
-                        const year = dateObj.getUTCFullYear();
-                        return day + "/" + month + "/" + year
-                    });
-
-                    const d3 = Plotly.d3;
-                    const gd3 = d3.select('#LANDSAT')
-                    const gd = gd3.node();
-
-                    const trace1 = {
-                        x: date,
-                        y: ndvi,
-                        text: date,
-                        name: "NDVI - TMWM",
-                        hoverinfo: "text+y",
+                    // Criando os traços diretamente dos dados retornados
+                    let trace1 = {
+                        x: data[0].x,
+                        y: data[0].y,
+                        type: "scatter",
+                        mode: "lines",
+                        name: "NDVI (Savgol)",
                         line: {
-                            width: 1.5,
-                            color: '#f6b2b2'
+                            color: "rgb(50, 168, 82)"
                         }
                     };
 
+                    let trace2 = {
+                        x: data[1].x,
+                        y: data[1].y,
+                        type: "scatter",
+                        mode: "markers",
+                        name: "NDVI (Original)",
+                        marker: {
+                            color: "rgba(50, 168, 82, 0.3)"
+                        }
+                    };
 
-                    const layout = {
+                    let trace3 = {
+                        x: data[2].x,
+                        y: data[2].y,
+                        type: "bar",
+                        name: "Precipitation",
+                        marker: {
+                            color: "blue"
+                        },
+                        yaxis: "y2"
+                    };
+
+                    let layout = {
                         height: 400,
                         legend: {
                             xanchor: "center",
@@ -404,22 +410,28 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             gridwidth: 1
                         },
                         yaxis: {
-                            title: 'NDVI - TMWM',
+                            title: 'NDVI',
                             fixedrange: true,
                             rangemode: "nonnegative"
+                        },
+                        yaxis2: {
+                            title: "Precipitação (mm)",
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
                         }
                     };
 
-                    const dataChart = [trace1];
-
-                    Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+                    let dataChart = [trace1, trace2, trace3];
+                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                    Plotly.Plots.resize(gd);
 
                     window.onresize = function () {
                         Plotly.Plots.resize(gd);
                     };
                 }
             });
-        }
+        };
 
         var generateMaps = function () {
             $scope.maps = [];

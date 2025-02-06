@@ -1,7 +1,14 @@
+const axios = require("axios");
+const https = require("https");
+
 module.exports = function (app) {
 
     const collections = app.repository.tSCollections;
     let Timeseries = {};
+
+    const agent = new https.Agent({
+        rejectUnauthorized: false, // ⚠️ Desabilita a verificação SSL (uso temporário)
+    });
 
     Timeseries.getLandsatNdviByLonLat = function (request, response) {
         const {lon, lat, campaign} =  request.query;
@@ -96,6 +103,32 @@ module.exports = function (app) {
             response.end()
         }
     }
+
+    Timeseries.getTimeSeriesLandsatNdviByLonLat = async function (request, response) {
+        const { lon, lat } = request.query;
+
+        if (!lon || !lat) {
+            console.error("lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        const url = `https://tiles.lapig.iesa.ufg.br/api/timeseries/landsat/${lat}/${lon}`;
+
+        try {
+            const res = await axios.get(url, {
+                headers: {
+                    "User-Agent": "Node.js",
+                },
+                httpsAgent: agent,
+            });
+
+            response.status(200).send(res.data);
+        } catch (error) {
+            console.error("Error fetching timeseries:", error.message);
+            response.status(500).send({ error: "Failed to fetch timeseries data" });
+        }
+    };
+
 
     return Timeseries;
 
