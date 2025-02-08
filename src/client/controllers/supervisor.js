@@ -3,6 +3,7 @@
 Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal) {
     $scope.showCharts = false
     $scope.showChartsLandsat = false
+    $scope.showChartsNDDI = false
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
@@ -432,6 +433,59 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             });
         };
+        var createNDDIChart = function () {
+            Plotly.purge('NDDI');
+
+            requester._get(`timeseries/nddi`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
+            }, function (data) {
+                if (data && data.length > 0) {
+                    $scope.showChartsNDDI = true;
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#NDDI');
+                    let gd = gd3.node();
+
+                    // Criando os traços diretamente dos dados retornados
+                    let trace = {
+                        x: data[0].x,
+                        y: data[0].y,
+                        type: "scatter",
+                        mode: "lines",
+                        name: "NDDI (MapBiomas Mosaics)",
+                        line: {
+                            color: "rgb(0, 168, 82)"
+                        }
+                    };
+
+                    let layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        }
+                    };
+
+                    let dataChart = [trace];
+                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                    Plotly.Plots.resize(gd);
+
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                }
+            });
+        };
 
         var generateMaps = function () {
             $scope.maps = [];
@@ -669,6 +723,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             if (!$scope.isChaco) {
                 createModisChart(data.point.dates);
                 createLandsatChart();
+                createNDDIChart();
             }
             $scope.counter = 0;
 
