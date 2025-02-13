@@ -6,6 +6,7 @@ const campaign = process.argv[3];
 
 const collectionPointsName = "points";
 const dbUrl = 'mongodb://172.16.106.2:27017/tvi';
+const CHUNK_SIZE = 1000; // Número de pontos por chunk
 
 const checkError = function(error) {
 	if(error) {
@@ -50,50 +51,53 @@ const getDB = function(dbUrl, callback) {
 	});
 }
 
-fs.readFile(geojsonFile, 'utf-8', function(error, geojsonDataStr){
+const processChunk = async (collectionPoints, chunk, campaign) => {
+	const bulkOps = chunk.map(point => {
+		const inspection = {
+			"counter": 0,
+			"form": point.inspections.map(item => ({
+				"initialYear": item.year,
+				"finalYear": item.year,
+				"landUse": item.class
+			})),
+			"fillDate": new Date()
+		};
+
+		return {
+			updateOne: {
+				filter: { 'campaign': campaign, 'lon': point.lon, 'lat': point.lat },
+				update: {
+					'$push': {
+						"inspection": inspection,
+						"userName": "Classificação Automática"
+					}
+				}
+			}
+		};
+	});
+
+	try {
+		const result = await collectionPoints.bulkWrite(bulkOps, { ordered: false });
+		console.log(`[SUCCESS] Chunk processed: ${result.modifiedCount} documents updated.`);
+	} catch (err) {
+		console.error("[ERROR] Chunk processing failed:", err);
+	}
+};
+
+fs.readFile(geojsonFile, 'utf-8', async function(error, geojsonDataStr){
 	checkError(error);
 
-	getDB(dbUrl, function(db) {
-		db.collection(collectionPointsName, function(err, collectionPoints) {
-			if (err) {
-				console.error(err);
-				db.close();
-				return;
-			}
+	getDB(dbUrl, async function(db) {
+		const collectionPoints = db.collection(collectionPointsName);
+		const points = getInspections(geojsonDataStr);
 
-			const points = getInspections(geojsonDataStr);
-			const bulkOps = points.map(point => {
-				const inspection = {
-					"counter": 0,
-					"form": point.inspections.map(item => ({
-						"initialYear": item.year,
-						"finalYear": item.year,
-						"landUse": item.class
-					})),
-					"fillDate": new Date()
-				};
+		// Dividir os pontos em chunks
+		for (let i = 0; i < points.length; i += CHUNK_SIZE) {
+			const chunk = points.slice(i, i + CHUNK_SIZE);
+			console.log(`Processing chunk ${i / CHUNK_SIZE + 1} of ${Math.ceil(points.length / CHUNK_SIZE)}`);
+			await processChunk(collectionPoints, chunk, campaign);
+		}
 
-				return {
-					updateOne: {
-						filter: { 'campaign': campaign, 'lon': point.lon, 'lat': point.lat },
-						update: {
-							'$push': {
-								"inspection": inspection,
-								"userName": "Classificação Automática"
-							}
-						}
-					}
-				};
-			});
-
-			collectionPoints.bulkWrite(bulkOps, { ordered: false }, function(err, result) {
-				if (err) {
-					console.error("[ERROR] Bulk write failed:", err);
-				} else {
-					console.log("[SUCCESS] Bulk write completed:", result);
-				}
-				db.close();
-			});
-		});
+		db.close();
 	});
 });
