@@ -6,6 +6,7 @@ The increasing number of sensors orbiting the earth is systematically producing 
 
 ![alt tag](https://raw.githubusercontent.com/lapig-ufg/tvi/master/docs/admin.png)
 
+
 ## Running:
  1. Start MongoDB
  ```
