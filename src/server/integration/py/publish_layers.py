@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 import os
 import sys
 import ee
@@ -7,11 +6,12 @@ import json
 import datetime
 import traceback
 import glob
+from google.oauth2 import service_account
 from pymongo import MongoClient
 
 MONGO_URL = os.getenv('MONGO_URL')
 
-CREDENTIALS_DIR = sys.argv[1]
+EE_PRIVATE_KEY_FILE = sys.argv[1]
 MONGO_HOST = sys.argv[2]
 MONGO_PORT = int(sys.argv[3])
 
@@ -33,25 +33,25 @@ PERIODS_BR = [
 	}
 ]
 
-def gee_multi_credentials(credentials_dir):
-	
-	def mpb_get_credentials_path():
-		credentials_files = ee.oauth.credentials_files
+def initialize_gee_with_service_account(private_key_file):
+    """
+    Inicializa o Google Earth Engine usando um arquivo de chave privada de Service Account.
 
-		if ee.oauth.current_credentials_idx == len(credentials_files):
-			ee.oauth.current_credentials_idx = 0
-		
-		credential = credentials_files[ee.oauth.current_credentials_idx]
-		ee.oauth.current_credentials_idx += 1
+    Args:
+        private_key_file (str): Caminho para o arquivo de chave privada (.json).
+    """
+    try:
+        service_account_file = private_key_file
+        print(f"Initializing service account {service_account_file}")
+        credentials = service_account.Credentials.from_service_account_file(
+            service_account_file,
+            scopes=["https://www.googleapis.com/auth/earthengine.readonly"],
+        )
+        ee.Initialize(credentials)
 
-		print("Acessing GEE from %s" % credential)
-
-		return credential
-
-	ee.oauth.current_credentials_idx = 0
-	ee.oauth.credentials_files = glob.glob(credentials_dir+'/*.json')
-
-	ee.oauth.get_credentials_path = mpb_get_credentials_path
+        print("GEE Initialized successfully.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to initialize GEE")
 
 def getBestImg(satellite, year, mDaysStart, mDaysEnd, path, row):
 	dtStart = str(year) + mDaysStart
@@ -170,7 +170,7 @@ def processPeriod(tiles, periods, suffix = ''):
 client = MongoClient(MONGO_URL)
 db = client.tvi
 
-gee_multi_credentials(CREDENTIALS_DIR)
+initialize_gee_with_service_account(EE_PRIVATE_KEY_FILE)
 
 now = datetime.datetime.now()
 current_year = now.year
@@ -179,8 +179,6 @@ if len(sys.argv) > 4:
     TILES_BR = getWrsCodes(sys.argv[4])
 
 for year in range(1985, current_year):
-
-	ee.Initialize()
 
 	LANDSAT_5 = ee.ImageCollection("LANDSAT/LT05/C02/T1_TOA")
 	LANDSAT_7 = ee.ImageCollection("LANDSAT/LE07/C02/T1_TOA")
@@ -195,4 +193,5 @@ for year in range(1985, current_year):
 
 		processPeriod(TILES_BR, PERIODS_BR)
 
-	ee.Reset()
+
+ee.Reset()
