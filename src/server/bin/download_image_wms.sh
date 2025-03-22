@@ -38,7 +38,7 @@ fi
 if check_file; then
     echo "Arquivo baixado com sucesso: $IMAGE_FILE"
     # Executa o script Python para processar a imagem
-     python3 "$BASEDIR/enhance_img_clahe.py" "$IMAGE_FILE"
+    # python3 "$BASEDIR/enhance_img_clahe.py" "$IMAGE_FILE"
 else
     echo "Erro: O arquivo não foi baixado ou está vazio: $IMAGE_FILE"
 fi
