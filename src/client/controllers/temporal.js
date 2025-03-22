@@ -557,6 +557,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         var loadPoint = function (data) {
+            Plotly.purge('NDDI');
+            Plotly.purge('LANDSAT');
+            Plotly.purge('NDVI');
             $scope.onSubmission = false;
             $scope.pointLoaded = true;
             $scope.point = data.point;

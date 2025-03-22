@@ -701,6 +701,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
 
         var loadPoint = function (data) {
+            Plotly.purge('NDDI');
+            Plotly.purge('LANDSAT');
+            Plotly.purge('NDVI');
+
             if(data.totalPoints === 0){
                 alert('Não foram encontrados pontos não consolidados.');
                 return;
