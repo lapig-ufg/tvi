@@ -209,3 +209,4 @@ jobs:
           echo "{\"content\": \"$discordTitle\", \"embeds\": [ { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }, $EMBEDS_STATUS] ], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }"
           
           curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$discordTitle\", \"embeds\": [ $EMBEDS_STATUS { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }" https://discord.com/api/webhooks/${{ secrets.DISCORD_KEY }}
+            
