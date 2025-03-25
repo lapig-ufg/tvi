@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=8096
     outputs:
 
       APPLICATION_NAME: ${{ steps.creat_env.outputs.APPLICATION_NAME }}
@@ -54,9 +56,7 @@ jobs:
           echo "LAPIG_AUTHOR_DATE=$(git log -1 --format=%cd --date=local)" >> "$GITHUB_OUTPUT"
           echo "LAPIG_PROJECT_NAME=$repo_name" >> "$GITHUB_OUTPUT"
           echo "LAPIG_COMMIT_DATE=$(git show -s --format=%ci)" >> "$GITHUB_OUTPUT"
-          
-          
-          echo "NODE_OPTIONS=--max-old-space-size=8096"  >> $GITHUB_ENV
+
 
       - name: Create version.json
         run: echo "{\"commitId\":\"$LAST_COMMIT_HASH\"}" > version.json
@@ -209,4 +209,3 @@ jobs:
           echo "{\"content\": \"$discordTitle\", \"embeds\": [ { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }, $EMBEDS_STATUS] ], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }"
           
           curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$discordTitle\", \"embeds\": [ $EMBEDS_STATUS { \"title\": \"$discordTitle\", \"description\": \"$discordDesc\", \"footer\": { \"text\": \"$discordFooter\" },  \"thumbnail\": { \"url\":\"$avatar_url\"} }], \"username\": \"GitHub Actions\", \"avatar_url\": \"$avatar_url\" }" https://discord.com/api/webhooks/${{ secrets.DISCORD_KEY }}
-            
