@@ -780,12 +780,12 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
         };
 
-        requester._get('planet/mosaics', function(mosaics) {
+        requester._get('mapbiomas/capabilities', function(mosaics) {
             if (mosaics && mosaics.length > 0) {
                 $scope.planetMosaics = mosaics.map(mosaic => ({
-                    tiles: mosaic._links.tiles,
-                    firstAcquired: new Date(mosaic.first_acquired),
-                    lastAcquired: new Date(mosaic.last_acquired)
+                    name: mosaic.name,
+                    firstAcquired: moment(mosaic.date).toDate(),
+                    lastAcquired: moment(mosaic.date).toDate(),
                 }));
             }
         });

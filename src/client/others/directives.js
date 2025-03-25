@@ -156,7 +156,13 @@ Application
                   iconSize: [42, 42]
                 })
               }).addTo($scope.map);
-              $scope.tileLayer = L.tileLayer($scope.mosaicUrl).addTo($scope.map);
+
+              $scope.tileLayer = L.tileLayer.wms('/service/mapbiomas/wms', {
+                layers: $scope.mosaicUrl,
+                format: 'image/png',
+                version: '1.3.0',
+                uppercase: true,
+              }).addTo($scope.map);
             }
 
             $scope.$watch('mosaicUrl', function(newVal) {
@@ -205,8 +211,6 @@ Application
           visparams: '='
         },
         controller: function($scope, $element) {
-          console.log('selectedVisparam', $scope.visparams)
-
           $scope.selectedVisparam = $scope.visparams[0]; // Seleciona o primeiro visparam por padrão
           $timeout(function() {
             var mapElement = $element[0].querySelector(`#sentinel-map-${$scope.$id}`);

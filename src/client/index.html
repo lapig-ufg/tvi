@@ -5,20 +5,31 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LAPIG - Visual Inspection Tool</title>
+
+  <link rel="canonical"         href="https://tvi.lapig.iesa.ufg.br/"/>
+  <meta property="og:locale"    content="pt_BR"/>
+  <meta property="og:type"      content="website"/>
+  <meta property="og:title"     content="TVI"/>
+  <meta property="og:url"       content="https://tvi.lapig.iesa.ufg.br/"/>
+  <meta property="og:image"     content="https://tvi.lapig.iesa.ufg.br/favicon.ico">
+  <meta property="og:site_name" content="TVI"/>
+  <meta name="twitter:card"     content="summary_large_image"/>
+  <meta name="twitter:title"    content="TVI"/>
+  <meta name="twitter:image"    content="https://tvi.lapig.iesa.ufg.br/favicon.ico"/>
+
+  <meta name="description" content="Ferramenta online e de código aberto destinada á inspeção visual de pontos de amostras em series históricas de imagens de sensoriamento remoto do satélite Landsat.">
+  <meta name="keywords" content="tvi, landsat, inspection, remote sensing"/>
+
   <link href="3thparty/css/bootstrap.min.css" rel="stylesheet">
   <link href="3thparty/css/ng-magnify.css" rel="stylesheet">
   <link href="3thparty/css/leaflet.css" rel="stylesheet">
   <link href="assets/style.css" rel="stylesheet">
-  <link href="https://mark-rolich.github.io/Magnifier.js/magnifier.css" rel="stylesheet">
+  <link href="3thparty/css/magnifier.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-csp.css">
+  <link rel="stylesheet" href="3thparty/css/ui-bootstrap-csp.css">
 
-  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-  <!--[if lt IE 9]>
-  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.js?version=4.8.0&features=default"></script>
+
 </head>
 <body ng-app="application">
 <script src="3thparty/js/jquery-3.1.0.min.js"></script>
@@ -29,10 +40,11 @@
 <script src="3thparty/js/ng-magnify.js"></script>
 <script src="3thparty/js/leaflet.js"></script>
 <script src="3thparty/js/ui-leaflet.js"></script>
+<script src="3thparty/js/moment.min.js"></script>
 <script src="3thparty/js/angular-simple-logger.min.js"></script>
-<script src="https://mark-rolich.github.io/Magnifier.js/Event.js"></script>
-<script src="https://mark-rolich.github.io/Magnifier.js/Magnifier.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.js"></script>
+<script src="3thparty/js/Event.js"></script>
+<script src="3thparty/js/Magnifier.js"></script>
+<script src="3thparty/js/ui-bootstrap-tpls.js"></script>
 <script src="app.js"></script>
 <script src="controllers/navbar.js"></script>
 <script src="controllers/login.js"></script>

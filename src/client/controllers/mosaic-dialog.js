@@ -18,15 +18,15 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     $scope.period = period;
     $scope.selectedMosaicIndex = 0;
 
-
-    $scope.currentMosaicUrl = $scope.mosaics[$scope.selectedMosaicIndex].tiles;
+    $scope.currentMosaicUrl = $scope.mosaics[$scope.selectedMosaicIndex].name;
+    console.log($scope.currentMosaicUrl)
 
     $scope.close = function() {
         $uibModalInstance.dismiss('cancel');
     };
     $scope.updateMosaic = function(evt) {
         $scope.selectedMosaicIndex = evt.index;
-        $scope.currentMosaicUrl = $scope.mosaics[evt.index].tiles;
+        $scope.currentMosaicUrl = $scope.mosaics[evt.index].name;
     };
     // Adiciona a lógica para o slider
     $scope.onSliderChange = function(index) {

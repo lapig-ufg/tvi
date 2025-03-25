@@ -22,6 +22,12 @@ Application
 			return $filter('date')(new Date(input), 'dd/MM/yyyy HH:mm:ss');
 		};
 	})
+	.filter('month', function() {
+		return function(input) {
+			if (!input) return "";
+			return moment(input).format("MM/YYYY");
+		};
+	})
 	.filter('truncate', function() {
 		return function(text, length, end) {
 

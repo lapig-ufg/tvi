@@ -24,6 +24,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
         $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
         $scope.isDisabled = true;
+
         $scope.isObjectEmpty = function (obj) {
 
             keyCounts = 0;
@@ -86,7 +87,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             generateMaps();
         }
 
-        var generateOptionYears = function (initialYear, finalYear) {
+        const generateOptionYears = function (initialYear, finalYear) {
             var options = [];
             for (var year = initialYear; year <= finalYear; year++) {
                 options.push(year);
@@ -94,7 +95,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.optionYears.push(options);
         }
 
-        var getDateImages = function () {
+        const getDateImages = function () {
             date = []
             for (var i = 0; i < $scope.maps.length; i++) {
                 date.push(new Date($scope.maps[i].date));
@@ -102,7 +103,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             return date;
         }
 
-        var trace2NDVI = function (values, date) {
+        const trace2NDVI = function (values, date) {
             ndvi = []
 
             for (var i = 0; i < date.length; i++) {
@@ -118,7 +119,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             return ndvi;
         }
 
-        var getPrecipitationData = function (callback) {
+        const getPrecipitationData = function (callback) {
             requester._get('spatial/precipitation', {
                 "longitude": $scope.point.lon,
                 "latitude": $scope.point.lat
@@ -148,7 +149,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             })
         }
 
-        var getDryDate = function (dates, tmsIdList) {
+        const getDryDate = function (dates, tmsIdList) {
             var dry = [];
             for (key in dates) {
                 for (var i = 0; i < tmsIdList.length; i++) {
@@ -163,7 +164,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             return dry.sort()
         }
 
-        var createModisChart = function (datesFromService) {
+        const createModisChart = function (datesFromService) {
 
             Plotly.purge('NDVI');
 
@@ -337,7 +338,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             });
         }
 
-        var createLandsatChart = function () {
+        const createLandsatChart = function () {
             Plotly.purge('LANDSAT');
 
             requester._get(`timeseries/landsat/ndvi`, {
@@ -423,7 +424,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 }
             });
         };
-        var createNDDIChart = function () {
+
+        const createNDDIChart = function () {
             Plotly.purge('NDDI');
 
             requester._get(`timeseries/nddi`, {
@@ -477,7 +479,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             });
         };
 
-        var generateMaps = function () {
+        const generateMaps = function () {
             $scope.maps = [];
             var tmsIdList = [];
 
@@ -527,14 +529,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $window.open(url + "service/kml?longitude=" + lon + "&latitude=" + lat + "&county=" + county);
         }
 
-        var initCounter = function () {
+        const initCounter = function () {
             $scope.counter = 0;
             $interval(function () {
                 $scope.counter = $scope.counter + 1;
             }, 1000);
         }
 
-        var initFormViewVariables = function () {
+        const initFormViewVariables = function () {
             $scope.optionYears = [];
 
             var landUseIndex = 1;
@@ -542,7 +544,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 if ($scope.config.landUse[i] == 'Leñosas (forestal)' || $scope.config.landUse[i] == 'Vegetação nativa"') {
                     landUseIndex = i;
                     break;
-
                 }
             }
 
@@ -556,7 +557,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             ];
         }
 
-        var loadPoint = function (data) {
+        const loadPoint = function (data) {
             Plotly.purge('NDDI');
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
@@ -583,14 +584,15 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         initCounter();
+
         requester._get('points/next-point', loadPoint);
 
-        requester._get('planet/mosaics', function(mosaics) {
+        requester._get('mapbiomas/capabilities',function(mosaics) {
             if (mosaics && mosaics.length > 0) {
                 $scope.planetMosaics = mosaics.map(mosaic => ({
-                    tiles: mosaic._links.tiles,
-                    firstAcquired: new Date(mosaic.first_acquired),
-                    lastAcquired: new Date(mosaic.last_acquired)
+                    name: mosaic.name,
+                    firstAcquired: moment(mosaic.date).toDate(),
+                    lastAcquired: moment(mosaic.date).toDate(),
                 }));
             }
         });
