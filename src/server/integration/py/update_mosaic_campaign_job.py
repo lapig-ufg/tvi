@@ -96,7 +96,7 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
 
     # Atualiza (ou insere) o documento na collection "campaign" usando o campaign_id
     campaign_collection.update_one(
-        {"campaign_id": campaign_id},
+        {"_id": campaign_id},
         {"$set": {"customURLs": customURLs}},
         upsert=True
     )
