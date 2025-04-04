@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import ee
 from pymongo import MongoClient
@@ -12,7 +13,7 @@ def initialize_gee_with_service_account(private_key_file):
     """
     try:
         service_account_file = private_key_file
-        print(f"Inicializando a service account {service_account_file}")
+        print("Inicializando a service account {}".format(service_account_file))
         credentials = service_account.Credentials.from_service_account_file(
             service_account_file,
             scopes=["https://www.googleapis.com/auth/earthengine.readonly"],
@@ -20,7 +21,7 @@ def initialize_gee_with_service_account(private_key_file):
         ee.Initialize(credentials)
         print("GEE inicializado com sucesso.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Falha ao inicializar o GEE")
+        raise Exception(status_code=500, detail="Falha ao inicializar o GEE")
 
 
 
@@ -32,9 +33,7 @@ campaign_collection = db["campaign"]    # Collection onde a campanha será atual
 
 # Função para determinar o satélite com base nas regras definidas, incluindo L9
 def get_satellite(year, rules):
-    if "L9" in rules and year >= rules["L9"].get("min_year", 2022):
-        return "L9"
-    elif "L8" in rules and year >= rules["L8"].get("min_year", 2013):
+    if "L8" in rules and year >= rules["L8"].get("min_year", 2013):
         return "L8"
     elif "L7" in rules and rules["L7"].get("min_year") <= year <= rules["L7"].get("max_year"):
         return "L7"
@@ -51,7 +50,7 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
     # Verifica se o job está ativo
     job_active = param.get("job_active", False)
     if not job_active:
-        print(f"Job não ativo para o documento {param.get('_id')}. Pulando.")
+        print("Job não ativo para o documento {}. Pulando.".format(param.get('_id')))
         continue
 
     # Extrai os parâmetros do documento
@@ -66,15 +65,15 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
     suffixes       = param.get("suffixes", ["DRY", "WET"])
     satellite_rules = param.get("satellite_rules")
 
+    initialize_gee_with_service_account(param.get("ee_key_path"))
+
     # Dicionário para armazenar as URLs customizadas
     customURLs = {}
 
     # Itera pelos anos definidos
     for year in range(start_year, end_year + 1):
-        # Cria o filtro na coleção do Earth Engine conforme os parâmetros
-        mosaic = (ee.ImageCollection(collection_id)
-                    .filterMetadata('biome', 'equals', biome)
-                    .filterMetadata('year', 'equals', year))
+        # Cria o filtro na coleção do Earth Engine conforme os
+        mosaic = ee.ImageCollection(collection_id).filterMetadata('biome', 'equals', biome).filterMetadata('year', 'equals', year)
 
         # Define os parâmetros de visualização
         map_params = {
@@ -84,24 +83,20 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
         }
 
         # Executa a função getMap e recupera a URL formatada
-        map_dict = mosaic.getMap(map_params)
-        url = map_dict.get('urlFormat')
+        map_dict = mosaic.getMapId(map_params)
+        url = map_dict['tile_fetcher'].url_format
 
         # Determina o satélite para o ano
         satellite = get_satellite(year, satellite_rules)
 
         # Para cada sufixo (por exemplo, DRY e WET), cria a chave e armazena a URL
         for suffix in suffixes:
-            key = f"{satellite}_{year}_{suffix}"
+            key = "{}_{}_{}".format(satellite, year, suffix)
             customURLs[key] = url
 
     # Atualiza (ou insere) o documento na collection "campaign" usando o campaign_id
-#     campaign_collection.update_one(
-#         {"campaign_id": campaign_id},
-#         {"$set": {"customURLs": customURLs}},
-#         upsert=True
-#     )
-    print(customURLs)
-    print(f"Documento da campanha {campaign_id} atualizado com o campo customURLs.")
-
-print("Processamento concluído para todos os documentos 'mosaic_pantanal'.")
+    campaign_collection.update_one(
+        {"campaign_id": campaign_id},
+        {"$set": {"customURLs": customURLs}},
+        upsert=True
+    )
