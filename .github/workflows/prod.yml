@@ -41,9 +41,6 @@ jobs:
           export NODE_OPTIONS=--max-old-space-size=8096
           npm set progress=false
           cd ${{ github.workspace }}/src/server && npm install
-          cd ${{ github.workspace }}/src/client && npm install
-          npm install -g @angular/cli@8
-          cd ${{ github.workspace }}/src/client && ng build --stats-json --source-map=false --no-progress
 
       - name: Build Docker image
         run: |
