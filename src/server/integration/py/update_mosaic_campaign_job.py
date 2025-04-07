@@ -89,6 +89,8 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
         # Determina o satélite para o ano
         satellite = get_satellite(year, satellite_rules)
 
+        url = url.replace("{z}", "${z}").replace("{x}", "${x}").replace("{y}", "${y}")
+
         # Para cada sufixo (por exemplo, DRY e WET), cria a chave e armazena a URL
         for suffix in suffixes:
             key = "{}_{}_{}".format(satellite, year, suffix)

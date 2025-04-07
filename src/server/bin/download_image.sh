@@ -17,7 +17,7 @@ TYPE="${4:-gdal}"
 #-------------------- Parâmetros ajustáveis --------------------
 PIX_SIZE=30
 TIMEOUT="${TIMEOUT:-120}"          # seg. p/ cada request
-MAX_RETRY="${MAX_RETRY:-5}"
+MAX_RETRY="${MAX_RETRY:-8}"
 RETRY_DELAY="${RETRY_DELAY:-3}"
 
 #-------------------- Flags de ambiente GDAL -------------------
