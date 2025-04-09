@@ -15,4 +15,3 @@ The increasing number of sensors orbiting the earth is systematically producing 
  ```
  ./prod-start.sh
  ```
-
