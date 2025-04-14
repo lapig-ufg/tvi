@@ -14,8 +14,8 @@ module.exports = function(app) {
 		"correct": appRoot + "/bin/download_image_wms.sh",
 		"planetCredentials": process.env.PLANET_CREDENTIALS,
 		"cache": {
-			"parallelRequestsBusyTime": 52,
-			"parallelRequestsDawnTime": 60
+			"parallelRequestsBusyTime": 42,
+			"parallelRequestsDawnTime": 36
 		},
 		"mongo": {
 			"host": process.env.MONGO_HOST,
