@@ -72,8 +72,16 @@ for param in param_collection.find({"tipo_job": "mosaic_pantanal"}):
 
     # Itera pelos anos definidos
     for year in range(start_year, end_year + 1):
-        # Cria o filtro na coleção do Earth Engine conforme os
-        mosaic = ee.ImageCollection(collection_id).filterMetadata('biome', 'equals', biome).filterMetadata('year', 'equals', year)
+       
+        # Monta a ImageCollection base
+        mosaic = ee.ImageCollection(collection_id)
+
+        # Só aplica filtro de bioma se vier definido e não for string vazia
+        if biome is not None and str(biome).strip() != "":
+            mosaic = mosaic.filterMetadata('biome', 'equals', biome)
+
+        # Sempre aplica filtro de ano
+        mosaic = mosaic.filterMetadata('year', 'equals', year)
 
         # Define os parâmetros de visualização
         map_params = {
