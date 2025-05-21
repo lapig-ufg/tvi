@@ -188,96 +188,217 @@ Application
         }
       }
     })
-    .directive('sentinelMap', function($timeout, $http) {
+    // .directive('sentinelMap', function($timeout, $http) {
+    //   return {
+    //     template: `
+    //         <div>
+    //             <h4 style="text-align: center">Imagem COPERNICUS/S2_HARMONIZED {{::period}} - {{::year}}</h4>
+    //             <div style="text-align: center">
+    //                 <label ng-repeat="param in visparams" class="radio-visparam">
+    //                     <input type="radio" ng-model="$parent.selectedVisparam" ng-value="param" ng-change="updateTileLayer()">
+    //                     {{param}}
+    //                 </label>
+    //             </div>
+    //             <div id="sentinel-map-{{::$id}}" style="width: 100%; height: 300px;"></div>
+    //         </div>
+    //     `,
+    //     scope: {
+    //       lon: '=',
+    //       lat: '=',
+    //       zoom: '=',
+    //       period: '=',
+    //       year: '=',
+    //       visparams: '='
+    //     },
+    //     controller: function($scope, $element) {
+    //       $scope.selectedVisparam = $scope.visparams[0]; // Seleciona o primeiro visparam por padrão
+    //       $timeout(function() {
+    //         var mapElement = $element[0].querySelector(`#sentinel-map-${$scope.$id}`);
+    //         if (!mapElement) {
+    //           console.error('Elemento do mapa não encontrado!');
+    //           return;
+    //         }
+    //
+    //         if (!$scope.period || !$scope.year) {
+    //           console.error('Parâmetros de período ou ano não disponíveis!');
+    //           return;
+    //         }
+    //
+    //         $scope.markerInMap = true;
+    //         $scope.map = L.map(mapElement, {
+    //           center: [$scope.lat, $scope.lon],
+    //           zoomControl: true,
+    //           dragging: true,
+    //           doubleClickZoom: true,
+    //           scrollWheelZoom: true,
+    //           zoom: $scope.zoom,
+    //           minZoom: $scope.zoom,
+    //           maxZoom: $scope.zoom + 6,
+    //         });
+    //
+    //         $scope.updateTileLayer = function() {
+    //           if ($scope.tileLayer) {
+    //             $scope.map.removeLayer($scope.marker);
+    //             $scope.map.removeLayer($scope.tileLayer);
+    //           }
+    //           $scope.marker = L.marker([$scope.lat, $scope.lon], {
+    //             icon: L.icon({
+    //               iconUrl: 'assets/marker2.png',
+    //               iconSize: [42, 42]
+    //             })
+    //           }).addTo($scope.map);
+    //
+    //           var tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${$scope.selectedVisparam}&period=${$scope.period}&year=${$scope.year}`;
+    //           $scope.tileLayer = L.tileLayer(tileUrl, {
+    //             subdomains: ['1', '2', '3', '4', '5'],
+    //             attribution: `${$scope.period} - ${$scope.year}`,
+    //             attributionControl: true,
+    //           }).addTo($scope.map);
+    //         };
+    //
+    //         $scope.$watchGroup(['period', 'year'], function(newVals) {
+    //           if (newVals[0] && newVals[1]) {
+    //             $scope.updateTileLayer();
+    //           }
+    //         });
+    //
+    //         $scope.map.on('click', function () {
+    //           if ($scope.markerInMap) {
+    //             $scope.map.removeLayer($scope.marker);
+    //             $scope.markerInMap = false;
+    //           } else {
+    //             $scope.map.addLayer($scope.marker);
+    //             $scope.markerInMap = true;
+    //           }
+    //         });
+    //
+    //         $scope.updateTileLayer();
+    //
+    //         L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+    //       }, 0);
+    //     }
+    //   }
+    // })
+    .directive('sentinelMap', function ($timeout) {
       return {
         template: `
-            <div>
-                <h4 style="text-align: center">Imagem COPERNICUS/S2_HARMONIZED {{::period}} - {{::year}}</h4>
-                <div style="text-align: center">
-                    <label ng-repeat="param in visparams" class="radio-visparam">
-                        <input type="radio" ng-model="$parent.selectedVisparam" ng-value="param" ng-change="updateTileLayer()">
-                        {{param}}
-                    </label>
-                </div>
-                <div id="sentinel-map-{{::$id}}" style="width: 100%; height: 300px;"></div>
-            </div>
-        `,
+      <div>
+        <h4 style="text-align:center">
+          Imagem COPERNICUS/S2_HARMONIZED {{::period}} – {{::year}}
+        </h4>
+
+        <!-- Seletor de visparam -->
+        <div style="text-align:center">
+          <label ng-repeat="param in visparams" class="radio-visparam">
+            <input  type="radio"
+                    ng-model="$parent.selectedVisparam"
+                    ng-value="param"
+                    ng-change="updateTileLayer()">
+            {{param}}
+          </label>
+        </div>
+        <div id="sentinel-map-{{::$id}}" style="width:100%;height:300px;"></div>
+                <div class="slider-container"
+             ng-if="period === 'MONTH' && mosaics.length">
+          <label for="mosaicSlider-{{::$id}}">Mês: &nbsp;<strong>{{selectedMonth}}/{{year}}</strong></label>
+          <input  id="mosaicSlider-{{::$id}}"
+                  type="range"
+                  min="0"
+                  max="{{mosaics.length-1}}"
+                  step="1"
+                  class="slider"
+                  ng-model="selectedMosaicIndex"
+                  ng-change="onSliderChange(selectedMosaicIndex)">
+         
+        </div>
+      </div>
+    `,
         scope: {
-          lon: '=',
-          lat: '=',
-          zoom: '=',
-          period: '=',
-          year: '=',
+          lon:       '=',
+          lat:       '=',
+          zoom:      '=',
+          period:    '=',
+          year:      '=',
           visparams: '='
         },
-        controller: function($scope, $element) {
-          $scope.selectedVisparam = $scope.visparams[0]; // Seleciona o primeiro visparam por padrão
-          $timeout(function() {
-            var mapElement = $element[0].querySelector(`#sentinel-map-${$scope.$id}`);
-            if (!mapElement) {
-              console.error('Elemento do mapa não encontrado!');
+        controller: function ($scope, $element) {
+
+          /* ---------- estado ---------- */
+          $scope.selectedVisparam    = $scope.visparams[0];
+          $scope.mosaics             = [];
+          $scope.selectedMosaicIndex = 0;
+          $scope.selectedMonth       = null;
+          $scope.period = 'MONTH';
+
+          /* ---------- gera meses 01-12 (ou 01-mês_atual) ---------- */
+          function refreshMonths () {
+            if ($scope.period !== 'MONTH' || !$scope.year) {
+              $scope.mosaics = [];
               return;
             }
+            const now        = new Date();
+            const isCurrent  = +$scope.year === now.getFullYear();
+            const lastMonth  = isCurrent ? now.getMonth() + 1 : 12;
+            $scope.mosaics   = Array.from({ length: lastMonth }, (_, i) => i + 1);
+            $scope.selectedMosaicIndex = 0;
+            $scope.selectedMonth       = $scope.mosaics[0];
+          }
 
-            if (!$scope.period || !$scope.year) {
-              console.error('Parâmetros de período ou ano não disponíveis!');
-              return;
-            }
+          /* ---------- helpers ---------- */
+          function buildTileUrl () {
+            const periodOrMonth = $scope.period === 'MONTH' ? 'MONTH' : $scope.period;
+            const monthParam    = periodOrMonth === 'MONTH'
+                ? `&month=${$scope.selectedMonth}`
+                : '';
+            return `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}` +
+                `?period=${periodOrMonth}` +
+                `&year=${$scope.year}` +
+                `&visparam=${$scope.selectedVisparam}${monthParam}`;
+          }
 
-            $scope.markerInMap = true;
+          /* ---------- inicia Leaflet ---------- */
+          $timeout(function () {
+            const mapElement = $element[0]
+                .querySelector('#sentinel-map-' + $scope.$id);
+            if (!mapElement) return;
+
             $scope.map = L.map(mapElement, {
-              center: [$scope.lat, $scope.lon],
-              zoomControl: true,
-              dragging: true,
-              doubleClickZoom: true,
-              scrollWheelZoom: true,
-              zoom: $scope.zoom,
+              center:  [$scope.lat, $scope.lon],
+              zoom:    $scope.zoom,
               minZoom: $scope.zoom,
-              maxZoom: $scope.zoom + 6,
+              maxZoom: $scope.zoom + 6
             });
 
-            $scope.updateTileLayer = function() {
-              if ($scope.tileLayer) {
-                $scope.map.removeLayer($scope.marker);
-                $scope.map.removeLayer($scope.tileLayer);
-              }
-              $scope.marker = L.marker([$scope.lat, $scope.lon], {
-                icon: L.icon({
-                  iconUrl: 'assets/marker2.png',
-                  iconSize: [42, 42]
-                })
-              }).addTo($scope.map);
+            $scope.marker = L.marker([$scope.lat, $scope.lon], {
+              icon: L.icon({ iconUrl: 'assets/marker2.png', iconSize: [42, 42] })
+            }).addTo($scope.map);
 
-              var tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${$scope.selectedVisparam}&period=${$scope.period}&year=${$scope.year}`;
-              $scope.tileLayer = L.tileLayer(tileUrl, {
-                subdomains: ['1', '2', '3', '4', '5'],
-                attribution: `${$scope.period} - ${$scope.year}`,
-                attributionControl: true,
+            $scope.updateTileLayer = function () {
+              if ($scope.tileLayer) $scope.map.removeLayer($scope.tileLayer);
+              $scope.tileLayer = L.tileLayer(buildTileUrl(), {
+                subdomains: ['1','2','3','4','5'],
+                attribution: `${$scope.period} – ${$scope.year}`
               }).addTo($scope.map);
             };
 
-            $scope.$watchGroup(['period', 'year'], function(newVals) {
-              if (newVals[0] && newVals[1]) {
-                $scope.updateTileLayer();
-              }
+            $scope.onSliderChange = function (idx) {
+              $scope.selectedMonth = $scope.mosaics[idx];
+              $scope.updateTileLayer();
+            };
+
+            /* watchers */
+            $scope.$watchGroup(['period','year'], function () {
+              refreshMonths();
+              $scope.updateTileLayer();
             });
 
-            $scope.map.on('click', function () {
-              if ($scope.markerInMap) {
-                $scope.map.removeLayer($scope.marker);
-                $scope.markerInMap = false;
-              } else {
-                $scope.map.addLayer($scope.marker);
-                $scope.markerInMap = true;
-              }
-            });
-
+            /* primeira renderização */
+            refreshMonths();
             $scope.updateTileLayer();
-
-            L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+            L.control.scale({ metric:true, imperial:false }).addTo($scope.map);
           }, 0);
         }
-      }
+      };
     })
   .directive('combinedMaps', function() {
       return {

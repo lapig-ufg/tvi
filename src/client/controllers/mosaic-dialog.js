@@ -19,7 +19,6 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     $scope.selectedMosaicIndex = 0;
 
     $scope.currentMosaicUrl = $scope.mosaics[$scope.selectedMosaicIndex].name;
-    console.log($scope.currentMosaicUrl)
 
     $scope.close = function() {
         $uibModalInstance.dismiss('cancel');
