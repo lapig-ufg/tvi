@@ -287,10 +287,10 @@ Application
                         <small  class="text-center">Imagem da Campanha</small>
                         <inspection-map lon="lon" lat="lat" tms-url="tmsUrl" zoom="zoom" bounds="bounds"></inspection-map>
                     </div>
-                    <div style="flex: 1;">
-                        <small class="text-center">Imagen Planet</small>
-                        <planet-map lon="lon" lat="lat" zoom="zoom" mosaic-url="mosaicUrl"></planet-map>
-                    </div>
+<!--                    <div style="flex: 1;">-->
+<!--                        <small class="text-center">Imagen Planet</small>-->
+<!--                        <planet-map lon="lon" lat="lat" zoom="zoom" mosaic-url="mosaicUrl"></planet-map>-->
+<!--                    </div>-->
                 </div>
             `,
         scope: {

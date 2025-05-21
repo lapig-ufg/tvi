@@ -228,7 +228,7 @@
                          style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
                         <span style="margin-left: 5px; font-weight: bold;">{{map.date | date: 'dd/MM/yyyy'}}</span>
                         <span class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
-                        <span class="planet-button" ng-if="hasPlanetMosaicForYear(map.date | date: 'yyyy')" >
+                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
                             <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
                                 <i class="fa fa-camera"></i>
                             </button>

@@ -7,6 +7,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
+    $scope.sentinelMosaics   = [];
     $scope.tilesCapabilities = [];
 
     $rootScope.campaignFinished = false
@@ -780,36 +781,57 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
         };
 
-        requester._get('mapbiomas/capabilities', function(mosaics) {
-            if (mosaics && mosaics.length > 0) {
-                $scope.planetMosaics = mosaics.map(mosaic => ({
-                    name: mosaic.name,
-                    firstAcquired: moment(mosaic.date).toDate(),
-                    lastAcquired: moment(mosaic.date).toDate(),
-                }));
+        // requester._get('mapbiomas/capabilities', function(mosaics) {
+        //     if (mosaics && mosaics.length > 0) {
+        //         $scope.planetMosaics = mosaics.map(mosaic => ({
+        //             name: mosaic.name,
+        //             firstAcquired: moment(mosaic.date).toDate(),
+        //             lastAcquired: moment(mosaic.date).toDate(),
+        //         }));
+        //     }
+        // });
+
+
+        // $scope.hasPlanetMosaicForYear = function(year) {
+        //     return $scope.planetMosaics.some(mosaic => {
+        //         const firstYear = mosaic.firstAcquired.getFullYear();
+        //         const lastYear = mosaic.lastAcquired.getFullYear();
+        //         return year >= firstYear && year <= lastYear;
+        //     });
+        // };
+
+        $scope.hasMosaicForYear = function (year) {
+            // garante que o ano é number e evita erro se a lista ainda não chegou
+            const y = Number(year);
+            if (!Array.isArray($scope.sentinelMosaics)) {
+                return false;
             }
-        });
-
-
-        $scope.hasPlanetMosaicForYear = function(year) {
-            return $scope.planetMosaics.some(mosaic => {
-                const firstYear = mosaic.firstAcquired.getFullYear();
-                const lastYear = mosaic.lastAcquired.getFullYear();
-                return year >= firstYear && year <= lastYear;
-            });
+            return $scope.sentinelMosaics.some(m =>
+                Array.isArray(m.years) && m.years.includes(y)
+            );
         };
+
 
         requester._get('sentinel/capabilities', function(capabilities) {
             $scope.tilesCapabilities = capabilities;
+            $scope.sentinelMosaics = capabilities
+                .filter(c => c.name === 's2_harmonized')
+                .map(c => ({
+                    name: c.name,
+                    years: c.year,          // [2017 … 2025]
+                    periods: c.period,      // ["WET","DRY","MONTH"]
+                    visparams: c.visparam   // ["tvi-green", …]
+                }));
         });
 
         $scope.openMosaicDialog = function(map, point, config) {
-            const mosaicsForYear = $scope.planetMosaics.filter(mosaic => {
-                const firstYear = new Date(mosaic.firstAcquired).getFullYear();
-                const lastYear = new Date(mosaic.lastAcquired).getFullYear();
-                const mapYear = new Date(map.date).getFullYear();
-                return mapYear >= firstYear && mapYear <= lastYear;
-            });
+            // ano do “thumbnail” que o usuário clicou
+            const mapYear = map.year || Number(new Date(map.date).getFullYear());
+
+            // Sentinel-2 harmonizado cobre o ano?
+            const mosaicsForYear = $scope.sentinelMosaics.filter(m =>
+                Array.isArray(m.years) && m.years.includes(mapYear)
+            );
 
             $uibModal.open({
                 controller: 'MosaicDialogController',
