@@ -35,6 +35,7 @@
     "mongodb": "^2.2.34",
     "mu2": "~0.5.20",
     "multer": "^0.1.8",
+    "newrelic": "^12.20.0",
     "node-schedule": "~1.2.0",
     "nodemailer": "^2.0.0",
     "nodemon": "^2.0.20",
