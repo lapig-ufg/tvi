@@ -1,4 +1,6 @@
 require('dotenv').config();
+require('newrelic');
+
 const cluster = require('cluster');
 let clusterSize = require('os').cpus().length;
 
