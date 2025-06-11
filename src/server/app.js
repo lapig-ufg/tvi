@@ -1,3 +1,4 @@
+require('newrelic');
 const express = require('express')
 , load = require('express-load')
 , path = require('path')
