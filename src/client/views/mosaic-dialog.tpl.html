@@ -24,6 +24,10 @@
 
     <sentinel-map ng-if="hasSentinelImageForYear(year)" lon="point.lon" lat="point.lat" zoom="config.zoomLevel" period="period" year="year" visparams="visparams"></sentinel-map>
 
+    <div ng-if="hasLandsatImageForYear(year)" style="border: #0f0f0f 1px solid; margin-top: 10px; margin-bottom: 10px"></div>
+    
+    <landsat-map ng-if="hasLandsatImageForYear(year)" lon="point.lon" lat="point.lat" zoom="config.zoomLevel" period="period" year="year" visparams="landsatVisparams"></landsat-map>
+
 </div>
 <div class="modal-footer">
     <button class="btn btn-secondary" ng-click="close()">Fechar</button>

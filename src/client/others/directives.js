@@ -51,7 +51,7 @@ Application
     })
     .directive('inspectionMap', function () {
       return {
-        template: '<div id="map-{{::$id}}" style="width: 100%; height: 300px;"></div>',
+        template: '<div id="map-{{::$id}}" style="width: 100%; height: 100%;"></div>',
         scope: {
           lon: '=',
           lat: '=',
@@ -103,6 +103,20 @@ Application
             });
 
             L.control.scale({metric: true, imperial: false}).addTo($scope.map);
+            
+            // Force map to recalculate size after initialization
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+              }
+            }, 200);
+            
+            // Additional check for single map scenarios
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+              }
+            }, 500);
 
           });
         }
@@ -423,4 +437,184 @@ Application
           mosaicUrl: '='
         }
       }
+    })
+    .directive('landsatMap', function ($timeout, $http) {
+      return {
+        template: `
+          <div style="width: 100%; height: 100%;">
+            <div id="landsat-map-{{::$id}}" style="width: 100%; height: 100%;"></div>
+          </div>
+        `,
+        scope: {
+          lon: '=',
+          lat: '=',
+          zoom: '=',
+          period: '=',
+          year: '=',
+          visparams: '='
+        },
+        controller: function ($scope, $element) {
+          /* ---------- estado ---------- */
+          // Obter visparam do scope pai (supervisor controller)
+          $scope.selectedVisparam = $scope.$parent.landsatVisparam || localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
+          
+          $scope.tilesCapabilities = [];
+          $scope.markerInMap = true;
+          
+          // Escutar mudanças de visparam do scope pai
+          $scope.$on('landsatVisparamChanged', function(event, newVisparam) {
+            $scope.selectedVisparam = newVisparam;
+            if ($scope.map && $scope.period && $scope.year) {
+              $scope.updateTileLayer();
+            }
+          });
+
+          /* ---------- buscar capabilities ---------- */
+          function fetchCapabilities() {
+            $http.get('/service/sentinel/capabilities')
+              .then(function(response) {
+                if (response.data && response.data.length > 0) {
+                  // Encontrar a capability específica do Landsat
+                  const landsatCap = response.data.find(c => c.name === 'landsat');
+                  if (landsatCap) {
+                    $scope.tilesCapabilities = landsatCap;
+                    validateYearAndPeriod();
+                  }
+                }
+              })
+              .catch(function(error) {
+                console.error('Erro ao buscar capabilities:', error);
+              });
+          }
+
+          /* ---------- validar ano e período ---------- */
+          function validateYearAndPeriod() {
+            if (!$scope.tilesCapabilities) {
+              return;
+            }
+
+            // Encontrar a capability específica do Landsat
+            let landsatCapability = null;
+            if (Array.isArray($scope.tilesCapabilities)) {
+              landsatCapability = $scope.tilesCapabilities.find(c => c.name === 'landsat');
+            } else if ($scope.tilesCapabilities.name === 'landsat') {
+              landsatCapability = $scope.tilesCapabilities;
+            }
+
+            if (!landsatCapability || !landsatCapability.values) {
+              return;
+            }
+
+            // Validar ano
+            const availableYears = landsatCapability.values
+              .filter(v => v.period === $scope.period)
+              .map(v => v.year);
+
+            if (availableYears.length > 0 && !availableYears.includes($scope.year)) {
+              console.warn(`Ano ${$scope.year} não disponível para período ${$scope.period}`);
+            }
+
+            // Validar visparams
+            const availableVisparams = landsatCapability.values[0]?.visparams || [];
+            const landsatVisparams = availableVisparams.filter(v => 
+              v.startsWith('landsat-tvi-')
+            );
+
+            if (landsatVisparams.length > 0 && !landsatVisparams.includes($scope.selectedVisparam)) {
+              $scope.selectedVisparam = landsatVisparams[0];
+            }
+          }
+
+          /* ---------- helpers ---------- */
+          function buildTileUrl() {
+            // Salvar preferência no localStorage
+            localStorage.setItem('landsat_visparam', $scope.selectedVisparam);
+            
+            return `https://tm{s}.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
+              `?period=${$scope.period}` +
+              `&year=${$scope.year}` +
+              `&visparam=${$scope.selectedVisparam}`;
+          }
+
+          /* ---------- Define updateTileLayer antes de usar ---------- */
+          $scope.updateTileLayer = function () {
+            if (!$scope.map) return;
+            
+            if ($scope.tileLayer) {
+              $scope.map.removeLayer($scope.tileLayer);
+            }
+            
+            $scope.tileLayer = L.tileLayer(buildTileUrl(), {
+              subdomains: ['1', '2', '3', '4', '5'],
+              attribution: `Landsat ${$scope.period} – ${$scope.year}`,
+              maxZoom: 18
+            }).addTo($scope.map);
+          };
+
+          /* ---------- inicia Leaflet ---------- */
+          $timeout(function () {
+            const mapElement = $element[0]
+              .querySelector('#landsat-map-' + $scope.$id);
+            if (!mapElement) return;
+
+            $scope.map = L.map(mapElement, {
+              center: [$scope.lat, $scope.lon],
+              zoom: $scope.zoom,
+              minZoom: $scope.zoom,
+              maxZoom: $scope.zoom + 6,
+              zoomControl: true,
+              dragging: true,
+              doubleClickZoom: true,
+              scrollWheelZoom: true
+            });
+
+            $scope.marker = L.marker([$scope.lat, $scope.lon], {
+              icon: L.icon({ 
+                iconUrl: 'assets/marker2.png', 
+                iconSize: [42, 42] 
+              })
+            }).addTo($scope.map);
+
+            // Toggle do marcador ao clicar no mapa
+            $scope.map.on('click', function () {
+              if ($scope.markerInMap) {
+                $scope.map.removeLayer($scope.marker);
+                $scope.markerInMap = false;
+              } else {
+                $scope.map.addLayer($scope.marker);
+                $scope.markerInMap = true;
+              }
+            });
+
+            /* watchers */
+            $scope.$watchGroup(['period', 'year', 'selectedVisparam'], function () {
+              if ($scope.period && $scope.year) {
+                validateYearAndPeriod();
+                $scope.updateTileLayer();
+              }
+            });
+
+            /* primeira renderização */
+            fetchCapabilities();
+            if ($scope.period && $scope.year) {
+              $scope.updateTileLayer();
+            }
+            L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+            
+            // Force map to recalculate size after initialization
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+              }
+            }, 200);
+            
+            // Additional check for single map scenarios
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+              }
+            }, 500);
+          }, 0);
+        }
+      };
     });

@@ -55,4 +55,17 @@ Application
 	      input.push(i);
 	    return input;
 	  }
+	})
+	.filter('landsatVisparamLabel', function() {
+		return function(input) {
+			if (!input) return "";
+			
+			const labels = {
+				'landsat-tvi-true': 'Cor Natural',
+				'landsat-tvi-agri': 'Agricultura',
+				'landsat-tvi-false': 'Falsa Cor'
+			};
+			
+			return labels[input] || input;
+		};
 	});

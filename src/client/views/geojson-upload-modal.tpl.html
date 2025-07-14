@@ -1,0 +1,34 @@
+<div class="modal-header">
+    <h3 class="modal-title">Upload de GeoJSON</h3>
+</div>
+<div class="modal-body">
+    <form>
+        <div class="form-group">
+            <label>Arquivo GeoJSON</label>
+            <input type="file" class="form-control" accept=".geojson" onchange="angular.element(this).scope().setFile(this)">
+            <p class="help-block">Selecione um arquivo GeoJSON com os pontos da campanha</p>
+        </div>
+        
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" ng-model="skipGeoprocessing"> 
+                Pular geoprocessamento (não buscar informações de região/tile)
+            </label>
+            <p class="help-block">
+                Marque esta opção se os arquivos SHP não estiverem disponíveis ou se você já tiver as informações de bioma, UF, município nas propriedades do GeoJSON
+            </p>
+        </div>
+        
+        <div ng-if="uploading" class="progress">
+            <div class="progress-bar progress-bar-striped active" style="width: 100%">
+                Processando...
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="upload()" ng-disabled="!file || uploading">
+        <i class="glyphicon glyphicon-upload"></i> Upload
+    </button>
+    <button class="btn btn-default" ng-click="cancel()" ng-disabled="uploading">Cancelar</button>
+</div>

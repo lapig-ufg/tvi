@@ -37,4 +37,26 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
         if (!collection || !collection.year) return false;
         return collection.year.includes(year);
     };
+
+    // Adicionar funções para Landsat
+    $scope.hasLandsatImageForYear = function(year) {
+        if (!$scope.tilesCapabilities || !$scope.tilesCapabilities.length) return false;
+        const collection = $scope.tilesCapabilities.find(col => col.name === 'landsat');
+        if (!collection || !collection.values) return false;
+        // Verifica se há dados para o ano e período especificados
+        return collection.values.some(v => v.year === year && v.period === $scope.period);
+    };
+
+    $scope.getLandsatVisParams = function() {
+        if (!$scope.tilesCapabilities || !$scope.tilesCapabilities.length) return [];
+        const collection = $scope.tilesCapabilities.find(col => col.name === 'landsat');
+        if (!collection || !collection.values || !collection.values.length) return [];
+        
+        // Pegar os visparams do primeiro valor disponível
+        const visparams = collection.values[0].visparams || [];
+        // Filtrar apenas os visparams do Landsat TVI
+        return visparams.filter(v => v.startsWith('landsat-tvi-'));
+    };
+
+    $scope.landsatVisparams = $scope.getLandsatVisParams();
 });

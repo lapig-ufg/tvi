@@ -70,8 +70,8 @@ module.exports = function(app) {
 	}
 
 	Image.gdalDefinition = function(request, response) {
-		var mosaicId = request.param('id')
-		var campaignId = request.param('campaign')
+		var mosaicId = request.params.id
+		var campaignId = request.query.campaign
 		Internal.TMSUrl(mosaicId, campaignId, function(TMSurl) {
 			if(TMSurl != undefined)
 				response.write(Internal.GDALWmsXmlResponse(mosaicId, campaignId, TMSurl))
@@ -81,9 +81,9 @@ module.exports = function(app) {
 	}
 
 	Image.access = function(request, response) {
-		var layerId = request.param('layerId')
-		var pointId = request.param('pointId')
-		var campaignId = request.param('campaign')
+		var layerId = request.params.layerId
+		var pointId = request.params.pointId
+		var campaignId = request.query.campaign
 
 		var sourceUrl = 'http://localhost:3000/source/'+layerId+'?campaign='+campaignId
 
@@ -100,7 +100,6 @@ module.exports = function(app) {
 						}
 						fs.exists(imagePath, function(exists) {
 							if (exists) {
-								console.log(exists, imagePath)
 								response.sendFile(imagePath)
 							} else {
 								let cmd = '';

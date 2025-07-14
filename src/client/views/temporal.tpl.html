@@ -1,9 +1,9 @@
-$rootScope.user.campaign.numInspec
 <div class="container-fluid">
     <div class="row" style="margin-top: 50px">
         <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
             <div class="row">
-                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <!-- Informações de localização - controladas por showPointInfo -->
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" ng-show="showPointInfo && !isObjectEmpty(point)">
                     <legend>Informação de localização</legend>
                     <p>
                         <b ng-hide="isChaco || isRaisg">Bioma: {{point.biome}}</b>
@@ -17,8 +17,12 @@ $rootScope.user.campaign.numInspec
                         <b ng-show="isRaisg">Bioma: {{point.biome}}</b>
                     </p>
                     <p><b>Coordenadas:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
+                </div>
+                
+                <!-- Ferramentas - sempre visíveis -->
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 15px;">
                     <fieldset>
-                        <legend>Uso e Cobertura da Terra:</legend>
+                        <legend>Ferramentas:</legend>
                         <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
                                value="Alterar Período">
                         <input style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
@@ -59,13 +63,38 @@ $rootScope.user.campaign.numInspec
         </div>
         <div ng-hide="isObjectEmpty(point) && pointLoaded"
              class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-            <div class="row">
+            <div class="row" style="display: flex; flex-direction: column;justify-content: center;align-items: center;">
                 <fieldset>
                     <legend ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                        Imagens Landsat  <span ng-hide="isRaisg" class="titleMaps">RGB(NIR,SWIR,RED)</span>
-                        <span ng-show="isRaisg"class="titleMaps">RGB(SWIR,NIR,RED)</span>
+                        Imagens Landsat
                     </legend>
-                    <legend  ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    
+                    <!-- Seletor de visparam Landsat para página temporal - só mostra se visParam vier da campanha e o ponto estiver carregado -->
+                    <div ng-show="!isSentinel && hasVisParam && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
+                        <label class="radio-visparam" style="margin-right: 10px;">
+                            <input type="radio" 
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-true"
+                                   ng-change="updateLandsatVisparam()">
+                            Cor Natural
+                        </label>
+                        <label class="radio-visparam" style="margin-right: 10px;">
+                            <input type="radio" 
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-agri"
+                                   ng-change="updateLandsatVisparam()">
+                            Agricultura
+                        </label>
+                        <label class="radio-visparam">
+                            <input type="radio" 
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-false"
+                                   ng-change="updateLandsatVisparam()">
+                            Falsa Cor
+                        </label>
+                    </div>
+                    
+                    <legend ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                         Imagens Sentinel-2 L2A  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
                     </legend>
 <!--                    <legend>Imagens Landsat <span ng-hide="isRaisg && !isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span-->
@@ -76,25 +105,44 @@ $rootScope.user.campaign.numInspec
 <!--                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR16,NIR,RED)</span><span-->
 <!--                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>-->
 <!--                    </legend>-->
-                    <div ng-repeat="map in maps"
-                         ng-class="(size == 3) ? 'ee-mapbox col-xs-3 col-sm-3 col-md-3 col-lg-3' : 'ee-mapbox col-xs-2 col-sm-2 col-md-2 col-lg-2'"
-                         style="border: 1px solid black; padding-left: 0px; padding-right: 0px">
-                        <span style="margin-left: 5px; font-weight: bold;">{{map.date | date:'dd/MM/yyyy'}}</span>
-                        <span class="pull-right" style="margin-right: 5px; font-weight: bold;">{{periodo}}</span>
-                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
-                            <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
-                                <i class="fa fa-camera"></i>
-                            </button>
-                        </span>
-                        <inspection-map
-                                lon="point.lon"
-                                lat="point.lat"
-                                bounds="map.bounds"
-                                zoom="config.zoomLevel"
-                                tms-url="map.url">
-                        </inspection-map>
+                    
+                    <!-- Container com Bootstrap Grid -->
+                    <div class="row">
+                        <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
+                            <!-- Header do mapa com informações -->
+                            <div class="map-header">
+                                <span>{{map.date | date:'dd/MM/yyyy'}}</span>
+                                <span>{{periodo}}</span>
+                            </div>
+                            
+                            <!-- Botão do Planet Mosaics -->
+                            <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
+                                <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
+                                    <i class="fa fa-camera"></i>
+                                </button>
+                            </span>
+                            
+                            <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                    lon="point.lon"
+                                    lat="point.lat"
+                                    zoom="config.zoomLevel"
+                                    period="period"
+                                    year="map.year"
+                                    visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                            </landsat-map>
+                            
+                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                    lon="point.lon"
+                                    lat="point.lat"
+                                    bounds="map.bounds"
+                                    zoom="config.zoomLevel"
+                                    tms-url="map.url">
+                            </inspection-map>
+                        </div>
                     </div>
                 </fieldset>
+                <div class="clearfix"></div>
             </div>
         </div>
         <div ng-show="isObjectEmpty(point) && pointLoaded" class="row">
@@ -103,7 +151,7 @@ $rootScope.user.campaign.numInspec
             </center>
         </div>
         <div ng-hide="isObjectEmpty(point) && pointLoaded"
-             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310" ng-show="showTimeseries">
             <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
             <div class="row">
                 <fieldset  ng-show="showChartsLandsat" >

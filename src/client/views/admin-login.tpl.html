@@ -1,0 +1,54 @@
+<div class="container">
+    <div class="row" style="margin-top: 100px;">
+        <div class="col-md-4 col-md-offset-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">
+                        <i class="glyphicon glyphicon-user"></i> Admin Login
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <form ng-submit="login()" name="loginForm">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" 
+                                   id="username"
+                                   class="form-control" 
+                                   ng-model="credentials.username" 
+                                   placeholder="Digite seu username"
+                                   required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" 
+                                   id="password"
+                                   class="form-control" 
+                                   ng-model="credentials.password" 
+                                   placeholder="Digite sua senha"
+                                   required>
+                        </div>
+                        
+                        <div class="alert alert-danger" ng-show="error">
+                            <i class="glyphicon glyphicon-exclamation-sign"></i> {{error}}
+                        </div>
+                        
+                        <button type="submit" 
+                                class="btn btn-primary btn-block" 
+                                ng-disabled="loading || !loginForm.$valid">
+                            <span ng-show="loading">
+                                <i class="fa fa-spinner fa-spin"></i> Entrando...
+                            </span>
+                            <span ng-hide="loading">
+                                <i class="glyphicon glyphicon-log-in"></i> Entrar
+                            </span>
+                        </button>
+                    </form>
+                </div>
+                <div class="panel-footer text-center">
+                    <small class="text-muted">Sistema de Gerenciamento de Campanhas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

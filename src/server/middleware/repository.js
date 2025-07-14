@@ -55,7 +55,27 @@ module.exports = function (app) {
                     }
                 };
 
-                async.each(names, forEachOne, callback)
+                async.each(names, forEachOne, function(err) {
+                    if (err) return callback(err);
+                    
+                    // Garantir que as coleções necessárias existam
+                    var requiredCollections = ['campaign', 'points', 'users'];
+                    var ensureCollection = function(collectionName, callback) {
+                        if (!Repository.collections[collectionName]) {
+                            Repository.db.collection(collectionName, function (err, repository) {
+                                if (err) {
+                                    console.log(err);
+                                }
+                                Repository.collections[collectionName] = repository;
+                                callback();
+                            });
+                        } else {
+                            callback();
+                        }
+                    };
+                    
+                    async.each(requiredCollections, ensureCollection, callback);
+                })
             });
         });
     };

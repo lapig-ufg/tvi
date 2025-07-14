@@ -7,6 +7,34 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     $scope.showChartsNDDI = false
     $scope.planetMosaics = [];
     $scope.sentinelMosaics   = [];
+    
+    // Valores padrão para as configurações de visualização
+    $scope.showTimeseries = true;
+    $scope.showPointInfo = true;
+    $scope.useDynamicMaps = false; // Default to inspection-map
+    
+    // Inicializar visparam do Landsat
+    $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
+    
+    // Função para atualizar o visparam do Landsat e propagar para todos os mapas
+    $scope.updateLandsatVisparam = function() {
+        localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
+        // Broadcast para todas as diretivas landsat-map atualizarem
+        $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+    };
+
+    // Função para determinar a classe CSS do mapa individual baseado no número de mapas
+    $scope.getMapBoxClass = function(mapCount) {
+        if (mapCount === 1) {
+            return 'col-xs-12 col-sm-12 col-md-12 col-lg-12 ee-mapbox';
+        } else if (mapCount === 2) {
+            return 'col-xs-12 col-sm-12 col-md-6 col-lg-6 ee-mapbox';
+        } else if (mapCount === 3) {
+            return 'col-xs-12 col-sm-12 col-md-4 col-lg-4 ee-mapbox';
+        } else {
+            return 'col-xs-12 col-sm-6 col-md-3 col-lg-3 ee-mapbox';
+        }
+    };
 
     util.waitUserData(function () {
         $scope.size = 3;
@@ -558,6 +586,36 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             ];
         }
 
+        var loadCampaignConfig = function(callback) {
+            requester._get('campaign/config', {}, function(config) {
+                if (config) {
+                    // Atualizar as configurações de visualização
+                    $scope.showTimeseries = config.showTimeseries;
+                    $scope.showPointInfo = config.showPointInfo;
+                    $scope.useDynamicMaps = config.useDynamicMaps;
+                    $scope.hasVisParam = config.visParam !== null;
+                    
+                    // Se houver visParam, atualizar o landsatVisparam
+                    if (config.visParam) {
+                        $scope.landsatVisparam = config.visParam;
+                        localStorage.setItem('landsatVisparam', config.visParam);
+                        // Broadcast para atualizar as diretivas
+                        $scope.$broadcast('landsatVisparamChanged', config.visParam);
+                    }
+                    
+                    // Verificar se é Sentinel baseado no imageType
+                    if (config.imageType) {
+                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a';
+                    }
+                }
+                
+                // Chamar callback se fornecido
+                if (callback) {
+                    callback();
+                }
+            });
+        };
+
         const loadPoint = function (data) {
             Plotly.purge('NDDI');
             Plotly.purge('LANDSAT');
@@ -570,11 +628,15 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $rootScope.current = data.current;
             $scope.datesFromService = data.point.dates;
 
+            // Buscar configurações da campanha do novo endpoint
+            loadCampaignConfig();
+
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
             generateMaps();
 
-            if (!$scope.isChaco) {
+            // Mostrar gráficos apenas se showTimeseries for true
+            if (!$scope.isChaco && $scope.showTimeseries) {
                 createModisChart(data.point.dates);
                 createLandsatChart();
                 createNDDIChart();

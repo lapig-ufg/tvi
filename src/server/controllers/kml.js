@@ -6,9 +6,9 @@ module.exports = function(app) {
 	var KML = {};
 
 	KML.KmlGenerator = function(request, response){
-		var lon = request.param('longitude');
-		var lat = request.param('latitude');
-		var county = request.param('county');
+		var lon = request.query.longitude;
+		var lat = request.query.latitude;
+		var county = request.query.county;
 		
 		fs.readFile('./templates/kml.ejs', 'utf8', function (err, template) {
 			var content = ejs.render(template,{

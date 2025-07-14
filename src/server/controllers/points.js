@@ -184,6 +184,8 @@ module.exports = function(app) {
 
 		findPoint(user.campaign, user.name, function(result) {
 			request.session.currentPointId = result.point._id;
+			// Incluir dados da campanha na resposta
+			result.campaign = user.campaign;
 			response.send(result);
 			response.end();
 		})

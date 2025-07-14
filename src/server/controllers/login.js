@@ -26,9 +26,9 @@ module.exports = function(app) {
 	}
 
 	Login.enterTvi = function(request, response) {
-		var campaignId = request.param('campaign');
-		var name = request.param('name');
-		var senha = request.param('senha');
+		var campaignId = request.body.campaign;
+		var name = request.body.name;
+		var senha = request.body.senha;
 
 		campaigns.findOne({"_id": campaignId}, function(err, campaign) {
 

@@ -1,0 +1,95 @@
+<div class="modal-header">
+    <h3 class="modal-title">{{ isNew ? 'Nova Campanha' : 'Editar Campanha' }}</h3>
+</div>
+<div class="modal-body">
+    <form name="campaignForm">
+        <div class="form-group" ng-if="isNew">
+            <label>ID da Campanha *</label>
+            <input type="text" class="form-control" ng-model="campaign._id" required>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Ano Inicial</label>
+                    <input type="number" class="form-control" ng-model="campaign.initialYear" min="1984" max="2024">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Ano Final</label>
+                    <input type="number" class="form-control" ng-model="campaign.finalYear" min="1984" max="2024">
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Número de Inspeções</label>
+            <input type="number" class="form-control" ng-model="campaign.numInspec" min="1">
+        </div>
+        
+        <div class="form-group">
+            <label>Senha (opcional)</label>
+            <input type="password" class="form-control" ng-model="campaign.password">
+        </div>
+        
+        <div class="form-group">
+            <label>Tipos de Uso da Terra</label>
+            <div class="well">
+                <div ng-repeat="landUse in campaign.landUse track by $index" style="margin-bottom: 5px;">
+                    <div class="input-group">
+                        <input type="text" class="form-control" ng-model="campaign.landUse[$index]" readonly>
+                        <span class="input-group-btn">
+                            <button class="btn btn-danger" ng-click="removeLandUse($index)">
+                                <i class="glyphicon glyphicon-remove"></i>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary" ng-click="addLandUse()">
+                    <i class="glyphicon glyphicon-plus"></i> Adicionar Tipo
+                </button>
+            </div>
+        </div>
+        
+        <h4>Configurações de Visualização</h4>
+        
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" ng-model="campaign.showTimeseries"> Mostrar Gráfico de Série Temporal
+            </label>
+        </div>
+        
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" ng-model="campaign.showPointInfo"> Mostrar Informações do Ponto
+            </label>
+        </div>
+        
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" ng-model="campaign.useDynamicMaps"> Usar Mapas Dinâmicos
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label>Tipo de Imagem</label>
+            <select class="form-control" ng-model="campaign.imageType">
+                <option value="landsat">Landsat</option>
+                <option value="sentinel-2">Sentinel-2</option>
+            </select>
+        </div>
+        
+        <div class="form-group" ng-show="campaign.imageType === 'landsat'">
+            <label>Parâmetro de Visualização (Landsat)</label>
+            <select class="form-control" ng-model="campaign.visParam">
+                <option value="">Nenhum</option>
+                <option ng-repeat="opt in visParamOptions" value="{{opt.value}}">{{opt.label}}</option>
+            </select>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="save()" ng-disabled="campaignForm.$invalid">Salvar</button>
+    <button class="btn btn-default" ng-click="cancel()">Cancelar</button>
+</div>

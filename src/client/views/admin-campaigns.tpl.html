@@ -1,0 +1,165 @@
+<div class="container-fluid" style="margin-top: 60px;">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="clearfix">
+                <h2 class="pull-left">
+                    <i class="glyphicon glyphicon-tasks"></i> Gerenciamento de Campanhas
+                </h2>
+                <div class="pull-right" style="margin-top: 15px;">
+                    <span class="text-muted">Logado como: <strong>{{user.username}}</strong></span>
+                    <button class="btn btn-success" ng-click="createCampaign()" style="margin-left: 15px;">
+                        <i class="glyphicon glyphicon-plus"></i> Nova Campanha
+                    </button>
+                    <button class="btn btn-default" ng-click="logout()" style="margin-left: 5px;">
+                        <i class="glyphicon glyphicon-log-out"></i> Sair
+                    </button>
+                </div>
+            </div>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row" ng-show="loading">
+        <div class="col-lg-12 text-center">
+            <h3><i class="fa fa-spinner fa-spin"></i> Carregando campanhas...</h3>
+        </div>
+    </div>
+    
+    <div class="row" ng-hide="loading">
+        <div class="col-lg-12">
+            <!-- Informações de paginação -->
+            <div class="row" style="margin-bottom: 15px;">
+                <div class="col-sm-6">
+                    <p class="text-muted">
+                        Mostrando {{campaigns.length}} de {{pagination.totalCampaigns}} campanhas
+                        (Página {{pagination.currentPage}} de {{pagination.totalPages}})
+                    </p>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <div class="form-inline">
+                        <label>Itens por página:</label>
+                        <select class="form-control input-sm" ng-model="pagination.limit" 
+                                ng-change="loadCampaigns(1)" style="width: 80px; margin-left: 5px;">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Período</th>
+                            <th>Inspeções</th>
+                            <th>Pontos</th>
+                            <th>Progresso</th>
+                            <th>Configurações</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="campaign in campaigns">
+                            <td>{{campaign._id}}</td>
+                            <td>{{campaign.initialYear}} - {{campaign.finalYear}}</td>
+                            <td>{{campaign.numInspec}}</td>
+                            <td>{{campaign.totalPoints || 0}}</td>
+                            <td>
+                                <div class="progress" style="margin-bottom: 0;">
+                                    <div class="progress-bar" 
+                                         ng-class="getProgressClass(campaign.progress)"
+                                         style="width: {{campaign.progress || 0}}%">
+                                        {{campaign.progress || 0}}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="label label-info" ng-show="campaign.showTimeseries">Timeseries</span>
+                                <span class="label label-info" ng-show="campaign.showPointInfo">Point Info</span>
+                                <span class="label label-warning" ng-show="campaign.visParam">{{campaign.visParam}}</span>
+                                <span class="label label-success" ng-show="campaign.useDynamicMaps">Dynamic Maps</span>
+                                <span class="label label-primary">{{campaign.imageType || 'landsat'}}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-primary" ng-click="editCampaign(campaign)" 
+                                            title="Editar campanha">
+                                        <i class="glyphicon glyphicon-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-info" ng-click="uploadGeoJSON(campaign)"
+                                            title="Upload GeoJSON">
+                                        <i class="glyphicon glyphicon-upload"></i>
+                                    </button>
+                                    <button class="btn btn-default" ng-click="viewPoints(campaign)"
+                                            title="Ver pontos" ng-disabled="!campaign.totalPoints">
+                                        <i class="glyphicon glyphicon-map-marker"></i>
+                                    </button>
+                                    <button class="btn btn-warning" ng-click="deletePoints(campaign)"
+                                            title="Deletar pontos" ng-disabled="!campaign.totalPoints">
+                                        <i class="glyphicon glyphicon-trash"></i>
+                                    </button>
+                                    <button class="btn btn-danger" ng-click="deleteCampaign(campaign)"
+                                            title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
+                                        <i class="glyphicon glyphicon-remove"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr ng-show="campaigns.length === 0">
+                            <td colspan="7" class="text-center text-muted">
+                                <em>Nenhuma campanha encontrada</em>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Controles de paginação -->
+            <div class="row" ng-show="pagination.totalPages > 1">
+                <div class="col-lg-12">
+                    <nav class="text-center">
+                        <ul class="pagination">
+                            <!-- Primeira página -->
+                            <li ng-class="{disabled: !pagination.hasPrev}">
+                                <a href="#" ng-click="goToPage(1)" ng-disabled="!pagination.hasPrev">
+                                    <i class="glyphicon glyphicon-fast-backward"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Página anterior -->
+                            <li ng-class="{disabled: !pagination.hasPrev}">
+                                <a href="#" ng-click="prevPage()" ng-disabled="!pagination.hasPrev">
+                                    <i class="glyphicon glyphicon-chevron-left"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Páginas numeradas -->
+                            <li ng-repeat="page in getPages()" 
+                                ng-class="{active: page === pagination.currentPage}">
+                                <a href="#" ng-click="goToPage(page)">{{page}}</a>
+                            </li>
+                            
+                            <!-- Próxima página -->
+                            <li ng-class="{disabled: !pagination.hasNext}">
+                                <a href="#" ng-click="nextPage()" ng-disabled="!pagination.hasNext">
+                                    <i class="glyphicon glyphicon-chevron-right"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Última página -->
+                            <li ng-class="{disabled: !pagination.hasNext}">
+                                <a href="#" ng-click="goToPage(pagination.totalPages)" ng-disabled="!pagination.hasNext">
+                                    <i class="glyphicon glyphicon-fast-forward"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -392,20 +392,17 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 
 .planet-button {
   position: absolute;
-  right: 1px;
-  top: 23px;
+  right: 8px;
+  top: 40px;
   z-index: 1000;
-  background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
+  background-color: rgba(255, 255, 255, 0.9);
   border: none;
-  padding: 2px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* Transição suave */
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
   cursor: pointer;
-  outline: none; /* Remove a estilização da borda ao clicar */
-  i{
-    background-color: rgba(255, 255, 255, 0.8); /* Fundo branco semi-transparente */
-
-  }
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .planet-button i {
@@ -472,4 +469,184 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 
 .radio-visparam:hover{
   cursor: pointer;
+}
+
+
+.ee-mapbox {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 15px;
+  min-height: 400px;
+}
+
+/* Header do mapa com informações */
+.map-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.4));
+  color: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Garantir que os mapas ocupem toda a largura do container */
+.ee-mapbox landsat-map,
+.ee-mapbox inspection-map,
+.ee-mapbox planet-map,
+.ee-mapbox sentinel-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Forçar altura para single map container */
+.ee-mapbox.col-lg-12 {
+  min-height: 600px;
+}
+
+.ee-mapbox.col-lg-12 landsat-map,
+.ee-mapbox.col-lg-12 inspection-map,
+.ee-mapbox.col-lg-12 planet-map,
+.ee-mapbox.col-lg-12 sentinel-map {
+  height: 600px !important;
+  min-height: 600px !important;
+}
+
+/* Altura padrão para os mapas */
+.ee-mapbox div[id^="map-"],
+.ee-mapbox div[id^="landsat-map-"],
+.ee-mapbox div[id^="planet-map-"],
+.ee-mapbox div[id^="sentinel-map-"] {
+  height: 400px;
+  min-height: 400px;
+}
+
+/* Ajustar altura dos mapas baseado no número de mapas */
+@media (min-width: 768px) {
+  /* Quando há apenas 1 mapa - altura muito maior para ocupar mais espaço */
+  .ee-mapbox.col-lg-12 landsat-map > div,
+  .ee-mapbox.col-lg-12 inspection-map > div,
+  .ee-mapbox.col-lg-12 div[id^="map-"],
+  .ee-mapbox.col-lg-12 div[id^="landsat-map-"],
+  .ee-mapbox.col-lg-12 div[id^="planet-map-"],
+  .ee-mapbox.col-lg-12 div[id^="sentinel-map-"] {
+    height: 600px !important;
+    min-height: 600px !important;
+  }
+
+  /* Quando há 2 mapas */
+  .ee-mapbox.col-lg-6 landsat-map > div,
+  .ee-mapbox.col-lg-6 inspection-map > div,
+  .ee-mapbox.col-lg-6 div[id^="map-"],
+  .ee-mapbox.col-lg-6 div[id^="landsat-map-"],
+  .ee-mapbox.col-lg-6 div[id^="planet-map-"],
+  .ee-mapbox.col-lg-6 div[id^="sentinel-map-"] {
+    height: 450px !important;
+    min-height: 450px !important;
+  }
+
+  /* Quando há 3 mapas */
+  .ee-mapbox.col-lg-4 landsat-map > div,
+  .ee-mapbox.col-lg-4 inspection-map > div,
+  .ee-mapbox.col-lg-4 div[id^="map-"],
+  .ee-mapbox.col-lg-4 div[id^="landsat-map-"],
+  .ee-mapbox.col-lg-4 div[id^="planet-map-"],
+  .ee-mapbox.col-lg-4 div[id^="sentinel-map-"] {
+    height: 400px !important;
+    min-height: 400px !important;
+  }
+
+  /* Quando há 4 ou mais mapas */
+  .ee-mapbox.col-lg-3 landsat-map > div,
+  .ee-mapbox.col-lg-3 inspection-map > div,
+  .ee-mapbox.col-lg-3 div[id^="map-"],
+  .ee-mapbox.col-lg-3 div[id^="landsat-map-"],
+  .ee-mapbox.col-lg-3 div[id^="planet-map-"],
+  .ee-mapbox.col-lg-3 div[id^="sentinel-map-"] {
+    height: 350px !important;
+    min-height: 350px !important;
+  }
+}
+
+/* Ajustes para telas menores */
+@media (max-width: 767px) {
+  .ee-mapbox landsat-map > div,
+  .ee-mapbox inspection-map > div,
+  .ee-mapbox div[id^="map-"],
+  .ee-mapbox div[id^="landsat-map-"],
+  .ee-mapbox div[id^="planet-map-"],
+  .ee-mapbox div[id^="sentinel-map-"] {
+    height: 350px !important;
+    min-height: 350px !important;
+  }
+}
+
+/* Ajuste especial para quando há apenas um mapa - forçar altura maior */
+.ee-mapbox.col-xs-12.col-sm-12.col-md-12.col-lg-12 {
+  height: 600px !important;
+  min-height: 600px !important;
+}
+
+/*.ee-mapbox.col-xs-12.col-sm-12.col-md-12.col-lg-12 > * {*/
+/*  height: 100% !important;*/
+/*  min-height: 100% !important;*/
+/*}*/
+
+/* Correção para garantir que o mapa Leaflet preencha o container */
+.ee-mapbox .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Garantir altura mínima para o fieldset que contém os mapas */
+fieldset {
+  min-height: 400px;
+}
+
+/* Fix específico para quando há apenas um mapa */
+fieldset:has(.ee-mapbox.col-lg-12:only-child) {
+  min-height: 650px;
+}
+
+/* Alternativa para navegadores que não suportam :has() */
+fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
+  min-height: 600px !important;
+}
+
+/* Forçar o container do mapa a preencher o espaço disponível */
+.ee-mapbox.col-lg-12:only-child {
+  height: 600px !important;
+  min-height: 600px !important;
+}
+
+/* Utilitários */
+.hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .navbar {
+    border-radius: unset !important;
+  }
+}
+.single-map{
+  width: 100%;
+  height: 600px!important;
+}
+.ferramentas button{
+  margin: 5px;
+}
+
+.leaflet-top {
+  top: 33px !important;
 }

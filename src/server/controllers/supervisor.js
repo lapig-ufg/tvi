@@ -178,13 +178,13 @@ module.exports = function (app) {
 
     Points.getPoint = function (request, response) {
         var campaign = request.session.user.campaign;
-        var index = parseInt(request.param("index"));
-        var landUse = request.param("landUse");
-        var userName = request.param("userName");
-        var biome = request.param("biome");
-        var uf = request.param("uf");
-        var timePoint = request.param("timeInspection");
-        var agreementPoint = request.param("agreementPoint");
+        var index = parseInt(request.body.index);
+        var landUse = request.body.landUse;
+        var userName = request.body.userName;
+        var biome = request.body.biome;
+        var uf = request.body.uf;
+        var timePoint = request.body.timeInspection;
+        var agreementPoint = request.body.agreementPoint;
 
         var filter = {
             "campaign": campaign._id
@@ -367,8 +367,11 @@ module.exports = function (app) {
                     creatPoint(point, function (result) {
                         pointsCollection.count(filter, function (err, count) {
 
-                            result.totalPoints = count
-                            response.send(result)
+                            response.send({
+                                ...result,
+                                totalPoints: count,
+                                campaign: campaign
+                            })
                             response.end()
                         })
                     })
@@ -378,8 +381,8 @@ module.exports = function (app) {
     }
 
     Points.updatedClassConsolidated = function (request, response) {
-        var classArray = request.param("class");
-        var pointId = request.param("_id")
+        var classArray = request.body.class;
+        var pointId = request.body._id
 
         pointsCollection.update({'_id': pointId}, {$set: {'classConsolidated': classArray, 'pointEdited': true}})
 
@@ -388,10 +391,10 @@ module.exports = function (app) {
 
     Points.landUseFilter = function (request, response) {
         var campaign = request.session.user.campaign;
-        //var landUse = request.param("landUse");
-        var userName = request.param("userName");
-        var biome = request.param("biome");
-        var uf = request.param("uf");
+        //var landUse = request.query.landUse;
+        var userName = request.query.userName;
+        var biome = request.query.biome;
+        var uf = request.query.uf;
 
         var filter = {
             "campaign": campaign._id
@@ -420,10 +423,10 @@ module.exports = function (app) {
 
     Points.usersFilter = function (request, response) {
         var campaign = request.session.user.campaign;
-        var landUse = request.param("landUse");
-        //var userName = request.param("userName");
-        var biome = request.param("biome");
-        var uf = request.param("uf");
+        var landUse = request.query.landUse;
+        //var userName = request.query.userName;
+        var biome = request.query.biome;
+        var uf = request.query.uf;
 
         var filter = {
             "campaign": campaign._id
@@ -458,10 +461,10 @@ module.exports = function (app) {
     Points.biomeFilter = function (request, response) {
         var result = [];
         var campaign = request.session.user.campaign;
-        var landUse = request.param("landUse");
-        var userName = request.param("userName");
-        //var biome = request.param("biome");
-        var uf = request.param("uf");
+        var landUse = request.query.landUse;
+        var userName = request.query.userName;
+        //var biome = request.query.biome;
+        var uf = request.query.uf;
 
         var filter = {
             "campaign": campaign._id
@@ -499,10 +502,10 @@ module.exports = function (app) {
 
     Points.ufFilter = function (request, response) {
         var campaign = request.session.user.campaign;
-        var landUse = request.param("landUse");
-        var userName = request.param("userName");
-        var biome = request.param("biome");
-        //var uf = request.param("uf");
+        var landUse = request.query.landUse;
+        var userName = request.query.userName;
+        var biome = request.query.biome;
+        //var uf = request.query.uf;
 
         var filter = {
             "campaign": campaign._id
@@ -663,6 +666,32 @@ module.exports = function (app) {
             response.status(404).send('O identificador: pointerId não foi encontrado.');
             response.end();
         }
+    }
+
+    Points.getCampaignConfig = function(request, response) {
+        var campaignId = request.session.user.campaign._id;
+        
+        infoCampaign.findOne({'_id': campaignId}, function(err, campaign) {
+            if (err) {
+                response.status(500).json({ error: 'Erro ao buscar configurações da campanha' });
+                return;
+            }
+            
+            if (campaign) {
+                // Retornar apenas as configurações relevantes
+                var config = {
+                    showTimeseries: campaign.showTimeseries !== false,
+                    showPointInfo: campaign.showPointInfo !== false,
+                    useDynamicMaps: campaign.useDynamicMaps || false,
+                    visParam: campaign.visParam || null,
+                    imageType: campaign.imageType || null
+                };
+                
+                response.json(config);
+            } else {
+                response.status(404).json({ error: 'Campanha não encontrada' });
+            }
+        });
     }
 
 

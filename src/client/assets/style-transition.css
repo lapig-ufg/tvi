@@ -1,0 +1,1272 @@
+/* TVI - CSS de Transição Suave */
+/* Este arquivo aplica melhorias graduais mantendo compatibilidade total */
+/* Importe APÓS o style.css original para sobrescrever suavemente */
+
+/* 1. MELHORIAS BÁSICAS - Sem quebrar nada */
+/* ========================================= */
+
+/* Melhora a tipografia sem alterar tamanhos */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1e293b;
+  background-color: #f8fafc;
+}
+
+/* Suaviza todas as transições */
+* {
+  transition: background-color 200ms ease, 
+              color 200ms ease, 
+              border-color 200ms ease,
+              box-shadow 200ms ease,
+              transform 200ms ease;
+}
+
+/* 2. NAVBAR - Visual mais limpo */
+/* =============================== */
+
+.navbar-inverse {
+  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.05);
+}
+
+.navbar-inverse .navbar-brand {
+  color: #2563eb !important;
+  font-weight: 600;
+  padding: 12px 20px !important;
+  height: auto !important;
+}
+
+.navbar-inverse .navbar-nav > li > a {
+  color: #1e293b !important;
+  font-weight: 500;
+  padding: 12px 16px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > li > a:focus {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  color: #2563eb !important;
+}
+
+/* Ajuste dos botões na navbar para altura consistente */
+.navbar .btn {
+  height: 36px !important;
+  padding: 0 16px !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  margin: 7px 4px !important;
+}
+
+.user-info {
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4 !important;
+  padding: 8px 16px !important;
+}
+
+/* 3. FORMULÁRIOS - Mais modernos */
+/* ================================ */
+
+.form-control {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  background-color: #ffffff;
+}
+
+.form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-lclu {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+/* 4. BOTÕES - Visual moderno */
+/* ============================ */
+
+.btn {
+  border-radius: 0.375rem;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.btn-default {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-default:hover {
+  background-color: #e2e8f0;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.btn-success {
+  background-color: #22c55e;
+  border-color: #22c55e;
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* 5. LOGIN - Visual mais limpo */
+/* ============================== */
+
+.form-panel {
+  /* Mantém o background original da imagem */
+  background-image: url('tvi-login_backgroud.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.form-signin {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border: none;
+}
+
+.form-signin-heading {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+/* 6. TABELAS - Visual mais limpo */
+/* ================================ */
+
+.table {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.table > thead > tr > th {
+  background-color: #f1f5f9;
+  border-bottom: 2px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+}
+
+.table > tbody > tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table > tbody > tr:hover {
+  background-color: #f8fafc;
+}
+
+/* 7. SIDEBAR - Melhorias sutis */
+/* ============================== */
+
+.col-fixed-310 {
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1rem;
+}
+
+/* 8. MAPAS - Bordas mais suaves */
+/* =============================== */
+
+.leaflet-container {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+inspection-map, planet-map, sentinel-map {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* 9. LOADING - Mais moderno */
+/* =========================== */
+
+.overlay {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.loader {
+  border: 3px solid #ffffff;
+  border-top-color: #2563eb;
+}
+
+/* 10. ANIMAÇÕES - Mais suaves */
+/* ============================= */
+
+.glyphicon-refresh-animate {
+  color: #2563eb;
+}
+
+/* 11. PANELS - Visual mais limpo */
+/* ================================ */
+
+.panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.panel-heading {
+  background-color: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+/* 12. SCROLLBAR - Mais discreta */
+/* ================================ */
+
+.form-lulc-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.form-lulc-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form-lulc-panel::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0;
+  border-radius: 3px;
+}
+
+.form-lulc-panel::-webkit-scrollbar-thumb:hover {
+  background-color: #cbd5e1;
+}
+
+/* 13. PLANET BUTTON - Mais moderno */
+/* ================================== */
+
+.planet-button {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.planet-button:hover {
+  background-color: #f8fafc;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* 14. SLIDER - Visual mais limpo */
+/* ================================ */
+
+.slider {
+  background: #e2e8f0;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.slider::-webkit-slider-thumb {
+  background: #2563eb;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #1d4ed8;
+  transform: scale(1.1);
+}
+
+/* 15. FOCUS - Melhor acessibilidade */
+/* =================================== */
+
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* 16. REMOVER ELEMENTOS DATADOS */
+/* =============================== */
+
+.area, .area_dois {
+  display: none !important;
+}
+
+/* 17. RESPONSIVIDADE MELHORADA */
+/* ============================== */
+
+@media (max-width: 768px) {
+  .form-control {
+    font-size: 16px; /* Previne zoom no iOS */
+  }
+  
+  .col-fixed-310 {
+    width: 280px;
+  }
+  
+  .col-offset-310 {
+    padding-left: 295px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-signin {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .col-fixed-310 {
+    width: 100%;
+    position: static;
+    height: auto;
+  }
+  
+  .col-offset-310 {
+    padding-left: 15px;
+  }
+}
+
+/* 18. UTILITÁRIOS ADICIONAIS */
+/* =========================== */
+
+.text-muted {
+  color: #94a3b8 !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+.rounded {
+  border-radius: 0.375rem !important;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+/* 19. BOOTSTRAP 5 COMPATIBILITY CLASSES */
+/* ====================================== */
+
+/* Flexbox utilities */
+.d-flex { display: flex !important; }
+.align-items-center { align-items: center !important; }
+.justify-content-center { justify-content: center !important; }
+.min-vh-100 { min-height: 100vh !important; }
+
+/* Spacing utilities */
+.mb-0 { margin-bottom: 0 !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.me-2 { margin-right: 0.5rem !important; }
+.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+
+/* Text utilities */
+.text-center { text-align: center !important; }
+.small { font-size: 0.875rem !important; }
+.h3 { font-size: 1.75rem !important; }
+.font-weight-normal { font-weight: 400 !important; }
+
+/* Width utilities */
+.w-100 { width: 100% !important; }
+
+/* Image utilities */
+.img-fluid {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Form floating labels */
+.form-floating {
+  position: relative;
+}
+
+.form-floating > .form-control {
+  height: calc(3.5rem + 2px);
+  padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 1rem 0.75rem;
+  pointer-events: none;
+  border: 1px solid transparent;
+  transform-origin: 0 0;
+  transition: opacity .1s ease-in-out,transform .1s ease-in-out;
+  color: #6c757d;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+  opacity: .65;
+  transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
+  background-color: white;
+  padding: 0 0.25rem;
+}
+
+/* Alert improvements */
+.alert-danger {
+  color: #842029;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+}
+
+/* 20. NAVBAR ENHANCEMENTS */
+/* ======================== */
+
+/* Center text in navbar */
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #64748b !important;
+}
+
+/* Navbar buttons spacing */
+.navbar-btn {
+  margin: 8px 4px;
+}
+
+/* Active nav items */
+.navbar-nav > li.active > a {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  color: #2563eb !important;
+}
+
+/* Navbar text styling */
+.navbar-text {
+  color: #64748b !important;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+/* Icon spacing */
+.fas, .fa {
+  font-size: 14px;
+}
+
+/* Mobile improvements */
+@media (max-width: 767px) {
+  .navbar-center {
+    position: static;
+    transform: none;
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+  }
+  
+  .navbar-nav {
+    margin: 0;
+  }
+  
+  .navbar-text {
+    text-align: center;
+    padding: 10px 15px;
+    margin: 0;
+  }
+}
+
+/* Additional spacing utilities */
+.ms-2 { margin-left: 0.5rem !important; }
+
+/* 21. DASHBOARD IMPROVEMENTS */
+/* =========================== */
+
+/* Card-like panels */
+.panel {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Dashboard grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* Stat cards */
+.stat-card {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.stat-card h4 {
+  color: #64748b;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* 22. ADDITIONAL UTILITIES */
+/* ========================= */
+
+/* Page header */
+.page-header {
+  padding: 1.5rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #1e293b;
+}
+
+/* Dashboard container */
+.dashboard-container {
+  padding: 20px 0;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 60px);
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background-color: #22c55e;
+  color: white;
+}
+
+.badge-warning {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.badge-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Panel body spacing */
+.panel-body {
+  padding: 1.5rem;
+  min-height: 300px; /* Altura mínima para gráficos */
+}
+
+/* Gráficos Plotly */
+#pointsInsp,
+#totalInspec,
+#meanTime,
+#cachedPoints,
+#agreementPoints,
+#coverPoints {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+}
+
+/* Responsive panels */
+@media (max-width: 768px) {
+  .panel-body {
+    padding: 1rem;
+  }
+  
+  #pointsInsp,
+  #totalInspec,
+  #meanTime,
+  #cachedPoints,
+  #agreementPoints,
+  #coverPoints {
+    min-height: 300px;
+  }
+}
+
+/* Table improvements */
+.table-responsive {
+  border: none;
+  box-shadow: none;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Button sizes */
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* Justify utilities */
+.justify-content-between {
+  justify-content: space-between !important;
+}
+
+/* Additional responsive columns */
+.col-12 {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .col-lg-6 {
+    width: 50%;
+  }
+}
+
+/* 23. SUPERVISOR TOOLBAR MODERNIZATION */
+/* ===================================== */
+
+/* Toolbar principal */
+.row.navbar-fixed-top {
+  background: linear-gradient(to bottom, #fafbfc 0%, #f8fafc 100%) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.875rem 0 !important;
+  top: 50px !important; /* Ajustado para altura da navbar principal */
+  z-index: 1030 !important;
+}
+
+/* Container de busca */
+.form-inline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+}
+
+/* Input de índice */
+input[type="index"] {
+  width: 90px !important;
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.375rem !important;
+  font-size: 1rem !important;
+  text-align: center !important;
+  height: 42px !important;
+}
+
+/* Botões de navegação */
+.btn-navbar {
+  padding: 0.5rem 1.25rem !important;
+  font-size: 1rem !important;
+  margin: 0 !important;
+  height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-weight: 500 !important;
+}
+
+/* Grupo de navegação */
+.form-inline > span {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+  margin: 0 0.75rem;
+}
+
+/* Botões de seta */
+.glyphicon-chevron-left,
+.glyphicon-chevron-right {
+  padding: 0.5rem 0.75rem !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  font-size: 1.125rem !important;
+}
+
+/* Radio buttons modernos */
+input[type="radio"] {
+  display: none !important;
+}
+
+input[type="radio"] + label {
+  display: inline-block !important;
+  padding: 0.5rem 1.25rem !important;
+  margin: 0 0.25rem !important;
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  transition: all 200ms ease !important;
+  color: #64748b !important;
+  height: 42px !important;
+  line-height: 1.5 !important;
+}
+
+input[type="radio"]:checked + label {
+  background-color: #2563eb !important;
+  color: white !important;
+  border-color: #2563eb !important;
+}
+
+input[type="radio"]:disabled + label {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Select dropdowns modernos */
+.form-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 0.75rem 0 0 !important;
+  gap: 0.5rem !important;
+}
+
+.form-group label {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  color: #475569 !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+}
+
+.form-group select {
+  min-width: 140px !important;
+  max-width: 220px !important;
+  padding: 0.5rem 2.5rem 0.5rem 1rem !important;
+  font-size: 1rem !important;
+  height: 42px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1.25rem !important;
+  font-weight: 400 !important;
+  color: #1e293b !important;
+}
+
+/* Toolbar sections */
+.filterMediumLeft {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  padding: 0 1rem !important;
+}
+
+/* Responsividade melhorada */
+@media (max-width: 1200px) {
+  .form-group {
+    margin: 0.25rem 0.5rem !important;
+  }
+  
+  .form-group select {
+    min-width: 100px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .row.navbar-fixed-top {
+    position: relative !important;
+    top: 0 !important;
+    padding: 1rem !important;
+  }
+  
+  .filterMediumLeft {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .form-inline {
+    justify-content: center !important;
+  }
+  
+  .form-group {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    margin: 0.5rem 0 !important;
+  }
+  
+  .form-group select {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* 24. INFO BOX IMPROVEMENTS */
+/* ========================= */
+
+/* Container de informações do ponto */
+.borderPoint {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 0.5rem 0 !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+/* Títulos das informações */
+.borderPoint h3 {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  margin: 0 0 0.25rem 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Valores das informações */
+.borderPoint p,
+.borderPoint span {
+  font-size: 0.875rem !important;
+  color: #1e293b !important;
+  margin: 0 !important;
+}
+
+/* 25. BUTTON GROUP ENHANCEMENTS */
+/* ============================== */
+
+/* Grupo de botões de ação */
+.button-group {
+  display: flex !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+  margin-top: 1rem !important;
+}
+
+.button-group .btn {
+  flex: 1 !important;
+  min-width: 100px !important;
+  justify-content: center !important;
+}
+
+/* Botões desabilitados */
+.btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Hover states melhorados */
+.btn-success:hover:not(:disabled) {
+  background-color: #16a34a !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 26. FORM LAYOUT OPTIMIZATION */
+/* ============================ */
+
+/* Container principal dos filtros */
+.col-xs-12.col-sm-9.col-md-9.col-lg-9 {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  padding: 0 1rem !important;
+}
+
+/* Alinhamento dos formulários */
+form {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+}
+
+/* Visual consistency */
+.btn, .form-control, input[type="radio"] + label {
+  height: 36px !important;
+  line-height: 1.5 !important;
+}
+
+/* Focus states */
+.btn:focus,
+.form-control:focus,
+input[type="radio"]:focus + label {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Disabled states */
+.form-control:disabled,
+.btn:disabled,
+input[type="radio"]:disabled + label {
+  background-color: #f1f5f9 !important;
+  cursor: not-allowed !important;
+}
+
+/* 27. ICON REPLACEMENTS */
+/* ===================== */
+
+/* Substituir glyphicons por ícones modernos */
+.glyphicon-chevron-left:before {
+  content: "\f053" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+}
+
+.glyphicon-chevron-right:before {
+  content: "\f054" !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+}
+
+/* 28. INSPECTOR VIEW IMPROVEMENTS */
+/* ================================ */
+
+/* Botões de ação da sidebar */
+.btn.alterar-per,
+.btn.google-earth,
+.btn.remover,
+.btn.editar,
+.btn.borda-csv {
+  width: 100% !important;
+  margin: 0.25rem 0 !important;
+  justify-content: flex-start !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+.btn.alterar-per {
+  background-color: #f59e0b !important;
+  color: white !important;
+}
+
+.btn.google-earth {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.btn.editar {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+.btn.borda-csv {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.btn.remover {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+/* 29. FILTER TOOLBAR REFINEMENTS */
+/* =============================== */
+
+/* Container dos filtros */
+.navbar-fixed-top + .container-fluid {
+  margin-top: 120px !important; /* Espaço para navbars */
+}
+
+/* Melhor organização dos radio buttons */
+input[type="radio"] + label:first-of-type {
+  margin-left: 0 !important;
+  border-top-left-radius: 0.375rem !important;
+  border-bottom-left-radius: 0.375rem !important;
+}
+
+input[type="radio"] + label:last-of-type {
+  margin-right: 0 !important;
+  border-top-right-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+}
+
+/* Grupo de radio buttons conectados */
+.radio-group {
+  display: inline-flex !important;
+  margin: 0.5rem 0 !important;
+}
+
+.radio-group input[type="radio"] + label {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-right: none !important;
+}
+
+.radio-group input[type="radio"] + label:last-child {
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* 29.1 MODERN POINT INFO SECTION */
+/* =============================== */
+
+/* Container principal das informações */
+.point-info-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  padding: 0 !important;
+  margin: 0.5rem 0 !important;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.06) !important;
+  overflow: hidden !important;
+}
+
+/* Seção de informações do ponto */
+.point-info-section {
+  padding: 1.5rem !important;
+  background: linear-gradient(to bottom, #fafbfc 0%, #ffffff 100%) !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.point-info-header {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.point-info-header::before {
+  content: "📍" !important;
+  font-size: 1.25rem !important;
+}
+
+/* Lista de informações */
+.info-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.info-item {
+  padding: 0.75rem 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-size: 0.875rem !important;
+}
+
+.info-item:last-child {
+  border-bottom: none !important;
+}
+
+.info-label {
+  font-weight: 600 !important;
+  color: #64748b !important;
+  display: inline-block !important;
+  margin-bottom: 0.25rem !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.info-value {
+  color: #1e293b !important;
+  display: block !important;
+  font-size: 0.9375rem !important;
+}
+
+/* Seção de ferramentas */
+.tools-section {
+  padding: 1.5rem !important;
+  background: #ffffff !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+.tools-header {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  margin-bottom: 1.25rem !important;
+  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+.tools-header::before {
+  content: "🛠️" !important;
+  font-size: 1.25rem !important;
+}
+
+/* Grid de botões de ferramentas */
+.tools-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+}
+
+/* Botões de ferramentas modernos */
+.tool-btn {
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 200ms ease !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.tool-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Remover ícones duplicados dos botões */
+
+/* Estilo específico para cada tipo de botão */
+.tool-btn.btn-warning {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  color: white !important;
+}
+
+.tool-btn.btn-success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  color: white !important;
+}
+
+.tool-btn.btn-primary {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  color: white !important;
+}
+
+.tool-btn.btn-info {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%) !important;
+  color: white !important;
+}
+
+.tool-btn.btn-danger {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  color: white !important;
+}
+
+/* Responsividade da seção de informações */
+@media (max-width: 1200px) {
+  .tools-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .point-info-section,
+  .tools-section {
+    padding: 1rem !important;
+  }
+}
+
+/* Layout mobile */
+@media (max-width: 768px) {
+  .point-info-container {
+    flex-direction: column !important;
+  }
+  
+  .point-info-section {
+    border-right: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  
+  .tools-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 30. FINAL POLISH */
+/* ================= */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Consistent box shadows */
+.shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06) !important;
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid #2563eb;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Improved print styles */
+@media print {
+  .navbar,
+  .navbar-fixed-top,
+  .btn,
+  .form-control {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt;
+    color: black;
+    background: white;
+  }
+}
