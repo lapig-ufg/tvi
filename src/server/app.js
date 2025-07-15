@@ -1,4 +1,4 @@
-require('newrelic');
+// require('newrelic');
 const express = require('express')
 , load = require('express-load')
 , path = require('path')
@@ -71,12 +71,30 @@ app.middleware.repository.init(() => {
 		app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 		app.use(multer());
 
+		// Tornar io disponível para outros modules
+		app.io = io;
+
 		io.on('connection', function(socket){
+			console.log('Cliente conectado via socket:', socket.id);
+			
+			// Join em salas específicas
+			socket.on('join', function(room) {
+				socket.join(room);
+				console.log('Socket', socket.id, 'entrou na sala:', room);
+			});
+			
+			// Join na sala de cache para receber atualizações
+			socket.join('cache-updates');
+			
 			socket.on('disconnect', function(){
-				store.get(socket.handshake.sessionID, function(error, session) {
-					app.emit('socket-disconnect', session);
-				});
-			})
+				console.log('Cliente desconectado:', socket.id);
+				// Remover lógica de sessão que pode estar causando o erro
+			});
+			
+			// Heartbeat para manter conexão viva
+			socket.on('ping', function() {
+				socket.emit('pong');
+			});
 		})
 
 		app.use(function(error, request, response, next) {

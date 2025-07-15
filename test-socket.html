@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Socket Connection</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Socket.io Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="log"></div>
+    <button onclick="createSecondConnection()">Test Second Connection</button>
+
+    <script>
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message) {
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            log.appendChild(p);
+            console.log(message);
+        }
+        
+        // First connection with same configuration as admin-login.js
+        let socket1;
+        
+        if (window.adminSocket && window.adminSocket.connected) {
+            socket1 = window.adminSocket;
+            addLog('Reusing existing socket: ' + socket1.id);
+        } else {
+            try {
+                socket1 = io('/', {
+                    transports: ['polling', 'websocket'],
+                    forceNew: false,
+                    reconnection: true,
+                    timeout: 15000,
+                    reconnectionAttempts: 3,
+                    reconnectionDelay: 3000,
+                    autoConnect: true
+                });
+                
+                window.adminSocket = socket1;
+                addLog('New socket created');
+            } catch (error) {
+                addLog('Error creating socket: ' + error);
+                socket1 = io();
+                window.adminSocket = socket1;
+            }
+        }
+        
+        socket1.on('connect', function() {
+            status.textContent = 'Connected: ' + socket1.id;
+            addLog('Socket 1 connected: ' + socket1.id);
+            socket1.emit('join', 'test-room');
+        });
+        
+        socket1.on('disconnect', function() {
+            status.textContent = 'Disconnected';
+            addLog('Socket 1 disconnected');
+        });
+        
+        socket1.on('connect_error', function(error) {
+            status.textContent = 'Connection Error';
+            addLog('Socket 1 connection error: ' + error);
+        });
+        
+        socket1.on('reconnect', function(attemptNumber) {
+            addLog('Socket 1 reconnected after ' + attemptNumber + ' attempts');
+        });
+        
+        function createSecondConnection() {
+            addLog('Creating second connection...');
+            
+            // Test second connection using same global pattern
+            let socket2;
+            if (window.adminSocket && window.adminSocket.connected) {
+                socket2 = window.adminSocket;
+                addLog('Second connection reusing existing socket: ' + socket2.id);
+            } else {
+                socket2 = io('/', {
+                    transports: ['polling', 'websocket'],
+                    forceNew: false,
+                    reconnection: true,
+                    timeout: 15000,
+                    reconnectionAttempts: 3,
+                    reconnectionDelay: 3000,
+                    autoConnect: true
+                });
+                
+                window.adminSocket = socket2;
+                addLog('Second connection created new socket');
+            }
+            
+            socket2.on('connect', function() {
+                addLog('Socket 2 connected: ' + socket2.id);
+                socket2.emit('join', 'test-room');
+            });
+            
+            socket2.on('connect_error', function(error) {
+                addLog('Socket 2 connection error: ' + error);
+            });
+        }
+    </script>
+</body>
+</html>

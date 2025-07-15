@@ -24,6 +24,7 @@
   <link href="3thparty/css/ng-magnify.css" rel="stylesheet">
   <link href="3thparty/css/leaflet.css" rel="stylesheet">
   <link href="assets/style.css" rel="stylesheet">
+  <link href="assets/language-selector.css" rel="stylesheet">
   <link href="3thparty/css/magnifier.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="3thparty/css/ui-bootstrap-csp.css">
@@ -53,9 +54,12 @@
 <script src="controllers/temporal.js"></script>
 <script src="controllers/mosaic-dialog.js"></script>
 <script src="controllers/admin-login.js"></script>
+<script src="controllers/cache-manager.js"></script>
+<script src="others/services.js"></script>
+<script src="others/i18n.js"></script>
 <script src="others/directives.js"></script>
 <script src="others/filters.js"></script>
-<script src="others/services.js"></script>
+<script src="directives/language-selector.js"></script>
 <script src="socket.io/socket.io.js"></script>
 <div ng-include="'views/navbar.tpl.html'"></div>
 <div ng-view="view" class="content-main page-view"></div>

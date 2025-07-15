@@ -1,13 +1,15 @@
 <div class="row form-panel">
 	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 		<form ng-show="showForm" class="form-signin">
+			<!-- Language Selector -->
+			<language-selector class="pull-right" style="margin-top: 10px;"></language-selector>
 			<img class="img-responsive" src="assets/lapig.png" />
-			<div class="form-signin-heading" >Temporal Visual Inspection</div>
-		  <input class="form-control field-login" type="text" placeholder="Nome" ng-model="name">
-		  <input class="form-control field-login" type="password" placeholder="Senha" ng-model="senha">
-		  <input class="form-control field-login" type="text" placeholder="Campanha" ng-model="campaign">
-		  <div ng-show="showMsg" class="alert alert-warning input" role="alert">Falha ao efetuar o login</div>
-		  <button class="btn btn-lg btn-default btn-block" ng-click="submit(name, senha, campaign)" type="submit">Entrar</button>
+			<div class="form-signin-heading" >{{ 'LOGIN.TITLE' | i18n }}</div>
+		  <input class="form-control field-login" type="text" placeholder="{{ 'LOGIN.NAME_PLACEHOLDER' | i18n }}" ng-model="name">
+		  <input class="form-control field-login" type="password" placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | i18n }}" ng-model="senha">
+		  <input class="form-control field-login" type="text" placeholder="{{ 'LOGIN.CAMPAIGN_PLACEHOLDER' | i18n }}" ng-model="campaign">
+		  <div ng-show="showMsg" class="alert alert-warning input" role="alert">{{ 'LOGIN.LOGIN_FAILED' | i18n }}</div>
+		  <button class="btn btn-lg btn-default btn-block" ng-click="submit(name, senha, campaign)" type="submit">{{ 'LOGIN.LOGIN_BUTTON' | i18n }}</button>
 		</form>
 	</div>
 </div>

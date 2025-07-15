@@ -34,7 +34,7 @@
                                ng-model="point.index">
                         <button type="submit" class="btn btn-success btn-navbar"
                                 ng-disabled="point.index > total || point.index < 1 || modeEdit"
-                                ng-click="submit(point.index)">Buscar
+                                ng-click="submit(point.index)">{{ 'COMMON.SEARCH' | i18n }}
                         </button>
                         <div class="form-inline" style="display: inline; margin-top: 0px;">
                             <button ng-click="submit(point.index-1)"
@@ -47,11 +47,11 @@
                         </div>
                         <div style="width: auto">
                             <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
-                                   value="sortedIndex" ng-checked="true"><label style="font-size: 15px">Indice</label>
+                                   value="sortedIndex" ng-checked="true"><label style="font-size: 15px">{{ 'SUPERVISOR.FILTERS.INDEX' | i18n }}</label>
                             <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
-                                   value="timeInspection"><label style="font-size: 15px;"> Tempo</label>
+                                   value="timeInspection"><label style="font-size: 15px;"> {{ 'SUPERVISOR.FILTERS.TIME' | i18n }}</label>
                             <input type="radio" ng-disabled="modeEdit" ng-change="submit(1)" ng-model="typeSort"
-                                   value="agreementPoint"><label style="font-size: 15px">Consolidado</label>
+                                   value="agreementPoint"><label style="font-size: 15px">{{ 'SUPERVISOR.FILTERS.CONSOLIDATED' | i18n }}</label>
                         </div>
                     </form>
                 </div>
@@ -59,7 +59,7 @@
                     <form>
                         <div class="form-group">
                             <label class="col-sm-1 col-form-label"
-                                   style="font-size: 15px; width: auto;">Classes:</label>
+                                   style="font-size: 15px; width: auto;">{{ 'SUPERVISOR.FILTERS.CLASSES' | i18n }}:</label>
                             <div class="col-sm-3" style="width: auto;">
                                 <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
                                         ng-model="selectedLandUse"
@@ -68,7 +68,7 @@
                         </div>
                         <div class="form-group">
                             <label class="col-sm-1 col-form-label"
-                                   style="font-size: 15px; width: auto;">Usuários:</label>
+                                   style="font-size: 15px; width: auto;">{{ 'SUPERVISOR.FILTERS.USERS' | i18n }}:</label>
                             <div class="col-sm-3" style="width: auto;">
                                 <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
                                         ng-model="selectUserNames"
@@ -77,9 +77,9 @@
                         </div>
                         <div class="form-group">
                             <label ng-hide="isChaco" class="col-sm-1 col-form-label"
-                                   style="font-size: 15px; width: auto;">Bioma:</label>
+                                   style="font-size: 15px; width: auto;">{{ 'SUPERVISOR.FILTERS.BIOME' | i18n }}:</label>
                             <label ng-show="isChaco" class="col-sm-1 col-form-label"
-                                   style="font-size: 15px; width: auto;">Região:</label>
+                                   style="font-size: 15px; width: auto;">{{ 'SUPERVISOR.FILTERS.REGION' | i18n }}:</label>
                             <div class="col-sm-3" style="width: auto;">
                                 <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
                                         ng-model="selectBiomes" ng-options="biome for biome in biomes"></select>
@@ -87,7 +87,7 @@
                         </div>
                         <div ng-hide="isChaco" class="form-group">
                             <label class="col-sm-1 col-form-label"
-                                   style="font-size: 15px; width: auto;">Estado(UF):</label>
+                                   style="font-size: 15px; width: auto;">{{ 'SUPERVISOR.FILTERS.STATE' | i18n }}:</label>
                             <div class="col-sm-3" style="width: auto;">
                                 <select ng-change="submit(1)" ng-disabled="modeEdit" class="form-control"
                                         ng-model="selectUf" ng-options="uf for uf in stateUF"></select>
@@ -101,35 +101,35 @@
                 <div class="borderPoint" style="margin-bottom: 1px; padding: 10px 15px; height: 222px; overflow-y: auto;">
                     <!-- Título do Ponto -->
                     <div style="margin-bottom: 10px; text-align: center;">
-                        <h4 style="margin: 0; color: #333; font-size: 18px;">Ponto #{{ point.originalIndex }}</h4>
+                        <h4 style="margin: 0; color: #333; font-size: 18px;">{{ 'SUPERVISOR.POINT_INFO.POINT_NUMBER' | i18n }} {{ point.originalIndex }}</h4>
                     </div>
                     
                     <!-- Localização -->
                     <div  ng-show="showPointInfo" style="margin-bottom: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #666; font-weight: bold;">Localização</h5>
+                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #666; font-weight: bold;">{{ 'SUPERVISOR.POINT_INFO.LOCATION' | i18n }}</h5>
                         <div ng-hide="isChaco || isRaisg" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">Bioma:</span> <strong>{{point.biome}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span> <strong>{{point.biome}}</strong>
                         </div>
                         <div ng-show="isChaco" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">Região:</span> <strong>{{point.county}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.REGION' | i18n }}:</span> <strong>{{point.county}}</strong>
                         </div>
                         <div ng-show="isRaisg" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">País:</span> <strong>{{point.county}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.COUNTRY' | i18n }}:</span> <strong>{{point.county}}</strong>
                         </div>
                         <div ng-hide="isChaco || isRaisg" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">Município:</span> <strong>{{point.county}} - {{point.uf}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.MUNICIPALITY' | i18n }}:</span> <strong>{{point.county}} - {{point.uf}}</strong>
                         </div>
                         <div ng-show="isChaco" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">Carta:</span> <strong>{{point.biome}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.MAP' | i18n }}:</span> <strong>{{point.biome}}</strong>
                         </div>
                         <div ng-show="isRaisg" style="font-size: 12px;">
-                            <span style="color: #888;">Bioma:</span> <strong>{{point.biome}}</strong>
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span> <strong>{{point.biome}}</strong>
                         </div>
                     </div>
                     
                     <!-- Coordenadas -->
                     <div style="margin-bottom: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
-                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #666; font-weight: bold;">Coordenadas</h5>
+                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #666; font-weight: bold;">{{ 'SUPERVISOR.POINT_INFO.COORDINATES' | i18n }}</h5>
                         <div style="margin-bottom: 3px; font-size: 12px;">
                             <span style="color: #888;">Lat/Lon:</span> <strong>{{point.lat | number:4}}, {{point.lon | number:4}}</strong>
                         </div>
@@ -140,35 +140,35 @@
                     
                     <!-- Tempo de Inspeção -->
                     <div style="padding: 8px; background-color: #e3f2fd; border-radius: 4px;">
-                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #1976d2; font-weight: bold;">Estatísticas</h5>
+                        <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #1976d2; font-weight: bold;">{{ 'SUPERVISOR.POINT_INFO.STATISTICS' | i18n }}</h5>
                         <div style="font-size: 12px;">
-                            <span style="color: #1565c0;">Tempo de Inspeção:</span> <strong>{{timeInspectionPoint}} segundos</strong>
+                            <span style="color: #1565c0;">{{ 'SUPERVISOR.POINT_INFO.INSPECTION_TIME' | i18n }}:</span> <strong>{{timeInspectionPoint}} {{ 'COMMON.SECONDS' | i18n }}</strong>
                         </div>
                     </div>
 
                     <!-- Botões de Ferramentas -->
                     <div class="ferramentas col-xs-12 col-sm-12 col-md-12 col-lg-12" style="padding: 5px 10px;">
                         <button ng-click="changePeriod()" class="btn btn-warning btn-sm" style="margin-right: 5px;">
-                            <i class="glyphicon glyphicon-calendar"></i> Alterar Período
+                            <i class="glyphicon glyphicon-calendar"></i> {{ 'SUPERVISOR.ACTIONS.CHANGE_PERIOD' | i18n }}
                         </button>
                         <button ng-click="getKml()" class="btn btn-success btn-sm" style="margin-right: 5px;">
-                            <i class="glyphicon glyphicon-globe"></i> Google Earth
+                            <i class="glyphicon glyphicon-globe"></i> {{ 'SUPERVISOR.ACTIONS.GOOGLE_EARTH' | i18n }}
                         </button>
                         <button ng-if="objConsolidated.length > 0" ng-hide="buttonEdit == true"
                                 ng-click="editClass()" class="btn btn-primary btn-sm" style="margin-right: 5px;">
-                            <i class="glyphicon glyphicon-pencil"></i> Editar
+                            <i class="glyphicon glyphicon-pencil"></i> {{ 'COMMON.EDIT' | i18n }}
                         </button>
                         <button ng-hide="buttonEdit == false" ng-click="saveClass()"
                                 ng-submit="submit(1)" class="btn btn-primary btn-sm" style="margin-right: 5px;">
-                            <i class="glyphicon glyphicon-floppy-disk"></i> Salvar
+                            <i class="glyphicon glyphicon-floppy-disk"></i> {{ 'COMMON.SAVE' | i18n }}
                         </button>
                         <button ng-if="point.inspection.length > 0" ng-click="removeInspections()"
                                 ng-submit="submit(1)" class="btn btn-danger btn-sm" style="margin-right: 5px;">
-                            <i class="glyphicon glyphicon-trash"></i> Remover
+                            <i class="glyphicon glyphicon-trash"></i> {{ 'COMMON.REMOVE' | i18n }}
                         </button>
                         <button ng-click="downloadCSVBorda()" ng-submit="submit(1)"
                                 class="btn btn-info btn-sm">
-                            <i class="glyphicon glyphicon-download-alt"></i> Baixar CSV
+                            <i class="glyphicon glyphicon-download-alt"></i> {{ 'SUPERVISOR.ACTIONS.DOWNLOAD_CSV' | i18n }}
                         </button>
                     </div>
                 </div>
@@ -199,11 +199,11 @@
                         </tbody>
                         <tfoot ng-if="objConsolidated.length < point.inspection.length"
                                style="font-size: 14px; font-weight: bold;">
-                        <td ng-hide='dataTab[0].checked'>Classe Consolidada</td>
+                        <td ng-hide='dataTab[0].checked'>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
                         </tfoot>
                         <tfoot ng-if="objConsolidated.length >= point.inspection.length"
                                style="font-size: 14px; font-weight: bold;">
-                        <td ng-show='dataTab[0].checked'>Classe Consolidada</td>
+                        <td ng-show='dataTab[0].checked'>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
                         </tfoot>
                     </table>
                 </div>
@@ -251,7 +251,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 380px;">
             <div class="row">
                 <span ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                    Imagens Landsat
+                    {{ 'SUPERVISOR.MAP.LANDSAT_IMAGES' | i18n }}
                 </span>
                 
                 <!-- Seletor de visparam Landsat - só mostra se visParam vier da campanha e o ponto estiver carregado -->
@@ -261,30 +261,30 @@
                                ng-model="landsatVisparam" 
                                value="landsat-tvi-true"
                                ng-change="updateLandsatVisparam()">
-                        Cor Natural
+                        {{ 'SUPERVISOR.MAP.NATURAL_COLOR' | i18n }}
                     </label>
                     <label class="radio-visparam" style="margin-right: 10px;">
                         <input type="radio" 
                                ng-model="landsatVisparam" 
                                value="landsat-tvi-agri"
                                ng-change="updateLandsatVisparam()">
-                        Agricultura
+                        {{ 'SUPERVISOR.MAP.AGRICULTURE' | i18n }}
                     </label>
                     <label class="radio-visparam">
                         <input type="radio" 
                                ng-model="landsatVisparam" 
                                value="landsat-tvi-false"
                                ng-change="updateLandsatVisparam()">
-                        Falsa Cor
+                        {{ 'SUPERVISOR.MAP.FALSE_COLOR' | i18n }}
                     </label>
                 </div>
                 <span ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                    Imagens Sentinel-2 L2A  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
+                    {{ 'SUPERVISOR.MAP.SENTINEL_IMAGES' | i18n }}  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
                 </span>
                 
                 <!-- Container com Bootstrap Grid -->
-                <div class="row" style="margin: 10px;">
-                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-bottom: 10px;">
+                <div class="row maps-grid" style="margin: 0;">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-bottom: 0;">
                     <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
                         <!-- Header do mapa com informações -->
                         <div class="map-header">
@@ -323,15 +323,15 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 bold" style="margin-top: 50px" ng-show="showTimeseries">
             <fieldset ng-show="showChartsLandsat">
-                <span style="font-size: 18px; font-weight: bold;">Série temporal LANDSAT:</span>
+                <span style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
                 <div id="LANDSAT"></div>
             </fieldset>
             <fieldset >
-                <span ng-show="showCharts" style="font-size: 18px; font-weight: bold;">Série temporal MODIS:</span>
+                <span ng-show="showCharts" style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.MODIS_SERIES' | i18n }}:</span>
                 <div id="NDVI"></div>
             </fieldset>
             <fieldset ng-show="showChartsNDDI">
-                <span style="font-size: 18px; font-weight: bold;">Série Temporal do NDDI:</span>
+                <span style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.NDDI_SERIES' | i18n }}:</span>
                 <div id="NDDI"></div>
             </fieldset>
         </div>

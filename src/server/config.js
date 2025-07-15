@@ -52,6 +52,16 @@ module.exports = function(app) {
 					"cron": '0 0 20 1 0 *',
 					"runOnAppStart": false,
 					"params": {}
+				},
+				{
+					"name": "smartCacheProcessor",
+					"cron": '0 0 3,4,5 * * *', // Executar às 3h, 4h e 5h da manhã
+					"runOnAppStart": false,
+					"params": {
+						"batchSize": 5,
+						"maxPointsPerRun": 100,
+						"simulate": true // Começar em modo simulação
+					}
 				}
 			]
 		},

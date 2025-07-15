@@ -1,0 +1,74 @@
+/* Language Selector Styles */
+.language-selector {
+    display: inline-block;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.language-selector .btn {
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: transparent;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.language-selector .btn:first-child {
+    border-right: 1px solid #ddd;
+}
+
+.language-selector .btn:hover {
+    background-color: #f5f5f5;
+}
+
+.language-selector .btn.active {
+    background-color: #337ab7;
+    color: #fff;
+}
+
+.language-selector .btn.active:hover {
+    background-color: #286090;
+}
+
+/* Dark theme for navbar */
+.navbar-inverse .language-selector {
+    border-color: #444;
+    background-color: transparent;
+}
+
+.navbar-inverse .language-selector .btn {
+    color: #9d9d9d;
+}
+
+.navbar-inverse .language-selector .btn:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+.navbar-inverse .language-selector .btn.active {
+    background-color: #080808;
+    color: #fff;
+}
+
+.navbar-inverse .language-selector .btn.active:hover {
+    background-color: #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .language-selector {
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .language-selector .btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}

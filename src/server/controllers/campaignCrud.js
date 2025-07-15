@@ -83,7 +83,7 @@ module.exports = function(app) {
         }
     };
 
-    // Listar todas as campanhas com paginação e ordenação decrescente
+    // Listar todas as campanhas com paginação, filtros e ordenação
     CampaignCrud.list = async (req, res) => {
         try {
             // Parâmetros de paginação
@@ -91,27 +91,186 @@ module.exports = function(app) {
             const limit = parseInt(req.query.limit) || 10;
             const skip = (page - 1) * limit;
             
-            // Contar total de campanhas
-            const totalCampaigns = await campaignCollection.count({});
+            // Construir filtros
+            let query = {};
             
-            // Buscar campanhas com paginação e ordenação decrescente por data de criação
-            const campaigns = await campaignCollection.find({})
-                .sort({ _id: -1 })  // Ordenação decrescente por _id (que representa data de criação)
+            // Filtro por ID da campanha
+            if (req.query.campaignId && req.query.campaignId.trim()) {
+                query._id = { $regex: req.query.campaignId.trim(), $options: 'i' };
+            }
+            
+            // Filtros por anos
+            if (req.query.initialYear) {
+                query.initialYear = parseInt(req.query.initialYear);
+            }
+            if (req.query.finalYear) {
+                query.finalYear = parseInt(req.query.finalYear);
+            }
+            
+            // Filtro por número de inspeções
+            if (req.query.numInspec) {
+                query.numInspec = parseInt(req.query.numInspec);
+            }
+            
+            // Filtro por tipo de imagem
+            if (req.query.imageType) {
+                query.imageType = req.query.imageType;
+            }
+            
+            // Filtros por configurações booleanas
+            if (req.query.showTimeseries !== undefined) {
+                query.showTimeseries = req.query.showTimeseries === 'true';
+            }
+            if (req.query.showPointInfo !== undefined) {
+                query.showPointInfo = req.query.showPointInfo === 'true';
+            }
+            if (req.query.useDynamicMaps !== undefined) {
+                query.useDynamicMaps = req.query.useDynamicMaps === 'true';
+            }
+            
+            // Definir ordenação
+            let sortBy = { _id: -1 }; // Default: mais recente primeiro
+            if (req.query.sortBy) {
+                switch (req.query.sortBy) {
+                    case 'campaignId':
+                        sortBy = { _id: 1 };
+                        break;
+                    case 'initialYear':
+                        sortBy = { initialYear: -1 };
+                        break;
+                    case 'finalYear':
+                        sortBy = { finalYear: -1 };
+                        break;
+                    case 'totalPoints':
+                        // Este será aplicado após calcular estatísticas
+                        break;
+                    case 'progress':
+                        // Este será aplicado após calcular estatísticas
+                        break;
+                    default:
+                        sortBy = { _id: -1 };
+                }
+            }
+            
+            console.log('Campaign list query:', query);
+            console.log('Campaign list sort:', sortBy);
+            
+            // Contar total de campanhas com filtros
+            const totalCampaigns = await campaignCollection.count(query);
+            
+            // Buscar campanhas com paginação e filtros
+            let campaigns = await campaignCollection.find(query)
+                .sort(sortBy)
                 .skip(skip)
                 .limit(limit)
                 .toArray();
             
-            // Para cada campanha, contar quantos pontos existem
-            for (let campaign of campaigns) {
-                const totalPoints = await pointsCollection.count({ campaign: campaign._id });
-                const completedPoints = await pointsCollection.count({ 
-                    campaign: campaign._id,
-                    $where: `this.userName.length >= ${campaign.numInspec}`
+            // Buscar estatísticas de pontos em paralelo usando aggregation pipeline otimizado
+            const campaignIds = campaigns.map(c => c._id);
+            
+            if (campaignIds.length > 0) {
+                // Criar um mapa de numInspec para cada campanha
+                const numInspecMap = {};
+                campaigns.forEach(c => {
+                    numInspecMap[c._id] = c.numInspec || 3;
                 });
                 
-                campaign.totalPoints = totalPoints;
-                campaign.completedPoints = completedPoints;
-                campaign.progress = totalPoints > 0 ? (completedPoints / totalPoints * 100).toFixed(2) : 0;
+                // Pipeline otimizado para contar total e completos de uma vez
+                const statsResult = await pointsCollection.aggregate([
+                    { $match: { campaign: { $in: campaignIds } } },
+                    { 
+                        $project: {
+                            campaign: 1,
+                            userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                        }
+                    },
+                    { 
+                        $group: {
+                            _id: "$campaign",
+                            totalPoints: { $sum: 1 },
+                            userNameCounts: { $push: "$userNameCount" }
+                        }
+                    }
+                ], { allowDiskUse: true }).toArray();
+                
+                // Processar resultados e calcular pontos completos
+                const statsMap = {};
+                statsResult.forEach(stat => {
+                    const numInspec = numInspecMap[stat._id] || 3;
+                    const completedPoints = stat.userNameCounts.filter(count => count >= numInspec).length;
+                    statsMap[stat._id] = {
+                        totalPoints: stat.totalPoints,
+                        completedPoints: completedPoints
+                    };
+                });
+                
+                // Adicionar estatísticas às campanhas
+                for (let campaign of campaigns) {
+                    const stats = statsMap[campaign._id] || { totalPoints: 0, completedPoints: 0 };
+                    campaign.totalPoints = stats.totalPoints;
+                    campaign.completedPoints = stats.completedPoints;
+                    campaign.progress = stats.totalPoints > 0 ? (stats.completedPoints / stats.totalPoints * 100).toFixed(2) : 0;
+                }
+                
+                // Aplicar filtros pós-processamento (que dependem de estatísticas calculadas)
+                let filteredCampaigns = campaigns;
+                
+                // Filtro por status de progresso
+                if (req.query.progressStatus) {
+                    filteredCampaigns = campaigns.filter(campaign => {
+                        const progress = parseFloat(campaign.progress);
+                        switch (req.query.progressStatus) {
+                            case 'empty':
+                                return progress === 0;
+                            case 'started':
+                                return progress > 0 && progress < 100;
+                            case 'completed':
+                                return progress === 100;
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                // Aplicar ordenação pós-processamento se necessário
+                if (req.query.sortBy === 'totalPoints') {
+                    filteredCampaigns.sort((a, b) => b.totalPoints - a.totalPoints);
+                } else if (req.query.sortBy === 'progress') {
+                    filteredCampaigns.sort((a, b) => parseFloat(b.progress) - parseFloat(a.progress));
+                }
+                
+                // Se aplicamos filtros pós-processamento, precisamos recalcular paginação
+                if (req.query.progressStatus || req.query.sortBy === 'totalPoints' || req.query.sortBy === 'progress') {
+                    const totalFiltered = filteredCampaigns.length;
+                    const startIndex = skip;
+                    const endIndex = startIndex + limit;
+                    filteredCampaigns = filteredCampaigns.slice(startIndex, endIndex);
+                    
+                    // Atualizar estatísticas de paginação
+                    const totalPages = Math.ceil(totalFiltered / limit);
+                    
+                    // Resposta paginada com filtros pós-processamento
+                    return res.json({
+                        campaigns: filteredCampaigns,
+                        pagination: {
+                            currentPage: page,
+                            totalPages: totalPages,
+                            totalCampaigns: totalFiltered,
+                            limit,
+                            hasNext: page < totalPages,
+                            hasPrev: page > 1
+                        }
+                    });
+                }
+                
+                campaigns = filteredCampaigns;
+            } else {
+                // Se não há campanhas, definir valores padrão
+                for (let campaign of campaigns) {
+                    campaign.totalPoints = 0;
+                    campaign.completedPoints = 0;
+                    campaign.progress = 0;
+                }
             }
             
             // Resposta paginada
@@ -144,10 +303,18 @@ module.exports = function(app) {
             
             // Contar pontos
             const totalPoints = await pointsCollection.count({ campaign: campaign._id });
-            const completedPoints = await pointsCollection.count({ 
-                campaign: campaign._id,
-                $where: `this.userName.length >= ${campaign.numInspec}`
-            });
+            
+            // Contar pontos completos usando aggregation
+            const completedResult = await pointsCollection.aggregate([
+                { $match: { campaign: campaign._id } },
+                { $project: { 
+                    isCompleted: { $gte: [{ $size: "$userName" }, campaign.numInspec] }
+                }},
+                { $match: { isCompleted: true } },
+                { $count: "total" }
+            ]).toArray();
+            
+            const completedPoints = completedResult.length > 0 ? completedResult[0].total : 0;
             
             campaign.totalPoints = totalPoints;
             campaign.completedPoints = completedPoints;
@@ -157,6 +324,185 @@ module.exports = function(app) {
         } catch (error) {
             console.error('Error getting campaign:', error);
             res.status(500).json({ error: 'Failed to get campaign' });
+        }
+    };
+
+    // Obter dados detalhados e estatísticas de uma campanha
+    CampaignCrud.getDetails = async (req, res) => {
+        try {
+            const campaignId = req.params.id;
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campaign not found' });
+            }
+            
+            // Executar todas as queries em paralelo para melhor performance
+            const [totalPoints, completedResult, userStats, classStats, stateStats, biomeStats, progressTimeline, pendingByMunicipality] = await Promise.all([
+                // Total de pontos
+                pointsCollection.count({ campaign: campaign._id }),
+                
+                // Pontos completos - otimizado
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: {
+                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                    }},
+                    { $match: { userNameCount: { $gte: campaign.numInspec } } },
+                    { $count: "total" }
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Estatísticas por usuário - limitado ao top 50
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: { userName: 1 } },
+                    { $unwind: "$userName" },
+                    { $group: {
+                        _id: "$userName",
+                        inspections: { $sum: 1 }
+                    }},
+                    { $sort: { inspections: -1 } },
+                    { $limit: 50 }
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Estatísticas por classe de uso - otimizado
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: {
+                        mode: 1,
+                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                    }},
+                    { $match: { userNameCount: { $gte: campaign.numInspec } } },
+                    { $group: {
+                        _id: "$mode",
+                        count: { $sum: 1 }
+                    }},
+                    { $sort: { count: -1 } }
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Estatísticas por estado - otimizado
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: {
+                        uf: 1,
+                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                    }},
+                    { $group: {
+                        _id: "$uf",
+                        total: { $sum: 1 },
+                        completed: { 
+                            $sum: { 
+                                $cond: [{ $gte: ["$userNameCount", campaign.numInspec] }, 1, 0]
+                            }
+                        }
+                    }},
+                    { $sort: { total: -1 } }
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Estatísticas por bioma - otimizado
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: {
+                        biome: 1,
+                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                    }},
+                    { $group: {
+                        _id: "$biome",
+                        total: { $sum: 1 },
+                        completed: { 
+                            $sum: { 
+                                $cond: [{ $gte: ["$userNameCount", campaign.numInspec] }, 1, 0]
+                            }
+                        }
+                    }},
+                    { $sort: { total: -1 } }
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Progresso ao longo do tempo (últimos 30 dias) - simplificado
+                (async () => {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    
+                    return pointsCollection.aggregate([
+                        { $match: { 
+                            campaign: campaign._id,
+                            "inspection.counter": { $gte: campaign.numInspec },
+                            "inspection.date": { $gte: thirtyDaysAgo }
+                        }},
+                        { $unwind: "$inspection" },
+                        { $match: {
+                            "inspection.counter": { $gte: campaign.numInspec },
+                            "inspection.date": { $gte: thirtyDaysAgo }
+                        }},
+                        { $group: {
+                            _id: {
+                                $dateToString: { format: "%Y-%m-%d", date: "$inspection.date" }
+                            },
+                            count: { $sum: 1 }
+                        }},
+                        { $sort: { _id: 1 } }
+                    ], { allowDiskUse: true }).toArray();
+                })(),
+                
+                // Pontos pendentes por município - otimizado
+                pointsCollection.aggregate([
+                    { $match: { campaign: campaign._id } },
+                    { $project: {
+                        county: 1,
+                        uf: 1,
+                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                    }},
+                    { $match: { userNameCount: { $lt: campaign.numInspec } } },
+                    { $group: {
+                        _id: {
+                            municipality: "$county",
+                            state: "$uf"
+                        },
+                        count: { $sum: 1 }
+                    }},
+                    { $sort: { count: -1 } },
+                    { $limit: 20 }
+                ], { allowDiskUse: true }).toArray()
+            ]);
+            
+            const completedPoints = completedResult.length > 0 ? completedResult[0].total : 0;
+            
+            // Montar resposta detalhada
+            const details = {
+                campaign: {
+                    ...campaign,
+                    totalPoints,
+                    completedPoints,
+                    pendingPoints: totalPoints - completedPoints,
+                    progress: totalPoints > 0 ? (completedPoints / totalPoints * 100).toFixed(2) : 0
+                },
+                statistics: {
+                    users: {
+                        total: userStats.length,
+                        topInspectors: userStats.slice(0, 10),
+                        data: userStats
+                    },
+                    classes: {
+                        total: classStats.length,
+                        distribution: classStats
+                    },
+                    states: {
+                        total: stateStats.length,
+                        data: stateStats
+                    },
+                    biomes: {
+                        total: biomeStats.length,
+                        data: biomeStats
+                    },
+                    timeline: progressTimeline,
+                    pendingByMunicipality
+                }
+            };
+            
+            res.json(details);
+        } catch (error) {
+            console.error('Error getting campaign details:', error);
+            res.status(500).json({ error: 'Failed to get campaign details' });
         }
     };
 
@@ -280,11 +626,10 @@ module.exports = function(app) {
         }
     };
 
-    // Upload de GeoJSON e processamento - sem dependência de multer
+    // Upload de GeoJSON com processamento em foreground
     CampaignCrud.uploadGeoJSON = async (req, res) => {
         try {
             const campaignId = req.body.campaignId;
-            const skipGeoprocessing = req.body.skipGeoprocessing === 'true';
             const geojsonContent = req.body.geojsonContent;
             const filename = req.body.filename || 'campaign-upload.geojson';
             
@@ -306,7 +651,62 @@ module.exports = function(app) {
                 return res.status(400).json({ error: 'Invalid GeoJSON format' });
             }
             
-            // Salvar arquivo se necessário
+            if (!geojsonData.features || geojsonData.features.length === 0) {
+                return res.status(400).json({ error: 'No features found in GeoJSON' });
+            }
+            
+            // Obter sessionID da requisição para identificar o socket correto
+            const sessionId = req.sessionID;
+            const userId = req.session && req.session.admin && req.session.admin.superAdmin ? req.session.admin.superAdmin.id : 'anonymous';
+            
+            console.log('Iniciando upload em foreground para sessão:', sessionId, 'usuário:', userId);
+            
+            // Processar em foreground com progresso em tempo real
+            const result = await CampaignCrud.processGeoJSONForeground(campaignId, geojsonData, filename, app.io, sessionId, userId);
+            
+            // Responder com o resultado do processamento
+            res.json(result);
+            
+        } catch (error) {
+            console.error('Error processing GeoJSON upload:', error);
+            res.status(500).json({ error: 'Failed to process GeoJSON upload: ' + error.message });
+        }
+    };
+    
+    // Processamento em foreground do GeoJSON com progresso em tempo real
+    CampaignCrud.processGeoJSONForeground = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
+        const totalFeatures = geojsonData.features.length;
+        let processedCount = 0;
+        let insertedCount = 0;
+        let errorCount = 0;
+        const startTime = new Date();
+        
+        console.log(`Processamento foreground iniciado para sessão: ${sessionId}, usuário: ${userId}, campanha: ${campaignId}`);
+        
+        // Função para emitir eventos para o socket correto
+        const emitToUser = (event, data) => {
+            if (io) {
+                // Emitir para todos os sockets da sala geojson-upload
+                io.to('geojson-upload').emit(event, {
+                    ...data,
+                    sessionId: sessionId,
+                    userId: userId
+                });
+                
+                console.log(`Evento ${event} emitido para sessão ${sessionId}`);
+            }
+        };
+        
+        // Emitir evento de início
+        emitToUser('upload-started', {
+            campaignId: campaignId,
+            totalFeatures: totalFeatures,
+            filename: filename,
+            timestamp: startTime.toISOString()
+        });
+        
+        try {
+            // Salvar arquivo
             const uploadsDir = path.join(__dirname, '../../uploads');
             if (!fs.existsSync(uploadsDir)) {
                 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -316,7 +716,7 @@ module.exports = function(app) {
             const savedFilename = 'campaign-' + uniqueSuffix + '.geojson';
             const filePath = path.join(uploadsDir, savedFilename);
             
-            fs.writeFileSync(filePath, geojsonContent);
+            fs.writeFileSync(filePath, JSON.stringify(geojsonData, null, 2));
             
             // Extrair propriedades únicas de todas as features
             const allProperties = new Set();
@@ -337,128 +737,538 @@ module.exports = function(app) {
                 }
             );
             
-            // Processar os pontos
-            const points = [];
-            let counter = 1;
+            // Buscar o último índice inserido para esta campanha
+            let lastPoint = await pointsCollection.findOne(
+                { campaign: campaignId },
+                { sort: { index: -1 }, projection: { index: 1 } }
+            );
             
-            for (const feature of geojsonData.features) {
-                const coordinate = {
-                    X: feature.geometry.coordinates[0],
-                    Y: feature.geometry.coordinates[1]
-                };
+            let counter = lastPoint ? lastPoint.index + 1 : 1;
+            console.log(`Iniciando contador de pontos em: ${counter} para campanha: ${campaignId}`);
+            
+            // Processar os pontos em lotes menores para melhor responsividade
+            const batchSize = 50; // Reduzir tamanho do lote para foreground
+            
+            for (let i = 0; i < geojsonData.features.length; i += batchSize) {
+                const batch = geojsonData.features.slice(i, i + batchSize);
+                const batchNumber = Math.floor(i / batchSize) + 1;
+                const totalBatches = Math.ceil(geojsonData.features.length / batchSize);
                 
-                let regionInfo = {};
-                let tileInfo = {};
+                console.log(`Processando lote ${batchNumber}/${totalBatches} (${batch.length} features)`);
                 
-                if (!skipGeoprocessing) {
-                    // Obter informações de região e tile
-                    regionInfo = await getInfoByRegion(coordinate);
-                    tileInfo = await getInfoByTile(coordinate);
+                // Emitir progresso do batch
+                emitToUser('batch-processing', {
+                    campaignId: campaignId,
+                    batchNumber: batchNumber,
+                    totalBatches: totalBatches,
+                    batchSize: batch.length,
+                    processedCount: processedCount,
+                    insertedCount: insertedCount,
+                    progress: Math.round((processedCount / totalFeatures) * 100)
+                });
+                
+                const batchPoints = [];
+                
+                for (const feature of batch) {
+                    try {
+                        processedCount++;
+                        
+                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: 'Invalid geometry coordinates'
+                            });
+                            continue;
+                        }
+                        
+                        const coordinate = {
+                            X: feature.geometry.coordinates[0],
+                            Y: feature.geometry.coordinates[1]
+                        };
+                        
+                        // Validar coordenadas
+                        if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: 'Invalid coordinate values'
+                            });
+                            continue;
+                        }
+                        
+                        const point = {
+                            _id: counter + '_' + campaignId,
+                            campaign: campaignId,
+                            lon: coordinate.X,
+                            lat: coordinate.Y,
+                            dateImport: new Date(),
+                            biome: (feature.properties && feature.properties.biome) || null,
+                            uf: (feature.properties && feature.properties.uf) || null,
+                            county: (feature.properties && feature.properties.county) || null,
+                            countyCode: (feature.properties && feature.properties.countyCode) || null,
+                            path: (feature.properties && feature.properties.path) || null,
+                            row: (feature.properties && feature.properties.row) || null,
+                            userName: [],
+                            inspection: [],
+                            underInspection: 0,
+                            index: counter++,
+                            cached: false,
+                            enhance_in_cache: 1,
+                            // Armazenar todas as propriedades do GeoJSON
+                            properties: feature.properties || {}
+                        };
+                        
+                        batchPoints.push(point);
+                        
+                        // Emitir progresso de feature individual mais frequentemente
+                        if (processedCount % 25 === 0) {
+                            emitToUser('features-processed', {
+                                campaignId: campaignId,
+                                processedCount: processedCount,
+                                insertedCount: insertedCount,
+                                totalFeatures: totalFeatures,
+                                progress: Math.round((processedCount / totalFeatures) * 100)
+                            });
+                        }
+                        
+                    } catch (featureError) {
+                        errorCount++;
+                        console.error('Error processing feature:', featureError);
+                        emitToUser('feature-error', {
+                            campaignId: campaignId,
+                            featureIndex: processedCount - 1,
+                            error: featureError.message
+                        });
+                    }
                 }
                 
-                const point = {
-                    _id: counter + '_' + campaignId,
-                    campaign: campaignId,
-                    lon: coordinate.X,
-                    lat: coordinate.Y,
-                    dateImport: new Date(),
-                    biome: feature.properties.biome || regionInfo.biome || null,
-                    uf: feature.properties.uf || regionInfo.uf || null,
-                    county: feature.properties.county || regionInfo.county || null,
-                    countyCode: feature.properties.countyCode || regionInfo.countyCode || null,
-                    path: tileInfo.path || null,
-                    row: tileInfo.row || null,
-                    userName: [],
-                    inspection: [],
-                    underInspection: 0,
-                    index: counter++,
-                    cached: false,
-                    enhance_in_cache: 1,
-                    // Armazenar todas as propriedades do GeoJSON
-                    properties: feature.properties || {}
-                };
+                // Inserir batch no banco
+                if (batchPoints.length > 0) {
+                    try {
+                        const insertResult = await pointsCollection.insertMany(batchPoints, { ordered: false });
+                        const insertedInBatch = insertResult.insertedCount || batchPoints.length;
+                        insertedCount += insertedInBatch;
+                        
+                        console.log(`Lote ${batchNumber} inserido: ${insertedInBatch} pontos`);
+                        
+                        emitToUser('batch-completed', {
+                            campaignId: campaignId,
+                            batchNumber: batchNumber,
+                            totalBatches: totalBatches,
+                            batchPointsInserted: insertedInBatch,
+                            processedCount: processedCount,
+                            insertedCount: insertedCount,
+                            errorCount: errorCount,
+                            progress: Math.round((processedCount / totalFeatures) * 100)
+                        });
+                        
+                    } catch (insertError) {
+                        console.error('Error inserting batch:', insertError);
+                        
+                        // Verificar se é erro de chave duplicada
+                        if (insertError.code === 11000) {
+                            console.log(`Erro de chave duplicada detectado no lote ${batchNumber}`);
+                            
+                            // Tentar inserir pontos individualmente, pulando duplicados
+                            let individualErrors = 0;
+                            let individualSuccess = 0;
+                            
+                            for (const point of batchPoints) {
+                                try {
+                                    await pointsCollection.insertOne(point);
+                                    individualSuccess++;
+                                } catch (individualError) {
+                                    if (individualError.code === 11000) {
+                                        console.log(`Ponto duplicado pulado: ${point._id}`);
+                                        individualErrors++;
+                                    } else {
+                                        throw individualError;
+                                    }
+                                }
+                            }
+                            
+                            insertedCount += individualSuccess;
+                            errorCount += individualErrors;
+                            
+                            emitToUser('batch-warning', {
+                                campaignId: campaignId,
+                                batchNumber: batchNumber,
+                                warning: `Lote ${batchNumber} parcialmente inserido: ${individualSuccess} pontos inseridos, ${individualErrors} pontos duplicados pulados`,
+                                duplicatesSkipped: individualErrors,
+                                pointsInserted: individualSuccess,
+                                insertedCount: insertedCount,
+                                errorCount: errorCount
+                            });
+                        } else {
+                            // Outro tipo de erro
+                            errorCount += batchPoints.length;
+                            
+                            emitToUser('batch-error', {
+                                campaignId: campaignId,
+                                batchNumber: batchNumber,
+                                error: insertError.message,
+                                errorCode: insertError.code,
+                                pointsAffected: batchPoints.length,
+                                errorCount: errorCount
+                            });
+                        }
+                    }
+                }
                 
-                points.push(point);
+                // Emitir progresso final do lote
+                emitToUser('features-processed', {
+                    campaignId: campaignId,
+                    processedCount: processedCount,
+                    insertedCount: insertedCount,
+                    totalFeatures: totalFeatures,
+                    progress: Math.round((processedCount / totalFeatures) * 100)
+                });
+                
+                // Pequena pausa entre batches para não bloquear o event loop
+                await new Promise(resolve => setImmediate(resolve));
             }
             
-            // Inserir pontos em lote
-            if (points.length > 0) {
-                await pointsCollection.insertMany(points);
-            }
+            const endTime = new Date();
+            const duration = endTime - startTime;
             
-            res.json({ 
-                success: true, 
-                message: `Successfully imported ${points.length} points`,
+            const result = {
+                success: true,
+                message: 'Upload processado com sucesso',
+                campaignId: campaignId,
+                totalFeatures: totalFeatures,
+                processedCount: processedCount,
+                insertedCount: insertedCount,
+                errorCount: errorCount,
                 filename: savedFilename,
-                properties: Array.from(allProperties)
-            });
+                properties: Array.from(allProperties),
+                duration: duration,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString()
+            };
+            
+            // Emitir evento de conclusão
+            emitToUser('upload-completed', result);
+            
+            console.log(`GeoJSON upload foreground completed: ${insertedCount} points inserted, ${errorCount} errors, ${duration}ms`);
+            
+            return result;
             
         } catch (error) {
-            console.error('Error processing GeoJSON:', error);
-            res.status(500).json({ error: 'Failed to process GeoJSON: ' + error.message });
+            console.error('Error in foreground GeoJSON processing:', error);
+            
+            const errorResult = {
+                success: false,
+                error: error.message,
+                campaignId: campaignId,
+                processedCount: processedCount,
+                insertedCount: insertedCount,
+                errorCount: errorCount
+            };
+            
+            emitToUser('upload-failed', errorResult);
+            
+            throw error;
+        }
+    };
+    
+    // Processamento em background do GeoJSON
+    CampaignCrud.processGeoJSONBackground = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
+        const totalFeatures = geojsonData.features.length;
+        let processedCount = 0;
+        let errorCount = 0;
+        const startTime = new Date();
+        
+        console.log(`Processamento iniciado para sessão: ${sessionId}, usuário: ${userId}, campanha: ${campaignId}`);
+        
+        // Função para emitir eventos para o socket correto
+        const emitToUser = (event, data) => {
+            if (io) {
+                // Emitir para todos os sockets da sala geojson-upload
+                io.to('geojson-upload').emit(event, {
+                    ...data,
+                    sessionId: sessionId,
+                    userId: userId
+                });
+                
+                // Também emitir para a sessão específica
+                io.to(sessionId).emit(event, {
+                    ...data,
+                    sessionId: sessionId,
+                    userId: userId
+                });
+                
+                console.log(`Evento ${event} emitido para sessão ${sessionId}`);
+            }
+        };
+        
+        // Emitir evento de início
+        emitToUser('upload-started', {
+            campaignId: campaignId,
+            totalFeatures: totalFeatures,
+            filename: filename,
+            timestamp: startTime.toISOString()
+        });
+        
+        try {
+            // Salvar arquivo
+            const uploadsDir = path.join(__dirname, '../../uploads');
+            if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            const savedFilename = 'campaign-' + uniqueSuffix + '.geojson';
+            const filePath = path.join(uploadsDir, savedFilename);
+            
+            fs.writeFileSync(filePath, JSON.stringify(geojsonData, null, 2));
+            
+            // Extrair propriedades únicas de todas as features
+            const allProperties = new Set();
+            geojsonData.features.forEach(feature => {
+                Object.keys(feature.properties || {}).forEach(key => {
+                    allProperties.add(key);
+                });
+            });
+            
+            // Atualizar a campanha com as propriedades e arquivo
+            await campaignCollection.updateOne(
+                { _id: campaignId },
+                { 
+                    $set: { 
+                        geojsonFile: savedFilename,
+                        properties: Array.from(allProperties)
+                    } 
+                }
+            );
+            
+            // Buscar o último índice inserido para esta campanha
+            let lastPoint = await pointsCollection.findOne(
+                { campaign: campaignId },
+                { sort: { index: -1 }, projection: { index: 1 } }
+            );
+            
+            let counter = lastPoint ? lastPoint.index + 1 : 1;
+            console.log(`Iniciando contador de pontos em: ${counter} para campanha: ${campaignId}`);
+            
+            // Processar os pontos em lotes
+            const points = [];
+            const batchSize = 100; // Processar em lotes de 100
+            
+            for (let i = 0; i < geojsonData.features.length; i += batchSize) {
+                const batch = geojsonData.features.slice(i, i + batchSize);
+                const batchNumber = Math.floor(i / batchSize) + 1;
+                const totalBatches = Math.ceil(geojsonData.features.length / batchSize);
+                
+                // Emitir progresso do batch
+                if (io) {
+                    io.to('geojson-upload').emit('batch-processing', {
+                        campaignId: campaignId,
+                        batchNumber: batchNumber,
+                        totalBatches: totalBatches,
+                        batchSize: batch.length,
+                        processedCount: processedCount,
+                        progress: Math.round((processedCount / totalFeatures) * 100)
+                    });
+                }
+                
+                const batchPoints = [];
+                
+                for (const feature of batch) {
+                    try {
+                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                            errorCount++;
+                            if (io) {
+                                io.to('geojson-upload').emit('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: i + batch.indexOf(feature),
+                                    error: 'Invalid geometry coordinates'
+                                });
+                            }
+                            continue;
+                        }
+                        
+                        const coordinate = {
+                            X: feature.geometry.coordinates[0],
+                            Y: feature.geometry.coordinates[1]
+                        };
+                        
+                        // Validar coordenadas
+                        if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
+                            errorCount++;
+                            if (io) {
+                                io.to('geojson-upload').emit('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: i + batch.indexOf(feature),
+                                    error: 'Invalid coordinate values'
+                                });
+                            }
+                            continue;
+                        }
+                        
+                        const point = {
+                            _id: counter + '_' + campaignId,
+                            campaign: campaignId,
+                            lon: coordinate.X,
+                            lat: coordinate.Y,
+                            dateImport: new Date(),
+                            biome: (feature.properties && feature.properties.biome) || null,
+                            uf: (feature.properties && feature.properties.uf) || null,
+                            county: (feature.properties && feature.properties.county) || null,
+                            countyCode: (feature.properties && feature.properties.countyCode) || null,
+                            path: (feature.properties && feature.properties.path) || null,
+                            row: (feature.properties && feature.properties.row) || null,
+                            userName: [],
+                            inspection: [],
+                            underInspection: 0,
+                            index: counter++,
+                            cached: false,
+                            enhance_in_cache: 1,
+                            // Armazenar todas as propriedades do GeoJSON
+                            properties: feature.properties || {}
+                        };
+                        
+                        batchPoints.push(point);
+                        processedCount++;
+                        
+                        // Emitir progresso de feature individual ocasionalmente
+                        if (processedCount % 50 === 0 && io) {
+                            io.to('geojson-upload').emit('features-processed', {
+                                campaignId: campaignId,
+                                processedCount: processedCount,
+                                totalFeatures: totalFeatures,
+                                progress: Math.round((processedCount / totalFeatures) * 100)
+                            });
+                        }
+                        
+                    } catch (featureError) {
+                        errorCount++;
+                        console.error('Error processing feature:', featureError);
+                        if (io) {
+                            io.to('geojson-upload').emit('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: i + batch.indexOf(feature),
+                                error: featureError.message
+                            });
+                        }
+                    }
+                }
+                
+                // Inserir batch no banco
+                if (batchPoints.length > 0) {
+                    try {
+                        await pointsCollection.insertMany(batchPoints);
+                        
+                        if (io) {
+                            io.to('geojson-upload').emit('batch-completed', {
+                                campaignId: campaignId,
+                                batchNumber: batchNumber,
+                                totalBatches: totalBatches,
+                                batchPointsInserted: batchPoints.length,
+                                processedCount: processedCount,
+                                errorCount: errorCount,
+                                progress: Math.round((processedCount / totalFeatures) * 100)
+                            });
+                        }
+                    } catch (insertError) {
+                        console.error('Error inserting batch:', insertError);
+                        
+                        // Verificar se é erro de chave duplicada
+                        if (insertError.code === 11000) {
+                            // Extrair IDs duplicados
+                            const duplicateMatch = insertError.message.match(/dup key: { _id: "([^"]+)" }/);
+                            const duplicateId = duplicateMatch ? duplicateMatch[1] : 'unknown';
+                            
+                            console.log(`Erro de chave duplicada detectado: ${duplicateId}`);
+                            
+                            // Tentar inserir pontos individualmente, pulando duplicados
+                            let individualErrors = 0;
+                            let individualSuccess = 0;
+                            
+                            for (const point of batchPoints) {
+                                try {
+                                    await pointsCollection.insertOne(point);
+                                    individualSuccess++;
+                                } catch (individualError) {
+                                    if (individualError.code === 11000) {
+                                        console.log(`Ponto duplicado pulado: ${point._id}`);
+                                        individualErrors++;
+                                    } else {
+                                        throw individualError;
+                                    }
+                                }
+                            }
+                            
+                            processedCount = processedCount - batchPoints.length + individualSuccess;
+                            errorCount += individualErrors;
+                            
+                            if (io) {
+                                io.to('geojson-upload').emit('batch-warning', {
+                                    campaignId: campaignId,
+                                    batchNumber: batchNumber,
+                                    warning: `Batch parcialmente inserido: ${individualSuccess} pontos inseridos, ${individualErrors} pontos duplicados pulados`,
+                                    duplicatesSkipped: individualErrors,
+                                    pointsInserted: individualSuccess
+                                });
+                            }
+                        } else {
+                            // Outro tipo de erro
+                            errorCount += batchPoints.length;
+                            processedCount -= batchPoints.length; // Ajustar contador
+                            
+                            if (io) {
+                                io.to('geojson-upload').emit('batch-error', {
+                                    campaignId: campaignId,
+                                    batchNumber: batchNumber,
+                                    error: insertError.message,
+                                    errorCode: insertError.code
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                // Pequena pausa entre batches para não sobrecarregar o sistema
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const endTime = new Date();
+            const duration = endTime - startTime;
+            
+            // Emitir evento de conclusão
+            if (io) {
+                io.to('geojson-upload').emit('upload-completed', {
+                    campaignId: campaignId,
+                    totalFeatures: totalFeatures,
+                    processedCount: processedCount,
+                    errorCount: errorCount,
+                    filename: savedFilename,
+                    properties: Array.from(allProperties),
+                    duration: duration,
+                    startTime: startTime.toISOString(),
+                    endTime: endTime.toISOString(),
+                    success: true
+                });
+            }
+            
+            console.log(`GeoJSON upload completed: ${processedCount} points processed, ${errorCount} errors`);
+            
+        } catch (error) {
+            console.error('Error in background GeoJSON processing:', error);
+            
+            if (io) {
+                io.to('geojson-upload').emit('upload-failed', {
+                    campaignId: campaignId,
+                    error: error.message,
+                    processedCount: processedCount,
+                    errorCount: errorCount
+                });
+            }
         }
     };
 
-    // Funções auxiliares para obter informações geoespaciais
-    const getInfoByRegion = (coordinate) => {
-        return new Promise((resolve, reject) => {
-            const regions = "SHP/regions.shp";
-            const sql = `select COD_MUNICI,BIOMA,UF,MUNICIPIO from regions where ST_INTERSECTS(Geometry,GeomFromText('POINT(${coordinate.X} ${coordinate.Y})',4326))`;
-            const cmd = `ogrinfo -q -geom=no -dialect sqlite -sql "${sql}" ${regions}`;
-            
-            exec(cmd, (error, stdout, stderr) => {
-                if (error) {
-                    console.error('Error getting region info:', error);
-                    return resolve({});
-                }
-                
-                const strs = stdout.split("\n");
-                const result = {};
-                
-                for (const str of strs) {
-                    if (str.match(/BIOMA/g)) {
-                        result.biome = str.slice(18).trim();
-                    } else if (str.match(/UF/g)) {
-                        result.uf = str.slice(15, 18).trim();
-                    } else if (str.match(/MUNICIPIO/g)) {
-                        result.county = str.slice(22).trim();
-                    } else if (str.match(/COD_MUNICI/g)) {
-                        result.countyCode = str.slice(26, 35).trim();
-                    }
-                }
-                
-                resolve(result);
-            });
-        });
-    };
-    
-    const getInfoByTile = (coordinate) => {
-        return new Promise((resolve, reject) => {
-            const tiles = "SHP/tiles.shp";
-            const sql = `select path,row from tiles where ST_INTERSECTS(Geometry,GeomFromText('POINT(${coordinate.X} ${coordinate.Y})',4326))`;
-            const cmd = `ogrinfo -q -geom=no -dialect sqlite -sql "${sql}" ${tiles}`;
-            
-            exec(cmd, (error, stdout, stderr) => {
-                if (error) {
-                    console.error('Error getting tile info:', error);
-                    return resolve({});
-                }
-                
-                const strs = stdout.split("\n");
-                const result = {};
-                
-                for (const str of strs) {
-                    if (str.match(/row/g)) {
-                        result.row = Number(str.slice(18, 21).trim());
-                    } else if (str.match(/path/g)) {
-                        result.path = Number(str.slice(19, 22).trim());
-                    }
-                }
-                
-                resolve(result);
-            });
-        });
-    };
 
     // Listar pontos de uma campanha
     CampaignCrud.listPoints = async (req, res) => {
@@ -466,20 +1276,33 @@ module.exports = function(app) {
             const campaignId = req.params.id;
             const limit = parseInt(req.query.limit) || 100;
             const skip = parseInt(req.query.skip) || 0;
+            const search = req.query.search;
+            
+            // Construir query base
+            let query = { campaign: campaignId };
+            
+            // Adicionar filtro de busca se fornecido
+            if (search && search.trim()) {
+                const searchTrim = search.trim();
+                // Buscar por ID que contenha o termo de busca
+                query._id = { $regex: searchTrim, $options: 'i' };
+            }
             
             const points = await pointsCollection
-                .find({ campaign: campaignId })
+                .find(query)
                 .limit(limit)
                 .skip(skip)
+                .sort({ index: 1 })
                 .toArray();
                 
-            const total = await pointsCollection.count({ campaign: campaignId });
+            const total = await pointsCollection.count(query);
             
             res.json({
                 points: points,
                 total: total,
                 limit: limit,
-                skip: skip
+                skip: skip,
+                search: search || null
             });
         } catch (error) {
             console.error('Error listing points:', error);

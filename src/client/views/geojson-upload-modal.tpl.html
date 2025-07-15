@@ -1,34 +1,237 @@
-<div class="modal-header">
-    <h3 class="modal-title">Upload de GeoJSON</h3>
+<style>
+.modal-90-width .modal-dialog {
+    width: 90%;
+    max-width: none;
+    margin: 30px auto;
+}
+
+.modal-90-width .modal-content {
+    min-height: 80vh;
+}
+</style>
+
+<div class="modal-header" ng-class="{'bg-success': uploadProgress.isCompleted && uploadProgress.success, 'bg-danger': uploadProgress.isCompleted && !uploadProgress.success}">
+    <h3 class="modal-title">
+        <i class="glyphicon" ng-class="{
+            'glyphicon-upload': !uploadProgress.isUploading && !uploadProgress.isCompleted,
+            'glyphicon-cog fa-spin': uploadProgress.isUploading,
+            'glyphicon-ok': uploadProgress.isCompleted && uploadProgress.success,
+            'glyphicon-remove': uploadProgress.isCompleted && !uploadProgress.success
+        }"></i>
+        <span ng-if="!uploadProgress.isUploading && !uploadProgress.isCompleted">Importar Pontos da Campanha</span>
+        <span ng-if="uploadProgress.isUploading">Processando Importação...</span>
+        <span ng-if="uploadProgress.isCompleted && uploadProgress.success">Importação Concluída</span>
+        <span ng-if="uploadProgress.isCompleted && !uploadProgress.success">Falha na Importação</span>
+    </h3>
 </div>
 <div class="modal-body">
-    <form>
+    <form ng-if="!uploadProgress.isUploading">
         <div class="form-group">
             <label>Arquivo GeoJSON</label>
             <input type="file" class="form-control" accept=".geojson" onchange="angular.element(this).scope().setFile(this)">
             <p class="help-block">Selecione um arquivo GeoJSON com os pontos da campanha</p>
         </div>
         
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" ng-model="skipGeoprocessing"> 
-                Pular geoprocessamento (não buscar informações de região/tile)
-            </label>
-            <p class="help-block">
-                Marque esta opção se os arquivos SHP não estiverem disponíveis ou se você já tiver as informações de bioma, UF, município nas propriedades do GeoJSON
-            </p>
-        </div>
-        
-        <div ng-if="uploading" class="progress">
-            <div class="progress-bar progress-bar-striped active" style="width: 100%">
-                Processando...
-            </div>
+        <div class="alert alert-info">
+            <strong>Informações importantes:</strong>
+            <ul>
+                <li>O upload será processado em tempo real</li>
+                <li>Você pode acompanhar o progresso e logs durante o processamento</li>
+                <li>Não é necessário geoprocessamento - use as propriedades do GeoJSON</li>
+                <li>Propriedades esperadas: biome, uf, county, countyCode, path, row</li>
+            </ul>
         </div>
     </form>
+    
+    <!-- Progresso do Upload -->
+    <div ng-if="uploadProgress.isUploading">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h4>
+                    <i class="fa fa-spinner fa-spin"></i> 
+                    Processando Upload...
+                    <span class="label label-warning pull-right">{{uploadProgress.filename}}</span>
+                </h4>
+            </div>
+            <div class="panel-body">
+                <!-- Status Principal -->
+                <div class="alert alert-info text-center" style="margin-bottom: 20px;">
+                    <h4 style="margin: 0;">
+                        <i class="glyphicon glyphicon-time"></i>
+                        Processando arquivo GeoJSON... Por favor, aguarde.
+                    </h4>
+                    <p style="margin: 5px 0 0 0;">
+                        <small>Este processo pode levar alguns minutos dependendo do tamanho do arquivo.</small>
+                    </p>
+                </div>
+                
+                <!-- Barra de Progresso Principal -->
+                <div style="margin-bottom: 20px;">
+                    <h5><strong>Progresso do Processamento:</strong></h5>
+                    <div class="progress" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-bar progress-bar-striped active" 
+                             ng-class="{'progress-bar-success': uploadProgress.progress === 100, 'progress-bar-primary': uploadProgress.progress < 100}"
+                             style="width: {{uploadProgress.progress}}%">
+                            <strong>{{uploadProgress.progress}}%</strong>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p><i class="glyphicon glyphicon-time"></i> <strong>Tempo decorrido:</strong> {{uploadProgress.elapsedTime}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resultado do Upload -->
+    <div ng-if="uploadProgress.isCompleted">
+        <!-- Resultado de Sucesso -->
+        <div ng-if="uploadProgress.success" class="panel panel-success">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">
+                    <i class="glyphicon glyphicon-ok-circle" style="font-size: 1.2em;"></i>
+                    <strong>Importação Finalizada com Sucesso!</strong>
+                </h3>
+            </div>
+            <div class="panel-body">
+                <!-- Mensagem de Celebração -->
+                <div class="alert alert-success text-center" style="margin-bottom: 25px;">
+                    <h4><i class="glyphicon glyphicon-thumbs-up"></i> Parabéns!</h4>
+                    <p style="margin: 10px 0 0 0;">
+                        <strong>{{uploadProgress.processedCount | number}} pontos</strong> foram importados com sucesso para a campanha.
+                        <span ng-if="uploadProgress.errorCount === 0">
+                            <br><em>Importação realizada sem erros!</em> 🎉
+                        </span>
+                    </p>
+                </div>
+                
+                <!-- Resumo Detalhado -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5><strong><i class="glyphicon glyphicon-stats"></i> Resumo da Importação:</strong></h5>
+                        <div class="well">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <ul class="list-unstyled">
+                                        <li><i class="glyphicon glyphicon-file"></i> <strong>Arquivo:</strong> {{uploadProgress.filename}}</li>
+                                        <li><i class="glyphicon glyphicon-record"></i> <strong>Features no arquivo:</strong> {{uploadProgress.totalFeatures | number}}</li>
+                                        <li><i class="glyphicon glyphicon-ok"></i> <strong>Pontos inseridos:</strong> 
+                                            <span class="text-success">{{uploadProgress.processedCount | number}}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-sm-6">
+                                    <ul class="list-unstyled">
+                                        <li><i class="glyphicon glyphicon-warning-sign"></i> <strong>Erros encontrados:</strong> 
+                                            <span ng-class="uploadProgress.errorCount > 0 ? 'text-warning' : 'text-success'">
+                                                {{uploadProgress.errorCount}}
+                                            </span>
+                                        </li>
+                                        <li><i class="glyphicon glyphicon-time"></i> <strong>Tempo total:</strong> {{uploadProgress.duration / 1000 | number:1}} segundos</li>
+                                        <li><i class="glyphicon glyphicon-dashboard"></i> <strong>Taxa de sucesso:</strong> 
+                                            <span class="text-success">{{((uploadProgress.processedCount / uploadProgress.totalFeatures) * 100) | number:1}}%</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Propriedades Encontradas -->
+                        <div ng-if="uploadProgress.properties.length > 0" style="margin-top: 15px;">
+                            <h6><strong><i class="glyphicon glyphicon-tags"></i> Propriedades encontradas no GeoJSON:</strong></h6>
+                            <div class="well well-sm" style="max-height: 150px; overflow-y: auto; overflow-x: hidden;">
+                                <span ng-repeat="prop in uploadProgress.properties" 
+                                      class="label label-info" 
+                                      style="margin: 2px 5px 2px 0; padding: 4px 8px; display: inline-block; word-break: break-word;">
+                                    {{prop}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Próximos Passos -->
+                    <div class="col-md-4">
+                        <h5><strong><i class="glyphicon glyphicon-list-alt"></i> Próximos Passos:</strong></h5>
+                        <div class="panel panel-info">
+                            <div class="panel-body">
+                                <ol style="margin: 0; padding-left: 18px;">
+                                    <li>Revisar a campanha na lista</li>
+                                    <li>Verificar as configurações</li>
+                                    <li>Iniciar as inspeções</li>
+                                    <li>Acompanhar o progresso</li>
+                                </ol>
+                                <hr style="margin: 10px 0;">
+                                <p class="text-center">
+                                    <small class="text-muted">
+                                        <i class="glyphicon glyphicon-info-sign"></i>
+                                        A campanha já está disponível para uso
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alertas sobre Erros -->
+                <div ng-if="uploadProgress.errorCount > 0" class="alert alert-warning">
+                    <h6><i class="glyphicon glyphicon-warning-sign"></i> <strong>Atenção:</strong></h6>
+                    <p>
+                        {{uploadProgress.errorCount}} features apresentaram problemas durante a importação 
+                        (coordenadas inválidas, geometrias malformadas, etc.). 
+                        Os pontos válidos foram importados com sucesso.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resultado de Erro -->
+        <div ng-if="!uploadProgress.success" class="panel panel-danger">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">
+                    <i class="glyphicon glyphicon-remove-circle" style="font-size: 1.2em;"></i>
+                    <strong>Falha na Importação</strong>
+                </h3>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-danger text-center">
+                    <h4><i class="glyphicon glyphicon-exclamation-sign"></i> Erro Crítico</h4>
+                    <p><strong>A importação não pôde ser concluída devido ao seguinte erro:</strong></p>
+                    <div class="well well-sm" style="margin-top: 15px;">
+                        <code>{{uploadProgress.error}}</code>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><strong>Estatísticas Parciais:</strong></h5>
+                        <ul class="list-unstyled">
+                            <li><strong>Pontos processados antes do erro:</strong> {{uploadProgress.processedCount | number}}</li>
+                            <li><strong>Erros acumulados:</strong> {{uploadProgress.errorCount}}</li>
+                            <li><strong>Total esperado:</strong> {{uploadProgress.totalFeatures | number}}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><strong>Possíveis Soluções:</strong></h5>
+                        <ul>
+                            <li>Verifique o formato do arquivo GeoJSON</li>
+                            <li>Confirme se as coordenadas estão válidas</li>
+                            <li>Verifique se há features duplicadas</li>
+                            <li>Entre em contato com o suporte se necessário</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary" ng-click="upload()" ng-disabled="!file || uploading">
-        <i class="glyphicon glyphicon-upload"></i> Upload
+    <button class="btn btn-primary" ng-click="upload()" ng-disabled="!file || uploadProgress.isUploading" ng-if="!uploadProgress.isCompleted">
+        <i class="glyphicon glyphicon-upload"></i> Iniciar Upload
     </button>
-    <button class="btn btn-default" ng-click="cancel()" ng-disabled="uploading">Cancelar</button>
+    <button class="btn btn-success" ng-click="close()" ng-if="uploadProgress.isCompleted && uploadProgress.success">
+        <i class="glyphicon glyphicon-ok"></i> Concluir
+    </button>
+    <button class="btn btn-default" ng-click="cancel()" ng-disabled="uploadProgress.isUploading && !uploadProgress.isCompleted">
+        {{uploadProgress.isUploading ? 'Aguarde...' : 'Cancelar'}}
+    </button>
 </div>

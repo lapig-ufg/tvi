@@ -1,0 +1,216 @@
+{
+  "COMMON": {
+    "SEARCH": "Buscar",
+    "SAVE": "Salvar",
+    "CANCEL": "Cancelar",
+    "EDIT": "Editar",
+    "REMOVE": "Remover",
+    "DOWNLOAD": "Baixar",
+    "CLOSE": "Fechar",
+    "SUBMIT": "Enviar",
+    "BETWEEN": "Entre",
+    "AND": "e",
+    "LOADING": "Carregando...",
+    "LOGOUT": "Sair",
+    "SECONDS": "segundos"
+  },
+  "NAVBAR": {
+    "POINTS": "Pontos",
+    "DASHBOARD": "Dashboard",
+    "INSPECTION_REPORT": "Relatório de Inspeções",
+    "INSPECTED_POINTS": "ponto(s) inspecionado(s)"
+  },
+  "LOGIN": {
+    "TITLE": "Temporal Visual Inspection",
+    "NAME_PLACEHOLDER": "Nome",
+    "PASSWORD_PLACEHOLDER": "Senha",
+    "CAMPAIGN_PLACEHOLDER": "Campanha",
+    "LOGIN_BUTTON": "Entrar",
+    "LOGIN_FAILED": "Falha ao efetuar o login"
+  },
+  "SUPERVISOR": {
+    "TITLE": "Supervisor",
+    "FILTERS": {
+      "INDEX": "Índice",
+      "TIME": "Tempo", 
+      "CONSOLIDATED": "Consolidado",
+      "CLASSES": "Classes",
+      "USERS": "Usuários",
+      "BIOME": "Bioma",
+      "REGION": "Região",
+      "STATE": "Estado(UF)"
+    },
+    "POINT_INFO": {
+      "POINT_NUMBER": "Ponto #",
+      "LOCATION": "Localização",
+      "BIOME": "Bioma",
+      "REGION": "Região",
+      "COUNTRY": "País",
+      "MUNICIPALITY": "Município",
+      "MAP": "Carta",
+      "COORDINATES": "Coordenadas",
+      "STATISTICS": "Estatísticas",
+      "INSPECTION_TIME": "Tempo de Inspeção",
+      "CONSOLIDATED_CLASS": "Classe Consolidada"
+    },
+    "ACTIONS": {
+      "CHANGE_PERIOD": "Alterar Período",
+      "GOOGLE_EARTH": "Google Earth",
+      "DOWNLOAD_CSV": "Baixar CSV"
+    },
+    "MAP": {
+      "LANDSAT_IMAGES": "Imagens Landsat",
+      "SENTINEL_IMAGES": "Imagens Sentinel-2 L2A",
+      "NATURAL_COLOR": "Cor Natural",
+      "AGRICULTURE": "Agricultura",
+      "FALSE_COLOR": "Falsa Cor"
+    },
+    "CHARTS": {
+      "LANDSAT_SERIES": "Série temporal LANDSAT",
+      "MODIS_SERIES": "Série temporal MODIS",
+      "NDDI_SERIES": "Série Temporal do NDDI"
+    }
+  },
+  "TEMPORAL": {
+    "TITLE": "Temporal",
+    "LOCATION_INFO": {
+      "TITLE": "Informação de localização",
+      "BIOME": "Bioma",
+      "REGION": "Região",
+      "COUNTRY": "País",
+      "MUNICIPALITY": "Município",
+      "MAP": "Carta",
+      "COORDINATES": "Coordenadas"
+    },
+    "TOOLS": {
+      "TITLE": "Ferramentas",
+      "CHANGE_PERIOD": "Alterar Período",
+      "GOOGLE_EARTH": "Google Earth"
+    },
+    "FORM": {
+      "CLASS": "Classe",
+      "BORDER_PIXEL": "Pixel de Borda",
+      "SUBMIT": "Enviar"
+    },
+    "MAP": {
+      "LANDSAT_IMAGES": "Imagens Landsat",
+      "SENTINEL_IMAGES": "Imagens Sentinel-2 L2A",
+      "NATURAL_COLOR": "Cor Natural",
+      "AGRICULTURE": "Agricultura",
+      "FALSE_COLOR": "Falsa Cor"
+    },
+    "CHARTS": {
+      "LANDSAT_SERIES": "Série temporal LANDSAT",
+      "MODIS_SERIES": "Série temporal MODIS",
+      "NDDI_SERIES": "Série Temporal do NDDI"
+    }
+  },
+  "LANGUAGES": {
+    "PT_BR": "Português",
+    "EN": "English"
+  },
+  "ALERTS": {
+    "CAMPAIGN_NOT_FINISHED": "A campanha não foi finalizada. Ainda há pontos para finalizarem as inspeções.",
+    "CAMPAIGN_CREATED": "Campanha criada com sucesso!",
+    "CAMPAIGN_UPDATED": "Campanha atualizada com sucesso!",
+    "CAMPAIGN_DELETED": "Campanha deletada com sucesso!",
+    "CAMPAIGN_DELETE_CONFIRM": "Tem certeza que deseja deletar a campanha \"{{campaignId}}\"?",
+    "CAMPAIGN_DELETE_ALL_POINTS_CONFIRM": "Tem certeza que deseja deletar TODOS os pontos da campanha \"{{campaignId}}\"? Esta ação não pode ser desfeita!",
+    "ERROR_LOADING_CAMPAIGNS": "Erro ao carregar campanhas",
+    "ERROR_CREATING_CAMPAIGN": "Erro ao criar campanha",
+    "ERROR_UPDATING_CAMPAIGN": "Erro ao atualizar campanha",
+    "ERROR_DELETING_CAMPAIGN": "Erro ao deletar campanha",
+    "ERROR_DELETING_POINTS": "Erro ao deletar pontos",
+    "SELECT_GEOJSON_FILE": "Selecione um arquivo GeoJSON",
+    "UPLOAD_SUCCESS": "Upload realizado com sucesso!",
+    "UPLOAD_COMPLETE": "Upload concluído: {{count}} pontos processados",
+    "CAMPAIGN_ID_REQUIRED": "ID da campanha é obrigatório",
+    "CAMPAIGN_NOT_FOUND": "Campanha não encontrada",
+    "CANNOT_DELETE_CAMPAIGN_WITH_POINTS": "Não é possível excluir campanhas com pontos associados",
+    "DELETE_CAMPAIGN_CONFIRM": "Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita!",
+    "FEATURE_COMING_SOON": "Funcionalidade de gerenciamento de classes será implementada em breve"
+  },
+  "DASHBOARD": {
+    "INSPECTED_POINTS": "Número de pontos inspecionados",
+    "INSPECTIONS_NUMBER": "Número de inspeções",
+    "COMPLETE_INSPECTIONS": "Inspeções completas",
+    "INCOMPLETE_INSPECTIONS": "Inspeções incompletas",
+    "NO_INSPECTIONS": "Sem inspeções",
+    "AVG_TIME_PER_POINT": "Média de tempo por ponto inspecionado",
+    "TOTAL_STORED_POINTS": "Total de pontos armazenados",
+    "POINTS_WITH_CACHE": "Pontos com cache",
+    "POINTS_WITHOUT_CACHE": "Pontos sem cache",
+    "POINTS_WITH_AGREEMENT": "Número de pontos com concordância",
+    "POINTS_CHANGED": "Pontos alterados",
+    "POINTS_WITHOUT_AGREEMENT": "Pontos sem concordância",
+    "AVG_VOTES_BY_COVERAGE": "Média de votos por cobertura em %",
+    "NO_DATA_AVAILABLE": "Nenhum dado disponível"
+  },
+  "CACHE": {
+    "PROCESSING_STARTED": "Iniciando processamento de {{totalPoints}} pontos em {{totalBatches}} batches",
+    "BATCH_COMPLETED": "Batch {{batchNumber}}/{{totalBatches}} concluído - {{processedCount}} processados, {{errorCount}} erros ({{progress}}%)",
+    "PROCESSING_POINT": "Processando ponto {{pointId}} - {{campaign}} ({{period}}/{{year}})",
+    "POINT_COMPLETED": "Ponto {{pointId}} concluído - {{processedTiles}}/{{totalTiles}} tiles processados",
+    "TILE_ERROR": "Erro no tile: {{url}} - {{error}}",
+    "PROCESSING_COMPLETED": "Processamento concluído! {{totalProcessed}} sucessos, {{totalErrors}} erros",
+    "ERROR_LOADING_STATUS": "Erro ao carregar status do cache",
+    "ERROR_LOADING_UNCACHED": "Erro ao carregar pontos não cacheados",
+    "PROCESSING_IN_PROGRESS": "Já existe um processamento em andamento",
+    "SIMULATE_CACHE_CONFIRM": "Simular cache para {{count}} pontos?",
+    "REAL_CACHE_CONFIRM": "ATENÇÃO: Fazer cache REAL para {{count}} pontos?\nIsto irá consumir recursos do servidor!",
+    "PRIORITY_UPDATED": "Prioridade atualizada com sucesso!",
+    "ERROR_UPDATING_PRIORITY": "Erro ao atualizar prioridade",
+    "PRIORITY_HIGH": "Alta",
+    "PRIORITY_MEDIUM": "Média",
+    "PRIORITY_LOW": "Baixa",
+    "PRIORITY_NORMAL": "Normal",
+    "ERROR_LOADING_JOB_STATUS": "Erro ao carregar status do job",
+    "FILL_REQUIRED_FIELDS": "Por favor, preencha todos os campos obrigatórios",
+    "BATCH_SIZE_RANGE": "Batch Size deve estar entre 1 e 10",
+    "MAX_POINTS_RANGE": "Máximo de pontos deve estar entre 5 e 100",
+    "UPDATE_JOB_CONFIG_SIMULATION": "Atualizar configuração do job para modo SIMULAÇÃO?",
+    "UPDATE_JOB_CONFIG_REAL": "ATENÇÃO: Atualizar configuração do job para modo REAL?\nIsto fará com que o job execute cache real automaticamente!",
+    "JOB_CONFIG_UPDATED": "Configuração do job atualizada com sucesso!",
+    "ERROR_UPDATING_CONFIG": "Erro ao atualizar configuração",
+    "RUN_JOB_MANUALLY_SIMULATION": "Executar job manualmente em modo SIMULAÇÃO?",
+    "RUN_JOB_MANUALLY_REAL": "ATENÇÃO: Executar job manualmente em modo REAL?\nIsto irá consumir recursos do servidor!",
+    "JOB_EXECUTED_MANUALLY": "Job executado manualmente com sucesso!\nVerifique os logs para acompanhar o progresso.",
+    "ERROR_EXECUTING_JOB": "Erro ao executar job",
+    "REMOVE_CACHE_WARNING": "ATENÇÃO: Esta operação irá remover permanentemente os tiles do cache!\n\n",
+    "REMOVE_ALL_CACHE_CONFIRM": "Esta é uma operação MUITO perigosa! Tem certeza absoluta que deseja remover TODO o cache?",
+    "CACHE_REMOVED": "Cache removido com sucesso!\n{{removed}} itens removidos.",
+    "ERROR_REMOVING_CACHE": "Erro ao remover cache"
+  },
+  "PERIODS": {
+    "DRY": "SECO",
+    "WET": "CHUVOSO"
+  },
+  "TABS": {
+    "USERS": "Usuários",
+    "POINTS": "Pontos"
+  },
+  "CHARTS": {
+    "POINT_INSPECTION_TIME": "Tempo de inspeção do ponto (s)",
+    "AVG_TIME_ALL_POINTS": "Tempo médio de todos os pontos (s)",
+    "NDVI_SAVGOL": "NDVI (Savgol)",
+    "NDVI_ORIGINAL": "NDVI (Original)",
+    "PRECIPITATION": "Precipitation",
+    "PRECIPITATION_MM": "Precipitação (mm)",
+    "NDDI_MAPBIOMAS": "NDDI (MapBiomas Mosaics)"
+  },
+  "VIS_PARAMS": {
+    "NATURAL_COLOR": "Cor Natural",
+    "AGRICULTURE": "Agricultura", 
+    "FALSE_COLOR": "Falsa Cor",
+    "TVI_RED": "TVI Red"
+  },
+  "PROMPTS": {
+    "ENTER_NEW_LAND_USE": "Digite o novo tipo de uso da terra:"
+  },
+  "AUTH": {
+    "NOT_AUTHENTICATED": "Não autenticado ou erro na verificação",
+    "USERNAME_PASSWORD_REQUIRED": "Username e senha são obrigatórios",
+    "LOGIN_SUCCESS": "Login bem-sucedido, redirecionando para admin/campaigns",
+    "LOGIN_ERROR": "Erro no login"
+  }
+}

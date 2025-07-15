@@ -31,6 +31,7 @@ src/server/GJSON/pontos_aa_5000.geojson
 src/server/GJSON/pontos_aa_5000_part.geojson
 src/server/bin/nohupCommand.txt
 src/server/log/
+src/uploads
 src/server/bin/SHP/*
 lapig-ee-09144f43f3b5.json
 lapig-ee-09144f43f3b5.pem
@@ -43,4 +44,5 @@ src/server/bin/GeoJSON/
 .idea
 *.pkl
 *.pkl
+src/server/undefined
 

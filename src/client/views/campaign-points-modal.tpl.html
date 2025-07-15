@@ -1,11 +1,32 @@
 <div class="modal-header">
     <h3 class="modal-title">Pontos da Campanha: {{ campaign._id }}</h3>
 </div>
-<div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+<div class="modal-body" style="max-height: 600px; overflow-y: auto;">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <p><strong>Total de pontos:</strong> {{ totalPoints }}</p>
             <p><strong>Pontos completos:</strong> {{ campaign.completedPoints }} ({{ campaign.progress }}%)</p>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="searchId">Buscar por ID:</label>
+                <div class="input-group">
+                    <input type="text" 
+                           id="searchId"
+                           class="form-control" 
+                           ng-model="searchId" 
+                           placeholder="Digite o ID do ponto..." 
+                           ng-change="searchPoints()"
+                           ng-model-options="{debounce: 300}">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" 
+                                ng-click="clearSearch()" 
+                                ng-disabled="!searchId">
+                            <i class="glyphicon glyphicon-remove"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -45,17 +66,54 @@
     </table>
     
     <div ng-if="!loading && points.length == 0" class="alert alert-info">
-        Nenhum ponto encontrado para esta campanha.
+        <span ng-if="searchId">Nenhum ponto encontrado com o ID "{{searchId}}".</span>
+        <span ng-if="!searchId">Nenhum ponto encontrado para esta campanha.</span>
     </div>
     
-    <div ng-if="totalPoints > pageSize" class="text-center">
-        <pagination 
+    <!-- Informações de paginação -->
+    <div ng-if="!loading && (totalPoints > 0 || searchId)" class="row" style="margin-top: 15px;">
+        <div class="col-md-6">
+            <p class="text-muted">
+                <span ng-if="!searchId">
+                    Exibindo {{((currentPage - 1) * pageSize) + 1}} - {{Math.min(currentPage * pageSize, totalPoints)}} de {{totalPoints}} pontos
+                </span>
+                <span ng-if="searchId && points.length > 0">
+                    {{points.length}} resultado(s) encontrado(s) para "{{searchId}}"
+                </span>
+            </p>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Pontos por página:</label>
+                <select class="form-control" style="width: 80px; display: inline-block;" 
+                        ng-model="pageSize" 
+                        ng-change="changePageSize()"
+                        ng-disabled="searchId">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Paginação -->
+    <div ng-if="!searchId && totalPoints > pageSize" class="text-center" style="margin-top: 10px;">
+        <uib-pagination 
             total-items="totalPoints" 
             ng-model="currentPage" 
             items-per-page="pageSize"
             ng-change="loadPoints()"
-            max-size="5">
-        </pagination>
+            max-size="7"
+            class="pagination-sm"
+            boundary-links="true"
+            rotate="false"
+            first-text="Primeira"
+            last-text="Última"
+            previous-text="Anterior"
+            next-text="Próxima">
+        </uib-pagination>
     </div>
 </div>
 <div class="modal-footer">

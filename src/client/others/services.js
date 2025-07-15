@@ -7,15 +7,17 @@ Application
 		this._parseParams = function(params) {
 			var result = '';
 
-			if(params.length > 0)
-				console.log('oi')
-				result += '?'
-
-			for(var key in params) {
-
-				result += key + '=' + params[key] + '&';
+			// Verificar se params é um objeto com propriedades
+			if(params && Object.keys(params).length > 0) {
+				result += '?';
+				
+				for(var key in params) {
+					if (params.hasOwnProperty(key) && params[key] !== null && params[key] !== undefined) {
+						result += key + '=' + encodeURIComponent(params[key]) + '&';
+					}
+				}
+				result = result.slice(0, -1); // Remove o último &
 			}
-			result = result.slice(0, -1);
 
 			return result;
 		}
@@ -67,6 +69,7 @@ Application
 				params = [];
 			}
 
+			url += this._parseParams(params);
 			$http.delete(url).success(function(response){
         callback(response);
       }.bind(this));
@@ -172,6 +175,43 @@ Application
 
 
   	}	
+  })
+  .service('capabilitiesService', function($http, $q) {
+    var self = this;
+    self.cache = null;
+    self.promise = null;
+    
+    this.getCapabilities = function() {
+      // Se já temos cache, retornar imediatamente
+      if (self.cache) {
+        return $q.resolve(self.cache);
+      }
+      
+      // Se já existe uma requisição em andamento, retornar a mesma promise
+      if (self.promise) {
+        return self.promise;
+      }
+      
+      // Fazer nova requisição e cachear
+      self.promise = $http.get('/service/sentinel/capabilities')
+        .then(function(response) {
+          self.cache = response.data;
+          self.promise = null; // Limpar promise após conclusão
+          return self.cache;
+        })
+        .catch(function(error) {
+          self.promise = null; // Limpar promise em caso de erro
+          throw error;
+        });
+      
+      return self.promise;
+    };
+    
+    // Método para limpar cache se necessário
+    this.clearCache = function() {
+      self.cache = null;
+      self.promise = null;
+    };
   })
   .service('fakeRequester', function(){
 

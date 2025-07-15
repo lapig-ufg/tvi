@@ -1,6 +1,6 @@
-'uses trict'
+'use strict'
 
-Application.controller('navController', function($rootScope, $scope, $location, $window, requester, util) {
+Application.controller('navController', function($rootScope, $scope, $location, $window, requester, util, i18nService) {
 
 	$rootScope.showNavInsp= false;
 	$rootScope.showNavSuper= false;
@@ -21,7 +21,7 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 		if($rootScope.campaignFinished){
 			window.open(`https://timeseries.lapig.iesa.ufg.br/api/analytics/tvi/${$rootScope.user.campaign._id}/csv?direct=true`, '_blank')
 		} else {
-			$window.alert(`A campanha não foi finalizada. Ainda há pontos para finalizarem as inspeções.`)
+			$window.alert(i18nService.translate('ALERTS.CAMPAIGN_NOT_FINISHED'))
 		}
 	};
 

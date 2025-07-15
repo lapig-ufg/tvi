@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>i18n Test</title>
+</head>
+<body ng-app="application">
+    <div ng-controller="TestController">
+        <h1>i18n Test Page</h1>
+        
+        <p>Current Language: {{currentLanguage}}</p>
+        <p>Translations Loaded: {{translationsLoaded}}</p>
+        
+        <language-selector></language-selector>
+        
+        <h2>Translation Tests:</h2>
+        <ul>
+            <li>COMMON.SEARCH: {{ 'COMMON.SEARCH' | i18n }}</li>
+            <li>NAVBAR.POINTS: {{ 'NAVBAR.POINTS' | i18n }}</li>
+            <li>LOGIN.TITLE: {{ 'LOGIN.TITLE' | i18n }}</li>
+        </ul>
+        
+        <h2>Direct Service Test:</h2>
+        <ul>
+            <li>COMMON.SAVE: {{directTranslation}}</li>
+        </ul>
+    </div>
+    
+    <script>
+        Application.controller('TestController', function($scope, i18nService) {
+            $scope.currentLanguage = i18nService.currentLanguage;
+            $scope.translationsLoaded = Object.keys(i18nService.translations).length > 0;
+            $scope.directTranslation = i18nService.translate('COMMON.SAVE');
+            
+            $scope.$on('languageChanged', function(event, lang) {
+                $scope.currentLanguage = lang;
+                $scope.directTranslation = i18nService.translate('COMMON.SAVE');
+                $scope.$apply();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -9,18 +9,20 @@ db = db.getSiblingDB('tvi');
 print("Criando índices para a coleção campaigns...");
 
 // Índices para campaigns
+// O índice _id já existe automaticamente, não precisa criar
+
 try {
-    db.campaign.createIndex({ "_id": -1 });
-    print("✓ Índice criado: campaigns._id (desc)");
+    db.campaign.createIndex({ "createdAt": -1 });
+    print("✓ Índice criado: campaigns.createdAt (desc)");
 } catch (e) {
-    print("Erro ao criar índice campaigns._id:", e.message);
+    print("Erro ao criar índice campaigns.createdAt:", e.message);
 }
 
 try {
-    db.campaign.createIndex({ "_id": -1, "createdAt": -1 });
-    print("✓ Índice criado: campaigns._id + createdAt (desc)");
+    db.campaign.createIndex({ "cachePriority": 1 });
+    print("✓ Índice criado: campaigns.cachePriority");
 } catch (e) {
-    print("Erro ao criar índice campaigns composto:", e.message);
+    print("Erro ao criar índice campaigns.cachePriority:", e.message);
 }
 
 print("\nCriando índices para a coleção points...");

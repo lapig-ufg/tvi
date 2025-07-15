@@ -37,19 +37,21 @@ const createIndexes = async () => {
             });
         });
 
-        // Índice para consultas de listagem ordenadas por data de criação (descendente)
-        await campaignCollection.createIndex({ _id: -1 });
-        console.log('✓ Índice criado: campaigns._id (desc)');
+        // O índice _id já existe automaticamente, não precisa criar
+        
+        // Índice para consultas de listagem ordenadas por data de criação
+        await campaignCollection.createIndex({ createdAt: -1 });
+        console.log('✓ Índice criado: campaigns.createdAt (desc)');
+        
+        // Índice para prioridade de cache
+        await campaignCollection.createIndex({ cachePriority: 1 });
+        console.log('✓ Índice criado: campaigns.cachePriority');
 
         // Índice para consultas por status/tipo se houver
         if (await hasField(campaignCollection, 'status')) {
             await campaignCollection.createIndex({ status: 1 });
             console.log('✓ Índice criado: campaigns.status');
         }
-
-        // Índice composto para paginação eficiente
-        await campaignCollection.createIndex({ _id: -1, createdAt: -1 });
-        console.log('✓ Índice criado: campaigns._id + createdAt (desc)');
 
         // Índices para a coleção points
         console.log('\nCriando índices para a coleção points...');

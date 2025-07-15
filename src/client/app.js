@@ -28,16 +28,69 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/admin-campaigns.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin/campaigns/manage/:id', {
+			controller: 'CampaignManagementController',
+			templateUrl: 'views/campaign-management.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/cache', {
+			controller: 'CacheManagerController',
+			templateUrl: 'views/cache-manager.tpl.html',
+			reloadOnSearch: false
+		})
 		.when('/login', {
 			controller: 'LoginController',
 			templateUrl: 'views/login.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/i18n-test', {
+			templateUrl: 'views/i18n-test.html',
+			reloadOnSearch: false
+		})
 		.otherwise({
-			redirectTo: '/login'
+			redirectTo: function() {
+				console.log('Otherwise route triggered, current path:', location.hash);
+				// Se estamos em rota admin, não redirecionar
+				if (location.hash && location.hash.indexOf('#/admin') === 0) {
+					console.log('Admin route detected in otherwise, staying put');
+					return location.hash.substring(1); // Remove # from hash
+				}
+				return '/login';
+			}
 		});
 
-}).run(function($http, $location, $rootScope, requester) {
+}).config(function($httpProvider) {
+	// Configurar interceptor HTTP
+	$httpProvider.interceptors.push(function($location, $rootScope) {
+		return {
+			'response': function(response) {
+				console.log('HTTP Response:', {
+					url: response.config.url,
+					status: response.status,
+					currentPath: $location.path(),
+					isAdminMode: $rootScope.isAdminMode
+				});
+				return response;
+			},
+			'responseError': function(rejection) {
+				console.error('HTTP Error:', {
+					url: rejection.config.url,
+					status: rejection.status,
+					currentPath: $location.path(),
+					isAdminMode: $rootScope.isAdminMode
+				});
+				return Promise.reject(rejection);
+			}
+		};
+	});
+}).run(function($http, $location, $rootScope, requester, i18nService) {
+	// Ensure i18n translations are loaded
+	console.log('[app] Ensuring i18n translations are loaded');
+	i18nService.ensureLoaded().then(function() {
+		console.log('[app] i18n translations loaded successfully');
+	}).catch(function(error) {
+		console.error('[app] Failed to load i18n translations:', error);
+	});
 
 	var socket = io.connect('/', {
 		transports: [ 'websocket' ]
@@ -57,8 +110,17 @@ Application.config(function($routeProvider, $locationProvider) {
 		var currentPath = $location.path();
 		var nextPath = next && next.$$route && next.$$route.originalPath;
 		
+		console.log('Route change intercepted:', {
+			currentPath: currentPath,
+			nextPath: nextPath,
+			isAdminMode: $rootScope.isAdminMode,
+			isAdminRouteCurrent: isAdminRoute(currentPath),
+			isAdminRouteNext: isAdminRoute(nextPath)
+		});
+		
 		// Completamente ignorar qualquer coisa relacionada a admin
 		if (isAdminRoute(currentPath) || isAdminRoute(nextPath) || $rootScope.isAdminMode) {
+			console.log('Admin route detected, ignoring interceptor');
 			return;
 		}
 		
@@ -66,18 +128,22 @@ Application.config(function($routeProvider, $locationProvider) {
 		var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard'];
 		var isMainSystemRoute = nextPath && mainSystemRoutes.includes(nextPath);
 		
+		console.log('Main system route check:', { nextPath: nextPath, isMainSystemRoute: isMainSystemRoute });
+		
 		if (isMainSystemRoute) {
+			console.log('Checking login for main system route');
 			requester._get('login/user', function(result) {
 				if(!result) {
-					$location.path('login');
+					console.log('No user found, redirecting to /login');
+					$location.path('/login');
 				} else {
 					$rootScope.user = result;
 
 					if(result.type == 'supervisor'){
-						$location.path('supervisor');
+						$location.path('/supervisor');
 					}
 					else if(result.type == 'inspector') {
-						$location.path('temporal');
+						$location.path('/temporal');
 					}
 				}
 			});
@@ -88,18 +154,27 @@ Application.config(function($routeProvider, $locationProvider) {
 	var currentPath = $location.path();
 	var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard', '/login', '/'];
 	
+	console.log('Initial route check:', {
+		currentPath: currentPath,
+		isAdminRoute: isAdminRoute(currentPath),
+		isMainSystemRoute: mainSystemRoutes.includes(currentPath),
+		shouldCheck: !isAdminRoute(currentPath) && (mainSystemRoutes.includes(currentPath) || currentPath === '')
+	});
+	
 	if (!isAdminRoute(currentPath) && (mainSystemRoutes.includes(currentPath) || currentPath === '')) {
+		console.log('Running initial login check for main system');
 		requester._get('login/user', function(result) {
 			if(!result) {
-				$location.path('login');
+				console.log('Initial check: No user found, redirecting to /login');
+				$location.path('/login');
 			} else {
 				$rootScope.user = result;
 
 				if(result.type == 'supervisor'){
-					$location.path('supervisor');
+					$location.path('/supervisor');
 				}
 				else if(result.type == 'inspector') {
-					$location.path('temporal');
+					$location.path('/temporal');
 				}
 			}
 		});

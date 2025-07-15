@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout) {
+Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService) {
     $scope.showCharts = false
     $scope.showChartsLandsat = false
     $scope.showChartsNDDI = false
@@ -56,7 +56,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.size = 4;
         $scope.onSubmission = false;
         $scope.period = 'DRY';
-        $scope.periodo = 'SECO';
+        $scope.periodo = i18nService.translate('PERIODS.DRY');
         $scope.pointEnabled = true;
         $scope.config = {
             initialYear: $rootScope.user.campaign.initialYear,

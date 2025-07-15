@@ -2,15 +2,17 @@
   <nav class="navbar navbar-inverse container-fluid" ng-show="user.type == 'inspector'">
     <div class="blog-masthead row">
       <div class="col-md-6">
-          <span class="navbar-brand" style="font-weight: 900;">{{current}}/{{total}} Pontos</span>
+          <span class="navbar-brand" style="font-weight: 900;">{{current}}/{{total}} {{ 'NAVBAR.POINTS' | i18n }}</span>
       </div>
       <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-      <label class="pull-right">
-        <button style="margin-top: 7px;" type="button" class="btn btn-danger" href="#" class="glyphicon glyphicon-off" ng-click="logoff()" style="color:white">Sair</button>
+        <label class="pull-right">
+          <button style="margin-top: 7px;" type="button" class="btn btn-danger" href="#" class="glyphicon glyphicon-off" ng-click="logoff()" style="color:white">{{ 'COMMON.LOGOUT' | i18n }}</button>
         </label>
+        <!-- Language Selector for Inspector -->
+        <language-selector class="pull-right" style="margin-right: 10px; margin-top: 11px;"></language-selector>
         <label class="user-info pull-right">
           <b>{{user.name}}</b><br>
-          {{count}} ponto(s) inspecionado(s)
+          {{count}} {{ 'NAVBAR.INSPECTED_POINTS' | i18n }}
         </label>
       </div>
     </div>
@@ -19,14 +21,16 @@
     <div class="blog-masthead row">
       <div class="col-md-12">
         <ul class="col-md-4 nav navbar-nav" style="float: left; margin-top: 9px; margin-left: -10px">
-          <a ng-href="#/dashboard" style="color: white">&nbsp;Dashboard</a>&nbsp;&nbsp;&nbsp;&nbsp;<a ng-href="#/supervisor" style="color: white">Pontos</a>
+          <a ng-href="#/dashboard" style="color: white">&nbsp;{{ 'NAVBAR.DASHBOARD' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;<a ng-href="#/supervisor" style="color: white">{{ 'NAVBAR.POINTS' | i18n }}</a>
         </ul>
         <div class="col-md-4" ng-show="user" style="float: left">
           <h3><center><span style="color: #FFFFFF"> {{user.campaign._id}} </span></center></h3> 
         </div>  
         <div class="col-md-4" style="display: flex; justify-content: flex-end; align-items: center;">
-          <button type="button" class="btn btn-success" href="#" ng-click="downloadFinalReport()" style="color:white; margin-right: 5px">Relatório de Inspeções</button>
-          <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">Sair</button>
+          <!-- Language Selector -->
+          <language-selector style="margin-right: 10px;"></language-selector>
+          <button type="button" class="btn btn-success" href="#" ng-click="downloadFinalReport()" style="color:white; margin-right: 5px">{{ 'NAVBAR.INSPECTION_REPORT' | i18n }}</button>
+          <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">{{ 'COMMON.LOGOUT' | i18n }}</button>
         </div>
       </div>
     </div>

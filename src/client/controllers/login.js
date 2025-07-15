@@ -1,6 +1,6 @@
-'uses trict';
+'use strict';
 
-Application.controller('LoginController', function($rootScope, $scope, $location, $window, requester, util) {
+Application.controller('LoginController', function($rootScope, $scope, $location, $window, requester, util, i18nService) {
 
 	$scope.showMsg = false;
 	$scope.showForm = true;

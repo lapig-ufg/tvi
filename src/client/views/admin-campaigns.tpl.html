@@ -10,6 +10,9 @@
                     <button class="btn btn-success" ng-click="createCampaign()" style="margin-left: 15px;">
                         <i class="glyphicon glyphicon-plus"></i> Nova Campanha
                     </button>
+                    <a href="#/admin/cache" class="btn btn-info" style="margin-left: 5px;">
+                        <i class="glyphicon glyphicon-hdd"></i> Cache Manager
+                    </a>
                     <button class="btn btn-default" ng-click="logout()" style="margin-left: 5px;">
                         <i class="glyphicon glyphicon-log-out"></i> Sair
                     </button>
@@ -27,12 +30,162 @@
     
     <div class="row" ng-hide="loading">
         <div class="col-lg-12">
+            <!-- Filtros Avançados -->
+            <div class="panel panel-default" style="margin-bottom: 20px;">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse"  aria-expanded="false" ng-click="toggleFilters()">
+                            <i class="glyphicon" ng-class="{'glyphicon-chevron-down': !showFilters, 'glyphicon-chevron-up': showFilters}"></i>
+                            Filtros Avançados
+                            <span class="label label-info" ng-show="hasActiveFilters()">{{getActiveFiltersCount()}} ativo(s)</span>
+                        </a>
+                    </h4>
+                </div>
+                <div id="advancedFilters" class="panel-collapse collapse" ng-class="{in: showFilters}">
+                    <div class="panel-body">
+                        <div class="row">
+                            <!-- Filtro por ID/Nome -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>ID da Campanha:</label>
+                                    <input type="text" class="form-control input-sm" 
+                                           ng-model="filters.campaignId" 
+                                           placeholder="Digite ID da campanha">
+                                </div>
+                            </div>
+                            
+                            <!-- Filtro por Período -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Ano Inicial:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.initialYear">
+                                        <option value="">Todos</option>
+                                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Ano Final:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.finalYear">
+                                        <option value="">Todos</option>
+                                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtro por Número de Inspeções -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Nº Inspeções:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.numInspec">
+                                        <option value="">Todos</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Filtro por Status -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Status do Progresso:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.progressStatus">
+                                        <option value="">Todos</option>
+                                        <option value="empty">Sem pontos (0%)</option>
+                                        <option value="started">Iniciada (1-99%)</option>
+                                        <option value="completed">Completa (100%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtro por Tipo de Imagem -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Tipo de Imagem:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.imageType">
+                                        <option value="">Todos</option>
+                                        <option value="landsat">Landsat</option>
+                                        <option value="sentinel">Sentinel</option>
+                                        <option value="planet">Planet</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtro por Configurações -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Configurações:</label>
+                                    <div class="checkbox-inline">
+                                        <label>
+                                            <input type="checkbox" ng-model="filters.showTimeseries">
+                                            Timeseries
+                                        </label>
+                                    </div>
+                                    <div class="checkbox-inline">
+                                        <label>
+                                            <input type="checkbox" ng-model="filters.showPointInfo">
+                                            Point Info
+                                        </label>
+                                    </div>
+                                    <div class="checkbox-inline">
+                                        <label>
+                                            <input type="checkbox" ng-model="filters.useDynamicMaps">
+                                            Dynamic Maps
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ordenação -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Ordenar por:</label>
+                                    <select class="form-control input-sm" 
+                                            ng-model="filters.sortBy">
+                                        <option value="_id">Data de Criação (Mais recente)</option>
+                                        <option value="campaignId">ID da Campanha</option>
+                                        <option value="initialYear">Ano Inicial</option>
+                                        <option value="finalYear">Ano Final</option>
+                                        <option value="totalPoints">Número de Pontos</option>
+                                        <option value="progress">Progresso</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <button class="btn btn-default btn-sm" ng-click="clearFilters()">
+                                    <i class="glyphicon glyphicon-remove"></i> Limpar Filtros
+                                </button>
+                                <button class="btn btn-primary btn-sm" ng-click="applyFilters()" style="margin-left: 5px;">
+                                    <i class="glyphicon glyphicon-search"></i> Aplicar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Informações de paginação -->
             <div class="row" style="margin-bottom: 15px;">
                 <div class="col-sm-6">
                     <p class="text-muted">
                         Mostrando {{campaigns.length}} de {{pagination.totalCampaigns}} campanhas
                         (Página {{pagination.currentPage}} de {{pagination.totalPages}})
+                        <span ng-show="hasActiveFilters()" class="label label-warning">Filtrado</span>
                     </p>
                 </div>
                 <div class="col-sm-6 text-right">
@@ -86,6 +239,10 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-success" ng-click="manageCampaign(campaign)" 
+                                            title="Gerenciar campanha">
+                                        <i class="glyphicon glyphicon-cog"></i>
+                                    </button>
                                     <button class="btn btn-primary" ng-click="editCampaign(campaign)" 
                                             title="Editar campanha">
                                         <i class="glyphicon glyphicon-pencil"></i>
@@ -125,14 +282,14 @@
                         <ul class="pagination">
                             <!-- Primeira página -->
                             <li ng-class="{disabled: !pagination.hasPrev}">
-                                <a href="#" ng-click="goToPage(1)" ng-disabled="!pagination.hasPrev">
+                                <a href="" ng-click="goToPage(1); $event.preventDefault()" ng-disabled="!pagination.hasPrev">
                                     <i class="glyphicon glyphicon-fast-backward"></i>
                                 </a>
                             </li>
                             
                             <!-- Página anterior -->
                             <li ng-class="{disabled: !pagination.hasPrev}">
-                                <a href="#" ng-click="prevPage()" ng-disabled="!pagination.hasPrev">
+                                <a href="" ng-click="prevPage(); $event.preventDefault()" ng-disabled="!pagination.hasPrev">
                                     <i class="glyphicon glyphicon-chevron-left"></i>
                                 </a>
                             </li>
@@ -140,19 +297,19 @@
                             <!-- Páginas numeradas -->
                             <li ng-repeat="page in getPages()" 
                                 ng-class="{active: page === pagination.currentPage}">
-                                <a href="#" ng-click="goToPage(page)">{{page}}</a>
+                                <a href="" ng-click="goToPage(page); $event.preventDefault()">{{page}}</a>
                             </li>
                             
                             <!-- Próxima página -->
                             <li ng-class="{disabled: !pagination.hasNext}">
-                                <a href="#" ng-click="nextPage()" ng-disabled="!pagination.hasNext">
+                                <a href="" ng-click="nextPage(); $event.preventDefault()" ng-disabled="!pagination.hasNext">
                                     <i class="glyphicon glyphicon-chevron-right"></i>
                                 </a>
                             </li>
                             
                             <!-- Última página -->
                             <li ng-class="{disabled: !pagination.hasNext}">
-                                <a href="#" ng-click="goToPage(pagination.totalPages)" ng-disabled="!pagination.hasNext">
+                                <a href="" ng-click="goToPage(pagination.totalPages); $event.preventDefault()" ng-disabled="!pagination.hasNext">
                                     <i class="glyphicon glyphicon-fast-forward"></i>
                                 </a>
                             </li>

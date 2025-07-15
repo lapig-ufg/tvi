@@ -59,7 +59,7 @@ module.exports = function (app) {
                     if (err) return callback(err);
                     
                     // Garantir que as coleções necessárias existam
-                    var requiredCollections = ['campaign', 'points', 'users'];
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -74,7 +74,12 @@ module.exports = function (app) {
                         }
                     };
                     
-                    async.each(requiredCollections, ensureCollection, callback);
+                    async.each(requiredCollections, ensureCollection, function(err) {
+                        if (err) return callback(err);
+                        
+                        // Criar índices para melhorar performance
+                        Repository.createIndexes(callback);
+                    });
                 })
             });
         });
@@ -113,6 +118,86 @@ module.exports = function (app) {
 
     Repository.get = function (collectionName, callback) {
         Repository.db.collection(collectionName, callback);
+    };
+
+    // Criar índices para melhorar performance das consultas
+    Repository.createIndexes = function(callback) {
+        console.log('Criando índices para otimização de performance...');
+        
+        async.series([
+            // Índices para collection points
+            function(cb) {
+                if (!Repository.collections.points) return cb();
+                
+                Repository.collections.points.createIndexes([
+                    // Índice composto para consultas por campanha e status
+                    { key: { campaign: 1, _id: 1 }, name: 'campaign_id' },
+                    { key: { campaign: 1, userName: 1 }, name: 'campaign_userName' },
+                    { key: { campaign: 1, cached: 1 }, name: 'campaign_cached' },
+                    { key: { campaign: 1, uf: 1 }, name: 'campaign_uf' },
+                    { key: { campaign: 1, biome: 1 }, name: 'campaign_biome' },
+                    { key: { campaign: 1, county: 1, uf: 1 }, name: 'campaign_county_uf' },
+                    { key: { campaign: 1, mode: 1 }, name: 'campaign_mode' },
+                    // Índice para contagem de inspeções
+                    { key: { campaign: 1, 'inspection.counter': 1 }, name: 'campaign_inspection_counter' },
+                    // Índice para data de importação
+                    { key: { dateImport: -1 }, name: 'dateImport_desc' },
+                    // Índice para cache
+                    { key: { cached: 1, enhance_in_cache: 1 }, name: 'cached_enhance' }
+                ], function(err) {
+                    if (err) {
+                        console.error('Erro ao criar índices para points:', err);
+                    } else {
+                        console.log('Índices criados para collection points');
+                    }
+                    cb();
+                });
+            },
+            // Índices para collection campaign
+            function(cb) {
+                if (!Repository.collections.campaign) return cb();
+                
+                Repository.collections.campaign.createIndexes([
+                    // O índice _id já existe automaticamente, não precisa criar
+                    // Índice para busca por data de criação
+                    { key: { createdAt: -1 }, name: 'createdAt_desc' },
+                    // Índice para busca por tipo de imagem
+                    { key: { imageType: 1 }, name: 'imageType' },
+                    // Índice para prioridade de cache
+                    { key: { cachePriority: 1 }, name: 'cachePriority' }
+                ], function(err) {
+                    if (err) {
+                        console.error('Erro ao criar índices para campaign:', err);
+                    } else {
+                        console.log('Índices criados para collection campaign');
+                    }
+                    cb();
+                });
+            },
+            // Índices para collection users
+            function(cb) {
+                if (!Repository.collections.users) return cb();
+                
+                Repository.collections.users.createIndexes([
+                    { key: { username: 1 }, unique: true, name: 'username_unique' },
+                    { key: { username: 1, role: 1 }, name: 'username_role' }
+                ], function(err) {
+                    if (err && err.code !== 11000) { // Ignorar erro de duplicação
+                        console.error('Erro ao criar índices para users:', err);
+                    } else {
+                        console.log('Índices criados para collection users');
+                    }
+                    cb();
+                });
+            }
+        ], function(err) {
+            if (err) {
+                console.error('Erro ao criar índices:', err);
+            } else {
+                console.log('Todos os índices foram criados com sucesso');
+            }
+            callback();
+        });
     };
 
     return Repository;

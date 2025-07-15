@@ -438,7 +438,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, $http) {
+    .directive('landsatMap', function ($timeout, capabilitiesService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -471,11 +471,11 @@ Application
 
           /* ---------- buscar capabilities ---------- */
           function fetchCapabilities() {
-            $http.get('/service/sentinel/capabilities')
-              .then(function(response) {
-                if (response.data && response.data.length > 0) {
+            capabilitiesService.getCapabilities()
+              .then(function(data) {
+                if (data && data.length > 0) {
                   // Encontrar a capability específica do Landsat
-                  const landsatCap = response.data.find(c => c.name === 'landsat');
+                  const landsatCap = data.find(c => c.name === 'landsat');
                   if (landsatCap) {
                     $scope.tilesCapabilities = landsatCap;
                     validateYearAndPeriod();
@@ -530,7 +530,7 @@ Application
             // Salvar preferência no localStorage
             localStorage.setItem('landsat_visparam', $scope.selectedVisparam);
             
-            return `https://tm{s}.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
+            return `https://tiles.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
               `?period=${$scope.period}` +
               `&year=${$scope.year}` +
               `&visparam=${$scope.selectedVisparam}`;

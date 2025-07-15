@@ -343,24 +343,25 @@ module.exports = function(app){
 
 	Dashboard.memberStatus = function(request, response) {
 		var campaign = request.session.user.campaign;
-		var result = {};
-		var count = 0;
+		var cursor = status.find({'campaign': campaign._id});
 
-		status.count({'campaign': campaign._id}, function(error, numDocs) {
-			status.find({'campaign': campaign._id}).forEach(function(colStatus) {
-				count++;
+		cursor.toArray(function(error, docs) {
+			if (error) {
+				console.error('Erro ao buscar status dos membros:', error);
+				response.status(500).send({ error: 'Erro ao buscar status dos membros' });
+				return;
+			}
 
-				if(count < numDocs) {
-					result[count] = colStatus
+			var result = {};
+			
+			// Converter array em objeto indexado
+			docs.forEach(function(doc, index) {
+				result[index + 1] = doc;
+			});
 
-				} else {
-					result[count] = colStatus
-
-					response.send(result);
-					response.end();
-				}
-			})
-  	})
+			response.send(result);
+			response.end();
+		});
 	}
 
 	return Dashboard;
