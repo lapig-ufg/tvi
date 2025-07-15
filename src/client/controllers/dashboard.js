@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('dashboardController', function($rootScope, $scope, $location, $interval, $window, $timeout, requester, fakeRequester, util) {
+Application.controller('dashboardController', function($rootScope, $scope, $location, $interval, $window, $timeout, requester, fakeRequester, util, i18nService) {
 	
 	var chartsGd = [];
 	
@@ -145,7 +145,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		// Verificar se há dados válidos
 		if (!data || !data.ninspection || !data.usernames || 
 			data.ninspection.length === 0 || data.usernames.length === 0) {
-			showNoDataMessage(gd, 'Número de pontos inspecionados', 400);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.INSPECTED_POINTS'), 400);
 			return;
 		}
 		
@@ -173,7 +173,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				fixedrange: true,
 				gridwidth: 2
 			},
-			title: 'Número de pontos inspecionados',
+			title: i18nService.translate('DASHBOARD.INSPECTED_POINTS'),
 			titlefont: {
 				size: 18
 			}
@@ -192,7 +192,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		
 		// Verificar se há dados válidos
 		if (!data || (data.pointsComplet === undefined && data.pointsInspection === undefined && data.pointsNoComplet === undefined)) {
-			showNoDataMessage(gd, 'Número de inspeções', 500);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.INSPECTIONS_NUMBER'), 500);
 			return;
 		}
 		
@@ -201,14 +201,14 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			marker: {
 				colors: ['rgba(44,160,44,0.9)','rgba(221,221,42,0.9)','rgba(237,19,21,0.85)']
 			},
-			labels: ['Inspeções completas', 'Inspeções incompletas', 'Sem inspeções'],
+			labels: [i18nService.translate('DASHBOARD.COMPLETE_INSPECTIONS'), i18nService.translate('DASHBOARD.INCOMPLETE_INSPECTIONS'), i18nService.translate('DASHBOARD.NO_INSPECTIONS')],
 			type: 'pie',
 			hoverinfo: 'label+value'
 		}];
 		
 		var layout = {
 			height: 500,
-			title: 'Número de inspeções',
+			title: i18nService.translate('DASHBOARD.INSPECTIONS_NUMBER'),
 			titlefont: {
 				size: 18
 			}
@@ -227,7 +227,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		
 		// Verificar se há dados válidos
 		if (!data || Object.keys(data).length === 0) {
-			showNoDataMessage(gd, 'Média de tempo por ponto inspecionado', 400);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.AVG_TIME_PER_POINT'), 400);
 			return;
 		}
 		
@@ -260,7 +260,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				fixedrange: true,
 				gridwidth: 2
 			},
-			title: 'Média de tempo por ponto inspecionado',
+			title: i18nService.translate('DASHBOARD.AVG_TIME_PER_POINT'),
 			titlefont: {
 				size: 18
 			}
@@ -279,7 +279,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		
 		// Verificar se há dados válidos
 		if (!data || (data.pointsCached === undefined && data.pointsNoCached === undefined)) {
-			showNoDataMessage(gd, 'Total de pontos armazenados', 500);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.TOTAL_STORED_POINTS'), 500);
 			return;
 		}
 		
@@ -288,14 +288,14 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			marker: {
 				colors: ['rgba(29,84,54,0.9)','rgba(208,201,26,0.9)']
 			},
-			labels: ['Pontos com cache', 'Pontos sem cache'],
+			labels: [i18nService.translate('DASHBOARD.POINTS_WITH_CACHE'), i18nService.translate('DASHBOARD.POINTS_WITHOUT_CACHE')],
 			type: 'pie',
 			hoverinfo: 'label+value'
 		}];
 		
 		var layout = {
 			height: 500,
-			title: 'Total de pontos armazenados',
+			title: i18nService.translate('DASHBOARD.TOTAL_STORED_POINTS'),
 			titlefont: {
 				size: 18
 			}
@@ -314,7 +314,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		
 		// Verificar se há dados válidos
 		if (!data || Object.keys(data).length === 0) {
-			showNoDataMessage(gd, 'Número de pontos com concordância', 500);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.POINTS_WITH_AGREEMENT'), 500);
 			return;
 		}
 		
@@ -360,7 +360,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			marker: {
 				color: 'rgba(32,128,72,0.8)'
 			},
-			name: 'Pontos com concordância',
+			name: i18nService.translate('DASHBOARD.POINTS_WITH_AGREEMENT'),
 			type: 'bar',
 			orientation: 'h',
 			hoverinfo: 'x'
@@ -372,7 +372,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			marker: {
 				color: 'rgba(65,105,225,0.8)'
 			},
-			name: 'Pontos alterados',
+			name: i18nService.translate('DASHBOARD.POINTS_CHANGED'),
 			type: 'bar',
 			orientation: 'h',
 			hoverinfo: 'x'
@@ -384,7 +384,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 			marker: {
 				color: 'rgba(255,127,14,0.8)'
 			},
-			name: 'Pontos sem concordância',
+			name: i18nService.translate('DASHBOARD.POINTS_WITHOUT_AGREEMENT'),
 			type: 'bar',
 			orientation: 'h',
 			hoverinfo: 'x'
@@ -404,7 +404,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				fixedrange: true,
 				gridwidth: 2
 			},
-			title: 'Número de pontos com concordância',
+			title: i18nService.translate('DASHBOARD.POINTS_WITH_AGREEMENT'),
 			titlefont: {
 				size: 18
 			},
@@ -424,7 +424,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 		
 		// Verificar se há dados válidos
 		if (!data || Object.keys(data).length === 0) {
-			showNoDataMessage(gd, 'Média de votos por cobertura em %', 500);
+			showNoDataMessage(gd, i18nService.translate('DASHBOARD.AVG_VOTES_BY_COVERAGE'), 500);
 			return;
 		}
 		
@@ -460,7 +460,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				fixedrange: true,
 				gridwidth: 2
 			},
-			title: 'Média de votos por cobertura em %',
+			title: i18nService.translate('DASHBOARD.AVG_VOTES_BY_COVERAGE'),
 			titlefont: {
 				size: 18
 			}
@@ -503,7 +503,7 @@ Application.controller('dashboardController', function($rootScope, $scope, $loca
 				visible: false
 			},
 			annotations: [{
-				text: 'Nenhum dado disponível',
+				text: i18nService.translate('DASHBOARD.NO_DATA_AVAILABLE'),
 				xref: 'paper',
 				yref: 'paper',
 				showarrow: false,

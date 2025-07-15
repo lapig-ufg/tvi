@@ -116,10 +116,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }
 
             $scope.onSubmission = true;
+            $scope.showloading = true;
 
             requester._post('points/update-point', {"point": formPoint}, function (data) {
                 if (data.success) {
                     requester._get('points/next-point', loadPoint);
+                } else {
+                    $scope.showloading = false;
+                    $scope.onSubmission = false;
                 }
             });
         }
@@ -632,6 +636,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             Plotly.purge('NDDI');
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
+            $scope.showloading = false;
             $scope.onSubmission = false;
             $scope.pointLoaded = true;
             $scope.point = data.point;
@@ -659,7 +664,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         initCounter();
-
+        
+        $scope.showloading = true;
         requester._get('points/next-point', loadPoint);
 
         // requester._get('mapbiomas/capabilities',function(mosaics) {

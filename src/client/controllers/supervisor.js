@@ -70,13 +70,13 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
 
         $scope.dataTab = [
-            {"name": "Usuários", "checked": true},
-            {"name": "Pontos", "checked": false}
+            {"name": i18nService.translate('TABS.USERS'), "checked": true},
+            {"name": i18nService.translate('TABS.POINTS'), "checked": false}
         ];
 
         $scope.dataTimePoints = [
-            {"data": "Tempo de inspeção do ponto (s)"},
-            {"data": "Tempo médio de todos os pontos (s)"}
+            {"data": i18nService.translate('CHARTS.POINT_INSPECTION_TIME')},
+            {"data": i18nService.translate('CHARTS.AVG_TIME_ALL_POINTS')}
         ];
 
         $scope.sortTimeInspection = function (element) {
@@ -134,7 +134,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
             $scope.newValue = !$scope.newValue;
             $scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
-            $scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
+            $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.WET') : i18nService.translate('PERIODS.DRY');
             generateMaps();
         }
 
@@ -277,7 +277,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             x: dry,
                             y: trace2NDVI(data.values, dry),
                             text: dry,
-                            name: 'Landsat (Seco)',
+                            name: 'Landsat (' + i18nService.translate('PERIODS.DRY') + ')',
                             hoverinfo: "none",
                             mode: 'markers',
                             marker: {
@@ -290,7 +290,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             x: wet,
                             y: trace2NDVI(data.values, wet),
                             text: wet,
-                            name: 'Landsat (Chuvoso)',
+                            name: 'Landsat (' + i18nService.translate('PERIODS.WET') + ')',
                             hoverinfo: "none",
                             mode: 'markers',
                             marker: {
@@ -331,7 +331,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             x: precData,
                             y: precValue,
                             text: precText,
-                            name: 'Precipitação',
+                            name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                             hoverinfo: 'text+y',
                             opacity: 0.5,
                             mode: 'markers',
@@ -368,7 +368,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                                 rangemode: "nonnegative"
                             },
                             yaxis5: {
-                                title: 'Precipitação',
+                                title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                                 fixedrange: true,
                                 overlaying: 'y',
                                 side: 'right'
@@ -428,7 +428,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         x: data[2].x,
                         y: data[2].y,
                         type: "bar",
-                        name: "Precipitation",
+                        name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                         marker: {
                             color: "blue"
                         },
@@ -457,7 +457,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             rangemode: "nonnegative"
                         },
                         yaxis2: {
-                            title: "Precipitação (mm)",
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
                             fixedrange: true
@@ -618,16 +618,18 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             }
 
-            if ($scope.selectedLandUse && $scope.selectedLandUse != 'Todos')
+            var allText = i18nService.translate('COMMON.ALL');
+            
+            if ($scope.selectedLandUse && $scope.selectedLandUse != allText)
                 filter["landUse"] = $scope.selectedLandUse;
 
-            if ($scope.selectUserNames && $scope.selectUserNames != 'Todos')
+            if ($scope.selectUserNames && $scope.selectUserNames != allText)
                 filter["userName"] = $scope.selectUserNames;
 
-            if ($scope.selectBiomes && $scope.selectBiomes != 'Todos')
+            if ($scope.selectBiomes && $scope.selectBiomes != allText)
                 filter["biome"] = $scope.selectBiomes;
 
-            if ($scope.selectUf && $scope.selectUf != 'Todos')
+            if ($scope.selectUf && $scope.selectUf != allText)
                 filter["uf"] = $scope.selectUf;
 
             if ($scope.typeSort == 'timeInspection') {
@@ -662,9 +664,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     var flagError = true
 
                     for (var i = 0; i < $scope.objConsolidated.length; i++) {
-                        if ($scope.objConsolidated[i] == 'Não consolidado') {
+                        if ($scope.objConsolidated[i] == i18nService.translate('COMMON.NOT_CONSOLIDATED')) {
                             if (flagError)
-                                window.alert("Falha na operação, preencha todos os campos");
+                                window.alert(i18nService.translate('ALERTS.FILL_ALL_FIELDS'));
                             flagError = false;
 
                         } else {
@@ -703,11 +705,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var landUseFilter = function (filter) {
             requester._get('points/landUses', filter, function (landUses) {
-                landUses.unshift('Todos');
-                landUses.push('Não Consolidados');
+                landUses.unshift(i18nService.translate('COMMON.ALL'));
+                landUses.push(i18nService.translate('COMMON.NOT_CONSOLIDATED'));
 
                 if (filter.landUse == undefined)
-                    filter.landUse = 'Todos';
+                    filter.landUse = i18nService.translate('COMMON.ALL');
 
                 $scope.selectedLandUse = filter.landUse;
                 $scope.landUses = landUses;
@@ -716,10 +718,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var usersFilter = function (filter) {
             requester._get('points/users', filter, function (userNames) {
-                userNames.unshift('Todos');
+                userNames.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.userName == undefined)
-                    filter.userName = 'Todos';
+                    filter.userName = i18nService.translate('COMMON.ALL');
 
                 $scope.selectUserNames = filter.userName;
                 $scope.userNames = userNames;
@@ -728,10 +730,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var biomeFilter = function (filter) {
             requester._get('points/biome', filter, function (biomes) {
-                biomes.unshift('Todos');
+                biomes.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.biome == undefined)
-                    filter.biome = 'Todos';
+                    filter.biome = i18nService.translate('COMMON.ALL');
 
                 $scope.selectBiomes = filter.biome;
                 $scope.biomes = biomes;
@@ -740,10 +742,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var ufFilter = function (filter) {
             requester._get('points/uf', filter, function (stateUF) {
-                stateUF.unshift('Todos');
+                stateUF.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.uf == undefined)
-                    filter.uf = 'Todos';
+                    filter.uf = i18nService.translate('COMMON.ALL');
 
                 $scope.selectUf = filter.uf;
                 $scope.stateUF = stateUF;
@@ -785,9 +787,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 
+            // Se não há pontos com o filtro atual, avisar o usuário mas continuar
             if(data.totalPoints === 0){
-                alert('Não foram encontrados pontos não consolidados.');
-                return;
+                // Não bloquear - apenas informar o usuário
+                console.warn('No points found with current filters');
+                // Podemos opcionalmente mostrar uma mensagem mais amigável
+                if (!data.point) {
+                    alert(i18nService.translate('ALERTS.NO_UNCONSOLIDATED_POINTS'));
+                    return;
+                }
             }
             $scope.campaign = data.campaign;
             $scope.objConsolidated = data.point.classConsolidated;
@@ -830,7 +838,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 "campaign": $rootScope.user.campaign._id
             }, function (data) {
                 $scope.showloading = false;
-                $window.alert(data ? `Pontos corrigidos: ${data}` : 'Companha sem problemas com as inspeções.')
+                $window.alert(data ? i18nService.translate('ALERTS.POINTS_CORRECTED', {count: data}) : i18nService.translate('ALERTS.CAMPAIGN_NO_ISSUES'))
             });
         }
 
@@ -855,11 +863,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             window.open('service/campaign/csv-borda', '_blank')
         };
         $scope.removeInspections = () => {
-            if (confirm(`Are you sure you want to remove the inspections from the point identified as ${$scope.point._id}?
-             Be aware that once the removal is completed, it will no longer be possible to reverse this action.`)) {
+            if (confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: $scope.point._id}))) {
                 requester._get(`campaign/removeInspections?pointId=${$scope.point._id}`, function (data) {
                     if(data) {
-                        alert(`The inspections from point: ${$scope.point._id} were successfully removed.`);
+                        alert(i18nService.translate('ALERTS.INSPECTIONS_REMOVED', {pointId: $scope.point._id}));
                         $scope.submit($scope.point.index);
                     }
                 });

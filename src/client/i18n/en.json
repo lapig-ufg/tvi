@@ -13,7 +13,9 @@
     "LOADING": "Loading...",
     "LOGOUT": "Logout",
     "SECONDS": "seconds",
-    "CHOOSE": "Choose"
+    "CHOOSE": "Choose",
+    "ALL": "All",
+    "NOT_CONSOLIDATED": "Not Consolidated"
   },
   "NAVBAR": {
     "POINTS": "Points",
@@ -131,7 +133,13 @@
     "CAMPAIGN_NOT_FOUND": "Campaign not found",
     "CANNOT_DELETE_CAMPAIGN_WITH_POINTS": "Cannot delete campaigns with associated points",
     "DELETE_CAMPAIGN_CONFIRM": "Are you sure you want to delete this campaign? This action cannot be undone!",
-    "FEATURE_COMING_SOON": "Class management functionality will be implemented soon"
+    "FEATURE_COMING_SOON": "Class management functionality will be implemented soon",
+    "FILL_ALL_FIELDS": "Operation failed, please fill in all fields",
+    "NO_UNCONSOLIDATED_POINTS": "No unconsolidated points found.",
+    "POINTS_CORRECTED": "Points corrected: {{count}}",
+    "CAMPAIGN_NO_ISSUES": "Campaign has no issues with inspections.",
+    "CONFIRM_REMOVE_INSPECTIONS": "Are you sure you want to remove the inspections from the point identified as {{pointId}}?\nBe aware that once the removal is completed, it will no longer be possible to reverse this action.",
+    "INSPECTIONS_REMOVED": "The inspections from point {{pointId}} were successfully removed."
   },
   "DASHBOARD": {
     "INSPECTED_POINTS": "Number of inspected points",
@@ -147,7 +155,13 @@
     "POINTS_CHANGED": "Changed points",
     "POINTS_WITHOUT_AGREEMENT": "Points without agreement",
     "AVG_VOTES_BY_COVERAGE": "Average votes by coverage in %",
-    "NO_DATA_AVAILABLE": "No data available"
+    "NO_DATA_AVAILABLE": "No data available",
+    "TABLE": {
+      "NAME": "Name",
+      "STATUS": "Status",
+      "CURRENT_POINT": "Current Point",
+      "DATE": "Date"
+    }
   },
   "CACHE": {
     "PROCESSING_STARTED": "Starting processing of {{totalPoints}} points in {{totalBatches}} batches",

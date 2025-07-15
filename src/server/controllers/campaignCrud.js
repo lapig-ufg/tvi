@@ -523,22 +523,7 @@ module.exports = function(app) {
                 initialYear: parseInt(campaignData.initialYear) || 1985,
                 finalYear: parseInt(campaignData.finalYear) || 2024,
                 password: campaignData.password || null,
-                landUse: campaignData.landUse || [
-                    "Pastagem Natural", 
-                    "Vegetação nativa", 
-                    "Pastagem Cultivada", 
-                    "Não observado", 
-                    "Agricultura Anual", 
-                    "Em regeneração", 
-                    "Agricultura Perene", 
-                    "Mosaico de ocupação", 
-                    "Água", 
-                    "Solo Exposto", 
-                    "Cana-de-açucar", 
-                    "Desmatamento", 
-                    "Área urbana", 
-                    "Silvicultura"
-                ],
+                landUse: campaignData.landUse || [],
                 numInspec: parseInt(campaignData.numInspec) || 3,
                 // Novas propriedades
                 showTimeseries: campaignData.showTimeseries !== false,

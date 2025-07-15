@@ -550,9 +550,9 @@ Application
               maxZoom: 18
             }).addTo($scope.map);
             
-            // Garantir que o marcador esteja sempre no topo
+            // Garantir que o marcador esteja sempre no topo usando setZIndexOffset
             if ($scope.marker && $scope.markerInMap) {
-              $scope.marker.bringToFront();
+              $scope.marker.setZIndexOffset(1000);
             }
           };
 
@@ -605,7 +605,9 @@ Application
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
                 setTimeout(function() {
-                  $scope.marker.bringToFront();
+                  if ($scope.marker && $scope.map.hasLayer($scope.marker)) {
+                    $scope.marker.setZIndexOffset(1000);
+                  }
                 }, 50);
               }
             });
@@ -623,7 +625,7 @@ Application
                 $scope.map.invalidateSize();
                 // Garantir que o marcador esteja visível após o redimensionamento
                 if ($scope.marker && $scope.markerInMap) {
-                  $scope.marker.bringToFront();
+                  $scope.marker.setZIndexOffset(1000);
                 }
               }
             }, 100);

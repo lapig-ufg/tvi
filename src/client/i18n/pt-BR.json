@@ -13,7 +13,9 @@
     "LOADING": "Carregando...",
     "LOGOUT": "Sair",
     "SECONDS": "segundos",
-    "CHOOSE": "Escolher"
+    "CHOOSE": "Escolher",
+    "ALL": "Todos",
+    "NOT_CONSOLIDATED": "Não Consolidados"
   },
   "NAVBAR": {
     "POINTS": "Pontos",
@@ -131,7 +133,13 @@
     "CAMPAIGN_NOT_FOUND": "Campanha não encontrada",
     "CANNOT_DELETE_CAMPAIGN_WITH_POINTS": "Não é possível excluir campanhas com pontos associados",
     "DELETE_CAMPAIGN_CONFIRM": "Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita!",
-    "FEATURE_COMING_SOON": "Funcionalidade de gerenciamento de classes será implementada em breve"
+    "FEATURE_COMING_SOON": "Funcionalidade de gerenciamento de classes será implementada em breve",
+    "FILL_ALL_FIELDS": "Falha na operação, preencha todos os campos",
+    "NO_UNCONSOLIDATED_POINTS": "Não foram encontrados pontos não consolidados.",
+    "POINTS_CORRECTED": "Pontos corrigidos: {{count}}",
+    "CAMPAIGN_NO_ISSUES": "Campanha sem problemas com as inspeções.",
+    "CONFIRM_REMOVE_INSPECTIONS": "Tem certeza que deseja remover as inspeções do ponto identificado como {{pointId}}?\nTenha em mente que uma vez concluída a remoção, não será mais possível reverter esta ação.",
+    "INSPECTIONS_REMOVED": "As inspeções do ponto {{pointId}} foram removidas com sucesso."
   },
   "DASHBOARD": {
     "INSPECTED_POINTS": "Número de pontos inspecionados",
@@ -147,7 +155,13 @@
     "POINTS_CHANGED": "Pontos alterados",
     "POINTS_WITHOUT_AGREEMENT": "Pontos sem concordância",
     "AVG_VOTES_BY_COVERAGE": "Média de votos por cobertura em %",
-    "NO_DATA_AVAILABLE": "Nenhum dado disponível"
+    "NO_DATA_AVAILABLE": "Nenhum dado disponível",
+    "TABLE": {
+      "NAME": "Nome",
+      "STATUS": "Status",
+      "CURRENT_POINT": "Ponto Atual",
+      "DATE": "Data"
+    }
   },
   "CACHE": {
     "PROCESSING_STARTED": "Iniciando processamento de {{totalPoints}} pontos em {{totalBatches}} batches",

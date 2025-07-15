@@ -139,12 +139,16 @@ Application.config(function($routeProvider, $locationProvider) {
 				} else {
 					$rootScope.user = result;
 
-					if(result.type == 'supervisor'){
-						$location.path('/supervisor');
+					// Só redirecionar se estiver tentando acessar a rota raiz
+					if(nextPath === '/' || nextPath === '/login') {
+						if(result.type == 'supervisor'){
+							$location.path('/supervisor');
+						}
+						else if(result.type == 'inspector') {
+							$location.path('/temporal');
+						}
 					}
-					else if(result.type == 'inspector') {
-						$location.path('/temporal');
-					}
+					// Se já está tentando acessar uma rota específica válida, permitir
 				}
 			});
 		}
@@ -170,12 +174,16 @@ Application.config(function($routeProvider, $locationProvider) {
 			} else {
 				$rootScope.user = result;
 
-				if(result.type == 'supervisor'){
-					$location.path('/supervisor');
+				// Only redirect if current path is root or empty
+				if(currentPath === '/' || currentPath === '') {
+					if(result.type == 'supervisor'){
+						$location.path('/supervisor');
+					}
+					else if(result.type == 'inspector') {
+						$location.path('/temporal');
+					}
 				}
-				else if(result.type == 'inspector') {
-					$location.path('/temporal');
-				}
+				// If already on a valid route like /dashboard, don't redirect
 			}
 		});
 	}
