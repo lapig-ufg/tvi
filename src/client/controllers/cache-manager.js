@@ -599,9 +599,22 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 }
                 break;
             case 'point':
-                // Para remover cache de um ponto específico, precisamos calcular os tiles
-                // Vamos passar o ponto e campanha para o servidor processar
-                params.pattern = `*/${$scope.cacheRemoval.campaignId}/${$scope.cacheRemoval.pointId}/*`;
+                // Processar múltiplos pontos se houver vírgulas
+                var pointIds = $scope.cacheRemoval.pointId.split(',').map(function(id) {
+                    return id.trim();
+                }).filter(function(id) {
+                    return id.length > 0;
+                });
+                
+                if (pointIds.length === 1) {
+                    // Um único ponto
+                    params.pattern = `*/${$scope.cacheRemoval.campaignId}/${pointIds[0]}/*`;
+                } else {
+                    // Múltiplos pontos - enviar array
+                    params.campaignId = $scope.cacheRemoval.campaignId;
+                    params.pointIds = pointIds;
+                }
+                
                 if ($scope.cacheRemoval.year) {
                     params.year = $scope.cacheRemoval.year;
                 }
@@ -883,6 +896,128 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.cacheRemoval.y = null;
                 $scope.cacheRemoval.z = null;
             }
+        }
+    });
+
+    // === FUNÇÕES DE RESET CACHE MONGODB ===
+    
+    // Variáveis para reset de cache no MongoDB
+    $scope.mongoReset = {
+        type: 'campaign',
+        campaignIds: '',
+        campaignId: '',
+        pointIds: '',
+        isResetting: false,
+        lastResult: null
+    };
+    
+    // Verificar se pode resetar cache no MongoDB
+    $scope.canResetMongoCache = function() {
+        if ($scope.mongoReset.type === 'campaign' && !$scope.mongoReset.campaignIds) {
+            return false;
+        }
+        if ($scope.mongoReset.type === 'point' && (!$scope.mongoReset.campaignId || !$scope.mongoReset.pointIds)) {
+            return false;
+        }
+        return true;
+    };
+    
+    // Resetar cache no MongoDB
+    $scope.resetMongoCache = function() {
+        if (!$scope.canResetMongoCache()) {
+            alert('Por favor, preencha todos os campos obrigatórios');
+            return;
+        }
+        
+        var confirmMessage = 'ATENÇÃO: Esta operação marcará os pontos como não cacheados no MongoDB.\n\n';
+        
+        switch($scope.mongoReset.type) {
+            case 'campaign':
+                var campaignCount = $scope.mongoReset.campaignIds.split(',').filter(function(id) { return id.trim(); }).length;
+                confirmMessage += `Resetar cache de ${campaignCount} campanha(s): ${$scope.mongoReset.campaignIds}`;
+                break;
+            case 'point':
+                var pointCount = $scope.mongoReset.pointIds.split(',').filter(function(id) { return id.trim(); }).length;
+                confirmMessage += `Resetar cache de ${pointCount} ponto(s) da campanha ${$scope.mongoReset.campaignId}`;
+                break;
+            case 'all':
+                confirmMessage += 'Resetar cache de TODOS os pontos no banco de dados';
+                break;
+        }
+        
+        confirmMessage += '\n\nDeseja continuar?';
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        $scope.mongoReset.isResetting = true;
+        $scope.mongoReset.lastResult = null;
+        
+        // Montar parâmetros
+        var params = {};
+        
+        switch($scope.mongoReset.type) {
+            case 'campaign':
+                // Processar múltiplas campanhas
+                var campaignIds = $scope.mongoReset.campaignIds.split(',').map(function(id) {
+                    return id.trim();
+                }).filter(function(id) {
+                    return id.length > 0;
+                });
+                params.campaignIds = campaignIds;
+                break;
+                
+            case 'point':
+                // Processar múltiplos pontos
+                var pointIds = $scope.mongoReset.pointIds.split(',').map(function(id) {
+                    return id.trim();
+                }).filter(function(id) {
+                    return id.length > 0;
+                });
+                params.campaignId = $scope.mongoReset.campaignId;
+                params.pointIds = pointIds;
+                break;
+                
+            case 'all':
+                params.resetAll = true;
+                break;
+        }
+        
+        // Fazer chamada para API de reset
+        requester._post('cache/reset-mongo', params, function(data) {
+            $scope.mongoReset.isResetting = false;
+            
+            if (data.success) {
+                $scope.mongoReset.lastResult = {
+                    success: true,
+                    updated: data.updated || 0
+                };
+                
+                alert(`Cache resetado com sucesso!\n${data.updated || 0} pontos marcados como não cacheados.`);
+                
+                // Atualizar status
+                $scope.loadCacheStatus();
+                $scope.loadUncachedPoints();
+            } else {
+                $scope.mongoReset.lastResult = {
+                    success: false,
+                    error: data.error || 'Erro desconhecido'
+                };
+                
+                console.error('Erro ao resetar cache:', data.error);
+                alert('Erro ao resetar cache: ' + (data.error || 'Erro desconhecido'));
+            }
+        });
+    };
+    
+    // Watch para limpar campos quando mudar o tipo
+    $scope.$watch('mongoReset.type', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+            $scope.mongoReset.campaignIds = '';
+            $scope.mongoReset.campaignId = '';
+            $scope.mongoReset.pointIds = '';
+            $scope.mongoReset.lastResult = null;
         }
     });
 

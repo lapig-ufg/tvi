@@ -12,7 +12,8 @@
     "AND": "and",
     "LOADING": "Loading...",
     "LOGOUT": "Logout",
-    "SECONDS": "seconds"
+    "SECONDS": "seconds",
+    "CHOOSE": "Choose"
   },
   "NAVBAR": {
     "POINTS": "Points",
@@ -90,7 +91,8 @@
     "FORM": {
       "CLASS": "Class",
       "BORDER_PIXEL": "Border Pixel",
-      "SUBMIT": "Submit"
+      "SUBMIT": "Submit",
+      "VALIDATION_ERROR": "Please select a land use class for all periods before submitting."
     },
     "MAP": {
       "LANDSAT_IMAGES": "Landsat Images",
@@ -102,7 +104,8 @@
     "CHARTS": {
       "LANDSAT_SERIES": "LANDSAT time series",
       "MODIS_SERIES": "MODIS time series",
-      "NDDI_SERIES": "NDDI Time Series"
+      "NDDI_SERIES": "NDDI Time Series",
+      "PRECIPITATION": "Precipitation"
     }
   },
   "LANGUAGES": {

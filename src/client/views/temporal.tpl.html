@@ -21,127 +21,232 @@
                 
                 <!-- Ferramentas - sempre visíveis -->
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 15px;">
-                    <fieldset>
                         <legend>{{ 'TEMPORAL.TOOLS.TITLE' | i18n }}:</legend>
                         <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
                                value="{{ 'TEMPORAL.TOOLS.CHANGE_PERIOD' | i18n }}">
                         <input ng-show="showPointInfo && !isObjectEmpty(point)" style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
                                value="{{ 'TEMPORAL.TOOLS.GOOGLE_EARTH' | i18n }}">
-                    </fieldset>
                 </div>
             </div>
             <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 form-lulc-panel">
-                    <form class="form-inline form-lclu" ng-repeat="answer in answers">
-                        <label class="form-label-lclu" style="margin-right: 24px;">{{ 'COMMON.BETWEEN' | i18n }}</label><select
-                            style="-webkit-appearance: none;" ng-disabled='answers.length >= ($index + 1)'
-                            class="form-inline form-control form-year-lclu" ng-model="answer.initialYear"
-                            ng-options="x for x in optionYears[$index]"></select>
-                        <label class="form-label-lclu">{{ 'COMMON.AND' | i18n }}</label><select ng-disabled='answers.length != ($index + 1)'
-                                                                        class="form-inline form-control form-year-lclu"
-                                                                        ng-model="answer.finalYear"
-                                                                        ng-change="formPlus()"
-                                                                        ng-options="y for y in optionYears[$index]"></select>
-                        <br><label style="margin: 10px;">{{ 'TEMPORAL.FORM.CLASS' | i18n }}: </label><select style="width: 200px;"
-                                                                                 class="form-control"
-                                                                                 ng-model="answer.landUse"
-                                                                                 ng-options="z for z in config.landUse"
-                                                                                 ng-click="form-plus"></select>
-                        <label style="margin: 10px;">{{ 'TEMPORAL.FORM.BORDER_PIXEL' | i18n }}: <input type="checkbox"
-                                                                            ng-model="answer.pixelBorder"></label>
+                    <style>
+                        .form-temporal {
+                            margin-bottom: 15px;
+                            padding: 10px;
+                            background-color: #ffffff;
+                            border-radius: 8px;
+                            border: 1px solid #e0e0e0;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                        }
+                        .form-temporal .form-row {
+                            display: flex;
+                            align-items: center;
+                            margin-bottom: 15px;
+                            flex-wrap: wrap;
+                        }
+                        .form-temporal .form-row-dates {
+                            display: flex;
+                            align-items: center;
+                            margin-bottom: 10px;
+                            flex-wrap: nowrap;
+                            gap: 8px;
+                            justify-content: space-between;
+                        }
+                        .form-temporal .form-group-inline {
+                            display: flex;
+                            align-items: center;
+                            margin-right: 0;
+                            margin-bottom: 0;
+                        }
+                        .form-temporal .form-label {
+                            margin-right: 8px;
+                            margin-bottom: 0;
+                            font-weight: 600;
+                            white-space: nowrap;
+                            color: #333;
+                        }
+                        .form-temporal .form-year-select {
+                            width: 105px;
+                            padding: 6px 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            -webkit-appearance: none;
+                        }
+                        .form-temporal .form-year-select:disabled {
+                            width: 65px;
+                            background-color: #f5f5f5;
+                            opacity: 0.8;
+                            cursor: not-allowed;
+                        }
+                        .form-temporal .form-landuse-select {
+                            min-width: 232px;
+                            padding: 6px 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                        }
+                        .form-temporal .checkbox-label {
+                            display: flex;
+                            align-items: center;
+                            margin-bottom: 0;
+                            margin-top: 5px;
+                        }
+                        .form-temporal .checkbox-label input[type="checkbox"] {
+                            margin-right: 5px;
+                        }
+                        .form-actions {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-top: 20px;
+                            padding-top: 15px;
+                            border-top: 1px solid #e0e0e0;
+                        }
+                        .form-actions .right-actions {
+                            display: flex;
+                            align-items: center;
+                            gap: 15px;
+                        }
+                        .form-actions .counter-display {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #666;
+                        }
+                        /* Responsividade para telas muito pequenas */
+                        @media (max-width: 400px) {
+                            .form-temporal .form-row-dates {
+                                flex-wrap: wrap;
+                            }
+                            .form-temporal .form-row {
+                                flex-wrap: wrap;
+                            }
+                        }
+                    </style>
+                    <form class="form-temporal" ng-repeat="answer in answers">
+                        <div class="form-row-dates">
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'COMMON.BETWEEN' | i18n }}</label>
+                                <select ng-disabled='answers.length >= ($index + 1)'
+                                        class="form-control form-year-select" 
+                                        ng-model="answer.initialYear"
+                                        ng-options="x for x in optionYears[$index]">
+                                </select>
+                            </div>
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'COMMON.AND' | i18n }}</label>
+                                <select ng-disabled='answers.length != ($index + 1)'
+                                        class="form-control form-year-select"
+                                        ng-model="answer.finalYear"
+                                        ng-change="formPlus()"
+                                        ng-options="y for y in optionYears[$index]">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'TEMPORAL.FORM.CLASS' | i18n }}:</label>
+                                <select class="form-control form-landuse-select"
+                                        ng-model="answer.landUse"
+                                        ng-click="form-plus">
+                                    <option value="" disabled selected>{{ 'COMMON.CHOOSE' | i18n }}</option>
+                                    <option ng-repeat="z in config.landUse" value="{{z}}">{{z}}</option>
+                                </select>
+                            </div>
+                            <div class="form-group-inline">
+                                <label class="form-label checkbox-label">
+                                    <input type="checkbox" ng-model="answer.pixelBorder">
+                                    {{ 'TEMPORAL.FORM.BORDER_PIXEL' | i18n }}
+                                </label>
+                            </div>
+                        </div>
                     </form>
-                    <input style="margin-left: 0px;" type="button" class="btn pull-left btn-success"
-                           ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
-                           ng-click="submitForm()" value="{{ 'COMMON.SUBMIT' | i18n }}">
-                    <input style="margin-right: 23px;" type="button" class="btn btn-danger pull-right"
-                           ng-click="formSubtraction()" ng-disabled="answers.length == 1" value="-">
-                    <div class="pull-right button-align">
-                        <b>{{counter}} s</b>
+                    <div class="form-actions">
+                        <input type="button" class="btn btn-success"
+                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
+                               ng-click="submitForm()" value="{{ 'COMMON.SUBMIT' | i18n }}">
+                        <div class="right-actions">
+                            <span class="counter-display"><b>{{counter}} s</b></span>
+                            <input type="button" class="btn btn-danger btn-sm"
+                                   ng-click="formSubtraction()" 
+                                   ng-disabled="answers.length == 1" 
+                                   value="-">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div ng-hide="isObjectEmpty(point) && pointLoaded"
-             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
-            <div class="row" style="display: flex; flex-direction: column;justify-content: center;align-items: center;">
-                <fieldset>
-                    <legend ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                        {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
-                    </legend>
-                    
-                    <!-- Seletor de visparam Landsat para página temporal - só mostra se visParam vier da campanha e o ponto estiver carregado -->
-                    <div ng-show="!isSentinel && hasVisParam && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
-                        <label class="radio-visparam" style="margin-right: 10px;">
-                            <input type="radio" 
-                                   ng-model="landsatVisparam" 
-                                   value="landsat-tvi-true"
-                                   ng-change="updateLandsatVisparam()">
-                            {{ 'TEMPORAL.MAP.NATURAL_COLOR' | i18n }}
-                        </label>
-                        <label class="radio-visparam" style="margin-right: 10px;">
-                            <input type="radio" 
-                                   ng-model="landsatVisparam" 
-                                   value="landsat-tvi-agri"
-                                   ng-change="updateLandsatVisparam()">
-                            {{ 'TEMPORAL.MAP.AGRICULTURE' | i18n }}
-                        </label>
-                        <label class="radio-visparam">
-                            <input type="radio" 
-                                   ng-model="landsatVisparam" 
-                                   value="landsat-tvi-false"
-                                   ng-change="updateLandsatVisparam()">
-                            {{ 'TEMPORAL.MAP.FALSE_COLOR' | i18n }}
-                        </label>
-                    </div>
-                    
-                    <legend ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                        {{ 'TEMPORAL.MAP.SENTINEL_IMAGES' | i18n }}  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
-                    </legend>
-<!--                    <legend>Imagens Landsat <span ng-hide="isRaisg && !isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span-->
-<!--                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR,NIR,RED)</span><span-->
-<!--                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>-->
-<!--                    </legend>-->
-<!--                    <legend>Imagens Sentinel-2 L2A <span ng-hide="isSentinel" style=" font-size: 14px; color: gray;">RBG(NIR,SWIR,RED)</span><span-->
-<!--                            ng-show="isRaisg" style=" font-size: 14px; color: gray;">RBG(SWIR16,NIR,RED)</span><span-->
-<!--                            style=" font-size: 13px; color: gray; margin-top: 10px;" class="pull-right">Clique no mapa para desabilitar a localização do ponto</span>-->
-<!--                    </legend>-->
-                    
-                    <!-- Container com Bootstrap Grid -->
-                    <div class="row maps-grid" style="margin: 0;">
-                        <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
-                            <!-- Header do mapa com informações -->
-                            <div class="map-header">
-                                <span>{{map.date | date:'dd/MM/yyyy'}}</span>
-                                <span>{{periodo}}</span>
-                            </div>
-                            
-                            <!-- Botão do Planet Mosaics -->
-                            <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
+        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+            <div class="row">
+                <legend  ng-show="pointLoaded" ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
+                </legend>
+
+                <!-- Seletor de visparam Landsat para página temporal - só mostra se visParam vier da campanha e o ponto estiver carregado -->
+                <div ng-show="!isSentinel && hasVisParam && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
+                    <label class="radio-visparam" style="margin-right: 10px;">
+                        <input type="radio"
+                               ng-model="landsatVisparam"
+                               value="landsat-tvi-true"
+                               ng-change="updateLandsatVisparam()">
+                        {{ 'TEMPORAL.MAP.NATURAL_COLOR' | i18n }}
+                    </label>
+                    <label class="radio-visparam" style="margin-right: 10px;">
+                        <input type="radio"
+                               ng-model="landsatVisparam"
+                               value="landsat-tvi-agri"
+                               ng-change="updateLandsatVisparam()">
+                        {{ 'TEMPORAL.MAP.AGRICULTURE' | i18n }}
+                    </label>
+                    <label class="radio-visparam">
+                        <input type="radio"
+                               ng-model="landsatVisparam"
+                               value="landsat-tvi-false"
+                               ng-change="updateLandsatVisparam()">
+                        {{ 'TEMPORAL.MAP.FALSE_COLOR' | i18n }}
+                    </label>
+                </div>
+
+                <legend ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    {{ 'TEMPORAL.MAP.SENTINEL_IMAGES' | i18n }}  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
+                </legend>
+
+            </div>
+
+            <div class="row" style="display: flex; flex-direction: column;justify-content: center;align-items: center">
+                <div class="row maps-grid" style="margin: 5px; width: 100%">
+                    <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
+                        <!-- Header do mapa com informações -->
+                        <div class="map-header">
+                            <span>{{map.date | date:'dd/MM/yyyy'}}</span>
+                            <span>{{periodo}}</span>
+                        </div>
+
+                        <!-- Botão do Planet Mosaics -->
+                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
                                 <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
                                     <i class="fa fa-camera"></i>
                                 </button>
                             </span>
-                            
-                            <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
-                                    lon="point.lon"
-                                    lat="point.lat"
-                                    zoom="config.zoomLevel"
-                                    period="period"
-                                    year="map.year"
-                                    visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
-                            </landsat-map>
-                            
-                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                    lon="point.lon"
-                                    lat="point.lat"
-                                    bounds="map.bounds"
-                                    zoom="config.zoomLevel"
-                                    tms-url="map.url">
-                            </inspection-map>
-                        </div>
+
+                        <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
+                        <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                     lon="point.lon"
+                                     lat="point.lat"
+                                     zoom="config.zoomLevel"
+                                     period="period"
+                                     year="map.year"
+                                     visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                        </landsat-map>
+
+                        <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                        lon="point.lon"
+                                        lat="point.lat"
+                                        bounds="map.bounds"
+                                        zoom="config.zoomLevel"
+                                        tms-url="map.url">
+                        </inspection-map>
                     </div>
-                </fieldset>
+                </div>
                 <div class="clearfix"></div>
             </div>
         </div>
@@ -158,7 +263,7 @@
                     <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
                     <div id="LANDSAT"></div>
                 </fieldset>
-                <fieldset>
+                <fieldset ng-show="showCharts">
                     <div style="margin-bottom: 0px"><h4>{{ 'TEMPORAL.CHARTS.MODIS_SERIES' | i18n }}:</h4></div>
                     <div id="NDVI"></div>
                 </fieldset>

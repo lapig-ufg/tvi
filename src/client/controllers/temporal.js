@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false
@@ -40,7 +40,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.size = 3;
         $scope.onSubmission = false;
         $scope.period = 'DRY';
-        $scope.periodo = 'SECO';
+        $scope.periodo = i18nService.translate('PERIODS.DRY');
         $scope.pointEnabled = true;
         $scope.config = {
             initialYear: $rootScope.user.campaign.initialYear,
@@ -93,6 +93,20 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         $scope.submitForm = function () {
+            // Validar se todos os períodos têm uma classe de uso da terra selecionada
+            var hasInvalidAnswer = false;
+            for (var i = 0; i < $scope.answers.length; i++) {
+                if (!$scope.answers[i].landUse || $scope.answers[i].landUse === '') {
+                    hasInvalidAnswer = true;
+                    break;
+                }
+            }
+            
+            if (hasInvalidAnswer) {
+                alert(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
+                return;
+            }
+            
             var formPoint = {
                 _id: $scope.point._id,
                 inspection: {
@@ -112,7 +126,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         $scope.changePeriod = function () {
             $scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
-            $scope.periodo = ($scope.periodo == 'SECO') ? 'CHUVOSO' : 'SECO';
+            $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
             generateMaps();
         }
 
@@ -202,6 +216,12 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 "longitude": $scope.point.lon,
                 "latitude": $scope.point.lat
             }, function (data) {
+                // Verificar se há dados de NDVI
+                if (!data || !data.values || data.values.length === 0) {
+                    console.warn('No NDVI data available for this point');
+                    return;
+                }
+                
                 getPrecipitationData(function (dataPrecip) {
 
                     var ndvi = [];
@@ -257,7 +277,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         x: dry,
                         y: trace2NDVI(data.values, dry),
                         text: dry,
-                        name: 'Landsat (Seco)',
+                        name: 'Landsat (' + i18nService.translate('PERIODS.DRY') + ')',
                         hoverinfo: "none",
                         mode: 'markers',
                         marker: {
@@ -270,7 +290,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         x: wet,
                         y: trace2NDVI(data.values, wet),
                         text: wet,
-                        name: 'Landsat (Chuvoso)',
+                        name: 'Landsat (' + i18nService.translate('PERIODS.WET') + ')',
                         hoverinfo: "none",
                         mode: 'markers',
                         marker: {
@@ -311,7 +331,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         x: precData,
                         y: precValue,
                         text: precText,
-                        name: 'Precipitação',
+                        name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                         hoverinfo: 'text+y',
                         opacity: 0.5,
                         mode: 'markers',
@@ -348,7 +368,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                             rangemode: "nonnegative"
                         },
                         yaxis5: {
-                            title: 'Precipitação',
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                             fixedrange: true,
                             overlaying: 'y',
                             side: 'right'
@@ -407,7 +427,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         x: data[2].x,
                         y: data[2].y,
                         type: "bar",
-                        name: "Precipitation",
+                        name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
                         marker: {
                             color: "blue"
                         },
@@ -436,7 +456,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                             rangemode: "nonnegative"
                         },
                         yaxis2: {
-                            title: "Precipitação (mm)",
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
                             fixedrange: true
@@ -568,19 +588,11 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const initFormViewVariables = function () {
             $scope.optionYears = [];
 
-            var landUseIndex = 1;
-            for (var i = 0; i < $scope.config.landUse.length; i++) {
-                if ($scope.config.landUse[i] == 'Leñosas (forestal)' || $scope.config.landUse[i] == 'Vegetação nativa"') {
-                    landUseIndex = i;
-                    break;
-                }
-            }
-
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
                     finalYear: $scope.config.finalYear,
-                    landUse: $scope.config.landUse[landUseIndex],
+                    landUse: '', // Inicializar vazio para forçar seleção
                     pixelBorder: false
                 }
             ];

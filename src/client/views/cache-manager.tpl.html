@@ -314,26 +314,29 @@
                         <div class="form-group" ng-if="cacheRemoval.type === 'campaign'">
                             <label class="col-sm-3 control-label">Campanha:</label>
                             <div class="col-sm-9">
-                                <select class="form-control" ng-model="cacheRemoval.campaignId">
-                                    <option value="">Selecione uma campanha</option>
-                                    <option ng-repeat="campaign in getCampaignsForSelection()" value="{{campaign.id}}">
-                                        {{campaign.name}} ({{campaign.uncachedCount}} pontos)
-                                    </option>
-                                </select>
+                                <input type="text" class="form-control" ng-model="cacheRemoval.campaignId" 
+                                       placeholder="Digite o ID da campanha">
+                                <p class="help-block">
+                                    Ex: cana_2020, pastagem_2021
+                                </p>
                             </div>
                         </div>
 
-                        <div class="form-group" ng-if="cacheRemoval.type === 'point' && cacheRemoval.campaignId">
-                            <label class="col-sm-3 control-label">Ponto:</label>
+                        <div class="form-group" ng-if="cacheRemoval.type === 'point'">
+                            <label class="col-sm-3 control-label">Campanha:</label>
                             <div class="col-sm-9">
-                                <select class="form-control" ng-model="cacheRemoval.pointId" ng-disabled="!cacheRemoval.campaignId">
-                                    <option value="">Selecione um ponto</option>
-                                    <option ng-repeat="point in availablePoints" value="{{point._id}}">
-                                        {{point._id}} - Lat: {{point.lat}}, Lon: {{point.lon}}
-                                    </option>
-                                </select>
-                                <p class="help-block" ng-if="!cacheRemoval.campaignId">
-                                    Selecione primeiro uma campanha para listar os pontos
+                                <input type="text" class="form-control" ng-model="cacheRemoval.campaignId" 
+                                       placeholder="Digite o ID da campanha">
+                            </div>
+                        </div>
+
+                        <div class="form-group" ng-if="cacheRemoval.type === 'point'">
+                            <label class="col-sm-3 control-label">Ponto(s):</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" ng-model="cacheRemoval.pointId" 
+                                       placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
+                                <p class="help-block">
+                                    Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
                                 </p>
                             </div>
                         </div>
@@ -341,23 +344,11 @@
                         <div class="form-group" ng-if="cacheRemoval.type === 'layer'">
                             <label class="col-sm-3 control-label">Camada:</label>
                             <div class="col-sm-9">
-                                <select class="form-control" ng-model="cacheRemoval.layer">
-                                    <option value="">Selecione uma camada</option>
-                                    <option value="landsat">Landsat</option>
-                                    <option value="s2_harmonized">Sentinel-2 Harmonized</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'point' && !cacheRemoval.campaignId">
-                            <label class="col-sm-3 control-label">Campanha:</label>
-                            <div class="col-sm-9">
-                                <select class="form-control" ng-model="cacheRemoval.campaignId">
-                                    <option value="">Selecione uma campanha primeiro</option>
-                                    <option ng-repeat="campaign in getCampaignsForSelection()" value="{{campaign.id}}">
-                                        {{campaign.name}} ({{campaign.uncachedCount}} pontos)
-                                    </option>
-                                </select>
+                                <input type="text" class="form-control" ng-model="cacheRemoval.layer" 
+                                       placeholder="Digite o nome da camada">
+                                <p class="help-block">
+                                    Opções: landsat, s2_harmonized
+                                </p>
                             </div>
                         </div>
 
@@ -412,6 +403,110 @@
                                     <span ng-if="!cacheRemoval.lastResult.success" class="text-danger">
                                         <i class="glyphicon glyphicon-remove"></i>
                                         Erro: {{cacheRemoval.lastResult.error}}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Cache MongoDB -->
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h4>
+                        <i class="glyphicon glyphicon-refresh"></i> 
+                        Reset Cache MongoDB
+                        <small class="text-muted">(Marcar pontos como não cacheados no banco)</small>
+                    </h4>
+                </div>
+                <div class="panel-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Tipo de Reset:</label>
+                            <div class="col-sm-9">
+                                <label class="radio-inline">
+                                    <input type="radio" ng-model="mongoReset.type" value="campaign">
+                                    Por Campanha(s)
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" ng-model="mongoReset.type" value="point">
+                                    Por Ponto(s)
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" ng-model="mongoReset.type" value="all">
+                                    Todos
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Opções por campanha -->
+                        <div class="form-group" ng-if="mongoReset.type === 'campaign'">
+                            <label class="col-sm-3 control-label">Campanha(s):</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" ng-model="mongoReset.campaignIds" 
+                                       placeholder="Digite o(s) ID(s) da(s) campanha(s), separados por vírgula">
+                                <p class="help-block">
+                                    Ex: cana_2020 ou cana_2020,pastagem_2021,soja_2022 para múltiplas campanhas
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Opções por ponto -->
+                        <div class="form-group" ng-if="mongoReset.type === 'point'">
+                            <label class="col-sm-3 control-label">Campanha:</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" ng-model="mongoReset.campaignId" 
+                                       placeholder="Digite o ID da campanha (obrigatório para pontos)">
+                            </div>
+                        </div>
+
+                        <div class="form-group" ng-if="mongoReset.type === 'point'">
+                            <label class="col-sm-3 control-label">Ponto(s):</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" ng-model="mongoReset.pointIds" 
+                                       placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
+                                <p class="help-block">
+                                    Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <div class="alert alert-info">
+                                    <i class="glyphicon glyphicon-info-sign"></i>
+                                    <strong>Atenção:</strong> Esta operação marca os pontos como <code>cached: false</code> no MongoDB, 
+                                    permitindo que sejam processados novamente pelo sistema de cache.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-9">
+                                <button type="button" class="btn btn-primary" 
+                                        ng-click="resetMongoCache()" 
+                                        ng-disabled="mongoReset.isResetting || !canResetMongoCache()">
+                                    <i class="glyphicon" ng-class="{
+                                        'glyphicon-refresh glyphicon-refresh-animate': mongoReset.isResetting,
+                                        'glyphicon-refresh': !mongoReset.isResetting
+                                    }"></i>
+                                    <span ng-if="!mongoReset.isResetting">Resetar Cache no MongoDB</span>
+                                    <span ng-if="mongoReset.isResetting">Resetando...</span>
+                                </button>
+                                
+                                <span ng-if="mongoReset.lastResult" class="text-muted" style="margin-left: 15px;">
+                                    <span ng-if="mongoReset.lastResult.success" class="text-success">
+                                        <i class="glyphicon glyphicon-ok"></i>
+                                        {{mongoReset.lastResult.updated}} pontos atualizados
+                                    </span>
+                                    <span ng-if="!mongoReset.lastResult.success" class="text-danger">
+                                        <i class="glyphicon glyphicon-remove"></i>
+                                        Erro: {{mongoReset.lastResult.error}}
                                     </span>
                                 </span>
                             </div>

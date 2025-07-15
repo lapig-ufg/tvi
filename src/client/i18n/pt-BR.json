@@ -12,7 +12,8 @@
     "AND": "e",
     "LOADING": "Carregando...",
     "LOGOUT": "Sair",
-    "SECONDS": "segundos"
+    "SECONDS": "segundos",
+    "CHOOSE": "Escolher"
   },
   "NAVBAR": {
     "POINTS": "Pontos",
@@ -90,7 +91,8 @@
     "FORM": {
       "CLASS": "Classe",
       "BORDER_PIXEL": "Pixel de Borda",
-      "SUBMIT": "Enviar"
+      "SUBMIT": "Enviar",
+      "VALIDATION_ERROR": "Por favor, selecione uma classe de uso da terra para todos os períodos antes de submeter."
     },
     "MAP": {
       "LANDSAT_IMAGES": "Imagens Landsat",
@@ -102,7 +104,8 @@
     "CHARTS": {
       "LANDSAT_SERIES": "Série temporal LANDSAT",
       "MODIS_SERIES": "Série temporal MODIS",
-      "NDDI_SERIES": "Série Temporal do NDDI"
+      "NDDI_SERIES": "Série Temporal do NDDI",
+      "PRECIPITATION": "Precipitação"
     }
   },
   "LANGUAGES": {

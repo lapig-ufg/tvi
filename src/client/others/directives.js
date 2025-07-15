@@ -530,7 +530,7 @@ Application
             // Salvar preferência no localStorage
             localStorage.setItem('landsat_visparam', $scope.selectedVisparam);
             
-            return `https://tiles.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
+            return `https://tm{s}.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
               `?period=${$scope.period}` +
               `&year=${$scope.year}` +
               `&visparam=${$scope.selectedVisparam}`;
@@ -549,6 +549,11 @@ Application
               attribution: `Landsat ${$scope.period} – ${$scope.year}`,
               maxZoom: 18
             }).addTo($scope.map);
+            
+            // Garantir que o marcador esteja sempre no topo
+            if ($scope.marker && $scope.markerInMap) {
+              $scope.marker.bringToFront();
+            }
           };
 
           /* ---------- inicia Leaflet ---------- */
@@ -568,11 +573,13 @@ Application
               scrollWheelZoom: true
             });
 
+            // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
               icon: L.icon({ 
                 iconUrl: 'assets/marker2.png', 
                 iconSize: [42, 42] 
-              })
+              }),
+              zIndexOffset: 1000
             }).addTo($scope.map);
 
             // Toggle do marcador ao clicar no mapa
@@ -587,10 +594,19 @@ Application
             });
 
             /* watchers */
-            $scope.$watchGroup(['period', 'year', 'selectedVisparam'], function () {
+            $scope.$watchGroup(['period', 'year', 'selectedVisparam'], function (newValues, oldValues) {
               if ($scope.period && $scope.year) {
                 validateYearAndPeriod();
                 $scope.updateTileLayer();
+              }
+            });
+            
+            // Adicionar evento para garantir que o marcador permaneça visível quando os tiles carregam
+            $scope.map.on('layeradd', function(e) {
+              if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
+                setTimeout(function() {
+                  $scope.marker.bringToFront();
+                }, 50);
               }
             });
 
@@ -601,17 +617,25 @@ Application
             }
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
             
-            // Force map to recalculate size after initialization
+            // Force map to recalculate size and ensure marker is visible
             setTimeout(function() {
               if ($scope.map) {
                 $scope.map.invalidateSize();
+                // Garantir que o marcador esteja visível após o redimensionamento
+                if ($scope.marker && $scope.markerInMap) {
+                  $scope.marker.bringToFront();
+                }
               }
-            }, 200);
+            }, 100);
             
-            // Additional check for single map scenarios
+            // Additional check for grid scenarios with multiple maps
             setTimeout(function() {
               if ($scope.map) {
                 $scope.map.invalidateSize();
+                // Re-adicionar o marcador se ele não estiver visível
+                if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
+                  $scope.map.addLayer($scope.marker);
+                }
               }
             }, 500);
           }, 0);

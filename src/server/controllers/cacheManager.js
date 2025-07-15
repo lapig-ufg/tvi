@@ -859,4 +859,88 @@ module.exports = function (app) {
         });
     });
 
+    /**
+     * Reset cache status in MongoDB (set cached = false)
+     */
+    app.post('/service/cache/reset-mongo', function (request, response) {
+        var campaignIds = request.body.campaignIds;
+        var campaignId = request.body.campaignId;
+        var pointIds = request.body.pointIds;
+        var resetAll = request.body.resetAll;
+        
+        var updateQuery = {};
+        var updateData = {
+            $set: {
+                cached: false,
+                cachedAt: null,
+                cachedBy: null
+            }
+        };
+        
+        // Construir query baseada nos parâmetros
+        if (resetAll) {
+            // Resetar todos os pontos
+            updateQuery = { cached: true };
+        } else if (campaignIds && campaignIds.length > 0) {
+            // Resetar múltiplas campanhas
+            updateQuery = { 
+                campaign: { $in: campaignIds },
+                cached: true
+            };
+        } else if (campaignId && pointIds && pointIds.length > 0) {
+            // Resetar pontos específicos de uma campanha
+            var numericPointIds = pointIds.map(function(id) {
+                return parseInt(id);
+            }).filter(function(id) {
+                return !isNaN(id);
+            });
+            
+            updateQuery = {
+                campaign: campaignId,
+                _id: { $in: numericPointIds },
+                cached: true
+            };
+        } else {
+            return response.status(400).json({
+                success: false,
+                error: 'Parâmetros inválidos. Forneça campaignIds, ou campaignId com pointIds, ou resetAll=true'
+            });
+        }
+        
+        // Log da operação
+        console.log('Reset cache MongoDB - Query:', JSON.stringify(updateQuery));
+        
+        // Executar update
+        pointsCollection.updateMany(
+            updateQuery,
+            updateData,
+            function(err, result) {
+                if (err) {
+                    console.error('Erro ao resetar cache no MongoDB:', err);
+                    return response.status(500).json({
+                        success: false,
+                        error: 'Erro ao resetar cache no banco de dados',
+                        details: err.message
+                    });
+                }
+                
+                var updatedCount = result.modifiedCount || 0;
+                console.log(`Cache resetado para ${updatedCount} pontos`);
+                
+                // Emitir evento de atualização
+                Internal.emitCacheUpdate('cache-reset-mongodb', {
+                    updatedCount: updatedCount,
+                    resetType: resetAll ? 'all' : (campaignIds ? 'campaigns' : 'points'),
+                    source: 'manual'
+                });
+                
+                response.json({
+                    success: true,
+                    updated: updatedCount,
+                    message: `${updatedCount} pontos marcados como não cacheados`
+                });
+            }
+        );
+    });
+
 };
