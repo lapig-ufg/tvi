@@ -415,7 +415,7 @@ module.exports = function(app) {
 		
 		var onEach = function(key, next) {
 			var cmd = params.cmd + " " + key.file + " " +config.currentCampaign + " " + key.startYear + " " + params.keys.length;
-			console.log(cmd)
+			// Command executed
 			exec(cmd, function (error, stdout, stderr) {
 				  
 				  if(error || stderr) {
@@ -449,13 +449,13 @@ module.exports = function(app) {
 				var logStream = fs.createWriteStream(logFile, {'flags': 'a'});
 				var startLogMsg = "Job " + job.name + " start.";
 				
-				console.log(strDate() + " " + startLogMsg);
+				// Job started
 				writeLog(logStream, startLogMsg);
 
 				Jobs[job.name](job.params,logStream, function() {
 
 					var endLogMsg = "Job " + job.name + " end.";
-					console.log(strDate() + " " + endLogMsg);
+					// Job ended
 					writeLog(logStream, endLogMsg);
 					
 					logStream.end();

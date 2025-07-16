@@ -6,23 +6,33 @@
 
 <div class="container-fluid">
     <div class="row" style="margin-top: 50px">
-        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-fixed-310">
+        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-2 col-lg-2 sidebar-fixed">
             <div class="row">
                 <!-- Informações de localização - controladas por showPointInfo -->
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" ng-show="showPointInfo && !isObjectEmpty(point)">
                     <legend>{{ 'TEMPORAL.LOCATION_INFO.TITLE' | i18n }}</legend>
-                    <p>
+                    <!-- Informações padrão de localização -->
+                    <p ng-if="point.biome">
                         <b ng-hide="isChaco || isRaisg">{{ 'TEMPORAL.LOCATION_INFO.BIOME' | i18n }}: {{point.biome}}</b>
-                        <b ng-show="isChaco">{{ 'TEMPORAL.LOCATION_INFO.REGION' | i18n }}: {{point.county}}</b>
-                        <b ng-show="isRaisg">{{ 'TEMPORAL.LOCATION_INFO.COUNTRY' | i18n }}: {{point.county}}</b>
-
-                    </p>
-                    <p>
-                        <b ng-hide="isChaco || isRaisg">{{ 'TEMPORAL.LOCATION_INFO.MUNICIPALITY' | i18n }}: {{point.county}} {{point.uf}}</b>
-                        <b ng-show="isChaco">{{ 'TEMPORAL.LOCATION_INFO.MAP' | i18n }}: {{point.biome}}</b>
                         <b ng-show="isRaisg">{{ 'TEMPORAL.LOCATION_INFO.BIOME' | i18n }}: {{point.biome}}</b>
                     </p>
+                    <p ng-if="point.county">
+                        <b ng-show="isChaco">{{ 'TEMPORAL.LOCATION_INFO.REGION' | i18n }}: {{point.county}}</b>
+                        <b ng-show="isRaisg">{{ 'TEMPORAL.LOCATION_INFO.COUNTRY' | i18n }}: {{point.county}}</b>
+                        <b ng-hide="isChaco || isRaisg">{{ 'TEMPORAL.LOCATION_INFO.MUNICIPALITY' | i18n }}: {{point.county}}<span ng-if="point.uf"> - {{point.uf}}</span></b>
+                    </p>
+                    <p ng-if="point.biome && isChaco">
+                        <b>{{ 'TEMPORAL.LOCATION_INFO.MAP' | i18n }}: {{point.biome}}</b>
+                    </p>
                     <p><b>{{ 'TEMPORAL.LOCATION_INFO.COORDINATES' | i18n }}:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
+                    
+                    <!-- Propriedades customizadas -->
+                    <div ng-if="point.properties && hasCustomProperties()">
+                        <hr style="margin: 10px 0;">
+                        <div ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)">
+                            <p><b>{{formatPropertyName(key)}}: </b>{{value}}</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Ferramentas - sempre visíveis -->
@@ -127,6 +137,46 @@
                                 flex-wrap: wrap;
                             }
                         }
+                        
+                        /* Sidebar fixa durante scroll */
+                        @media (min-width: 992px) {
+                            .sidebar-fixed {
+                                position: fixed;
+                                top: 50px;
+                                bottom: 0;
+                                left: 0;
+                                width: 16.66666667%; /* col-md-2 width */
+                                overflow-y: auto;
+                                z-index: 100;
+                                padding-right: 15px;
+                                padding-left: 15px;
+                                background-color: #fff;
+                                border-right: 1px solid #e0e0e0;
+                                box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+                            }
+                        }
+                        
+                        @media (min-width: 1200px) {
+                            .sidebar-fixed {
+                                width: 19.66666667%; /* col-lg-2 width */
+                            }
+                        }
+                        
+                        /* Main content com margin left para compensar sidebar fixa */
+                        @media (min-width: 992px) {
+                            .main-content {
+                                margin-left: 18.66666667%; /* col-md-2 width */
+                                width: 79.33333333%; /* col-md-10 width */
+                                float: none;
+                            }
+                        }
+                        
+                        @media (min-width: 1200px) {
+                            .main-content {
+                                margin-left: 19.66666667%; /* col-lg-2 width */
+                                width: 79.33333333%; /* col-lg-10 width */
+                            }
+                        }
                     </style>
                     <form class="form-temporal" ng-repeat="answer in answers">
                         <div class="form-row-dates">
@@ -181,7 +231,7 @@
                 </div>
             </div>
         </div>
-        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310">
+        <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-10 col-lg-10 main-content">
             <div class="row">
                 <legend  ng-show="pointLoaded" ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                     {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
@@ -218,53 +268,73 @@
 
             </div>
 
-            <div class="row" style="display: flex; flex-direction: column;justify-content: center;align-items: center">
-                <div class="row maps-grid" style="margin: 5px; width: 100%">
-                    <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
-                        <!-- Header do mapa com informações -->
-                        <div class="map-header">
-                            <span>{{map.date | date:'dd/MM/yyyy'}}</span>
-                            <span>{{periodo}}</span>
+            <div class="row">
+                <div class="maps-grid" style="margin: 5px; width: 100%">
+                    <div ng-repeat="map in maps" 
+                         ng-class="getMapBoxClass(maps.length)"
+                         lazy-map
+                         map-index="{{map.index}}"
+                         total-maps="{{maps.length}}"
+                         on-visible="onMapVisible(map.index)">
+                        
+                        <!-- Placeholder enquanto o mapa não está carregado -->
+                        <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
+                            <div class="map-header">
+                                <span>{{formatMapDate(map.date)}}</span>
+                                <span>{{periodo}}</span>
+                            </div>
+                            <div class="map-loading-content">
+                                <i class="fa fa-spinner fa-spin"></i>
+                                <p>{{ 'COMMON.LOADING' | i18n }}...</p>
+                            </div>
                         </div>
+                        
+                        <!-- Conteúdo real do mapa -->
+                        <div ng-if="mapStates[map.index].visible">
+                            <!-- Header do mapa com informações -->
+                            <div class="map-header">
+                                <span>{{formatMapDate(map.date)}}</span>
+                                <span>{{periodo}}</span>
+                            </div>
 
-                        <!-- Botão do Planet Mosaics -->
-                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
+                            <!-- Botão do Planet Mosaics -->
+                            <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
                                 <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
                                     <i class="fa fa-camera"></i>
                                 </button>
                             </span>
 
-                        <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
-                        <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
-                                     lon="point.lon"
-                                     lat="point.lat"
-                                     zoom="config.zoomLevel"
-                                     period="period"
-                                     year="map.year"
-                                     visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
-                        </landsat-map>
+                            <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                         lon="point.lon"
+                                         lat="point.lat"
+                                         zoom="config.zoomLevel"
+                                         period="period"
+                                         year="map.year"
+                                         visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                            </landsat-map>
 
-                        <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                        lon="point.lon"
-                                        lat="point.lat"
-                                        bounds="map.bounds"
-                                        zoom="config.zoomLevel"
-                                        tms-url="map.url">
-                        </inspection-map>
+                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                            lon="point.lon"
+                                            lat="point.lat"
+                                            bounds="map.bounds"
+                                            zoom="config.zoomLevel"
+                                            tms-url="map.url">
+                            </inspection-map>
+                        </div>
                     </div>
                 </div>
                 <div class="clearfix"></div>
             </div>
         </div>
-        <div ng-show="isObjectEmpty(point) && pointLoaded" class="row">
+        <div ng-show="isObjectEmpty(point) && pointLoaded" class="row  main-content">
             <center>
                 <img class="img-responsive" src="assets/finish.jpg"/>
             </center>
         </div>
-        <div ng-hide="isObjectEmpty(point) && pointLoaded"
-             class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-offset-310" ng-show="showTimeseries">
+        <div ng-hide="isObjectEmpty(point) && pointLoaded " class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-2 col-lg-offset-2  main-content" ng-show="showTimeseries">
             <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
-            <div class="row">
+            <div class="row" style="padding-left: 5px;">
                 <fieldset  ng-show="showChartsLandsat" >
                     <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
                     <div id="LANDSAT"></div>

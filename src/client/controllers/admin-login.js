@@ -19,7 +19,7 @@ Application.controller('AdminLoginController', function ($scope, $http, $window,
             }
         }, function(error) {
             // Se erro na verificação, continuar na tela de login
-            console.log('Não autenticado ou erro na verificação');
+            // User not authenticated or verification error
         });
     };
 
@@ -35,7 +35,7 @@ Application.controller('AdminLoginController', function ($scope, $http, $window,
         $http.post('/api/admin/login', $scope.credentials).then(function(response) {
             $scope.loading = false;
             if (response.data.success) {
-                console.log('Login bem-sucedido, redirecionando para admin/campaigns');
+                // Login successful, redirecting to admin/campaigns
                 // Usar timeout para garantir que o redirecionamento aconteça após o digest
                 setTimeout(function() {
                     $scope.$apply(function() {
@@ -91,7 +91,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
     $scope.checkAuth = function() {
         // Marcar que estamos no sistema admin
         $scope.$root.isAdminMode = true;
-        console.log('Admin mode activated:', $scope.$root.isAdminMode);
+        // Admin mode activated
         
         $http.get('/api/admin/check').then(function(response) {
             if (!response.data.authenticated) {
@@ -117,9 +117,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
 
     // Carregar campanhas com filtros
     $scope.loadCampaigns = function(page) {
-        console.log('loadCampaigns called with page:', page);
-        console.log('Current path before loadCampaigns:', $location.path());
-        console.log('Current admin mode before loadCampaigns:', $scope.$root.isAdminMode);
+        // Loading campaigns with filters and pagination
         
         if (page) {
             $scope.pagination.currentPage = page;
@@ -162,19 +160,19 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
             params += `&sortBy=${encodeURIComponent($scope.filters.sortBy)}`;
         }
         
-        console.log('Making API call to:', '/api/campaigns' + params);
+        // Making API call to load campaigns
         
         $http.get('/api/campaigns' + params).then(function(response) {
-            console.log('API call successful, response received');
+            // API call successful, processing response
             $scope.campaigns = response.data.campaigns;
             $scope.pagination = response.data.pagination;
             $scope.loading = false;
         }, function(error) {
             console.error('Error loading campaigns:', error);
-            console.log('Current path after error:', $location.path());
+            // Error occurred while loading campaigns
             $scope.loading = false;
             if (error.status === 401) {
-                console.log('Redirecting to /admin/login due to 401 error');
+                // Redirecting to login due to 401 error
                 $location.path('/admin/login');
             } else {
                 alert('Erro ao carregar campanhas');
@@ -240,9 +238,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
 
     // Funções de navegação
     $scope.goToPage = function(page) {
-        console.log('goToPage called with page:', page);
-        console.log('Current admin mode:', $scope.$root.isAdminMode);
-        console.log('Current pagination:', $scope.pagination);
+        // Navigating to page with admin mode verification
         
         if (page >= 1 && page <= $scope.pagination.totalPages) {
             $scope.loadCampaigns(page);
@@ -447,7 +443,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
 // Função global para gerenciar conexão socket única
 window.getAdminSocket = function() {
     if (!window.adminSocket || !window.adminSocket.connected) {
-        console.log('Criando nova conexão socket global...');
+        // Creating new global socket connection...
         try {
             window.adminSocket = io('/', {
                 transports: ['polling', 'websocket'],
@@ -461,11 +457,11 @@ window.getAdminSocket = function() {
             
             // Event listeners globais para debug
             window.adminSocket.on('connect', function() {
-                console.log('Socket global conectado:', window.adminSocket.id);
+                // Global socket connected
             });
             
             window.adminSocket.on('disconnect', function() {
-                console.log('Socket global desconectado');
+                // Global socket disconnected
             });
             
             window.adminSocket.on('connect_error', function(error) {
@@ -473,7 +469,7 @@ window.getAdminSocket = function() {
             });
             
             window.adminSocket.on('reconnect', function(attemptNumber) {
-                console.log('Socket global reconectado após', attemptNumber, 'tentativas');
+                // Global socket reconnected after attempts
             });
             
         } catch (error) {
@@ -481,7 +477,7 @@ window.getAdminSocket = function() {
             window.adminSocket = io();
         }
     } else {
-        console.log('Reutilizando socket global existente:', window.adminSocket.id);
+        // Reusing existing global socket
     }
     return window.adminSocket;
 };
@@ -572,7 +568,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
                     $scope.uploadProgress.duration = response.data.duration || 0;
                     $scope.uploadProgress.properties = response.data.properties || [];
                     
-                    console.log('Upload concluído com sucesso:', response.data);
+                    // Upload completed successfully
                 } else {
                     $scope.uploadProgress.success = false;
                     $scope.uploadProgress.error = response.data.error || 'Erro desconhecido';

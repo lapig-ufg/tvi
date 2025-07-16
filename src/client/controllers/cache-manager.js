@@ -112,7 +112,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
             $scope.liveProgress.recentLogs = [];
             $scope.liveProgress.startTime = new Date();
             
-            console.log('Job de cache iniciado:', data);
+            // Cache job started
         });
     });
     
@@ -127,7 +127,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 message: `Iniciando processamento de ${data.totalPoints} pontos em ${data.totalBatches} batches`
             });
             
-            console.log('Pontos encontrados para cache:', data);
+            // Points found for cache processing
         });
     });
     
@@ -168,7 +168,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.liveProgress.recentLogs.shift();
             }
             
-            console.log('Batch de cache concluído:', data);
+            // Cache batch completed
         });
     });
     
@@ -186,7 +186,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.liveProgress.recentLogs.shift();
             }
             
-            console.log('Ponto sendo processado:', data);
+            // Point being processed
         });
     });
     
@@ -208,7 +208,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.liveProgress.recentLogs.shift();
             }
             
-            console.log('Ponto concluído:', data);
+            // Point processing completed
         });
     });
     
@@ -235,8 +235,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     // Quando um tile é processado com sucesso
     socket.on('cache-tile-success', function(data) {
         $scope.$apply(function() {
-            // Apenas log em debug - não mostrar na UI para evitar spam
-            console.log('Tile processado:', data.url, 'Status:', data.status);
+            // Tile processed successfully - debug only, not shown in UI
         });
     });
     
@@ -259,7 +258,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.loadJobStatus();
             }, 1000);
             
-            console.log('Job de cache concluído:', data);
+            // Cache job completed
         });
     });
 
@@ -687,18 +686,16 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     
     // Monitorar conexão do socket
     socket.on('connect', function() {
-        console.log('Socket conectado');
-        // Re-entrar na sala após reconexão
+        // Socket connected, rejoining room
         socket.emit('join', 'cache-updates');
     });
     
     socket.on('disconnect', function() {
-        console.log('Socket desconectado');
+        // Socket disconnected
     });
     
     socket.on('reconnect', function(attemptNumber) {
-        console.log('Socket reconectado após', attemptNumber, 'tentativas');
-        // Re-entrar na sala após reconexão
+        // Socket reconnected after attempts, rejoining room
         socket.emit('join', 'cache-updates');
     });
     

@@ -20,21 +20,21 @@ Application.directive('languageSelector', function(i18nService, $rootScope, $tim
                     '</button>' +
                   '</div>',
         link: function(scope, element, attrs) {
-            console.log('[language-selector] Initializing component');
+            // Initializing language selector component
             
             // Initialize with current language
             scope.currentLanguage = i18nService.currentLanguage;
-            console.log('[language-selector] Current language:', scope.currentLanguage);
+            // Current language initialized
             
             // Function to select language
             scope.selectLanguage = function(lang) {
-                console.log('[language-selector] Selecting language:', lang);
+                // Selecting new language
                 var promise = i18nService.setLanguage(lang);
                 
                 if (promise && promise.then) {
                     promise.then(function() {
                         scope.currentLanguage = lang;
-                        console.log('[language-selector] Language changed to:', lang);
+                        // Language changed successfully
                         // Force page reload to update all translations
                         $timeout(function() {
                             $window.location.reload();
@@ -50,7 +50,7 @@ Application.directive('languageSelector', function(i18nService, $rootScope, $tim
             
             // Listen for language changes
             var unregister = $rootScope.$on('languageChanged', function(event, lang) {
-                console.log('[language-selector] Received language change event:', lang);
+                // Received language change event
                 scope.currentLanguage = lang;
                 if (!scope.$$phase) {
                     scope.$apply();

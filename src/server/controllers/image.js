@@ -64,7 +64,9 @@ module.exports = function(app) {
     <BlockSizeX>256</BlockSizeX> \n\
     <BlockSizeY>256</BlockSizeY> \n\
     <BandsCount>3</BandsCount> \n\
-    <MaxConnections>10</MaxConnections> \n\
+    <MaxConnections>3</MaxConnections> \n\
+    <Timeout>30</Timeout> \n\
+    <ZeroBlockHttpCodes>429,503,504</ZeroBlockHttpCodes> \n\
     <Cache /> \n\
 </GDAL_WMS>"
 	}

@@ -397,7 +397,7 @@ module.exports = function (app) {
                     jobConfig.params.simulate = updateData.simulate;
                 }
                 
-                console.log('Configuração de cache atualizada:', updateData);
+                // Configuração de cache atualizada
                 
                 response.json({
                     success: true,
@@ -542,7 +542,7 @@ module.exports = function (app) {
                     
                     if (simulate) {
                         // Apenas simular - não fazer requisições reais
-                        console.log(`[SIMULAÇÃO] Processando ${point._id} - Landsat ${year} ${period}`);
+                        // [SIMULAÇÃO] Processando ponto
                         pointResult.imagesProcessed++;
                         
                         // Simular tempo de processamento
@@ -553,7 +553,7 @@ module.exports = function (app) {
                         try {
                             await Internal.simulateLeafletRequest(point, period, year, campaign);
                             pointResult.imagesProcessed++;
-                            console.log(`[REAL] Cacheado ${point._id} - Landsat ${year} ${period}`);
+                            // [REAL] Cacheado ponto
                         } catch (error) {
                             console.error(`Erro ao cachear ${point._id} - Landsat ${year} ${period}:`, error.message);
                             pointResult.errors.push(`Landsat ${year} ${period}: ${error.message}`);
@@ -656,7 +656,7 @@ module.exports = function (app) {
                         resolve(null); // Não falha o processo todo
                     } else {
                         processedTiles++;
-                        console.log(`[OK] ${tileUrl} - Status: ${response.statusCode}`);
+                        // [OK] Tile processado
                         Internal.emitCacheUpdate('cache-tile-success', {
                             pointId: point._id,
                             url: tileUrl,
@@ -693,7 +693,7 @@ module.exports = function (app) {
         source: 'manual'
     });
     
-    console.log(`Concluído: ${point._id} - ${period}/${year} - ${processedTiles}/${tiles.length} tiles (Zoom 13)`);
+    // Concluído processamento do ponto
     };
 
     /**
@@ -808,7 +808,7 @@ module.exports = function (app) {
             fullUrl += '?' + queryParams.join('&');
         }
         
-        console.log(`Chamando API de remoção de cache: ${fullUrl}`);
+        // Chamando API de remoção de cache
         
         // Fazer requisição para API de tiles
         request({
@@ -833,7 +833,7 @@ module.exports = function (app) {
                 var result = JSON.parse(body || '{}');
                 
                 if (apiResponse.statusCode === 200) {
-                    console.log('Cache removido com sucesso:', result);
+                    // Cache removido com sucesso
                     
                     response.json({
                         success: true,
@@ -908,7 +908,7 @@ module.exports = function (app) {
         }
         
         // Log da operação
-        console.log('Reset cache MongoDB - Query:', JSON.stringify(updateQuery));
+        // Reset cache MongoDB - Query
         
         // Executar update
         pointsCollection.updateMany(
@@ -925,7 +925,7 @@ module.exports = function (app) {
                 }
                 
                 var updatedCount = result.modifiedCount || 0;
-                console.log(`Cache resetado para ${updatedCount} pontos`);
+                // Cache resetado
                 
                 // Emitir evento de atualização
                 Internal.emitCacheUpdate('cache-reset-mongodb', {

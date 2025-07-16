@@ -49,10 +49,10 @@ Application.config(function($routeProvider, $locationProvider) {
 		})
 		.otherwise({
 			redirectTo: function() {
-				console.log('Otherwise route triggered, current path:', location.hash);
+				// Otherwise route triggered
 				// Se estamos em rota admin, não redirecionar
 				if (location.hash && location.hash.indexOf('#/admin') === 0) {
-					console.log('Admin route detected in otherwise, staying put');
+					// Admin route detected in otherwise, staying put
 					return location.hash.substring(1); // Remove # from hash
 				}
 				return '/login';
@@ -64,12 +64,7 @@ Application.config(function($routeProvider, $locationProvider) {
 	$httpProvider.interceptors.push(function($location, $rootScope) {
 		return {
 			'response': function(response) {
-				console.log('HTTP Response:', {
-					url: response.config.url,
-					status: response.status,
-					currentPath: $location.path(),
-					isAdminMode: $rootScope.isAdminMode
-				});
+				// HTTP Response logged
 				return response;
 			},
 			'responseError': function(rejection) {
@@ -85,9 +80,9 @@ Application.config(function($routeProvider, $locationProvider) {
 	});
 }).run(function($http, $location, $rootScope, requester, i18nService) {
 	// Ensure i18n translations are loaded
-	console.log('[app] Ensuring i18n translations are loaded');
+	// [app] Ensuring i18n translations are loaded
 	i18nService.ensureLoaded().then(function() {
-		console.log('[app] i18n translations loaded successfully');
+		// [app] i18n translations loaded successfully
 	}).catch(function(error) {
 		console.error('[app] Failed to load i18n translations:', error);
 	});
@@ -110,17 +105,11 @@ Application.config(function($routeProvider, $locationProvider) {
 		var currentPath = $location.path();
 		var nextPath = next && next.$$route && next.$$route.originalPath;
 		
-		console.log('Route change intercepted:', {
-			currentPath: currentPath,
-			nextPath: nextPath,
-			isAdminMode: $rootScope.isAdminMode,
-			isAdminRouteCurrent: isAdminRoute(currentPath),
-			isAdminRouteNext: isAdminRoute(nextPath)
-		});
+		// Route change intercepted
 		
 		// Completamente ignorar qualquer coisa relacionada a admin
 		if (isAdminRoute(currentPath) || isAdminRoute(nextPath) || $rootScope.isAdminMode) {
-			console.log('Admin route detected, ignoring interceptor');
+			// Admin route detected, ignoring interceptor
 			return;
 		}
 		
@@ -128,13 +117,13 @@ Application.config(function($routeProvider, $locationProvider) {
 		var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard'];
 		var isMainSystemRoute = nextPath && mainSystemRoutes.includes(nextPath);
 		
-		console.log('Main system route check:', { nextPath: nextPath, isMainSystemRoute: isMainSystemRoute });
+		// Main system route check
 		
 		if (isMainSystemRoute) {
-			console.log('Checking login for main system route');
+			// Checking login for main system route
 			requester._get('login/user', function(result) {
 				if(!result) {
-					console.log('No user found, redirecting to /login');
+					// No user found, redirecting to /login
 					$location.path('/login');
 				} else {
 					$rootScope.user = result;
@@ -158,18 +147,13 @@ Application.config(function($routeProvider, $locationProvider) {
 	var currentPath = $location.path();
 	var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard', '/login', '/'];
 	
-	console.log('Initial route check:', {
-		currentPath: currentPath,
-		isAdminRoute: isAdminRoute(currentPath),
-		isMainSystemRoute: mainSystemRoutes.includes(currentPath),
-		shouldCheck: !isAdminRoute(currentPath) && (mainSystemRoutes.includes(currentPath) || currentPath === '')
-	});
+	// Initial route check
 	
 	if (!isAdminRoute(currentPath) && (mainSystemRoutes.includes(currentPath) || currentPath === '')) {
-		console.log('Running initial login check for main system');
+		// Running initial login check for main system
 		requester._get('login/user', function(result) {
 			if(!result) {
-				console.log('Initial check: No user found, redirecting to /login');
+				// Initial check: No user found, redirecting to /login
 				$location.path('/login');
 			} else {
 				$rootScope.user = result;

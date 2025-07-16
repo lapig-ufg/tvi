@@ -75,19 +75,19 @@ app.middleware.repository.init(() => {
 		app.io = io;
 
 		io.on('connection', function(socket){
-			console.log('Cliente conectado via socket:', socket.id);
+			// Cliente conectado via socket
 			
 			// Join em salas específicas
 			socket.on('join', function(room) {
 				socket.join(room);
-				console.log('Socket', socket.id, 'entrou na sala:', room);
+				// Socket entrou na sala
 			});
 			
 			// Join na sala de cache para receber atualizações
 			socket.join('cache-updates');
 			
 			socket.on('disconnect', function(){
-				console.log('Cliente desconectado:', socket.id);
+				// Cliente desconectado
 				// Remover lógica de sessão que pode estar causando o erro
 			});
 			
@@ -98,7 +98,7 @@ app.middleware.repository.init(() => {
 		})
 
 		app.use(function(error, request, response, next) {
-			console.log('ServerError: ', error.stack);
+			// ServerError logged
 			next();
 		});
 
@@ -109,7 +109,7 @@ app.middleware.repository.init(() => {
 
 
 		const httpServer = http.listen(app.config.port, function () {
-			console.log('%s Server @ [port %s] [pid %s]', 'TVI Server', app.config.port, process.pid.toString());
+			console.log('TVI Server started on port', app.config.port);
 			if(process.env.PRIMARY_WORKER) {
 				app.middleware.jobs.start();
 			}
@@ -119,7 +119,9 @@ app.middleware.repository.init(() => {
 
 		[`exit`, `uncaughtException`].forEach((event) => {
 			if (event === 'uncaughtException') {
-				process.on(event, (e) => { })
+				process.on(event, (e) => { 
+					console.error('Uncaught Exception:', e);
+				})
 			} else {
 				process.on(event, (e) => {
 					httpServer.close(() => process.exit())

@@ -28,15 +28,17 @@ module.exports = function (app) {
 
     Repository.id = function (id) {
         var x = new mongodb.ObjectID(id);
-        console.log(typeof x);
+        // ObjectID created
         return x;
     };
 
     Repository.init = function (callback) {
         Repository.db.open(function (err) {
             if (err) {
+                console.error('MongoDB connection error:', err);
                 return callback(err);
             }
+            console.log('MongoDB connected successfully');
 
             Repository.db.listCollections({}).toArray(function (err, names) {
 
@@ -45,7 +47,7 @@ module.exports = function (app) {
                     if (name != 'indexes') {
                         Repository.db.collection(name, function (err, repository) {
                             if (err) {
-                                console.log(err)
+                                console.error('Collection error for', name, ':', err);
                             }
                             Repository.collections[name] = repository;
                             callback();
@@ -64,7 +66,7 @@ module.exports = function (app) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
                                 if (err) {
-                                    console.log(err);
+                                    console.error('Required collection error for', collectionName, ':', err);
                                 }
                                 Repository.collections[collectionName] = repository;
                                 callback();
@@ -98,7 +100,7 @@ module.exports = function (app) {
                     if (name != 'indexes') {
                         Repository.dbTs.collection(name, function (err, repository) {
                             if (err) {
-                                console.log(err)
+                                console.error('Timeseries collection error for', name, ':', err);
                             }
                             Repository.tSCollections[name] = repository;
                             callback();
@@ -122,7 +124,7 @@ module.exports = function (app) {
 
     // Criar índices para melhorar performance das consultas
     Repository.createIndexes = function(callback) {
-        console.log('Criando índices para otimização de performance...');
+        // Criando índices para otimização de performance
         
         async.series([
             // Índices para collection points
@@ -148,7 +150,7 @@ module.exports = function (app) {
                     if (err) {
                         console.error('Erro ao criar índices para points:', err);
                     } else {
-                        console.log('Índices criados para collection points');
+                        // Índices criados para collection points
                     }
                     cb();
                 });
@@ -169,7 +171,7 @@ module.exports = function (app) {
                     if (err) {
                         console.error('Erro ao criar índices para campaign:', err);
                     } else {
-                        console.log('Índices criados para collection campaign');
+                        // Índices criados para collection campaign
                     }
                     cb();
                 });
@@ -185,7 +187,7 @@ module.exports = function (app) {
                     if (err && err.code !== 11000) { // Ignorar erro de duplicação
                         console.error('Erro ao criar índices para users:', err);
                     } else {
-                        console.log('Índices criados para collection users');
+                        // Índices criados para collection users
                     }
                     cb();
                 });
@@ -194,7 +196,7 @@ module.exports = function (app) {
             if (err) {
                 console.error('Erro ao criar índices:', err);
             } else {
-                console.log('Todos os índices foram criados com sucesso');
+                // Todos os índices foram criados com sucesso
             }
             callback();
         });

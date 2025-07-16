@@ -1,12 +1,15 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, mapLoadingService, $timeout) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false
     $scope.showChartsNDDI = false
     $scope.planetMosaics = [];
     $scope.sentinelMosaics   = [];
+    
+    // Estados para lazy loading
+    $scope.mapStates = {}; // { index: { visible: boolean, loading: boolean } }
     
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
@@ -15,6 +18,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
+    
+    // Lista de propriedades padrão que não devem ser mostradas nas propriedades customizadas
+    $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
     
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
@@ -222,7 +228,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }, function (data) {
                 // Verificar se há dados de NDVI
                 if (!data || !data.values || data.values.length === 0) {
-                    console.warn('No NDVI data available for this point');
+                    // Dados NDVI não disponíveis para este ponto - comportamento normal
                     return;
                 }
                 
@@ -381,7 +387,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
                     var dataChart = [trace1, trace2, trace3, trace4, trace5];
 
-                    Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+                    Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false, scrollZoom: false});
 
                     window.onresize = function () {
                         Plotly.Plots.resize(gd);
@@ -468,7 +474,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     };
 
                     let dataChart = [trace1, trace2, trace3];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false, scrollZoom: false });
                     Plotly.Plots.resize(gd);
 
                     window.onresize = function () {
@@ -522,7 +528,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     };
 
                     let dataChart = [trace];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false, scrollZoom: false });
                     Plotly.Plots.resize(gd);
 
                     window.onresize = function () {
@@ -534,6 +540,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         const generateMaps = function () {
             $scope.maps = [];
+            $scope.mapStates = {}; // Resetar estados
+            mapLoadingService.reset(); // Limpar serviço de loading
+            
             var tmsIdList = [];
 
             $scope.tmsIdListWet = [];
@@ -565,14 +574,61 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     date = image.datetime
                 }
 
+                const mapIndex = $scope.maps.length;
                 $scope.maps.push({
                     date: date,
                     year: year,
                     url: url,
-                    bounds: $scope.point.bounds
+                    bounds: $scope.point.bounds,
+                    index: mapIndex
                 });
+                
+                // Inicializar estado do mapa
+                $scope.mapStates[mapIndex] = {
+                    visible: false,
+                    loading: false
+                };
+            }
+            
+            // Carregar automaticamente os primeiros mapas IMEDIATAMENTE
+            const initialMapsToLoad = Math.min(3, $scope.maps.length);
+            
+            for (let i = 0; i < initialMapsToLoad; i++) {
+                $scope.onMapVisible(i);
             }
         }
+        
+        // Função chamada quando um mapa se torna visível
+        $scope.onMapVisible = function(index) {
+            if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
+                $scope.mapStates[index].visible = true;
+                $scope.mapStates[index].loading = true;
+                mapLoadingService.startLoading(index);
+                
+                // Simular carregamento completo após o mapa carregar
+                // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
+                $timeout(function() {
+                    $scope.mapStates[index].loading = false;
+                    mapLoadingService.finishLoading(index);
+                }, 500);
+            }
+        };
+        
+        // Listener para pré-carregar mapas
+        $scope.$on('preloadMaps', function(event, indices) {
+            indices.forEach(function(index) {
+                if (index >= 0 && index < $scope.maps.length && 
+                    !$scope.mapStates[index].visible && 
+                    !mapLoadingService.isLoaded(index) &&
+                    !mapLoadingService.isLoading(index)) {
+                    
+                    // Agendar pré-carregamento
+                    $timeout(function() {
+                        $scope.onMapVisible(index);
+                    }, 200);
+                }
+            });
+        });
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;
@@ -708,6 +764,63 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 }));
         });
 
+        // Função para verificar se deve mostrar uma propriedade
+        $scope.shouldShowProperty = function(key) {
+            return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
+        };
+        
+        // Função para formatar o nome da propriedade
+        $scope.formatPropertyName = function(key) {
+            // Capitalizar primeira letra e substituir underscores por espaços
+            return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+        };
+        
+        // Função para verificar se existem propriedades customizadas
+        $scope.hasCustomProperties = function() {
+            if (!$scope.point || !$scope.point.properties) {
+                return false;
+            }
+            
+            // Verificar se existe alguma propriedade que não está na lista de defaultProperties
+            for (var key in $scope.point.properties) {
+                if ($scope.shouldShowProperty(key)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        
+        // Função para formatar data do mapa - mostra apenas ano se for 00/00/YYYY
+        $scope.formatMapDate = function(dateString) {
+            if (!dateString) return '';
+            
+            // Verificar se é no formato 00/00/YYYY
+            if (dateString.startsWith('00/00/')) {
+                return dateString.split('/')[2]; // Retorna apenas o ano
+            }
+            
+            // Caso contrário, formatar como data normal
+            try {
+                var date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    // Se não conseguir converter para data, extrair o ano da string
+                    var parts = dateString.split('/');
+                    if (parts.length === 3) {
+                        return parts[2]; // Retorna apenas o ano
+                    }
+                    return dateString;
+                }
+                
+                var day = String(date.getDate()).padStart(2, '0');
+                var month = String(date.getMonth() + 1).padStart(2, '0');
+                var year = date.getFullYear();
+                
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                return dateString;
+            }
+        };
+        
         $scope.openMosaicDialog = function(map, point, config) {
             // const mosaicsForYear = $scope.planetMosaics.filter(mosaic => {
             //     const firstYear = new Date(mosaic.firstAcquired).getFullYear();

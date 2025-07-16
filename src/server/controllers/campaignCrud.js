@@ -152,8 +152,7 @@ module.exports = function(app) {
                 }
             }
             
-            console.log('Campaign list query:', query);
-            console.log('Campaign list sort:', sortBy);
+            // Campaign list query and sort logged for debugging
             
             // Contar total de campanhas com filtros
             const totalCampaigns = await campaignCollection.count(query);
@@ -611,7 +610,7 @@ module.exports = function(app) {
         }
     };
 
-    // Upload de GeoJSON com processamento em foreground
+    // Upload de GeoJSON com processamento direto (sem salvar arquivo)
     CampaignCrud.uploadGeoJSON = async (req, res) => {
         try {
             const campaignId = req.body.campaignId;
@@ -644,10 +643,10 @@ module.exports = function(app) {
             const sessionId = req.sessionID;
             const userId = req.session && req.session.admin && req.session.admin.superAdmin ? req.session.admin.superAdmin.id : 'anonymous';
             
-            console.log('Iniciando upload em foreground para sessão:', sessionId, 'usuário:', userId);
+            // Processamento direto iniciado
             
-            // Processar em foreground com progresso em tempo real
-            const result = await CampaignCrud.processGeoJSONForeground(campaignId, geojsonData, filename, app.io, sessionId, userId);
+            // Processar diretamente sem salvar arquivo
+            const result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId);
             
             // Responder com o resultado do processamento
             res.json(result);
@@ -658,15 +657,15 @@ module.exports = function(app) {
         }
     };
     
-    // Processamento em foreground do GeoJSON com progresso em tempo real
-    CampaignCrud.processGeoJSONForeground = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
+    // Processamento direto do GeoJSON sem salvar arquivo
+    CampaignCrud.processGeoJSONDirect = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
         const totalFeatures = geojsonData.features.length;
         let processedCount = 0;
         let insertedCount = 0;
         let errorCount = 0;
         const startTime = new Date();
         
-        console.log(`Processamento foreground iniciado para sessão: ${sessionId}, usuário: ${userId}, campanha: ${campaignId}`);
+        // Processamento direto iniciado
         
         // Função para emitir eventos para o socket correto
         const emitToUser = (event, data) => {
@@ -678,7 +677,7 @@ module.exports = function(app) {
                     userId: userId
                 });
                 
-                console.log(`Evento ${event} emitido para sessão ${sessionId}`);
+                // Evento emitido
             }
         };
         
@@ -691,18 +690,6 @@ module.exports = function(app) {
         });
         
         try {
-            // Salvar arquivo
-            const uploadsDir = path.join(__dirname, '../../uploads');
-            if (!fs.existsSync(uploadsDir)) {
-                fs.mkdirSync(uploadsDir, { recursive: true });
-            }
-            
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const savedFilename = 'campaign-' + uniqueSuffix + '.geojson';
-            const filePath = path.join(uploadsDir, savedFilename);
-            
-            fs.writeFileSync(filePath, JSON.stringify(geojsonData, null, 2));
-            
             // Extrair propriedades únicas de todas as features
             const allProperties = new Set();
             geojsonData.features.forEach(feature => {
@@ -711,12 +698,11 @@ module.exports = function(app) {
                 });
             });
             
-            // Atualizar a campanha com as propriedades e arquivo
+            // Atualizar a campanha apenas com as propriedades (sem o arquivo)
             await campaignCollection.updateOne(
                 { _id: campaignId },
                 { 
                     $set: { 
-                        geojsonFile: savedFilename,
                         properties: Array.from(allProperties)
                     } 
                 }
@@ -729,7 +715,7 @@ module.exports = function(app) {
             );
             
             let counter = lastPoint ? lastPoint.index + 1 : 1;
-            console.log(`Iniciando contador de pontos em: ${counter} para campanha: ${campaignId}`);
+            // Iniciando contador de pontos
             
             // Processar os pontos em lotes menores para melhor responsividade
             const batchSize = 50; // Reduzir tamanho do lote para foreground
@@ -739,7 +725,7 @@ module.exports = function(app) {
                 const batchNumber = Math.floor(i / batchSize) + 1;
                 const totalBatches = Math.ceil(geojsonData.features.length / batchSize);
                 
-                console.log(`Processando lote ${batchNumber}/${totalBatches} (${batch.length} features)`);
+                // Processando lote
                 
                 // Emitir progresso do batch
                 emitToUser('batch-processing', {
@@ -837,7 +823,7 @@ module.exports = function(app) {
                         const insertedInBatch = insertResult.insertedCount || batchPoints.length;
                         insertedCount += insertedInBatch;
                         
-                        console.log(`Lote ${batchNumber} inserido: ${insertedInBatch} pontos`);
+                        // Lote inserido
                         
                         emitToUser('batch-completed', {
                             campaignId: campaignId,
@@ -855,7 +841,7 @@ module.exports = function(app) {
                         
                         // Verificar se é erro de chave duplicada
                         if (insertError.code === 11000) {
-                            console.log(`Erro de chave duplicada detectado no lote ${batchNumber}`);
+                            // Erro de chave duplicada detectado
                             
                             // Tentar inserir pontos individualmente, pulando duplicados
                             let individualErrors = 0;
@@ -867,7 +853,308 @@ module.exports = function(app) {
                                     individualSuccess++;
                                 } catch (individualError) {
                                     if (individualError.code === 11000) {
-                                        console.log(`Ponto duplicado pulado: ${point._id}`);
+                                        // Ponto duplicado pulado
+                                        individualErrors++;
+                                    } else {
+                                        throw individualError;
+                                    }
+                                }
+                            }
+                            
+                            insertedCount += individualSuccess;
+                            errorCount += individualErrors;
+                            
+                            emitToUser('batch-warning', {
+                                campaignId: campaignId,
+                                batchNumber: batchNumber,
+                                warning: `Lote ${batchNumber} parcialmente inserido: ${individualSuccess} pontos inseridos, ${individualErrors} pontos duplicados pulados`,
+                                duplicatesSkipped: individualErrors,
+                                pointsInserted: individualSuccess,
+                                insertedCount: insertedCount,
+                                errorCount: errorCount
+                            });
+                        } else {
+                            // Outro tipo de erro
+                            errorCount += batchPoints.length;
+                            
+                            emitToUser('batch-error', {
+                                campaignId: campaignId,
+                                batchNumber: batchNumber,
+                                error: insertError.message,
+                                errorCode: insertError.code,
+                                pointsAffected: batchPoints.length,
+                                errorCount: errorCount
+                            });
+                        }
+                    }
+                }
+                
+                // Emitir progresso final do lote
+                emitToUser('features-processed', {
+                    campaignId: campaignId,
+                    processedCount: processedCount,
+                    insertedCount: insertedCount,
+                    totalFeatures: totalFeatures,
+                    progress: Math.round((processedCount / totalFeatures) * 100)
+                });
+                
+                // Pequena pausa entre batches para não bloquear o event loop
+                await new Promise(resolve => setImmediate(resolve));
+            }
+            
+            const endTime = new Date();
+            const duration = endTime - startTime;
+            
+            const result = {
+                success: true,
+                message: 'Upload processado com sucesso',
+                campaignId: campaignId,
+                totalFeatures: totalFeatures,
+                processedCount: processedCount,
+                insertedCount: insertedCount,
+                errorCount: errorCount,
+                filename: filename,
+                properties: Array.from(allProperties),
+                duration: duration,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString()
+            };
+            
+            // Emitir evento de conclusão
+            emitToUser('upload-completed', result);
+            
+            // GeoJSON processamento direto concluído
+            
+            return result;
+            
+        } catch (error) {
+            console.error('Error in direct GeoJSON processing:', error);
+            
+            const errorResult = {
+                success: false,
+                error: error.message,
+                campaignId: campaignId,
+                processedCount: processedCount,
+                insertedCount: insertedCount,
+                errorCount: errorCount
+            };
+            
+            emitToUser('upload-failed', errorResult);
+            
+            throw error;
+        }
+    };
+    
+    // Processamento em foreground do GeoJSON com progresso em tempo real
+    CampaignCrud.processGeoJSONForeground = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
+        const totalFeatures = geojsonData.features.length;
+        let processedCount = 0;
+        let insertedCount = 0;
+        let errorCount = 0;
+        const startTime = new Date();
+        
+        // Processamento foreground iniciado
+        
+        // Função para emitir eventos para o socket correto
+        const emitToUser = (event, data) => {
+            if (io) {
+                // Emitir para todos os sockets da sala geojson-upload
+                io.to('geojson-upload').emit(event, {
+                    ...data,
+                    sessionId: sessionId,
+                    userId: userId
+                });
+                
+                // Evento emitido
+            }
+        };
+        
+        // Emitir evento de início
+        emitToUser('upload-started', {
+            campaignId: campaignId,
+            totalFeatures: totalFeatures,
+            filename: filename,
+            timestamp: startTime.toISOString()
+        });
+        
+        try {
+            // Salvar arquivo
+            const uploadsDir = path.join(__dirname, '../../uploads');
+            if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            const savedFilename = 'campaign-' + uniqueSuffix + '.geojson';
+            const filePath = path.join(uploadsDir, savedFilename);
+            
+            fs.writeFileSync(filePath, JSON.stringify(geojsonData, null, 2));
+            
+            // Extrair propriedades únicas de todas as features
+            const allProperties = new Set();
+            geojsonData.features.forEach(feature => {
+                Object.keys(feature.properties || {}).forEach(key => {
+                    allProperties.add(key);
+                });
+            });
+            
+            // Atualizar a campanha com as propriedades e arquivo
+            await campaignCollection.updateOne(
+                { _id: campaignId },
+                { 
+                    $set: { 
+                        geojsonFile: savedFilename,
+                        properties: Array.from(allProperties)
+                    } 
+                }
+            );
+            
+            // Buscar o último índice inserido para esta campanha
+            let lastPoint = await pointsCollection.findOne(
+                { campaign: campaignId },
+                { sort: { index: -1 }, projection: { index: 1 } }
+            );
+            
+            let counter = lastPoint ? lastPoint.index + 1 : 1;
+            // Iniciando contador de pontos
+            
+            // Processar os pontos em lotes menores para melhor responsividade
+            const batchSize = 50; // Reduzir tamanho do lote para foreground
+            
+            for (let i = 0; i < geojsonData.features.length; i += batchSize) {
+                const batch = geojsonData.features.slice(i, i + batchSize);
+                const batchNumber = Math.floor(i / batchSize) + 1;
+                const totalBatches = Math.ceil(geojsonData.features.length / batchSize);
+                
+                // Processando lote
+                
+                // Emitir progresso do batch
+                emitToUser('batch-processing', {
+                    campaignId: campaignId,
+                    batchNumber: batchNumber,
+                    totalBatches: totalBatches,
+                    batchSize: batch.length,
+                    processedCount: processedCount,
+                    insertedCount: insertedCount,
+                    progress: Math.round((processedCount / totalFeatures) * 100)
+                });
+                
+                const batchPoints = [];
+                
+                for (const feature of batch) {
+                    try {
+                        processedCount++;
+                        
+                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: 'Invalid geometry coordinates'
+                            });
+                            continue;
+                        }
+                        
+                        const coordinate = {
+                            X: feature.geometry.coordinates[0],
+                            Y: feature.geometry.coordinates[1]
+                        };
+                        
+                        // Validar coordenadas
+                        if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: 'Invalid coordinate values'
+                            });
+                            continue;
+                        }
+                        
+                        const point = {
+                            _id: counter + '_' + campaignId,
+                            campaign: campaignId,
+                            lon: coordinate.X,
+                            lat: coordinate.Y,
+                            dateImport: new Date(),
+                            biome: (feature.properties && feature.properties.biome) || null,
+                            uf: (feature.properties && feature.properties.uf) || null,
+                            county: (feature.properties && feature.properties.county) || null,
+                            countyCode: (feature.properties && feature.properties.countyCode) || null,
+                            path: (feature.properties && feature.properties.path) || null,
+                            row: (feature.properties && feature.properties.row) || null,
+                            userName: [],
+                            inspection: [],
+                            underInspection: 0,
+                            index: counter++,
+                            cached: false,
+                            enhance_in_cache: 1,
+                            // Armazenar todas as propriedades do GeoJSON
+                            properties: feature.properties || {}
+                        };
+                        
+                        batchPoints.push(point);
+                        
+                        // Emitir progresso de feature individual mais frequentemente
+                        if (processedCount % 25 === 0) {
+                            emitToUser('features-processed', {
+                                campaignId: campaignId,
+                                processedCount: processedCount,
+                                insertedCount: insertedCount,
+                                totalFeatures: totalFeatures,
+                                progress: Math.round((processedCount / totalFeatures) * 100)
+                            });
+                        }
+                        
+                    } catch (featureError) {
+                        errorCount++;
+                        console.error('Error processing feature:', featureError);
+                        emitToUser('feature-error', {
+                            campaignId: campaignId,
+                            featureIndex: processedCount - 1,
+                            error: featureError.message
+                        });
+                    }
+                }
+                
+                // Inserir batch no banco
+                if (batchPoints.length > 0) {
+                    try {
+                        const insertResult = await pointsCollection.insertMany(batchPoints, { ordered: false });
+                        const insertedInBatch = insertResult.insertedCount || batchPoints.length;
+                        insertedCount += insertedInBatch;
+                        
+                        // Lote inserido
+                        
+                        emitToUser('batch-completed', {
+                            campaignId: campaignId,
+                            batchNumber: batchNumber,
+                            totalBatches: totalBatches,
+                            batchPointsInserted: insertedInBatch,
+                            processedCount: processedCount,
+                            insertedCount: insertedCount,
+                            errorCount: errorCount,
+                            progress: Math.round((processedCount / totalFeatures) * 100)
+                        });
+                        
+                    } catch (insertError) {
+                        console.error('Error inserting batch:', insertError);
+                        
+                        // Verificar se é erro de chave duplicada
+                        if (insertError.code === 11000) {
+                            // Erro de chave duplicada detectado
+                            
+                            // Tentar inserir pontos individualmente, pulando duplicados
+                            let individualErrors = 0;
+                            let individualSuccess = 0;
+                            
+                            for (const point of batchPoints) {
+                                try {
+                                    await pointsCollection.insertOne(point);
+                                    individualSuccess++;
+                                } catch (individualError) {
+                                    if (individualError.code === 11000) {
+                                        // Ponto duplicado pulado
                                         individualErrors++;
                                     } else {
                                         throw individualError;
@@ -937,7 +1224,7 @@ module.exports = function(app) {
             // Emitir evento de conclusão
             emitToUser('upload-completed', result);
             
-            console.log(`GeoJSON upload foreground completed: ${insertedCount} points inserted, ${errorCount} errors, ${duration}ms`);
+            // GeoJSON upload foreground completed
             
             return result;
             
@@ -966,7 +1253,7 @@ module.exports = function(app) {
         let errorCount = 0;
         const startTime = new Date();
         
-        console.log(`Processamento iniciado para sessão: ${sessionId}, usuário: ${userId}, campanha: ${campaignId}`);
+        // Processamento iniciado
         
         // Função para emitir eventos para o socket correto
         const emitToUser = (event, data) => {
@@ -985,7 +1272,7 @@ module.exports = function(app) {
                     userId: userId
                 });
                 
-                console.log(`Evento ${event} emitido para sessão ${sessionId}`);
+                // Evento emitido
             }
         };
         
@@ -1036,7 +1323,7 @@ module.exports = function(app) {
             );
             
             let counter = lastPoint ? lastPoint.index + 1 : 1;
-            console.log(`Iniciando contador de pontos em: ${counter} para campanha: ${campaignId}`);
+            // Iniciando contador de pontos
             
             // Processar os pontos em lotes
             const points = [];
@@ -1166,7 +1453,7 @@ module.exports = function(app) {
                             const duplicateMatch = insertError.message.match(/dup key: { _id: "([^"]+)" }/);
                             const duplicateId = duplicateMatch ? duplicateMatch[1] : 'unknown';
                             
-                            console.log(`Erro de chave duplicada detectado: ${duplicateId}`);
+                            // Erro de chave duplicada detectado
                             
                             // Tentar inserir pontos individualmente, pulando duplicados
                             let individualErrors = 0;
@@ -1178,7 +1465,7 @@ module.exports = function(app) {
                                     individualSuccess++;
                                 } catch (individualError) {
                                     if (individualError.code === 11000) {
-                                        console.log(`Ponto duplicado pulado: ${point._id}`);
+                                        // Ponto duplicado pulado
                                         individualErrors++;
                                     } else {
                                         throw individualError;
@@ -1238,7 +1525,7 @@ module.exports = function(app) {
                 });
             }
             
-            console.log(`GeoJSON upload completed: ${processedCount} points processed, ${errorCount} errors`);
+            // GeoJSON upload completed
             
         } catch (error) {
             console.error('Error in background GeoJSON processing:', error);

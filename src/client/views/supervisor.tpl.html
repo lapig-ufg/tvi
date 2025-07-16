@@ -107,23 +107,30 @@
                     <!-- Localização -->
                     <div  ng-show="showPointInfo" style="margin-bottom: 10px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;">
                         <h5 style="margin: 0 0 6px 0; font-size: 13px; color: #666; font-weight: bold;">{{ 'SUPERVISOR.POINT_INFO.LOCATION' | i18n }}</h5>
-                        <div ng-hide="isChaco || isRaisg" style="margin-bottom: 3px; font-size: 12px;">
+                        <div ng-if="point.biome && !isChaco && !isRaisg" style="margin-bottom: 3px; font-size: 12px;">
                             <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span> <strong>{{point.biome}}</strong>
                         </div>
-                        <div ng-show="isChaco" style="margin-bottom: 3px; font-size: 12px;">
+                        <div ng-if="point.county && isChaco" style="margin-bottom: 3px; font-size: 12px;">
                             <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.REGION' | i18n }}:</span> <strong>{{point.county}}</strong>
                         </div>
-                        <div ng-show="isRaisg" style="margin-bottom: 3px; font-size: 12px;">
+                        <div ng-if="point.county && isRaisg" style="margin-bottom: 3px; font-size: 12px;">
                             <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.COUNTRY' | i18n }}:</span> <strong>{{point.county}}</strong>
                         </div>
-                        <div ng-hide="isChaco || isRaisg" style="margin-bottom: 3px; font-size: 12px;">
-                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.MUNICIPALITY' | i18n }}:</span> <strong>{{point.county}} - {{point.uf}}</strong>
+                        <div ng-if="point.county && !isChaco && !isRaisg" style="margin-bottom: 3px; font-size: 12px;">
+                            <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.MUNICIPALITY' | i18n }}:</span> <strong>{{point.county}}<span ng-if="point.uf"> - {{point.uf}}</span></strong>
                         </div>
-                        <div ng-show="isChaco" style="margin-bottom: 3px; font-size: 12px;">
+                        <div ng-if="point.biome && isChaco" style="margin-bottom: 3px; font-size: 12px;">
                             <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.MAP' | i18n }}:</span> <strong>{{point.biome}}</strong>
                         </div>
-                        <div ng-show="isRaisg" style="font-size: 12px;">
+                        <div ng-if="point.biome && isRaisg" style="font-size: 12px;">
                             <span style="color: #888;">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span> <strong>{{point.biome}}</strong>
+                        </div>
+                        
+                        <!-- Propriedades customizadas -->
+                        <div ng-if="point.properties && hasCustomProperties()" style="margin-top: 10px;">
+                            <div ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)" style="margin-bottom: 3px; font-size: 12px;">
+                                <span style="color: #888;">{{formatPropertyName(key)}}:</span> <strong>{{value}}</strong>
+                            </div>
                         </div>
                     </div>
                     
@@ -285,38 +292,59 @@
                 <!-- Container com Bootstrap Grid -->
                 <div class="row maps-grid" style="margin: 0;">
                     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-bottom: 0;">
-                    <div ng-repeat="map in maps" ng-class="getMapBoxClass(maps.length)">
-                        <!-- Header do mapa com informações -->
-                        <div class="map-header">
-                            <span>{{map.date | date: 'dd/MM/yyyy'}}</span>
-                            <span>{{periodo}}</span>
+                    <div ng-repeat="map in maps" 
+                         ng-class="getMapBoxClass(maps.length)"
+                         lazy-map
+                         map-index="{{map.index}}"
+                         total-maps="{{maps.length}}"
+                         on-visible="onMapVisible(map.index)">
+                        
+                        <!-- Placeholder enquanto o mapa não está carregado -->
+                        <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
+                            <div class="map-header">
+                                <span>{{map.date | date:'dd/MM/yyyy'}}</span>
+                                <span>{{periodo}}</span>
+                            </div>
+                            <div class="map-loading-content">
+                                <i class="fa fa-spinner fa-spin"></i>
+                                <p>{{ 'COMMON.LOADING' | i18n }}...</p>
+                            </div>
                         </div>
                         
-                        <!-- Botão do Planet Mosaics -->
-                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
-                            <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
-                                <i class="fa fa-camera"></i>
-                            </button>
-                        </span>
+                        <!-- Conteúdo real do mapa -->
+                        <div ng-if="mapStates[map.index].visible">
+                            <!-- Header do mapa com informações -->
+                            <div class="map-header">
+                                <span>{{map.date | date: 'dd/MM/yyyy'}}</span>
+                                <span>{{periodo}}</span>
+                            </div>
+                            
+                            <!-- Botão do Planet Mosaics -->
+                            <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
+                                <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
+                                    <i class="fa fa-camera"></i>
+                                </button>
+                            </span>
 
-                        <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
-                        <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
-                                     lon="point.lon"
-                                     lat="point.lat"
-                                     zoom="config.zoomLevel"
-                                     period="period"
-                                     year="map.year"
-                                     visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
-                        </landsat-map>
+                            <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                         lon="point.lon"
+                                         lat="point.lat"
+                                         zoom="config.zoomLevel"
+                                         period="period"
+                                         year="map.year"
+                                         visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                            </landsat-map>
 
-                        <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                        lon="point.lon"
-                                        lat="point.lat"
-                                        bounds="map.bounds"
-                                        zoom="config.zoomLevel"
-                                        tms-url="map.url">
-                        </inspection-map>
+                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                            lon="point.lon"
+                                            lat="point.lat"
+                                            bounds="map.bounds"
+                                            zoom="config.zoomLevel"
+                                            tms-url="map.url">
+                            </inspection-map>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

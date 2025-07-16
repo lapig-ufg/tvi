@@ -2,7 +2,7 @@
 
 // Simple i18n service for TVI application
 Application.factory('i18nService', function($http, $rootScope, $q) {
-    console.log('[i18n] Initializing i18n service');
+    // Initializing i18n service
     var service = {
         currentLanguage: 'pt-BR',
         translations: {},
@@ -22,9 +22,9 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
             return $q.resolve(service.translations[lang]);
         }
         
-        console.log('[i18n] Loading translations for language:', lang);
+        // Loading translations for language
         service.loadingPromises[lang] = $http.get('i18n/' + lang + '.json').then(function(response) {
-            console.log('[i18n] Successfully loaded translations for', lang, ':', response.data);
+            // Successfully loaded translations
             service.translations[lang] = response.data;
             delete service.loadingPromises[lang];
             return response.data;
@@ -39,19 +39,19 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
     
     // Set current language
     service.setLanguage = function(lang) {
-        console.log('[i18n] Setting language to:', lang);
+        // Setting language
         service.currentLanguage = lang;
         localStorage.setItem('tvi-language', lang);
         
         // Load translations if not already loaded
         if (!service.translations[lang]) {
             return service.loadTranslations(lang).then(function() {
-                console.log('[i18n] Language loaded and set to:', lang);
+                // Language loaded and set
                 $rootScope.$broadcast('languageChanged', lang);
                 return lang;
             });
         } else {
-            console.log('[i18n] Language already loaded, broadcasting change:', lang);
+            // Language already loaded, broadcasting change
             $rootScope.$broadcast('languageChanged', lang);
             return $q.resolve(lang);
         }
@@ -63,7 +63,7 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
         var current = service.translations[service.currentLanguage];
         
         if (!current) {
-            console.warn('[i18n] No translations loaded for language:', service.currentLanguage, 'Key:', key);
+            // No translations loaded for language, using key as fallback
             return key; // Return key if no translations loaded
         }
         
@@ -109,7 +109,7 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
     // Function to detect browser language
     service.detectBrowserLanguage = function() {
         var browserLang = navigator.language || navigator.userLanguage || 'pt-BR';
-        console.log('[i18n] Browser language detected:', browserLang);
+        // Browser language detected
         
         // Map browser language codes to our supported languages
         if (browserLang.toLowerCase().startsWith('pt')) {
@@ -126,9 +126,9 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
     var savedLang = localStorage.getItem('tvi-language');
     if (!savedLang) {
         savedLang = service.detectBrowserLanguage();
-        console.log('[i18n] No saved language, using browser language:', savedLang);
+        // No saved language, using browser language
     } else {
-        console.log('[i18n] Using saved language:', savedLang);
+        // Using saved language
     }
     
     service.currentLanguage = savedLang;

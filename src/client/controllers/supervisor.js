@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService) {
+Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService) {
     $scope.showCharts = false
     $scope.showChartsLandsat = false
     $scope.showChartsNDDI = false
@@ -10,6 +10,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.sentinelMosaics   = [];
     $scope.tilesCapabilities = [];
     
+    // Estados para lazy loading
+    $scope.mapStates = {}; // { index: { visible: boolean, loading: boolean } }
+    
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
     $scope.showPointInfo = true;
@@ -17,6 +20,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
+    
+    // Lista de propriedades padrão que não devem ser mostradas nas propriedades customizadas
+    $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
     
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
@@ -530,6 +536,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var generateMaps = function () {
             $scope.maps = [];
+            $scope.mapStates = {}; // Resetar estados
+            mapLoadingService.reset(); // Limpar serviço de loading
+            
             var tmsIdList = [];
 
             $scope.tmsIdListWet = [];
@@ -563,21 +572,65 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     }
                 }
 
+                const mapIndex = $scope.maps.length;
                 $scope.maps.push({
                     date: date,
                     year: year,
                     url: url,
-                    bounds: $scope.point.bounds
+                    bounds: $scope.point.bounds,
+                    index: mapIndex
                 });
+                
+                // Inicializar estado do mapa
+                $scope.mapStates[mapIndex] = {
+                    visible: false,
+                    loading: false
+                };
             }
             
-            // Force Angular to update the view when there's only one map
-            if ($scope.maps.length === 1) {
-                $timeout(function() {
-                    $scope.$apply();
-                }, 0);
-            }
+            // Carregar automaticamente os primeiros mapas após um pequeno delay
+            $timeout(function() {
+                // Carregar os primeiros 2-3 mapas automaticamente
+                const initialMapsToLoad = Math.min(3, $scope.maps.length);
+                for (let i = 0; i < initialMapsToLoad; i++) {
+                    if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
+                        $scope.onMapVisible(i);
+                    }
+                }
+            }, 1000);
         }
+        
+        // Função chamada quando um mapa se torna visível
+        $scope.onMapVisible = function(index) {
+            if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
+                $scope.mapStates[index].visible = true;
+                $scope.mapStates[index].loading = true;
+                mapLoadingService.startLoading(index);
+                
+                // Simular carregamento completo após o mapa carregar
+                // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
+                $timeout(function() {
+                    $scope.mapStates[index].loading = false;
+                    mapLoadingService.finishLoading(index);
+                }, 500);
+            }
+        };
+        
+        // Listener para pré-carregar mapas
+        $scope.$on('preloadMaps', function(event, indices) {
+            indices.forEach(function(index) {
+                if (index >= 0 && index < $scope.maps.length && 
+                    !$scope.mapStates[index].visible && 
+                    !mapLoadingService.isLoaded(index) &&
+                    !mapLoadingService.isLoading(index)) {
+                    
+                    // Agendar pré-carregamento
+                    $timeout(function() {
+                        $scope.onMapVisible(index);
+                    }, 200);
+                }
+            });
+        });
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;
@@ -916,6 +969,32 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }));
         });
 
+        // Função para verificar se deve mostrar uma propriedade
+        $scope.shouldShowProperty = function(key) {
+            return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
+        };
+        
+        // Função para formatar o nome da propriedade
+        $scope.formatPropertyName = function(key) {
+            // Capitalizar primeira letra e substituir underscores por espaços
+            return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+        };
+        
+        // Função para verificar se existem propriedades customizadas
+        $scope.hasCustomProperties = function() {
+            if (!$scope.point || !$scope.point.properties) {
+                return false;
+            }
+            
+            // Verificar se existe alguma propriedade que não está na lista de defaultProperties
+            for (var key in $scope.point.properties) {
+                if ($scope.shouldShowProperty(key)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        
         $scope.openMosaicDialog = function(map, point, config) {
             // ano do “thumbnail” que o usuário clicou
             const mapYear = map.year || Number(new Date(map.date).getFullYear());
