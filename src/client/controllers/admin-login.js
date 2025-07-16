@@ -551,6 +551,11 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
                 campaignId: campaignId,
                 geojsonContent: content,
                 filename: $scope.file.name
+            }, {
+                timeout: 600000, // 10 minutos
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             }).then(function(response) {
                 // Parar simulação de progresso
                 clearInterval(progressInterval);
@@ -586,7 +591,21 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
                     $uibModalInstance.dismiss('unauthorized');
                     $location.path('/admin/login');
                 } else {
-                    $scope.uploadProgress.error = error.data?.error || 'Erro de conexão';
+                    let errorMessage = 'Erro de conexão';
+                    
+                    if (error.status === 413) {
+                        errorMessage = 'Arquivo muito grande. Limite máximo: 100MB';
+                    } else if (error.status === 400) {
+                        errorMessage = error.data?.error || 'Dados inválidos na requisição';
+                    } else if (error.status === 0) {
+                        errorMessage = 'Erro de conexão - verifique sua internet ou se o servidor está disponível';
+                    } else if (error.status >= 500) {
+                        errorMessage = 'Erro interno do servidor';
+                    } else if (error.data?.error) {
+                        errorMessage = error.data.error;
+                    }
+                    
+                    $scope.uploadProgress.error = errorMessage;
                 }
             });
         };

@@ -67,8 +67,8 @@ app.middleware.repository.init(() => {
         }));*/
 
 		app.use(responseTime());
-		app.use(bodyParser.json({ limit: '50mb' }));
-		app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+		app.use(bodyParser.json({ limit: '100mb' }));
+		app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 		app.use(multer());
 
 		// Tornar io disponível para outros modules
@@ -98,7 +98,23 @@ app.middleware.repository.init(() => {
 		})
 
 		app.use(function(error, request, response, next) {
-			// ServerError logged
+			// Handle body parser errors (like payload too large)
+			if (error.type === 'entity.too.large') {
+				return response.status(413).json({
+					error: 'Arquivo muito grande. Limite máximo: 100MB',
+					type: 'PAYLOAD_TOO_LARGE'
+				});
+			}
+			
+			if (error.type === 'entity.parse.failed') {
+				return response.status(400).json({
+					error: 'Erro ao processar dados da requisição',
+					type: 'PARSE_ERROR'
+				});
+			}
+			
+			// Other errors
+			console.error('Server Error:', error);
 			next();
 		});
 
