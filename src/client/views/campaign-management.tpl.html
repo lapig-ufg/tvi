@@ -159,6 +159,11 @@
                             <i class="glyphicon glyphicon-exclamation-sign"></i> Pendentes
                         </a>
                     </li>
+                    <li ng-class="{active: activeTab === 'properties'}" ng-if="details.propertyAnalysis">
+                        <a href="" ng-click="setActiveTab('properties')">
+                            <i class="glyphicon glyphicon-th-list"></i> Análise de Propriedades
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- Tab Content -->
@@ -201,11 +206,17 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <h4>Distribuição de Classes de Uso do Solo</h4>
+                                <div ng-if="details.statistics.classes.fieldUsed" class="alert alert-info" style="margin-bottom: 10px;">
+                                    <i class="fa fa-info-circle"></i> Campo usado para classificação: <strong>{{details.statistics.classes.fieldUsed}}</strong>
+                                </div>
                                 <div id="landCoverChart" style="height: 500px;"></div>
                             </div>
                             <div class="col-md-4">
                                 <h4>Resumo das Classes</h4>
-                                <div class="table-responsive">
+                                <div ng-if="details.statistics.classes.noDataMessage" class="alert alert-warning">
+                                    <i class="fa fa-warning"></i> {{details.statistics.classes.noDataMessage}}
+                                </div>
+                                <div class="table-responsive" ng-if="!details.statistics.classes.noDataMessage">
                                     <table class="table table-striped table-condensed">
                                         <thead>
                                             <tr>
@@ -331,6 +342,214 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Properties Analysis Tab -->
+                    <div ng-show="activeTab === 'properties'">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Análise de Propriedades Customizadas</h4>
+                                <p class="text-muted">Propriedades detectadas automaticamente dos pontos enviados pelos usuários</p>
+                                
+                                <!-- Visualization Recommendations -->
+                                <div ng-if="details.visualizationRecommendations && details.visualizationRecommendations.length > 0">
+                                    <h5><i class="glyphicon glyphicon-signal"></i> Visualizações Recomendadas</h5>
+                                    <div class="row">
+                                        <div class="col-md-6" ng-repeat="rec in details.visualizationRecommendations | limitTo:4">
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <span class="label label-primary pull-right">Prioridade {{rec.priority}}</span>
+                                                        {{rec.title}}
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <p>{{rec.description}}</p>
+                                                    <p><strong>Propriedade:</strong> {{rec.property || 'Múltiplas'}}</p>
+                                                    <p><strong>Tipo de Visualização:</strong> {{getVisualizationTypeName(rec.visualization)}}</p>
+                                                    <button class="btn btn-sm btn-primary" 
+                                                            ng-click="renderPropertyChart(rec)"
+                                                            ng-disabled="rec.rendered">
+                                                        <i class="glyphicon glyphicon-stats"></i> 
+                                                        {{rec.rendered ? 'Visualizado' : 'Visualizar'}}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Dynamic chart containers -->
+                                    <div class="row" style="margin-top: 20px;">
+                                        <div class="col-md-12" ng-repeat="rec in details.visualizationRecommendations" 
+                                             ng-if="rec.rendered">
+                                            <h5>{{rec.title}}</h5>
+                                            <div id="property-chart-{{$index}}" style="height: 400px; margin-bottom: 30px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Properties Summary -->
+                                <div ng-if="details.propertyAnalysis">
+                                    <h5 style="margin-top: 30px;"><i class="glyphicon glyphicon-list"></i> Resumo das Propriedades</h5>
+                                    
+                                    <div class="row">
+                                        <!-- Categorical Properties -->
+                                        <div class="col-md-6">
+                                            <div class="panel panel-info">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="glyphicon glyphicon-tags"></i> Propriedades Categóricas
+                                                        <span class="badge pull-right">{{details.propertyAnalysis.categoricalProperties.length}}</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-condensed">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Propriedade</th>
+                                                                    <th>Cobertura</th>
+                                                                    <th>Valores Únicos</th>
+                                                                    <th>Relevância</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr ng-repeat="prop in details.propertyAnalysis.categoricalProperties | limitTo:5">
+                                                                    <td><code>{{prop.name}}</code></td>
+                                                                    <td>{{prop.coverage.toFixed(1)}}%</td>
+                                                                    <td>{{prop.uniqueValues}}</td>
+                                                                    <td>
+                                                                        <div class="progress" style="margin-bottom: 0; height: 10px;">
+                                                                            <div class="progress-bar progress-bar-success" 
+                                                                                 style="width: {{prop.relevanceScore * 100}}%"></div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Numeric Properties -->
+                                        <div class="col-md-6">
+                                            <div class="panel panel-success">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="glyphicon glyphicon-stats"></i> Propriedades Numéricas
+                                                        <span class="badge pull-right">{{details.propertyAnalysis.numericProperties.length}}</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-condensed">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Propriedade</th>
+                                                                    <th>Cobertura</th>
+                                                                    <th>Min/Max</th>
+                                                                    <th>Relevância</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr ng-repeat="prop in details.propertyAnalysis.numericProperties | limitTo:5">
+                                                                    <td><code>{{prop.name}}</code></td>
+                                                                    <td>{{prop.coverage.toFixed(1)}}%</td>
+                                                                    <td>
+                                                                        <span ng-if="prop.statistics">
+                                                                            {{prop.statistics.min.toFixed(1)}} - {{prop.statistics.max.toFixed(1)}}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="progress" style="margin-bottom: 0; height: 10px;">
+                                                                            <div class="progress-bar progress-bar-success" 
+                                                                                 style="width: {{prop.relevanceScore * 100}}%"></div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <!-- Temporal Properties -->
+                                        <div class="col-md-6">
+                                            <div class="panel panel-warning">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="glyphicon glyphicon-time"></i> Propriedades Temporais
+                                                        <span class="badge pull-right">{{details.propertyAnalysis.temporalProperties.length}}</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <div ng-if="details.propertyAnalysis.temporalProperties.length > 0">
+                                                        <ul class="list-unstyled">
+                                                            <li ng-repeat="prop in details.propertyAnalysis.temporalProperties | limitTo:5">
+                                                                <code>{{prop.name}}</code> 
+                                                                <span class="text-muted">({{prop.coverage.toFixed(1)}}% cobertura)</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <div ng-if="details.propertyAnalysis.temporalProperties.length === 0" class="text-muted">
+                                                        Nenhuma propriedade temporal detectada
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Geographic Properties -->
+                                        <div class="col-md-6">
+                                            <div class="panel panel-danger">
+                                                <div class="panel-heading">
+                                                    <h6 class="panel-title">
+                                                        <i class="glyphicon glyphicon-map-marker"></i> Propriedades Geográficas Adicionais
+                                                        <span class="badge pull-right">{{details.propertyAnalysis.geographicProperties.length}}</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <div ng-if="details.propertyAnalysis.geographicProperties.length > 0">
+                                                        <ul class="list-unstyled">
+                                                            <li ng-repeat="prop in details.propertyAnalysis.geographicProperties | limitTo:5">
+                                                                <code>{{prop.name}}</code> 
+                                                                <span class="text-muted">({{prop.uniqueValues}} locais únicos)</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <div ng-if="details.propertyAnalysis.geographicProperties.length === 0" class="text-muted">
+                                                        Nenhuma propriedade geográfica adicional detectada
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="row" style="margin-top: 20px;">
+                                        <div class="col-md-12">
+                                            <button class="btn btn-primary" ng-click="loadAvailableProperties()">
+                                                <i class="glyphicon glyphicon-refresh"></i> Recarregar Análise
+                                            </button>
+                                            <button class="btn btn-info" ng-click="exportPropertyAnalysis()">
+                                                <i class="glyphicon glyphicon-download"></i> Exportar Análise
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- No property analysis available -->
+                                <div ng-if="!details.propertyAnalysis && !details.visualizationRecommendations" 
+                                     class="alert alert-info" style="margin-top: 20px;">
+                                    <i class="glyphicon glyphicon-info-sign"></i> 
+                                    Nenhuma análise de propriedades disponível. 
+                                    Certifique-se de que os pontos da campanha possuem propriedades customizadas.
                                 </div>
                             </div>
                         </div>

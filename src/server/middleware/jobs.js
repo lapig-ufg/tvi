@@ -3,6 +3,7 @@ var
 	,	exec = require('child_process').exec
 	,	dateFormat = require('dateformat')
 	,	fs = require('fs')
+	,	path = require('path')
 	,	async = require('async');
 
 module.exports = function(app) {
@@ -17,6 +18,52 @@ module.exports = function(app) {
 
 	var writeLog = function(logStream, msg) {
 		logStream.write(strDate() + msg + "\n");
+	}
+	
+	/**
+	 * Ensure log directory exists
+	 */
+	var ensureLogDirectory = function() {
+		try {
+			if (!fs.existsSync(config.logDir)) {
+				fs.mkdirSync(config.logDir, { recursive: true });
+				console.log('Created log directory:', config.logDir);
+			}
+		} catch (error) {
+			console.error('Failed to create log directory:', error);
+			// Try to create a fallback directory
+			try {
+				const fallbackDir = path.join(process.cwd(), 'logs');
+				if (!fs.existsSync(fallbackDir)) {
+					fs.mkdirSync(fallbackDir, { recursive: true });
+					console.log('Created fallback log directory:', fallbackDir);
+				}
+				config.logDir = fallbackDir;
+			} catch (fallbackError) {
+				console.error('Failed to create fallback log directory:', fallbackError);
+				// As last resort, use current directory
+				config.logDir = process.cwd();
+			}
+		}
+	}
+	
+	/**
+	 * Create log stream safely
+	 */
+	var createLogStream = function(logFile) {
+		try {
+			ensureLogDirectory();
+			return fs.createWriteStream(logFile, {'flags': 'a'});
+		} catch (error) {
+			console.error('Failed to create log stream for', logFile, ':', error);
+			// Return a mock stream that doesn't crash the app
+			return {
+				write: function(data) {
+					console.log('LOG:', data.trim());
+				},
+				end: function() {}
+			};
+		}
 	}
 
 	Jobs.populateCache = function(params, logStream, cacheComplete) {
@@ -442,11 +489,14 @@ module.exports = function(app) {
 	}
 	
 	Jobs.start = function() {
+		// Ensure log directory exists at startup
+		ensureLogDirectory();
+		
 		config.jobs.toRun.forEach(function(job) {
 			var logFile = config.logDir + "/" + job.name + ".log";
 
 			new cron.CronJob(job.cron, function() {
-				var logStream = fs.createWriteStream(logFile, {'flags': 'a'});
+				var logStream = createLogStream(logFile);
 				var startLogMsg = "Job " + job.name + " start.";
 				
 				// Job started

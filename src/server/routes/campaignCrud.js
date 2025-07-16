@@ -27,4 +27,6 @@ module.exports = function (app) {
     app.post('/api/campaigns/upload-geojson', requireSuperAdmin, campaignCrud.uploadGeoJSON);
     app.get('/api/campaigns/:id/points', requireSuperAdmin, campaignCrud.listPoints);
     app.delete('/api/campaigns/:id/points', requireSuperAdmin, campaignCrud.deletePoints);
+    app.get('/api/campaigns/:id/properties', requireSuperAdmin, campaignCrud.getAvailableProperties);
+    app.get('/api/campaigns/:id/aggregate-property', requireSuperAdmin, campaignCrud.aggregatePropertyData);
 };

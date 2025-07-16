@@ -7,6 +7,7 @@ module.exports = function(app) {
     const config = app.config;
     const campaignCollection = app.repository.collections.campaign;
     const pointsCollection = app.repository.collections.points;
+    const PropertyAnalyzer = require('./propertyAnalyzer')(app);
     
     // Configuração do multer para upload (versão antiga 0.1.8)
 
@@ -326,6 +327,61 @@ module.exports = function(app) {
         }
     };
 
+    // Função auxiliar para descobrir qual campo usar para classificação
+    CampaignCrud.inferClassificationField = async (campaignId) => {
+        try {
+            // Buscar uma amostra de pontos
+            const samplePoints = await pointsCollection
+                .find({ campaign: campaignId })
+                .limit(50)
+                .toArray();
+            
+            if (samplePoints.length === 0) return null;
+            
+            // Verificar primeiro o campo classConsolidated (campo padrão do sistema)
+            const hasClassConsolidated = samplePoints.some(point => 
+                point.classConsolidated !== undefined && 
+                point.classConsolidated !== null &&
+                Array.isArray(point.classConsolidated) &&
+                point.classConsolidated.length > 0
+            );
+            if (hasClassConsolidated) return 'classConsolidated';
+            
+            // Lista de possíveis campos de classificação
+            const possibleFields = ['mode', 'classe', 'class', 'landuse', 'land_use', 'uso_solo', 'categoria', 'tipo'];
+            
+            // Verificar campos no nível raiz
+            for (const field of possibleFields) {
+                const hasField = samplePoints.some(point => point[field] !== undefined && point[field] !== null);
+                if (hasField) return field;
+            }
+            
+            // Verificar campos dentro de properties
+            for (const field of possibleFields) {
+                const hasField = samplePoints.some(point => 
+                    point.properties && 
+                    point.properties[field] !== undefined && 
+                    point.properties[field] !== null
+                );
+                if (hasField) return `properties.${field}`;
+            }
+            
+            // Se não encontrou nenhum campo conhecido, verificar qualquer string em properties
+            const firstPointWithProperties = samplePoints.find(p => p.properties && Object.keys(p.properties).length > 0);
+            if (firstPointWithProperties && firstPointWithProperties.properties) {
+                const stringField = Object.keys(firstPointWithProperties.properties).find(key => 
+                    typeof firstPointWithProperties.properties[key] === 'string'
+                );
+                if (stringField) return `properties.${stringField}`;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error inferring classification field:', error);
+            return null;
+        }
+    };
+
     // Obter dados detalhados e estatísticas de uma campanha
     CampaignCrud.getDetails = async (req, res) => {
         try {
@@ -336,8 +392,18 @@ module.exports = function(app) {
                 return res.status(404).json({ error: 'Campaign not found' });
             }
             
+            // Descobrir qual campo usar para classificação
+            const classificationField = await CampaignCrud.inferClassificationField(campaignId);
+            
+            // Analisar propriedades disponíveis
+            const propertyAnalysis = await PropertyAnalyzer.analyzeProperties(
+                pointsCollection, 
+                campaignId, 
+                campaign.numInspec
+            );
+            
             // Executar todas as queries em paralelo para melhor performance
-            const [totalPoints, completedResult, userStats, classStats, stateStats, biomeStats, progressTimeline, pendingByMunicipality] = await Promise.all([
+            const [totalPoints, completedResult, userStats, classStats, stateStats, biomeStats, progressTimeline, pendingByMunicipality, meanTimeStats] = await Promise.all([
                 // Total de pontos
                 pointsCollection.count({ campaign: campaign._id }),
                 
@@ -364,26 +430,60 @@ module.exports = function(app) {
                     { $limit: 50 }
                 ], { allowDiskUse: true }).toArray(),
                 
-                // Estatísticas por classe de uso - otimizado
-                pointsCollection.aggregate([
-                    { $match: { campaign: campaign._id } },
-                    { $project: {
-                        mode: 1,
-                        userNameCount: { $size: { $ifNull: ["$userName", []] } }
-                    }},
-                    { $match: { userNameCount: { $gte: campaign.numInspec } } },
-                    { $group: {
-                        _id: "$mode",
-                        count: { $sum: 1 }
-                    }},
-                    { $sort: { count: -1 } }
-                ], { allowDiskUse: true }).toArray(),
+                // Estatísticas por classe de uso - usando campo dinâmico
+                classificationField ? (async () => {
+                    let pipeline = [
+                        { $match: { campaign: campaign._id } },
+                        { $project: {
+                            classificationField: classificationField.includes('.') 
+                                ? `$${classificationField.replace('.', '.')}`
+                                : `$${classificationField}`,
+                            userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                        }},
+                        { $match: { 
+                            userNameCount: { $gte: campaign.numInspec },
+                            classificationField: { $exists: true, $ne: null }
+                        }}
+                    ];
+                    
+                    // Special handling for classConsolidated array field
+                    if (classificationField === 'classConsolidated') {
+                        pipeline.push(
+                            { $unwind: "$classificationField" },
+                            { $group: {
+                                _id: "$classificationField",
+                                count: { $sum: 1 }
+                            }}
+                        );
+                    } else {
+                        pipeline.push(
+                            { $group: {
+                                _id: "$classificationField",
+                                count: { $sum: 1 }
+                            }}
+                        );
+                    }
+                    
+                    pipeline.push({ $sort: { count: -1 } });
+                    
+                    return pointsCollection.aggregate(pipeline, { allowDiskUse: true }).toArray();
+                })() : Promise.resolve([]),
                 
                 // Estatísticas por estado - otimizado
                 pointsCollection.aggregate([
                     { $match: { campaign: campaign._id } },
                     { $project: {
-                        uf: 1,
+                        uf: {
+                            $cond: {
+                                if: { $or: [
+                                    { $eq: ["$uf", null] },
+                                    { $eq: ["$uf", ""] },
+                                    { $not: ["$uf"] }
+                                ]},
+                                then: "Não informado",
+                                else: "$uf"
+                            }
+                        },
                         userNameCount: { $size: { $ifNull: ["$userName", []] } }
                     }},
                     { $group: {
@@ -402,7 +502,17 @@ module.exports = function(app) {
                 pointsCollection.aggregate([
                     { $match: { campaign: campaign._id } },
                     { $project: {
-                        biome: 1,
+                        biome: {
+                            $cond: {
+                                if: { $or: [
+                                    { $eq: ["$biome", null] },
+                                    { $eq: ["$biome", ""] },
+                                    { $not: ["$biome"] }
+                                ]},
+                                then: "Não informado",
+                                else: "$biome"
+                            }
+                        },
                         userNameCount: { $size: { $ifNull: ["$userName", []] } }
                     }},
                     { $group: {
@@ -425,17 +535,16 @@ module.exports = function(app) {
                     return pointsCollection.aggregate([
                         { $match: { 
                             campaign: campaign._id,
-                            "inspection.counter": { $gte: campaign.numInspec },
-                            "inspection.date": { $gte: thirtyDaysAgo }
+                            "inspection.fillDate": { $gte: thirtyDaysAgo }
                         }},
                         { $unwind: "$inspection" },
                         { $match: {
                             "inspection.counter": { $gte: campaign.numInspec },
-                            "inspection.date": { $gte: thirtyDaysAgo }
+                            "inspection.fillDate": { $gte: thirtyDaysAgo }
                         }},
                         { $group: {
                             _id: {
-                                $dateToString: { format: "%Y-%m-%d", date: "$inspection.date" }
+                                $dateToString: { format: "%Y-%m-%d", date: "$inspection.fillDate" }
                             },
                             count: { $sum: 1 }
                         }},
@@ -461,7 +570,39 @@ module.exports = function(app) {
                     }},
                     { $sort: { count: -1 } },
                     { $limit: 20 }
-                ], { allowDiskUse: true }).toArray()
+                ], { allowDiskUse: true }).toArray(),
+                
+                // Média de tempo por inspeção - adaptado do dashboard
+                (async () => {
+                    const points = await pointsCollection.find({ campaign: campaign._id }).toArray();
+                    const listInsp = {};
+                    
+                    points.forEach(point => {
+                        if (point.userName && point.inspection) {
+                            for (let i = 0; i < point.userName.length; i++) {
+                                const userName = point.userName[i];
+                                const inspection = point.inspection[i];
+                                
+                                if (!listInsp[userName]) {
+                                    listInsp[userName] = { sum: 0, count: 0 };
+                                }
+                                
+                                if (inspection && inspection.counter) {
+                                    listInsp[userName].sum += inspection.counter;
+                                    listInsp[userName].count += 1;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Calcular média para cada usuário
+                    for (const key in listInsp) {
+                        listInsp[key].avg = listInsp[key].count > 0 ? 
+                            (listInsp[key].sum / listInsp[key].count).toFixed(0) : 0;
+                    }
+                    
+                    return listInsp;
+                })()
             ]);
             
             const completedPoints = completedResult.length > 0 ? completedResult[0].total : 0;
@@ -483,7 +624,9 @@ module.exports = function(app) {
                     },
                     classes: {
                         total: classStats.length,
-                        distribution: classStats
+                        distribution: classStats,
+                        fieldUsed: classificationField,
+                        noDataMessage: !classificationField ? 'Nenhum campo de classificação encontrado' : null
                     },
                     states: {
                         total: stateStats.length,
@@ -494,8 +637,11 @@ module.exports = function(app) {
                         data: biomeStats
                     },
                     timeline: progressTimeline,
-                    pendingByMunicipality
-                }
+                    pendingByMunicipality,
+                    meanTime: meanTimeStats
+                },
+                propertyAnalysis: propertyAnalysis,
+                visualizationRecommendations: propertyAnalysis.visualizationRecommendations || []
             };
             
             res.json(details);
@@ -612,53 +758,235 @@ module.exports = function(app) {
 
     // Upload de GeoJSON com processamento direto (sem salvar arquivo)
     CampaignCrud.uploadGeoJSON = async (req, res) => {
+        const startTime = new Date();
+        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Enhanced logging function
+        const logError = (level, message, error = null, context = {}) => {
+            const logData = {
+                timestamp: new Date().toISOString(),
+                requestId: requestId,
+                level: level,
+                message: message,
+                context: context,
+                sessionId: req.sessionID,
+                ip: req.ip || req.connection.remoteAddress,
+                userAgent: req.get('User-Agent'),
+                error: error ? {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    code: error.code
+                } : null
+            };
+            
+            console.error(`[${level}] GeoJSON Upload:`, JSON.stringify(logData, null, 2));
+        };
+        
         try {
-            const campaignId = req.body.campaignId;
-            const geojsonContent = req.body.geojsonContent;
-            const filename = req.body.filename || 'campaign-upload.geojson';
+            logError('INFO', 'GeoJSON upload request started', null, {
+                hasBody: !!req.body,
+                bodyKeys: req.body ? Object.keys(req.body) : [],
+                contentLength: req.get('Content-Length'),
+                contentType: req.get('Content-Type')
+            });
             
-            if (!geojsonContent) {
-                return res.status(400).json({ error: 'No GeoJSON content provided' });
+            // Enhanced validation with detailed error reporting
+            const campaignId = req.body && req.body.campaignId;
+            const geojsonContent = req.body && req.body.geojsonContent;
+            const filename = (req.body && req.body.filename) || 'campaign-upload.geojson';
+            
+            // Validate request structure
+            if (!req.body) {
+                logError('ERROR', 'Request body is missing or empty', null, {
+                    headers: req.headers,
+                    method: req.method,
+                    url: req.url
+                });
+                return res.status(400).json({ 
+                    error: 'Dados inválidos na requisição',
+                    details: 'Request body is missing or empty',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
             }
             
-            // Verificar se a campanha existe
-            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaignId || typeof campaignId !== 'string') {
+                logError('ERROR', 'Campaign ID validation failed', null, {
+                    campaignId: campaignId,
+                    campaignIdType: typeof campaignId,
+                    bodyKeys: Object.keys(req.body)
+                });
+                return res.status(400).json({ 
+                    error: 'Dados inválidos na requisição',
+                    details: 'Campaign ID is required and must be a string',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            if (!geojsonContent || typeof geojsonContent !== 'string') {
+                logError('ERROR', 'GeoJSON content validation failed', null, {
+                    hasContent: !!geojsonContent,
+                    contentType: typeof geojsonContent,
+                    contentLength: geojsonContent ? geojsonContent.length : 0
+                });
+                return res.status(400).json({ 
+                    error: 'Dados inválidos na requisição',
+                    details: 'GeoJSON content is required and must be a string',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // Verify campaign exists with detailed error handling
+            let campaign;
+            try {
+                campaign = await campaignCollection.findOne({ _id: campaignId });
+            } catch (dbError) {
+                logError('ERROR', 'Database error while fetching campaign', dbError, {
+                    campaignId: campaignId,
+                    collection: 'campaigns'
+                });
+                return res.status(500).json({ 
+                    error: 'Erro interno do servidor',
+                    details: 'Database error while fetching campaign',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             if (!campaign) {
-                return res.status(404).json({ error: 'Campaign not found' });
+                logError('ERROR', 'Campaign not found', null, {
+                    campaignId: campaignId,
+                    searchAttempted: true
+                });
+                return res.status(404).json({ 
+                    error: 'Campanha não encontrada',
+                    details: `Campaign with ID '${campaignId}' was not found`,
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
             }
             
-            // Parse do conteúdo GeoJSON
+            // Enhanced GeoJSON parsing with detailed error context
             let geojsonData;
             try {
                 geojsonData = JSON.parse(geojsonContent);
             } catch (parseError) {
-                return res.status(400).json({ error: 'Invalid GeoJSON format' });
+                logError('ERROR', 'GeoJSON parsing failed', parseError, {
+                    contentLength: geojsonContent.length,
+                    contentPreview: geojsonContent.substring(0, 200),
+                    filename: filename
+                });
+                return res.status(400).json({ 
+                    error: 'Formato GeoJSON inválido',
+                    details: `JSON parsing failed: ${parseError.message}`,
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
             }
             
-            if (!geojsonData.features || geojsonData.features.length === 0) {
-                return res.status(400).json({ error: 'No features found in GeoJSON' });
+            // Validate GeoJSON structure
+            if (!geojsonData || typeof geojsonData !== 'object') {
+                logError('ERROR', 'Invalid GeoJSON structure - not an object', null, {
+                    dataType: typeof geojsonData,
+                    isNull: geojsonData === null,
+                    filename: filename
+                });
+                return res.status(400).json({ 
+                    error: 'Estrutura GeoJSON inválida',
+                    details: 'GeoJSON must be a valid object',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
             }
             
-            // Obter sessionID da requisição para identificar o socket correto
+            if (!geojsonData.features || !Array.isArray(geojsonData.features)) {
+                logError('ERROR', 'Invalid GeoJSON structure - missing features array', null, {
+                    hasFeatures: !!geojsonData.features,
+                    featuresType: typeof geojsonData.features,
+                    isArray: Array.isArray(geojsonData.features),
+                    geojsonKeys: Object.keys(geojsonData),
+                    filename: filename
+                });
+                return res.status(400).json({ 
+                    error: 'Estrutura GeoJSON inválida',
+                    details: 'GeoJSON must contain a features array',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            if (geojsonData.features.length === 0) {
+                logError('ERROR', 'Empty GeoJSON features array', null, {
+                    featuresLength: geojsonData.features.length,
+                    filename: filename
+                });
+                return res.status(400).json({ 
+                    error: 'Nenhuma feature encontrada',
+                    details: 'GeoJSON features array is empty',
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // Get session information
             const sessionId = req.sessionID;
-            const userId = req.session && req.session.admin && req.session.admin.superAdmin ? req.session.admin.superAdmin.id : 'anonymous';
+            const userId = (req.session && req.session.admin && req.session.admin.superAdmin && req.session.admin.superAdmin.id) || 'anonymous';
             
-            // Processamento direto iniciado
+            logError('INFO', 'Starting GeoJSON processing', null, {
+                campaignId: campaignId,
+                filename: filename,
+                featuresCount: geojsonData.features.length,
+                userId: userId,
+                processingMethod: 'direct'
+            });
             
-            // Processar diretamente sem salvar arquivo
-            const result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId);
+            // Process GeoJSON with enhanced error handling
+            const result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId, requestId);
             
-            // Responder com o resultado do processamento
-            res.json(result);
+            const processingTime = new Date() - startTime;
+            logError('INFO', 'GeoJSON processing completed successfully', null, {
+                processingTimeMs: processingTime,
+                result: result,
+                featuresProcessed: result.processedCount,
+                featuresInserted: result.insertedCount,
+                errors: result.errorCount
+            });
+            
+            // Add request tracking to response
+            res.json({
+                ...result,
+                requestId: requestId,
+                processingTime: processingTime,
+                timestamp: new Date().toISOString()
+            });
             
         } catch (error) {
-            console.error('Error processing GeoJSON upload:', error);
-            res.status(500).json({ error: 'Failed to process GeoJSON upload: ' + error.message });
+            const processingTime = new Date() - startTime;
+            logError('ERROR', 'Unexpected error during GeoJSON upload', error, {
+                processingTimeMs: processingTime,
+                requestBody: req.body ? {
+                    hasCampaignId: !!req.body.campaignId,
+                    hasGeojsonContent: !!req.body.geojsonContent,
+                    hasFilename: !!req.body.filename,
+                    contentLength: req.body.geojsonContent ? req.body.geojsonContent.length : 0
+                } : null
+            });
+            
+            res.status(500).json({ 
+                error: 'Erro interno do servidor',
+                details: `Unexpected error: ${error.message}`,
+                requestId: requestId,
+                timestamp: new Date().toISOString(),
+                processingTime: processingTime
+            });
         }
     };
     
     // Processamento direto do GeoJSON sem salvar arquivo
-    CampaignCrud.processGeoJSONDirect = async (campaignId, geojsonData, filename, io, sessionId, userId) => {
+    CampaignCrud.processGeoJSONDirect = async (campaignId, geojsonData, filename, io, sessionId, userId, requestId = null) => {
         const totalFeatures = geojsonData.features.length;
         let processedCount = 0;
         let insertedCount = 0;
@@ -1598,6 +1926,371 @@ module.exports = function(app) {
             res.status(500).json({ error: 'Failed to delete points' });
         }
     };
+
+    // Obter propriedades disponíveis nos pontos de uma campanha
+    CampaignCrud.getAvailableProperties = async (req, res) => {
+        try {
+            const campaignId = req.params.id;
+            
+            // Verificar se a campanha existe
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campaign not found' });
+            }
+            
+            // Usar o PropertyAnalyzer para analisar as propriedades
+            const propertyAnalysis = await PropertyAnalyzer.analyzeProperties(
+                pointsCollection, 
+                campaignId, 
+                campaign.numInspec
+            );
+            
+            res.json(propertyAnalysis);
+            
+        } catch (error) {
+            console.error('Error getting available properties:', error);
+            res.status(500).json({ error: 'Failed to get available properties' });
+        }
+    };
+
+    // Agregar dados de uma propriedade específica
+    CampaignCrud.aggregatePropertyData = async (req, res) => {
+        try {
+            const campaignId = req.params.id;
+            const propertyName = req.query.property;
+            const aggregationType = req.query.type || 'distribution';
+            
+            if (!propertyName) {
+                return res.status(400).json({ error: 'Property name is required' });
+            }
+            
+            // Verificar se a campanha existe
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campaign not found' });
+            }
+            
+            let result;
+            
+            switch (aggregationType) {
+                case 'distribution':
+                    // Agregação para propriedades categóricas
+                    result = await aggregateCategoricalProperty(pointsCollection, campaignId, propertyName, campaign.numInspec);
+                    break;
+                    
+                case 'histogram':
+                    // Agregação para propriedades numéricas
+                    result = await aggregateNumericProperty(pointsCollection, campaignId, propertyName, campaign.numInspec);
+                    break;
+                    
+                case 'temporal':
+                    // Agregação temporal
+                    result = await aggregateTemporalProperty(pointsCollection, campaignId, propertyName, campaign.numInspec);
+                    break;
+                    
+                case 'cross':
+                    // Agregação cruzada de duas propriedades
+                    const property2 = req.query.property2;
+                    if (!property2) {
+                        return res.status(400).json({ error: 'Second property name is required for cross analysis' });
+                    }
+                    result = await aggregateCrossProperties(pointsCollection, campaignId, propertyName, property2, campaign.numInspec);
+                    break;
+                    
+                default:
+                    return res.status(400).json({ error: 'Invalid aggregation type' });
+            }
+            
+            res.json(result);
+            
+        } catch (error) {
+            console.error('Error aggregating property data:', error);
+            res.status(500).json({ error: 'Failed to aggregate property data' });
+        }
+    };
+    
+    // Funções auxiliares de agregação
+    async function aggregateCategoricalProperty(collection, campaignId, propertyName, numInspec) {
+        const fieldPath = propertyName.includes('.') ? `$${propertyName}` : `$${propertyName}`;
+        
+        // Check if the field is an array
+        const sampleDoc = await collection.findOne({ campaign: campaignId });
+        const fieldValue = propertyName.includes('.') 
+            ? propertyName.split('.').reduce((obj, key) => obj && obj[key], sampleDoc)
+            : sampleDoc && sampleDoc[propertyName];
+        
+        const isArray = Array.isArray(fieldValue);
+        
+        let pipeline;
+        
+        if (isArray) {
+            // If field is array, unwind it first to count individual values
+            pipeline = [
+                { $match: { campaign: campaignId } },
+                { $project: {
+                    value: fieldPath,
+                    userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                }},
+                { $match: { 
+                    userNameCount: { $gte: numInspec },
+                    value: { $exists: true, $ne: null }
+                }},
+                { $unwind: "$value" },
+                { $group: {
+                    _id: "$value",
+                    count: { $sum: 1 }
+                }},
+                { $sort: { count: -1 } },
+                { $limit: 20 }
+            ];
+        } else {
+            // Regular categorical aggregation
+            pipeline = [
+                { $match: { campaign: campaignId } },
+                { $project: {
+                    value: fieldPath,
+                    userNameCount: { $size: { $ifNull: ["$userName", []] } }
+                }},
+                { $match: { 
+                    userNameCount: { $gte: numInspec },
+                    value: { $exists: true, $ne: null }
+                }},
+                { $group: {
+                    _id: "$value",
+                    count: { $sum: 1 }
+                }},
+                { $sort: { count: -1 } },
+                { $limit: 20 }
+            ];
+        }
+        
+        const results = await collection.aggregate(pipeline, { allowDiskUse: true }).toArray();
+        
+        return {
+            type: 'categorical',
+            property: propertyName,
+            data: results.map(r => ({
+                label: String(r._id),
+                value: r.count
+            })),
+            total: results.reduce((sum, r) => sum + r.count, 0)
+        };
+    }
+    
+    async function aggregateNumericProperty(collection, campaignId, propertyName, numInspec) {
+        const fieldPath = propertyName.includes('.') ? `$${propertyName}` : `$${propertyName}`;
+        
+        // Primeiro, obter estatísticas básicas
+        const statsPipeline = [
+            { $match: { campaign: campaignId } },
+            { $project: {
+                value: fieldPath,
+                userNameCount: { $size: { $ifNull: ["$userName", []] } }
+            }},
+            { $match: { 
+                userNameCount: { $gte: numInspec },
+                value: { $exists: true, $ne: null, $type: "number" }
+            }},
+            { $group: {
+                _id: null,
+                min: { $min: "$value" },
+                max: { $max: "$value" },
+                avg: { $avg: "$value" },
+                count: { $sum: 1 },
+                values: { $push: "$value" }
+            }}
+        ];
+        
+        const statsResult = await collection.aggregate(statsPipeline, { allowDiskUse: true }).toArray();
+        
+        if (statsResult.length === 0) {
+            return {
+                type: 'numeric',
+                property: propertyName,
+                data: [],
+                statistics: null
+            };
+        }
+        
+        const stats = statsResult[0];
+        
+        // Criar bins para histograma
+        const binCount = Math.min(20, Math.ceil(Math.sqrt(stats.count)));
+        const binSize = (stats.max - stats.min) / binCount;
+        
+        const histogramPipeline = [
+            { $match: { campaign: campaignId } },
+            { $project: {
+                value: fieldPath,
+                userNameCount: { $size: { $ifNull: ["$userName", []] } }
+            }},
+            { $match: { 
+                userNameCount: { $gte: numInspec },
+                value: { $exists: true, $ne: null, $type: "number" }
+            }},
+            { $bucket: {
+                groupBy: "$value",
+                boundaries: Array.from({length: binCount + 1}, (_, i) => stats.min + (i * binSize)),
+                default: "other",
+                output: {
+                    count: { $sum: 1 }
+                }
+            }}
+        ];
+        
+        const histogram = await collection.aggregate(histogramPipeline, { allowDiskUse: true }).toArray();
+        
+        return {
+            type: 'numeric',
+            property: propertyName,
+            data: histogram.map(h => ({
+                range: [h._id, h._id + binSize],
+                count: h.count
+            })),
+            statistics: {
+                min: stats.min,
+                max: stats.max,
+                mean: stats.avg,
+                count: stats.count
+            }
+        };
+    }
+    
+    async function aggregateTemporalProperty(collection, campaignId, propertyName, numInspec) {
+        const fieldPath = propertyName.includes('.') ? `$${propertyName}` : `$${propertyName}`;
+        
+        const pipeline = [
+            { $match: { campaign: campaignId } },
+            { $project: {
+                dateValue: {
+                    $cond: {
+                        if: { $isArray: fieldPath },
+                        then: { $arrayElemAt: [fieldPath, 0] },
+                        else: fieldPath
+                    }
+                },
+                userNameCount: { $size: { $ifNull: ["$userName", []] } }
+            }},
+            { $match: { 
+                userNameCount: { $gte: numInspec },
+                dateValue: { $exists: true, $ne: null }
+            }},
+            { $project: {
+                dateValue: 1,
+                // Try to convert to date if it's a string
+                date: {
+                    $cond: {
+                        if: { $eq: [{ $type: "$dateValue" }, "string"] },
+                        then: { $dateFromString: { 
+                            dateString: "$dateValue",
+                            format: "%Y-%m-%dT%H:%M:%S.%L%z",
+                            onError: { $dateFromString: { 
+                                dateString: "$dateValue",
+                                onError: null 
+                            }}
+                        }},
+                        else: {
+                            $cond: {
+                                if: { $eq: [{ $type: "$dateValue" }, "date"] },
+                                then: "$dateValue",
+                                else: {
+                                    $cond: {
+                                        if: { $eq: [{ $type: "$dateValue" }, "object"] },
+                                        then: {
+                                            $convert: {
+                                                input: "$dateValue",
+                                                to: "date",
+                                                onError: null
+                                            }
+                                        },
+                                        else: null
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }},
+            { $match: { date: { $ne: null } } },
+            { $group: {
+                _id: {
+                    $dateToString: { format: "%Y-%m-%d", date: "$date" }
+                },
+                count: { $sum: 1 }
+            }},
+            { $sort: { _id: 1 } }
+        ];
+        
+        const results = await collection.aggregate(pipeline, { allowDiskUse: true }).toArray();
+        
+        return {
+            type: 'temporal',
+            property: propertyName,
+            data: results.map(r => ({
+                date: r._id,
+                value: r.count
+            }))
+        };
+    }
+    
+    async function aggregateCrossProperties(collection, campaignId, property1, property2, numInspec) {
+        const field1Path = property1.includes('.') ? `$${property1}` : `$${property1}`;
+        const field2Path = property2.includes('.') ? `$${property2}` : `$${property2}`;
+        
+        const pipeline = [
+            { $match: { campaign: campaignId } },
+            { $project: {
+                prop1: field1Path,
+                prop2: field2Path,
+                userNameCount: { $size: { $ifNull: ["$userName", []] } }
+            }},
+            { $match: { 
+                userNameCount: { $gte: numInspec },
+                prop1: { $exists: true, $ne: null },
+                prop2: { $exists: true, $ne: null }
+            }},
+            { $group: {
+                _id: {
+                    prop1: "$prop1",
+                    prop2: "$prop2"
+                },
+                count: { $sum: 1 }
+            }},
+            { $sort: { count: -1 } },
+            { $limit: 100 }
+        ];
+        
+        const results = await collection.aggregate(pipeline, { allowDiskUse: true }).toArray();
+        
+        // Organizar dados para heatmap
+        const heatmapData = {};
+        const prop1Values = new Set();
+        const prop2Values = new Set();
+        
+        results.forEach(r => {
+            prop1Values.add(r._id.prop1);
+            prop2Values.add(r._id.prop2);
+            if (!heatmapData[r._id.prop1]) {
+                heatmapData[r._id.prop1] = {};
+            }
+            heatmapData[r._id.prop1][r._id.prop2] = r.count;
+        });
+        
+        return {
+            type: 'cross',
+            property1: property1,
+            property2: property2,
+            data: {
+                x: Array.from(prop2Values),
+                y: Array.from(prop1Values),
+                z: Array.from(prop1Values).map(p1 => 
+                    Array.from(prop2Values).map(p2 => 
+                        heatmapData[p1] && heatmapData[p1][p2] || 0
+                    )
+                )
+            }
+        };
+    }
 
     return CampaignCrud;
 };

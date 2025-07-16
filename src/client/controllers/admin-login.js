@@ -1617,10 +1617,21 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         if (!element) return;
         
         var data = $scope.details.statistics.classes.distribution;
+        var fieldUsed = $scope.details.statistics.classes.fieldUsed;
+        var noDataMessage = $scope.details.statistics.classes.noDataMessage;
         
-        if (!data || data.length === 0) {
-            $scope.showNoDataMessage(element, 'Distribuição de classes de uso do solo', 500);
+        if (noDataMessage || !data || data.length === 0) {
+            var message = noDataMessage || 'Nenhum dado disponível';
+            $scope.showNoDataMessage(element, 'Distribuição de classes', 500, message);
             return;
+        }
+        
+        // Título dinâmico baseado no campo usado
+        var title = 'Distribuição de Classes';
+        if (fieldUsed) {
+            // Extrair nome do campo se for aninhado
+            var fieldName = fieldUsed.includes('.') ? fieldUsed.split('.')[1] : fieldUsed;
+            title = 'Distribuição por ' + fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
         }
         
         var dataChart = [{
@@ -1648,7 +1659,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
                 fixedrange: true,
                 gridwidth: 2
             },
-            title: 'Distribuição de Classes de Uso do Solo',
+            title: title,
             titlefont: {
                 size: 18
             }
@@ -1677,7 +1688,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
                 color: 'rgba(32,128,72,0.8)'
             },
             x: data.map(state => state.completed),
-            y: data.map(state => state._id || 'N/A'),
+            y: data.map(state => state._id || 'Não informado'),
             orientation: 'h',
             hoverinfo: 'x',
             name: 'Concluídos'
@@ -1726,7 +1737,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
                 color: 'rgba(65,105,225,0.8)'
             },
             x: data.map(biome => biome.completed),
-            y: data.map(biome => biome._id || 'N/A'),
+            y: data.map(biome => biome._id || 'Não informado'),
             orientation: 'h',
             hoverinfo: 'x',
             name: 'Concluídos'
@@ -1935,7 +1946,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     };
     
     // Função para mostrar mensagem "sem dados"
-    $scope.showNoDataMessage = function(element, title, height) {
+    $scope.showNoDataMessage = function(element, title, height, customMessage) {
         var layout = {
             height: height,
             title: title,
@@ -1943,22 +1954,41 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
                 size: 18
             },
             xaxis: {
-                visible: false
+                visible: false,
+                showgrid: false,
+                showline: false,
+                showticklabels: false,
+                zeroline: false
             },
             yaxis: {
-                visible: false
+                visible: false,
+                showgrid: false,
+                showline: false,
+                showticklabels: false,
+                zeroline: false
+            },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: false,
+            margin: {
+                l: 0,
+                r: 0,
+                t: 60,
+                b: 0
             },
             annotations: [{
-                text: 'Nenhum dado disponível',
+                text: customMessage || 'Nenhum dado disponível',
                 xref: 'paper',
                 yref: 'paper',
                 showarrow: false,
                 font: {
-                    size: 20,
-                    color: 'grey'
+                    size: 18,
+                    color: '#999999'
                 },
                 x: 0.5,
-                y: 0.5
+                y: 0.5,
+                xanchor: 'center',
+                yanchor: 'middle'
             }]
         };
         Plotly.newPlot(element, [], layout, {displayModeBar: false});
@@ -2064,6 +2094,340 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         }, function(error) {
             alert('Erro ao excluir campanha: ' + (error.data.error || 'Erro desconhecido'));
         });
+    };
+    
+    // Functions for Properties Tab
+    $scope.getVisualizationTypeName = function(type) {
+        const typeNames = {
+            'pie_chart': 'Gráfico de Pizza',
+            'bar_chart': 'Gráfico de Barras',
+            'treemap': 'Mapa de Árvore',
+            'histogram': 'Histograma',
+            'box_plot': 'Box Plot',
+            'timeline': 'Linha do Tempo',
+            'choropleth_map': 'Mapa Coroplético',
+            'heat_map': 'Mapa de Calor',
+            'heatmap': 'Mapa de Calor',
+            'table': 'Tabela'
+        };
+        return typeNames[type] || type;
+    };
+    
+    $scope.renderPropertyChart = function(recommendation) {
+        const index = $scope.details.visualizationRecommendations.indexOf(recommendation);
+        const elementId = 'property-chart-' + index;
+        
+        // Mark as rendered
+        recommendation.rendered = true;
+        
+        // Wait for DOM update
+        $timeout(function() {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            // Load property data and render chart based on recommendation type
+            switch(recommendation.type) {
+                case 'main_classification':
+                    $scope.renderPropertyClassificationChart(element, recommendation);
+                    break;
+                case 'temporal_analysis':
+                    $scope.renderPropertyTemporalChart(element, recommendation);
+                    break;
+                case 'geographic_analysis':
+                    $scope.renderPropertyGeographicChart(element, recommendation);
+                    break;
+                case 'numeric_analysis':
+                    $scope.renderPropertyNumericChart(element, recommendation);
+                    break;
+                case 'cross_analysis':
+                    $scope.renderPropertyCrossAnalysisChart(element, recommendation);
+                    break;
+                default:
+                    $scope.showNoDataMessage(element, recommendation.title, 400, 'Tipo de visualização não implementado');
+            }
+        }, 100);
+    };
+    
+    $scope.renderPropertyClassificationChart = function(element, recommendation) {
+        // Get property data from backend
+        $http.get('/api/campaigns/' + $scope.campaignId + '/aggregate-property', {
+            params: {
+                property: recommendation.property,
+                type: 'distribution'
+            }
+        }).then(function(response) {
+            const data = response.data;
+            
+            if (!data || !data.data || data.data.length === 0) {
+                $scope.showNoDataMessage(element, recommendation.title, 400);
+                return;
+            }
+            
+            const labels = data.data.map(d => d.label || 'Não especificado');
+            const values = data.data.map(d => d.value);
+            
+            const dataChart = [{
+                type: recommendation.visualization === 'pie_chart' ? 'pie' : 'bar',
+                labels: labels,
+                values: values,
+                marker: {
+                    color: 'rgba(50, 171, 96, 0.7)'
+                },
+                textinfo: recommendation.visualization === 'pie_chart' ? 'label+percent' : undefined
+            }];
+            
+            const layout = {
+                height: 400,
+                title: recommendation.title,
+                titlefont: { size: 18 },
+                showlegend: recommendation.visualization === 'pie_chart'
+            };
+            
+            if (recommendation.visualization === 'bar_chart') {
+                layout.xaxis = { title: 'Categoria' };
+                layout.yaxis = { title: 'Quantidade' };
+            }
+            
+            Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+        }, function(error) {
+            $scope.showNoDataMessage(element, recommendation.title, 400, 'Erro ao carregar dados');
+        });
+    };
+    
+    $scope.renderPropertyTemporalChart = function(element, recommendation) {
+        // Get temporal data from backend
+        $http.get('/api/campaigns/' + $scope.campaignId + '/aggregate-property', {
+            params: {
+                property: recommendation.property,
+                type: 'temporal'
+            }
+        }).then(function(response) {
+            const data = response.data;
+            
+            if (!data || !data.data || data.data.length === 0) {
+                $scope.showNoDataMessage(element, recommendation.title, 400, 'Sem dados temporais');
+                return;
+            }
+            
+            const dates = data.data.map(d => d.date);
+            const values = data.data.map(d => d.value);
+            
+            const dataChart = [{
+                type: 'scatter',
+                mode: 'lines+markers',
+                x: dates,
+                y: values,
+                line: { color: 'rgba(31, 119, 180, 1)' },
+                marker: { size: 6 }
+            }];
+            
+            const layout = {
+                height: 400,
+                title: recommendation.title,
+                titlefont: { size: 18 },
+                xaxis: { title: 'Data' },
+                yaxis: { title: 'Valor' }
+            };
+            
+            Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+        }, function(error) {
+            $scope.showNoDataMessage(element, recommendation.title, 400, 'Erro ao carregar dados temporais');
+        });
+    };
+    
+    $scope.renderPropertyGeographicChart = function(element, recommendation) {
+        // Get geographic data from backend
+        $http.get('/api/campaigns/' + $scope.campaignId + '/aggregate-property', {
+            params: {
+                property: recommendation.property,
+                type: 'distribution'
+            }
+        }).then(function(response) {
+            const data = response.data;
+            
+            if (!data || !data.data || data.data.length === 0) {
+                $scope.showNoDataMessage(element, recommendation.title, 400, 'Sem dados geográficos');
+                return;
+            }
+            
+            // For geographic data, create a bar chart or scatter plot depending on data type
+            if (recommendation.visualization === 'heat_map') {
+                // For heat map, create a scatter plot of the numeric values
+                const labels = data.data.map(d => d.label || 'Não especificado');
+                const values = data.data.map(d => d.value);
+                
+                const dataChart = [{
+                    type: 'scatter',
+                    mode: 'markers',
+                    x: labels,
+                    y: values,
+                    marker: {
+                        size: values.map(v => Math.max(5, Math.min(20, v / Math.max(...values) * 20))),
+                        color: values,
+                        colorscale: 'Viridis',
+                        showscale: true
+                    },
+                    text: labels.map((label, i) => `${label}: ${values[i]}`),
+                    textposition: 'middle center'
+                }];
+                
+                const layout = {
+                    height: 400,
+                    title: recommendation.title,
+                    titlefont: { size: 18 },
+                    xaxis: { title: 'Localização' },
+                    yaxis: { title: 'Valor' }
+                };
+                
+                Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+            } else {
+                // For choropleth map, create a horizontal bar chart
+                const labels = data.data.map(d => d.label || 'Não especificado');
+                const values = data.data.map(d => d.value);
+                
+                const dataChart = [{
+                    type: 'bar',
+                    orientation: 'h',
+                    x: values,
+                    y: labels,
+                    marker: {
+                        color: values,
+                        colorscale: 'Blues'
+                    }
+                }];
+                
+                const layout = {
+                    height: 400,
+                    title: recommendation.title,
+                    titlefont: { size: 18 },
+                    xaxis: { title: 'Quantidade' },
+                    yaxis: { title: 'Localização' },
+                    margin: { l: 100 }
+                };
+                
+                Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+            }
+        }, function(error) {
+            $scope.showNoDataMessage(element, recommendation.title, 400, 'Erro ao carregar dados geográficos');
+        });
+    };
+    
+    $scope.renderPropertyNumericChart = function(element, recommendation) {
+        // Get numeric data from backend
+        $http.get('/api/campaigns/' + $scope.campaignId + '/aggregate-property', {
+            params: {
+                property: recommendation.property,
+                type: 'histogram'
+            }
+        }).then(function(response) {
+            const data = response.data;
+            
+            if (!data || !data.data || data.data.length === 0) {
+                $scope.showNoDataMessage(element, recommendation.title, 400, 'Sem dados numéricos');
+                return;
+            }
+            
+            if (recommendation.visualization === 'histogram') {
+                // Create histogram from aggregated data
+                const x = [];
+                const y = [];
+                
+                data.data.forEach(bin => {
+                    const midpoint = (bin.range[0] + bin.range[1]) / 2;
+                    x.push(midpoint);
+                    y.push(bin.count);
+                });
+                
+                const dataChart = [{
+                    type: 'bar',
+                    x: x,
+                    y: y,
+                    marker: { color: 'rgba(255, 127, 14, 0.7)' },
+                    name: recommendation.property
+                }];
+                
+                const layout = {
+                    height: 400,
+                    title: recommendation.title,
+                    titlefont: { size: 18 },
+                    xaxis: { title: recommendation.property },
+                    yaxis: { title: 'Frequência' },
+                    bargap: 0.05
+                };
+                
+                Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+            } else {
+                // Box plot
+                if (!data.statistics) {
+                    $scope.showNoDataMessage(element, recommendation.title, 400, 'Sem estatísticas disponíveis');
+                    return;
+                }
+                
+                const stats = data.statistics;
+                const dataChart = [{
+                    type: 'box',
+                    y: [stats.min, stats.mean - 20, stats.mean, stats.mean + 20, stats.max],
+                    boxpoints: false,
+                    name: recommendation.property,
+                    marker: { color: 'rgba(44, 160, 44, 0.7)' }
+                }];
+                
+                const layout = {
+                    height: 400,
+                    title: recommendation.title,
+                    titlefont: { size: 18 },
+                    yaxis: { title: recommendation.property }
+                };
+                
+                Plotly.newPlot(element, dataChart, layout, {displayModeBar: false});
+            }
+        }, function(error) {
+            $scope.showNoDataMessage(element, recommendation.title, 400, 'Erro ao carregar dados');
+        });
+    };
+    
+    $scope.renderPropertyCrossAnalysisChart = function(element, recommendation) {
+        // Placeholder heatmap
+        $scope.showNoDataMessage(element, recommendation.title, 400, 'Análise cruzada será implementada em breve');
+    };
+    
+    $scope.loadAvailableProperties = function() {
+        $scope.loading = true;
+        $http.get('/api/campaigns/' + $scope.campaignId + '/properties').then(function(response) {
+            if (response.data) {
+                $scope.details.propertyAnalysis = response.data;
+                $scope.details.visualizationRecommendations = response.data.visualizationRecommendations || [];
+            }
+            $scope.loading = false;
+        }, function(error) {
+            $scope.loading = false;
+            alert('Erro ao carregar propriedades: ' + (error.data.error || 'Erro desconhecido'));
+        });
+    };
+    
+    $scope.exportPropertyAnalysis = function() {
+        if (!$scope.details.propertyAnalysis) {
+            alert('Nenhuma análise disponível para exportar');
+            return;
+        }
+        
+        // Create JSON export
+        const exportData = {
+            campaignId: $scope.campaignId,
+            analysisDate: new Date().toISOString(),
+            propertyAnalysis: $scope.details.propertyAnalysis,
+            visualizationRecommendations: $scope.details.visualizationRecommendations
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `property-analysis-${$scope.campaignId}-${Date.now()}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
     };
     
     // Inicializar

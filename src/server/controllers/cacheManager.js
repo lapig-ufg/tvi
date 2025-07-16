@@ -287,6 +287,18 @@ module.exports = function (app) {
             
             try {
                 var logDir = app.config.logDir;
+                
+                // Ensure log directory exists
+                if (!fs.existsSync(logDir)) {
+                    try {
+                        fs.mkdirSync(logDir, { recursive: true });
+                        console.log('Created log directory for cache manager:', logDir);
+                    } catch (mkdirError) {
+                        console.error('Failed to create log directory:', mkdirError);
+                        // Continue with fallback behavior
+                    }
+                }
+                
                 var smartCacheLogFile = path.join(logDir, 'smartCacheProcessor.log');
                 
                 var jobStatus = {
@@ -429,8 +441,33 @@ module.exports = function (app) {
                 var params = Object.assign({}, mongoConfig, customParams);
                 
                 var fs = require('fs');
+                
+                // Ensure log directory exists
+                if (!fs.existsSync(app.config.logDir)) {
+                    try {
+                        fs.mkdirSync(app.config.logDir, { recursive: true });
+                        console.log('Created log directory for manual cache execution:', app.config.logDir);
+                    } catch (mkdirError) {
+                        console.error('Failed to create log directory for manual execution:', mkdirError);
+                        return response.status(500).json({
+                            success: false,
+                            error: 'Failed to create log directory: ' + mkdirError.message
+                        });
+                    }
+                }
+                
                 var logFile = app.config.logDir + "/smartCacheProcessor-manual.log";
-                var logStream = fs.createWriteStream(logFile, {'flags': 'a'});
+                var logStream;
+                
+                try {
+                    logStream = fs.createWriteStream(logFile, {'flags': 'a'});
+                } catch (streamError) {
+                    console.error('Failed to create log stream:', streamError);
+                    return response.status(500).json({
+                        success: false,
+                        error: 'Failed to create log stream: ' + streamError.message
+                    });
+                }
                 
                 logStream.write(`${new Date().toISOString()} - Execução manual iniciada com parâmetros: ${JSON.stringify(params)}\n`);
                 
