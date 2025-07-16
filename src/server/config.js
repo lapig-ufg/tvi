@@ -73,6 +73,15 @@ module.exports = function(app) {
 		config.jobs.toRun[0].runOnAppStart = false;
 		config.jobs.toRun[1].runOnAppStart = true;
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
+		// Ensure log directory exists in production
+		if (!require('fs').existsSync(config.logDir)) {
+			try {
+				require('fs').mkdirSync(config.logDir, { recursive: true });
+				console.log('Created production log directory:', config.logDir);
+			} catch (error) {
+				console.error('Failed to create production log directory:', error);
+			}
+		}
 	}
 
 	return config;

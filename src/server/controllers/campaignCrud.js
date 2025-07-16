@@ -7,7 +7,28 @@ module.exports = function(app) {
     const config = app.config;
     const campaignCollection = app.repository.collections.campaign;
     const pointsCollection = app.repository.collections.points;
-    const PropertyAnalyzer = require('./propertyAnalyzer')(app);
+    
+    // Try to load PropertyAnalyzer with error handling
+    let PropertyAnalyzer;
+    try {
+        PropertyAnalyzer = require('./propertyAnalyzer')(app);
+    } catch (error) {
+        console.error('Failed to load PropertyAnalyzer module:', error);
+        // Create a fallback PropertyAnalyzer
+        PropertyAnalyzer = {
+            analyzeProperties: async (pointsCollection, campaignId, numInspec) => {
+                console.warn('PropertyAnalyzer not available, using fallback');
+                return {
+                    relevantProperties: [],
+                    categoricalProperties: [],
+                    numericProperties: [],
+                    temporalProperties: [],
+                    geographicProperties: [],
+                    allProperties: []
+                };
+            }
+        };
+    }
     
     // Configuração do multer para upload (versão antiga 0.1.8)
 
