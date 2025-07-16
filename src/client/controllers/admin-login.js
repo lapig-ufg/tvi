@@ -529,7 +529,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     
     $scope.upload = function() {
         if (!$scope.file) {
-            alert('Selecione um arquivo GeoJSON');
+            alert('Selecione um arquivo GeoJSON ou ZIP');
             return;
         }
         
@@ -543,20 +543,25 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
         // Iniciar simulação de progresso
         var progressInterval = simulateProgress();
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const content = e.target.result;
-            
-            $http.post('/api/campaigns/upload-geojson', {
-                campaignId: campaignId,
-                geojsonContent: content,
-                filename: $scope.file.name
-            }, {
-                timeout: 600000, // 10 minutos
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(function(response) {
+        const isZipFile = $scope.file.name.toLowerCase().endsWith('.zip');
+        
+        if (isZipFile) {
+            // Para arquivos ZIP, ler como base64
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Content = e.target.result.split(',')[1]; // Remove o prefixo data:...;base64,
+                
+                $http.post('/api/campaigns/upload-geojson', {
+                    campaignId: campaignId,
+                    zipContent: base64Content,
+                    filename: $scope.file.name,
+                    isZip: true
+                }, {
+                    timeout: 600000, // 10 minutos
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(function(response) {
                 // Parar simulação de progresso
                 clearInterval(progressInterval);
                 
@@ -608,17 +613,96 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
                     $scope.uploadProgress.error = errorMessage;
                 }
             });
-        };
-        
-        reader.onerror = function() {
-            clearInterval(progressInterval);
-            $scope.uploadProgress.isUploading = false;
-            $scope.uploadProgress.isCompleted = true;
-            $scope.uploadProgress.success = false;
-            $scope.uploadProgress.error = 'Erro ao ler o arquivo';
-        };
-        
-        reader.readAsText($scope.file);
+            };
+            
+            reader.onerror = function() {
+                clearInterval(progressInterval);
+                $scope.uploadProgress.isUploading = false;
+                $scope.uploadProgress.isCompleted = true;
+                $scope.uploadProgress.success = false;
+                $scope.uploadProgress.error = 'Erro ao ler o arquivo';
+            };
+            
+            reader.readAsDataURL($scope.file);
+        } else {
+            // Para arquivos GeoJSON, ler como texto
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                
+                $http.post('/api/campaigns/upload-geojson', {
+                    campaignId: campaignId,
+                    geojsonContent: content,
+                    filename: $scope.file.name
+                }, {
+                    timeout: 600000, // 10 minutos
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(function(response) {
+                    // Parar simulação de progresso
+                    clearInterval(progressInterval);
+                    
+                    $scope.uploadProgress.isUploading = false;
+                    $scope.uploadProgress.isCompleted = true;
+                    $scope.uploadProgress.progress = 100;
+                    
+                    if (response.data.success) {
+                        $scope.uploadProgress.success = true;
+                        $scope.uploadProgress.result = response.data;
+                        $scope.uploadProgress.processedCount = response.data.processedCount || 0;
+                        $scope.uploadProgress.errorCount = response.data.errorCount || 0;
+                        $scope.uploadProgress.totalFeatures = response.data.totalFeatures || 0;
+                        $scope.uploadProgress.duration = response.data.duration || 0;
+                        $scope.uploadProgress.properties = response.data.properties || [];
+                        
+                        // Upload completed successfully
+                    } else {
+                        $scope.uploadProgress.success = false;
+                        $scope.uploadProgress.error = response.data.error || 'Erro desconhecido';
+                    }
+                }, function(error) {
+                    // Parar simulação de progresso
+                    clearInterval(progressInterval);
+                    
+                    $scope.uploadProgress.isUploading = false;
+                    $scope.uploadProgress.isCompleted = true;
+                    $scope.uploadProgress.success = false;
+                    $scope.uploadProgress.progress = 100;
+                    
+                    if (error.status === 401) {
+                        $uibModalInstance.dismiss('unauthorized');
+                        $location.path('/admin/login');
+                    } else {
+                        let errorMessage = 'Erro de conexão';
+                        
+                        if (error.status === 413) {
+                            errorMessage = 'Arquivo muito grande. Limite máximo: 100MB';
+                        } else if (error.status === 400) {
+                            errorMessage = error.data?.error || 'Dados inválidos na requisição';
+                        } else if (error.status === 0) {
+                            errorMessage = 'Erro de conexão - verifique sua internet ou se o servidor está disponível';
+                        } else if (error.status >= 500) {
+                            errorMessage = 'Erro interno do servidor';
+                        } else if (error.data?.error) {
+                            errorMessage = error.data.error;
+                        }
+                        
+                        $scope.uploadProgress.error = errorMessage;
+                    }
+                });
+            };
+            
+            reader.onerror = function() {
+                clearInterval(progressInterval);
+                $scope.uploadProgress.isUploading = false;
+                $scope.uploadProgress.isCompleted = true;
+                $scope.uploadProgress.success = false;
+                $scope.uploadProgress.error = 'Erro ao ler o arquivo';
+            };
+            
+            reader.readAsText($scope.file);
+        }
     };
     
     $scope.close = function() {

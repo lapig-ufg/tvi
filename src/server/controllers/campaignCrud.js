@@ -95,13 +95,27 @@ module.exports = function(app) {
     };
 
     CampaignCrud.checkAdminAuth = (req, res) => {
+        console.log('[AUTH CHECK ENDPOINT]', {
+            hasSession: !!req.session,
+            sessionId: req.sessionID,
+            adminData: req.session && req.session.admin,
+            cookies: req.cookies
+        });
+        
         if (req.session && req.session.admin && req.session.admin.superAdmin) {
             res.json({ 
                 authenticated: true, 
                 user: req.session.admin.superAdmin 
             });
         } else {
-            res.json({ authenticated: false });
+            res.json({ 
+                authenticated: false,
+                debug: {
+                    hasSession: !!req.session,
+                    hasAdmin: !!(req.session && req.session.admin),
+                    hasSuperAdmin: !!(req.session && req.session.admin && req.session.admin.superAdmin)
+                }
+            });
         }
     };
 
@@ -815,6 +829,8 @@ module.exports = function(app) {
             // Enhanced validation with detailed error reporting
             const campaignId = req.body && req.body.campaignId;
             const geojsonContent = req.body && req.body.geojsonContent;
+            const zipContent = req.body && req.body.zipContent;
+            const isZip = req.body && req.body.isZip;
             const filename = (req.body && req.body.filename) || 'campaign-upload.geojson';
             
             // Validate request structure
@@ -846,18 +862,36 @@ module.exports = function(app) {
                 });
             }
             
-            if (!geojsonContent || typeof geojsonContent !== 'string') {
-                logError('ERROR', 'GeoJSON content validation failed', null, {
-                    hasContent: !!geojsonContent,
-                    contentType: typeof geojsonContent,
-                    contentLength: geojsonContent ? geojsonContent.length : 0
-                });
-                return res.status(400).json({ 
-                    error: 'Dados inválidos na requisição',
-                    details: 'GeoJSON content is required and must be a string',
-                    requestId: requestId,
-                    timestamp: new Date().toISOString()
-                });
+            // Validate content based on file type
+            if (isZip) {
+                if (!zipContent || typeof zipContent !== 'string') {
+                    logError('ERROR', 'ZIP content validation failed', null, {
+                        hasContent: !!zipContent,
+                        contentType: typeof zipContent,
+                        contentLength: zipContent ? zipContent.length : 0,
+                        isZip: isZip
+                    });
+                    return res.status(400).json({ 
+                        error: 'Dados inválidos na requisição',
+                        details: 'ZIP content is required and must be a base64 string',
+                        requestId: requestId,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } else {
+                if (!geojsonContent || typeof geojsonContent !== 'string') {
+                    logError('ERROR', 'GeoJSON content validation failed', null, {
+                        hasContent: !!geojsonContent,
+                        contentType: typeof geojsonContent,
+                        contentLength: geojsonContent ? geojsonContent.length : 0
+                    });
+                    return res.status(400).json({ 
+                        error: 'Dados inválidos na requisição',
+                        details: 'GeoJSON content is required and must be a string',
+                        requestId: requestId,
+                        timestamp: new Date().toISOString()
+                    });
+                }
             }
             
             // Verify campaign exists with detailed error handling
@@ -890,15 +924,133 @@ module.exports = function(app) {
                 });
             }
             
+            // Process ZIP file if needed
+            let actualGeojsonContent = geojsonContent;
+            
+            if (isZip) {
+                logError('INFO', 'Processing ZIP file', null, {
+                    filename: filename,
+                    base64Length: zipContent.length
+                });
+                
+                try {
+                    // Since we don't have a ZIP library installed, we'll use the system's unzip command
+                    const tempDir = path.join(__dirname, '../../temp');
+                    if (!fs.existsSync(tempDir)) {
+                        fs.mkdirSync(tempDir, { recursive: true });
+                    }
+                    
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                    const tempZipPath = path.join(tempDir, `upload-${uniqueSuffix}.zip`);
+                    const tempExtractDir = path.join(tempDir, `extract-${uniqueSuffix}`);
+                    
+                    // Create extraction directory
+                    fs.mkdirSync(tempExtractDir, { recursive: true });
+                    
+                    // Write base64 content to a temporary ZIP file
+                    const zipBuffer = Buffer.from(zipContent, 'base64');
+                    fs.writeFileSync(tempZipPath, zipBuffer);
+                    
+                    logError('INFO', 'ZIP file written to temp', null, {
+                        tempZipPath: tempZipPath,
+                        zipSize: zipBuffer.length
+                    });
+                    
+                    // Extract ZIP using system command
+                    await new Promise((resolve, reject) => {
+                        exec(`unzip -o "${tempZipPath}" -d "${tempExtractDir}"`, (error, stdout, stderr) => {
+                            if (error) {
+                                logError('ERROR', 'ZIP extraction failed', error, {
+                                    stdout: stdout,
+                                    stderr: stderr,
+                                    command: 'unzip'
+                                });
+                                reject(new Error(`ZIP extraction failed: ${stderr || error.message}`));
+                            } else {
+                                logError('INFO', 'ZIP extraction successful', null, {
+                                    stdout: stdout,
+                                    extractDir: tempExtractDir
+                                });
+                                resolve();
+                            }
+                        });
+                    });
+                    
+                    // Find GeoJSON file in extracted content
+                    const findGeoJSONFile = (dir) => {
+                        const files = fs.readdirSync(dir);
+                        for (const file of files) {
+                            const fullPath = path.join(dir, file);
+                            const stat = fs.statSync(fullPath);
+                            
+                            if (stat.isDirectory()) {
+                                const found = findGeoJSONFile(fullPath);
+                                if (found) return found;
+                            } else if (file.toLowerCase().endsWith('.geojson') || file.toLowerCase().endsWith('.json')) {
+                                return fullPath;
+                            }
+                        }
+                        return null;
+                    };
+                    
+                    const geojsonFilePath = findGeoJSONFile(tempExtractDir);
+                    
+                    if (!geojsonFilePath) {
+                        // Clean up temp files
+                        try {
+                            fs.unlinkSync(tempZipPath);
+                            exec(`rm -rf "${tempExtractDir}"`, () => {});
+                        } catch (e) {}
+                        
+                        logError('ERROR', 'No GeoJSON file found in ZIP', null, {
+                            extractedFiles: fs.readdirSync(tempExtractDir)
+                        });
+                        
+                        return res.status(400).json({ 
+                            error: 'Arquivo GeoJSON não encontrado no ZIP',
+                            details: 'No .geojson or .json file found in the ZIP archive',
+                            requestId: requestId,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                    
+                    // Read the GeoJSON content
+                    actualGeojsonContent = fs.readFileSync(geojsonFilePath, 'utf8');
+                    
+                    logError('INFO', 'GeoJSON extracted from ZIP', null, {
+                        geojsonFilePath: geojsonFilePath,
+                        contentLength: actualGeojsonContent.length
+                    });
+                    
+                    // Clean up temp files
+                    try {
+                        fs.unlinkSync(tempZipPath);
+                        exec(`rm -rf "${tempExtractDir}"`, () => {});
+                    } catch (e) {
+                        logError('WARN', 'Failed to clean up temp files', e);
+                    }
+                    
+                } catch (zipError) {
+                    logError('ERROR', 'ZIP processing failed', zipError);
+                    return res.status(400).json({ 
+                        error: 'Erro ao processar arquivo ZIP',
+                        details: zipError.message,
+                        requestId: requestId,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
+            
             // Enhanced GeoJSON parsing with detailed error context
             let geojsonData;
             try {
-                geojsonData = JSON.parse(geojsonContent);
+                geojsonData = JSON.parse(actualGeojsonContent);
             } catch (parseError) {
                 logError('ERROR', 'GeoJSON parsing failed', parseError, {
-                    contentLength: geojsonContent.length,
-                    contentPreview: geojsonContent.substring(0, 200),
-                    filename: filename
+                    contentLength: actualGeojsonContent.length,
+                    contentPreview: actualGeojsonContent.substring(0, 200),
+                    filename: filename,
+                    wasZip: isZip
                 });
                 return res.status(400).json({ 
                     error: 'Formato GeoJSON inválido',

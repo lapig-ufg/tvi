@@ -64,6 +64,10 @@ module.exports = function(app) {
             if (req.url.includes('/api/') && !req.url.includes('/health')) {
                 console.log('[REQUEST]', JSON.stringify(requestLog));
             }
+            // Log especial para upload de GeoJSON
+            if (req.url.includes('upload-geojson')) {
+                console.log('[UPLOAD REQUEST DETECTED]', JSON.stringify(requestLog));
+            }
         } else {
             console.log('[REQUEST]', JSON.stringify(requestLog));
         }

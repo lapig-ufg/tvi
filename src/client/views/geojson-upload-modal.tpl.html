@@ -28,8 +28,8 @@
     <form ng-if="!uploadProgress.isUploading">
         <div class="form-group">
             <label>Arquivo GeoJSON</label>
-            <input type="file" class="form-control" accept=".geojson" onchange="angular.element(this).scope().setFile(this)">
-            <p class="help-block">Selecione um arquivo GeoJSON com os pontos da campanha</p>
+            <input type="file" class="form-control" accept=".geojson,.zip" onchange="angular.element(this).scope().setFile(this)">
+            <p class="help-block">Selecione um arquivo GeoJSON ou um arquivo ZIP contendo o GeoJSON</p>
         </div>
         
         <div class="alert alert-info">
@@ -37,6 +37,7 @@
             <ul>
                 <li>O upload será processado em tempo real</li>
                 <li>Você pode acompanhar o progresso e logs durante o processamento</li>
+                <li>Aceita arquivos GeoJSON ou arquivos ZIP contendo GeoJSON</li>
                 <li>Não é necessário geoprocessamento - use as propriedades do GeoJSON</li>
                 <li>Propriedades esperadas: biome, uf, county, countyCode, path, row</li>
             </ul>

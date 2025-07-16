@@ -3,8 +3,17 @@ module.exports = function (app) {
     var campaignCrud = app.controllers.campaignCrud;
     var errorHandler = app.middleware.errorHandler;
     
+    console.log('[ROUTE INIT] Loading campaignCrud routes...');
+    
     // Middleware de autenticação para super-admin
     var requireSuperAdmin = function(req, res, next) {
+        console.log('[AUTH CHECK]', {
+            url: req.url,
+            hasSession: !!req.session,
+            hasAdmin: !!(req.session && req.session.admin),
+            hasSuperAdmin: !!(req.session && req.session.admin && req.session.admin.superAdmin)
+        });
+        
         if (req.session && req.session.admin && req.session.admin.superAdmin) {
             return next();
         }
@@ -29,6 +38,7 @@ module.exports = function (app) {
     
     // Rotas para gerenciar pontos - protegidas por autenticação de super-admin
     // Usando asyncHandler para capturar erros assíncronos
+    console.log('[ROUTE REGISTER] POST /api/campaigns/upload-geojson');
     app.post('/api/campaigns/upload-geojson', 
         requireSuperAdmin, 
         errorHandler.asyncHandler(campaignCrud.uploadGeoJSON)
