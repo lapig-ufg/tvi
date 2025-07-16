@@ -5,7 +5,7 @@ module.exports = function(app) {
     const ErrorHandler = {};
     
     // Criar diretório de logs se não existir
-    const logDir = path.join(__dirname, '../../../log');
+    const logDir = path.join(__dirname, '../log');
     if (!fs.existsSync(logDir)) {
         fs.mkdirSync(logDir, { recursive: true });
     }
@@ -128,8 +128,8 @@ module.exports = function(app) {
                 userAgent: req.get('User-Agent')
             },
             session: {
-                userId: req.session?.userId,
-                adminId: req.session?.admin?.superAdmin?.id,
+                userId: req.session && req.session.userId,
+                adminId: req.session && req.session.admin && req.session.admin.superAdmin && req.session.admin.superAdmin.id,
                 sessionId: req.sessionID
             },
             environment: {
