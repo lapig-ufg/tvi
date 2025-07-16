@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const async = require('async');
 const exec = require('child_process').exec;
+const AdmZip = require('adm-zip');
 
 module.exports = function(app) {
     const config = app.config;
@@ -934,76 +935,42 @@ module.exports = function(app) {
                 });
                 
                 try {
-                    // Since we don't have a ZIP library installed, we'll use the system's unzip command
-                    const tempDir = path.join(__dirname, '../../temp');
-                    if (!fs.existsSync(tempDir)) {
-                        fs.mkdirSync(tempDir, { recursive: true });
+                    // Convert base64 to buffer
+                    const zipBuffer = Buffer.from(zipContent, 'base64');
+                    
+                    logError('INFO', 'Creating AdmZip instance', null, {
+                        bufferSize: zipBuffer.length
+                    });
+                    
+                    // Create AdmZip instance
+                    const zip = new AdmZip(zipBuffer);
+                    
+                    // Get all entries from the ZIP file
+                    const zipEntries = zip.getEntries();
+                    
+                    logError('INFO', 'ZIP entries found', null, {
+                        entryCount: zipEntries.length,
+                        entries: zipEntries.map(e => ({
+                            name: e.entryName,
+                            isDirectory: e.isDirectory,
+                            size: e.header.size
+                        }))
+                    });
+                    
+                    // Find GeoJSON file in ZIP entries
+                    let geojsonEntry = null;
+                    for (const entry of zipEntries) {
+                        if (!entry.isDirectory && 
+                            (entry.entryName.toLowerCase().endsWith('.geojson') || 
+                             entry.entryName.toLowerCase().endsWith('.json'))) {
+                            geojsonEntry = entry;
+                            break;
+                        }
                     }
                     
-                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                    const tempZipPath = path.join(tempDir, `upload-${uniqueSuffix}.zip`);
-                    const tempExtractDir = path.join(tempDir, `extract-${uniqueSuffix}`);
-                    
-                    // Create extraction directory
-                    fs.mkdirSync(tempExtractDir, { recursive: true });
-                    
-                    // Write base64 content to a temporary ZIP file
-                    const zipBuffer = Buffer.from(zipContent, 'base64');
-                    fs.writeFileSync(tempZipPath, zipBuffer);
-                    
-                    logError('INFO', 'ZIP file written to temp', null, {
-                        tempZipPath: tempZipPath,
-                        zipSize: zipBuffer.length
-                    });
-                    
-                    // Extract ZIP using system command
-                    await new Promise((resolve, reject) => {
-                        exec(`unzip -o "${tempZipPath}" -d "${tempExtractDir}"`, (error, stdout, stderr) => {
-                            if (error) {
-                                logError('ERROR', 'ZIP extraction failed', error, {
-                                    stdout: stdout,
-                                    stderr: stderr,
-                                    command: 'unzip'
-                                });
-                                reject(new Error(`ZIP extraction failed: ${stderr || error.message}`));
-                            } else {
-                                logError('INFO', 'ZIP extraction successful', null, {
-                                    stdout: stdout,
-                                    extractDir: tempExtractDir
-                                });
-                                resolve();
-                            }
-                        });
-                    });
-                    
-                    // Find GeoJSON file in extracted content
-                    const findGeoJSONFile = (dir) => {
-                        const files = fs.readdirSync(dir);
-                        for (const file of files) {
-                            const fullPath = path.join(dir, file);
-                            const stat = fs.statSync(fullPath);
-                            
-                            if (stat.isDirectory()) {
-                                const found = findGeoJSONFile(fullPath);
-                                if (found) return found;
-                            } else if (file.toLowerCase().endsWith('.geojson') || file.toLowerCase().endsWith('.json')) {
-                                return fullPath;
-                            }
-                        }
-                        return null;
-                    };
-                    
-                    const geojsonFilePath = findGeoJSONFile(tempExtractDir);
-                    
-                    if (!geojsonFilePath) {
-                        // Clean up temp files
-                        try {
-                            fs.unlinkSync(tempZipPath);
-                            exec(`rm -rf "${tempExtractDir}"`, () => {});
-                        } catch (e) {}
-                        
+                    if (!geojsonEntry) {
                         logError('ERROR', 'No GeoJSON file found in ZIP', null, {
-                            extractedFiles: fs.readdirSync(tempExtractDir)
+                            zipEntries: zipEntries.map(e => e.entryName)
                         });
                         
                         return res.status(400).json({ 
@@ -1014,21 +981,13 @@ module.exports = function(app) {
                         });
                     }
                     
-                    // Read the GeoJSON content
-                    actualGeojsonContent = fs.readFileSync(geojsonFilePath, 'utf8');
+                    // Extract the GeoJSON content
+                    actualGeojsonContent = zip.readAsText(geojsonEntry);
                     
                     logError('INFO', 'GeoJSON extracted from ZIP', null, {
-                        geojsonFilePath: geojsonFilePath,
+                        entryName: geojsonEntry.entryName,
                         contentLength: actualGeojsonContent.length
                     });
-                    
-                    // Clean up temp files
-                    try {
-                        fs.unlinkSync(tempZipPath);
-                        exec(`rm -rf "${tempExtractDir}"`, () => {});
-                    } catch (e) {
-                        logError('WARN', 'Failed to clean up temp files', e);
-                    }
                     
                 } catch (zipError) {
                     logError('ERROR', 'ZIP processing failed', zipError);

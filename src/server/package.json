@@ -4,6 +4,7 @@
   "description": "ERROR: No README.md file found!",
   "main": "importar_dados.js",
   "dependencies": {
+    "adm-zip": "^0.5.10",
     "app-root-path": "^1.0.0",
     "archiver": "~0.4.10",
     "async": "~0.2.10",
