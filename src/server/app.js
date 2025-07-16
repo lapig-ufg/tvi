@@ -67,9 +67,37 @@ app.middleware.repository.init(() => {
         }));*/
 
 		app.use(responseTime());
-		app.use(bodyParser.json({ limit: '100mb' }));
-		app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
-		app.use(multer());
+		
+		// Enhanced body parser configuration for production
+		const jsonParser = bodyParser.json({ 
+			limit: '100mb',
+			verify: function(req, res, buf, encoding) {
+				// Log large requests in production for debugging
+				if (process.env.NODE_ENV === 'prod' && buf.length > 1000000) {
+					console.log(`[PROD] Large JSON request: ${buf.length} bytes on ${req.url}`);
+				}
+			}
+		});
+		
+		const urlencodedParser = bodyParser.urlencoded({ 
+			extended: true, 
+			limit: '100mb' 
+		});
+		
+		// Apply parsers with error handling
+		app.use(function(req, res, next) {
+			// Skip body parsing for multipart requests
+			if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+				return next();
+			}
+			jsonParser(req, res, next);
+		});
+		
+		app.use(urlencodedParser);
+		
+		// Log environment and parser status
+		console.log(`[${process.env.NODE_ENV || 'dev'}] Body parser configured with 100MB limit`);
+		console.log(`[${process.env.NODE_ENV || 'dev'}] Multer disabled globally - use route-specific middleware for file uploads`);
 
 		// Tornar io disponível para outros modules
 		app.io = io;
@@ -97,31 +125,26 @@ app.middleware.repository.init(() => {
 			});
 		})
 
-		app.use(function(error, request, response, next) {
-			// Handle body parser errors (like payload too large)
-			if (error.type === 'entity.too.large') {
-				return response.status(413).json({
-					error: 'Arquivo muito grande. Limite máximo: 100MB',
-					type: 'PAYLOAD_TOO_LARGE'
-				});
-			}
-			
-			if (error.type === 'entity.parse.failed') {
-				return response.status(400).json({
-					error: 'Erro ao processar dados da requisição',
-					type: 'PARSE_ERROR'
-				});
-			}
-			
-			// Other errors
-			console.error('Server Error:', error);
-			next();
-		});
-
+		// Carregar o middleware de erro
+		const errorHandler = app.middleware.errorHandler;
+		
+		// Aplicar o logger de requisições ANTES das rotas
+		app.use(errorHandler.requestLogger);
+		
+		// Aplicar timeout global de requisições (5 minutos por padrão)
+		app.use(errorHandler.requestTimeout(300000));
+		
 		load('models', {'verbose': false})
 			.then('controllers')
 			.then('routes')
 			.into(app);
+		
+		// IMPORTANTE: Os handlers de erro devem vir DEPOIS das rotas
+		// Handler específico para erros de upload
+		app.use(errorHandler.uploadErrorHandler);
+		
+		// Handler global de erros (deve ser o último middleware)
+		app.use(errorHandler.globalErrorHandler);
 
 
 		const httpServer = http.listen(app.config.port, function () {

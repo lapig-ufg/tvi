@@ -1,0 +1,189 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="glyphicon glyphicon-info-sign"></i> 
+        Detalhes do Ponto: {{ point._id }}
+    </h3>
+</div>
+<div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+    <!-- Informações Básicas -->
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-map-marker"></i> Informações de Localização</h5>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-condensed">
+                        <tr>
+                            <td><strong>ID:</strong></td>
+                            <td>{{ point._id }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Latitude:</strong></td>
+                            <td>{{ point.lat | number:6 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Longitude:</strong></td>
+                            <td>{{ point.lon | number:6 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bioma:</strong></td>
+                            <td>{{ point.biome || 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-condensed">
+                        <tr>
+                            <td><strong>Estado (UF):</strong></td>
+                            <td>{{ point.uf || 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Município:</strong></td>
+                            <td>{{ point.county || 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Código do Município:</strong></td>
+                            <td>{{ point.countyCode || 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                <span ng-if="getInspectionCount() >= campaign.numInspec" class="label label-success">Completo</span>
+                                <span ng-if="getInspectionCount() < campaign.numInspec && getInspectionCount() > 0" class="label label-warning">Em andamento</span>
+                                <span ng-if="getInspectionCount() == 0" class="label label-default">Não iniciado</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propriedades Customizadas -->
+    <div ng-if="point.properties && hasCustomProperties()" class="panel panel-info">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-tags"></i> Propriedades Específicas</h5>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6" ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)">
+                    <strong>{{ formatPropertyName(key) }}:</strong> {{ value }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas de Inspeção -->
+    <div class="panel panel-success">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-stats"></i> Estatísticas de Inspeção</h5>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-primary">{{ getInspectionCount() }}</h4>
+                        <small>Inspeções Realizadas</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-info">{{ campaign.numInspec }}</h4>
+                        <small>Inspeções Necessárias</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-warning">{{ getUniqueInspectors() }}</h4>
+                        <small>Inspetores Únicos</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-success">{{ getCompletionPercentage() }}%</h4>
+                        <small>Progresso</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Inspeções -->
+    <div ng-if="point.userName && point.userName.length > 0" class="panel panel-default">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-list"></i> Histórico de Inspeções</h5>
+        </div>
+        <div class="panel-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Inspetor</th>
+                            <th>Data</th>
+                            <th>Tempo (s)</th>
+                            <th>Classes de Uso</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="inspection in getInspectionDetails() track by $index">
+                            <td>{{ $index + 1 }}</td>
+                            <td>
+                                <span class="label label-info">{{ inspection.user }}</span>
+                            </td>
+                            <td>{{ inspection.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td>{{ inspection.time || '-' }}</td>
+                            <td>
+                                <span ng-repeat="cls in inspection.landUseClasses" class="label label-default" style="margin-right: 2px;">
+                                    {{ cls }}
+                                </span>
+                                <span ng-if="!inspection.landUseClasses || inspection.landUseClasses.length == 0" class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-xs btn-warning" ng-click="editInspection(inspection, $index)" title="Editar">
+                                    <i class="glyphicon glyphicon-edit"></i>
+                                </button>
+                                <button class="btn btn-xs btn-danger" ng-click="removeInspection(inspection, $index)" title="Remover">
+                                    <i class="glyphicon glyphicon-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagem quando não há inspeções -->
+    <div ng-if="!point.userName || point.userName.length == 0" class="alert alert-info">
+        <i class="glyphicon glyphicon-info-sign"></i>
+        Este ponto ainda não possui nenhuma inspeção realizada.
+    </div>
+
+    <!-- Bounds Information (se disponível) -->
+    <div ng-if="point.bounds" class="panel panel-default">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-resize-full"></i> Limites Geográficos</h5>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Norte:</strong> {{ point.bounds.north | number:6 }}<br>
+                    <strong>Sul:</strong> {{ point.bounds.south | number:6 }}
+                </div>
+                <div class="col-md-6">
+                    <strong>Leste:</strong> {{ point.bounds.east | number:6 }}<br>
+                    <strong>Oeste:</strong> {{ point.bounds.west | number:6 }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="viewInTemporal()">
+        <i class="glyphicon glyphicon-eye-open"></i> Ver no Temporal
+    </button>
+    <button class="btn btn-default" ng-click="close()">Fechar</button>
+</div>

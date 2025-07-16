@@ -1,0 +1,211 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="glyphicon glyphicon-edit"></i> 
+        Editar Inspeções: {{ point._id }}
+    </h3>
+</div>
+<div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+    <!-- Informações do Ponto -->
+    <div class="alert alert-info">
+        <strong>Ponto:</strong> {{ point._id }} | 
+        <strong>Localização:</strong> {{ point.lat | number:4 }}, {{ point.lon | number:4 }} | 
+        <strong>{{ point.county || 'N/A' }}, {{ point.uf || 'N/A' }}</strong>
+    </div>
+
+    <!-- Resumo atual -->
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h5><i class="glyphicon glyphicon-stats"></i> Status Atual</h5>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-info">{{ inspections.length }}</h4>
+                        <small>Inspeções Atuais</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="well well-sm text-center">
+                        <h4 class="text-primary">{{ campaign.numInspec }}</h4>
+                        <small>Necessárias</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="well well-sm text-center">
+                        <h4 ng-class="inspections.length >= campaign.numInspec ? 'text-success' : 'text-warning'">
+                            {{ inspections.length >= campaign.numInspec ? 'Completo' : 'Pendente' }}
+                        </h4>
+                        <small>Status</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Inspeções para Edição -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5>
+                <i class="glyphicon glyphicon-list"></i> 
+                Inspeções ({{ inspections.length }})
+                <button class="btn btn-xs btn-success pull-right" ng-click="addNewInspection()">
+                    <i class="glyphicon glyphicon-plus"></i> Adicionar
+                </button>
+            </h5>
+        </div>
+        <div class="panel-body">
+            <div ng-if="inspections.length == 0" class="alert alert-warning">
+                <i class="glyphicon glyphicon-warning-sign"></i>
+                Nenhuma inspeção encontrada. Clique em "Adicionar" para criar uma nova inspeção.
+            </div>
+
+            <div ng-repeat="inspection in inspections" class="panel panel-default inspection-item">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6>
+                                <i class="glyphicon glyphicon-user"></i>
+                                Inspeção #{{ $index + 1 }} 
+                                <span ng-if="inspection.user" class="label label-info">{{ inspection.user }}</span>
+                                <span ng-if="inspection.date" class="label label-default">{{ inspection.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </h6>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <button class="btn btn-xs btn-warning" ng-click="editInspection(inspection, $index)" ng-if="!inspection.editing">
+                                <i class="glyphicon glyphicon-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-xs btn-success" ng-click="saveInspection(inspection, $index)" ng-if="inspection.editing">
+                                <i class="glyphicon glyphicon-ok"></i> Salvar
+                            </button>
+                            <button class="btn btn-xs btn-default" ng-click="cancelEdit(inspection, $index)" ng-if="inspection.editing">
+                                <i class="glyphicon glyphicon-remove"></i> Cancelar
+                            </button>
+                            <button class="btn btn-xs btn-danger" ng-click="removeInspection($index)" ng-if="!inspection.editing">
+                                <i class="glyphicon glyphicon-trash"></i> Remover
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <!-- Modo de Visualização -->
+                    <div ng-if="!inspection.editing">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Usuário:</strong> {{ inspection.user || 'Não definido' }}<br>
+                                <strong>Data:</strong> {{ inspection.date | date:'dd/MM/yyyy HH:mm' || 'Não definida' }}<br>
+                                <strong>Tempo:</strong> {{ inspection.time || 'N/A' }} segundos
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Classes de Uso:</strong><br>
+                                <span ng-repeat="form in inspection.form" class="label label-default" style="margin-right: 5px;">
+                                    {{ form.landUse }} ({{ form.initialYear }}-{{ form.finalYear }})
+                                </span>
+                                <span ng-if="!inspection.form || inspection.form.length == 0" class="text-muted">Nenhuma classe definida</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modo de Edição -->
+                    <div ng-if="inspection.editing">
+                        <form>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Usuário:</label>
+                                        <input type="text" class="form-control input-sm" ng-model="inspection.user" placeholder="Nome do usuário">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Data/Hora:</label>
+                                        <input type="datetime-local" class="form-control input-sm" ng-model="inspection.dateInput">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Tempo (segundos):</label>
+                                        <input type="number" class="form-control input-sm" ng-model="inspection.time" min="0" placeholder="Tempo em segundos">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Formulário de Classes de Uso -->
+                            <div class="form-group">
+                                <label>Classes de Uso da Terra:</label>
+                                <div ng-repeat="form in inspection.form" class="well well-sm">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label>Ano Inicial:</label>
+                                            <input type="number" class="form-control input-sm" ng-model="form.initialYear" min="1985" max="2024">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label>Ano Final:</label>
+                                            <input type="number" class="form-control input-sm" ng-model="form.finalYear" min="1985" max="2024">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label>Classe de Uso:</label>
+                                            <select class="form-control input-sm" ng-model="form.landUse">
+                                                <option value="">Selecione...</option>
+                                                <option ng-repeat="landUse in campaign.landUse" value="{{ landUse }}">{{ landUse }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label>&nbsp;</label><br>
+                                            <button type="button" class="btn btn-xs btn-danger" ng-click="removeFormItem(inspection, $index)">
+                                                <i class="glyphicon glyphicon-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-12">
+                                            <label>
+                                                <input type="checkbox" ng-model="form.pixelBorder"> 
+                                                Pixel de borda
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-xs btn-success" ng-click="addFormItem(inspection)">
+                                    <i class="glyphicon glyphicon-plus"></i> Adicionar Período
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validações -->
+    <div ng-if="validationErrors.length > 0" class="alert alert-danger">
+        <h5><i class="glyphicon glyphicon-exclamation-sign"></i> Erros de Validação:</h5>
+        <ul>
+            <li ng-repeat="error in validationErrors">{{ error }}</li>
+        </ul>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-success" ng-click="saveAllChanges()" ng-disabled="!hasChanges()">
+        <i class="glyphicon glyphicon-floppy-disk"></i> Salvar Todas as Alterações
+    </button>
+    <button class="btn btn-warning" ng-click="resetChanges()" ng-disabled="!hasChanges()">
+        <i class="glyphicon glyphicon-refresh"></i> Resetar
+    </button>
+    <button class="btn btn-default" ng-click="close()">Cancelar</button>
+</div>
+
+<style>
+.inspection-item {
+    margin-bottom: 15px;
+}
+
+.inspection-item .panel-heading {
+    padding: 10px 15px;
+}
+
+.inspection-item .panel-heading h6 {
+    margin: 0;
+    font-weight: bold;
+}
+</style>

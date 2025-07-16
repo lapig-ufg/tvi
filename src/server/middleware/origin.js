@@ -22,10 +22,37 @@ module.exports = function (app) {
             !allowedOrigins.includes(requestOrigin) &&
             !allowedHosts.includes(hostnameOnly)
         ) {
-            return res.status(403).json({ msg: 'Acesso não permitido.' });
+            // Log detalhado do bloqueio CORS
+            console.error('[CORS BLOCK]', {
+                timestamp: new Date().toISOString(),
+                requestOrigin: requestOrigin,
+                allowedOrigins: allowedOrigins,
+                hostnameOnly: hostnameOnly,
+                allowedHosts: allowedHosts,
+                headers: req.headers,
+                url: req.url,
+                method: req.method
+            });
+            
+            const corsError = new Error('Acesso não permitido - CORS');
+            corsError.statusCode = 403;
+            corsError.code = 'CORS_BLOCKED';
+            return next(corsError);
         }
 
-        // Se passou, está liberado
+        // Se passou, está liberado - adicionar headers CORS
+        if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+            res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+        }
+        
+        // Lidar com preflight requests
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
+        
         next();
     };
 
