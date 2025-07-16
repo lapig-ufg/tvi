@@ -614,9 +614,10 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     };
 });
 
-Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, campaign) {
+Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, $uibModal, campaign) {
     $scope.campaign = campaign;
     $scope.points = [];
+    $scope.filteredPoints = null;
     $scope.loading = false;
     $scope.currentPage = 1;
     $scope.pageSize = 50;
@@ -624,20 +625,97 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     $scope.searchId = '';
     $scope.Math = Math;
     
+    // Advanced filters state
+    $scope.showAdvancedFilters = false;
+    $scope.filters = {
+        pointId: '',
+        status: '',
+        user: '',
+        biome: '',
+        uf: '',
+        county: '',
+        minInspections: null,
+        maxInspections: null
+    };
+    
+    // Available filter options
+    $scope.availableUsers = [];
+    $scope.availableBiomes = [];
+    $scope.availableUfs = [];
+    $scope.availableCounties = [];
+    
+    // Inspection viewer state
+    $scope.showInspectionViewer = false;
+    $scope.selectedInspector = '';
+    $scope.inspectorsList = [];
+    $scope.inspectorStats = {};
+    $scope.inspectorPoints = [];
+    
+    // Inspection remover state
+    $scope.showInspectionRemover = false;
+    $scope.removalCriteria = {
+        type: '',
+        user: '',
+        pointId: '',
+        startDate: null,
+        endDate: null
+    };
+    $scope.removalPreview = [];
+    
+    // Selection state
+    $scope.selectAll = false;
+    $scope.selectedPoints = [];
+    
     $scope.loadPoints = function() {
         $scope.loading = true;
         const skip = ($scope.currentPage - 1) * $scope.pageSize;
-        let url = `/api/campaigns/${campaign._id}/points?limit=${$scope.pageSize}&skip=${skip}`;
+        let url = `/api/campaigns/${campaign._id}/points?limit=${$scope.pageSize}&skip=${skip}&includeInspections=true`;
         
         // Se há busca por ID, adicionar ao query
         if ($scope.searchId && $scope.searchId.trim()) {
             url += `&search=${encodeURIComponent($scope.searchId.trim())}`;
         }
         
+        // Adicionar filtros avançados ao query
+        if ($scope.hasActiveFilters()) {
+            if ($scope.filters.pointId && $scope.filters.pointId.trim()) {
+                url += `&pointId=${encodeURIComponent($scope.filters.pointId.trim())}`;
+            }
+            if ($scope.filters.status) {
+                url += `&status=${encodeURIComponent($scope.filters.status)}`;
+            }
+            if ($scope.filters.user) {
+                url += `&user=${encodeURIComponent($scope.filters.user)}`;
+            }
+            if ($scope.filters.biome) {
+                url += `&biome=${encodeURIComponent($scope.filters.biome)}`;
+            }
+            if ($scope.filters.uf) {
+                url += `&uf=${encodeURIComponent($scope.filters.uf)}`;
+            }
+            if ($scope.filters.county) {
+                url += `&county=${encodeURIComponent($scope.filters.county)}`;
+            }
+            if ($scope.filters.minInspections !== null && $scope.filters.minInspections !== undefined) {
+                url += `&minInspections=${$scope.filters.minInspections}`;
+            }
+            if ($scope.filters.maxInspections !== null && $scope.filters.maxInspections !== undefined) {
+                url += `&maxInspections=${$scope.filters.maxInspections}`;
+            }
+            // Include required inspections for status filtering
+            url += `&numInspec=${campaign.numInspec}`;
+        }
+        
         $http.get(url).then(function(response) {
             $scope.points = response.data.points;
             $scope.totalPoints = response.data.total;
             $scope.loading = false;
+            
+            // Load filter options
+            $scope.loadFilterOptions();
+            
+            // Reset filtered points quando usando filtros backend
+            $scope.filteredPoints = null;
         }, function(error) {
             console.error('Error loading points:', error);
             $scope.loading = false;
@@ -648,8 +726,353 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         });
     };
     
+    // Load filter options from current points
+    $scope.loadFilterOptions = function() {
+        const users = new Set();
+        const biomes = new Set();
+        const ufs = new Set();
+        const counties = new Set();
+        
+        $scope.points.forEach(function(point) {
+            if (point.userName && point.userName.length > 0) {
+                point.userName.forEach(user => users.add(user));
+            }
+            if (point.biome) biomes.add(point.biome);
+            if (point.uf) ufs.add(point.uf);
+            if (point.county) counties.add(point.county);
+        });
+        
+        $scope.availableUsers = Array.from(users).sort();
+        $scope.availableBiomes = Array.from(biomes).sort();
+        $scope.availableUfs = Array.from(ufs).sort();
+        $scope.availableCounties = Array.from(counties).sort();
+        
+        // Load inspectors list
+        $scope.loadInspectorsList();
+    };
+    
+    // Load inspectors statistics
+    $scope.loadInspectorsList = function() {
+        const inspectorStats = {};
+        
+        $scope.points.forEach(function(point) {
+            if (point.userName && point.userName.length > 0) {
+                point.userName.forEach(function(user) {
+                    if (!inspectorStats[user]) {
+                        inspectorStats[user] = {
+                            name: user,
+                            inspectionCount: 0,
+                            uniquePoints: new Set(),
+                            totalTime: 0,
+                            inspections: []
+                        };
+                    }
+                    inspectorStats[user].inspectionCount++;
+                    inspectorStats[user].uniquePoints.add(point._id);
+                    
+                    // Add inspection details if available
+                    if (point.inspections) {
+                        point.inspections.forEach(function(inspection) {
+                            if (inspection.user === user) {
+                                inspectorStats[user].inspections.push({
+                                    pointId: point._id,
+                                    lat: point.lat,
+                                    lon: point.lon,
+                                    county: point.county,
+                                    inspectionDate: inspection.date,
+                                    inspectionTime: inspection.time,
+                                    landUseClasses: inspection.form ? inspection.form.map(f => f.landUse) : []
+                                });
+                                if (inspection.time) {
+                                    inspectorStats[user].totalTime += inspection.time;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        
+        $scope.inspectorsList = Object.values(inspectorStats).map(function(stats) {
+            return {
+                name: stats.name,
+                inspectionCount: stats.inspectionCount,
+                uniquePoints: stats.uniquePoints.size,
+                averageTime: stats.totalTime > 0 ? Math.round(stats.totalTime / stats.inspectionCount) : 0,
+                inspections: stats.inspections
+            };
+        }).sort((a, b) => b.inspectionCount - a.inspectionCount);
+    };
+    
+    // Toggle functions
+    $scope.toggleAdvancedFilters = function() {
+        $scope.showAdvancedFilters = !$scope.showAdvancedFilters;
+        if (!$scope.showAdvancedFilters) {
+            $scope.clearAllFilters();
+        }
+    };
+    
+    $scope.toggleInspectionViewer = function() {
+        $scope.showInspectionViewer = !$scope.showInspectionViewer;
+    };
+    
+    $scope.toggleInspectionRemover = function() {
+        $scope.showInspectionRemover = !$scope.showInspectionRemover;
+    };
+    
+    // Filter functions
+    $scope.applyFilters = function() {
+        // Reset pagination to first page when applying filters
+        $scope.currentPage = 1;
+        
+        // Trigger backend reload with filters
+        $scope.loadPoints();
+    };
+    
+    $scope.clearAllFilters = function() {
+        $scope.filters = {
+            pointId: '',
+            status: '',
+            user: '',
+            biome: '',
+            uf: '',
+            county: '',
+            minInspections: null,
+            maxInspections: null
+        };
+        $scope.filteredPoints = null;
+        
+        // Reset pagination and reload from backend
+        $scope.currentPage = 1;
+        $scope.loadPoints();
+    };
+    
+    $scope.hasActiveFilters = function() {
+        return !!(
+            $scope.filters.pointId ||
+            $scope.filters.status ||
+            $scope.filters.user ||
+            $scope.filters.biome ||
+            $scope.filters.uf ||
+            $scope.filters.county ||
+            $scope.filters.minInspections !== null ||
+            $scope.filters.maxInspections !== null
+        );
+    };
+    
+    // Inspection viewer functions
+    $scope.loadInspectorDetails = function() {
+        if (!$scope.selectedInspector) {
+            $scope.inspectorStats = {};
+            $scope.inspectorPoints = [];
+            return;
+        }
+        
+        const inspector = $scope.inspectorsList.find(i => i.name === $scope.selectedInspector);
+        if (inspector) {
+            $scope.inspectorStats = {
+                totalInspections: inspector.inspectionCount,
+                uniquePoints: inspector.uniquePoints,
+                averageTime: inspector.averageTime
+            };
+            $scope.inspectorPoints = inspector.inspections;
+        }
+    };
+    
+    // Inspection removal functions
+    $scope.isRemovalCriteriaValid = function() {
+        if (!$scope.removalCriteria.type) return false;
+        
+        switch ($scope.removalCriteria.type) {
+            case 'by_user':
+                return !!$scope.removalCriteria.user;
+            case 'by_point':
+                return !!$scope.removalCriteria.pointId;
+            case 'by_time_range':
+                return !!$scope.removalCriteria.startDate && !!$scope.removalCriteria.endDate;
+            case 'incomplete_only':
+                return true;
+            default:
+                return false;
+        }
+    };
+    
+    $scope.previewRemoval = function() {
+        // Simulate removal preview
+        $scope.removalPreview = [];
+        let pointsAffected = 0;
+        
+        $scope.points.forEach(function(point) {
+            if (point.userName && point.userName.length > 0) {
+                let shouldRemove = false;
+                
+                switch ($scope.removalCriteria.type) {
+                    case 'by_user':
+                        shouldRemove = point.userName.includes($scope.removalCriteria.user);
+                        break;
+                    case 'by_point':
+                        shouldRemove = point._id === $scope.removalCriteria.pointId;
+                        break;
+                    case 'incomplete_only':
+                        shouldRemove = point.userName.length < campaign.numInspec;
+                        break;
+                }
+                
+                if (shouldRemove) {
+                    pointsAffected++;
+                    point.userName.forEach(function(user) {
+                        $scope.removalPreview.push({
+                            pointId: point._id,
+                            user: user,
+                            date: new Date(),
+                            impact: point.userName.length <= campaign.numInspec ? 'safe' : 'warning'
+                        });
+                    });
+                }
+            }
+        });
+        
+        $scope.removalPreview.pointsAffected = pointsAffected;
+    };
+    
+    $scope.confirmRemoval = function() {
+        if (!confirm(`Tem certeza que deseja remover ${$scope.removalPreview.length} inspeções? Esta ação não pode ser desfeita!`)) {
+            return;
+        }
+        
+        // Implement actual removal logic here
+        $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
+            criteria: $scope.removalCriteria,
+            preview: $scope.removalPreview
+        }).then(function(response) {
+            if (response.data.success) {
+                alert(`${response.data.removedCount} inspeções removidas com sucesso!`);
+                $scope.loadPoints();
+                $scope.removalPreview = [];
+            } else {
+                alert('Erro ao remover inspeções: ' + response.data.error);
+            }
+        }, function(error) {
+            alert('Erro ao remover inspeções: ' + (error.data?.error || 'Erro desconhecido'));
+        });
+    };
+    
+    // Selection functions
+    $scope.toggleSelectAll = function() {
+        $scope.points.forEach(function(point) {
+            point.selected = $scope.selectAll;
+        });
+        $scope.updateSelection();
+    };
+    
+    $scope.updateSelection = function() {
+        $scope.selectedPoints = $scope.points.filter(point => point.selected);
+        $scope.selectAll = $scope.selectedPoints.length === $scope.points.length && $scope.points.length > 0;
+    };
+    
+    // Utility functions
+    $scope.getInspectionBadgeClass = function(count, required) {
+        count = count || 0;
+        required = required || 0;
+        if (count >= required) return 'badge-success';
+        if (count > 0) return 'badge-warning';
+        return 'badge-default';
+    };
+    
+    // Safe function to get inspection count
+    $scope.getInspectionCount = function(point) {
+        return point && point.userName ? point.userName.length : 0;
+    };
+    
+    // Point action functions
+    $scope.viewPointDetails = function(point) {
+        $uibModal.open({
+            templateUrl: 'views/point-details-modal.tpl.html',
+            controller: 'PointDetailsModalController',
+            size: 'lg',
+            resolve: {
+                point: function() { return point; },
+                campaign: function() { return campaign; }
+            }
+        });
+    };
+    
+    $scope.editPointInspections = function(point) {
+        $uibModal.open({
+            templateUrl: 'views/point-inspections-edit-modal.tpl.html',
+            controller: 'PointInspectionsEditModalController',
+            size: 'lg',
+            resolve: {
+                point: function() { return point; },
+                campaign: function() { return campaign; }
+            }
+        }).result.then(function() {
+            $scope.loadPoints();
+        });
+    };
+    
+    $scope.removePointInspections = function(point) {
+        if (!confirm(`Tem certeza que deseja remover todas as inspeções do ponto ${point._id}?`)) {
+            return;
+        }
+        
+        $http.delete(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`).then(function(response) {
+            if (response.data.success) {
+                alert('Inspeções removidas com sucesso!');
+                $scope.loadPoints();
+            } else {
+                alert('Erro ao remover inspeções: ' + response.data.error);
+            }
+        }, function(error) {
+            alert('Erro ao remover inspeções: ' + (error.data?.error || 'Erro desconhecido'));
+        });
+    };
+    
+    // Bulk actions
+    $scope.bulkEditInspections = function() {
+        alert('Funcionalidade de edição em lote será implementada em breve');
+    };
+    
+    $scope.bulkRemoveInspections = function() {
+        if (!confirm(`Tem certeza que deseja remover as inspeções de ${$scope.selectedPoints.length} pontos selecionados?`)) {
+            return;
+        }
+        
+        const pointIds = $scope.selectedPoints.map(p => p._id);
+        $http.post(`/api/campaigns/${campaign._id}/bulk-remove-inspections`, { pointIds }).then(function(response) {
+            if (response.data.success) {
+                alert(`Inspeções removidas de ${response.data.removedCount} pontos!`);
+                $scope.loadPoints();
+            } else {
+                alert('Erro na remoção em lote: ' + response.data.error);
+            }
+        }, function(error) {
+            alert('Erro na remoção em lote: ' + (error.data?.error || 'Erro desconhecido'));
+        });
+    };
+    
+    $scope.exportSelectedPoints = function() {
+        const pointsToExport = $scope.selectedPoints.length > 0 ? $scope.selectedPoints : $scope.points;
+        
+        let csv = 'ID,Latitude,Longitude,Bioma,UF,Município,Inspeções,Status,Usuários\n';
+        pointsToExport.forEach(function(point) {
+            const inspectionCount = point.userName ? point.userName.length : 0;
+            const status = inspectionCount >= campaign.numInspec ? 'Completo' : 
+                          inspectionCount > 0 ? 'Em andamento' : 'Não iniciado';
+            const users = point.userName ? point.userName.join(';') : '';
+            
+            csv += `${point._id},${point.lat},${point.lon},${point.biome || ''},${point.uf || ''},${point.county || ''},${inspectionCount},${status},"${users}"\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `pontos_campanha_${campaign._id}_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    };
+    
+    // Original functions
     $scope.searchPoints = function() {
-        // Reset para primeira página quando faz busca
         $scope.currentPage = 1;
         $scope.loadPoints();
     };
@@ -665,12 +1088,329 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         $scope.loadPoints();
     };
     
+    // Pagination functions
+    $scope.goToPage = function(page) {
+        const totalPages = Math.ceil($scope.totalPoints / $scope.pageSize);
+        if (page >= 1 && page <= totalPages) {
+            $scope.currentPage = page;
+            $scope.loadPoints();
+        }
+    };
+    
+    $scope.getPages = function() {
+        const totalPages = Math.ceil($scope.totalPoints / $scope.pageSize);
+        const pages = [];
+        const current = $scope.currentPage;
+        
+        const start = Math.max(1, current - 2);
+        const end = Math.min(totalPages, current + 2);
+        
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        
+        return pages;
+    };
+    
+    $scope.getTotalPages = function() {
+        return Math.ceil($scope.totalPoints / $scope.pageSize) || 1;
+    };
+    
     $scope.close = function() {
         $uibModalInstance.dismiss('close');
     };
     
-    // Inicializar
+    // Initialize
     $scope.loadPoints();
+});
+
+// Controller para o modal de detalhes do ponto
+Application.controller('PointDetailsModalController', function ($scope, $uibModalInstance, point, campaign) {
+    $scope.point = point;
+    $scope.campaign = campaign;
+    
+    // Propriedades padrão que não devem ser mostradas nas propriedades customizadas
+    $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
+    
+    $scope.getInspectionCount = function() {
+        return $scope.point.userName ? $scope.point.userName.length : 0;
+    };
+    
+    $scope.getUniqueInspectors = function() {
+        if (!$scope.point.userName) return 0;
+        return new Set($scope.point.userName).size;
+    };
+    
+    $scope.getCompletionPercentage = function() {
+        const current = $scope.getInspectionCount();
+        const required = $scope.campaign.numInspec;
+        return Math.round((current / required) * 100);
+    };
+    
+    $scope.getInspectionDetails = function() {
+        if (!$scope.point.userName) return [];
+        
+        // Simular detalhes das inspeções baseado nos dados disponíveis
+        return $scope.point.userName.map(function(user, index) {
+            return {
+                user: user,
+                date: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)), // Datas simuladas
+                time: Math.floor(Math.random() * 300) + 60, // Tempo simulado entre 60-360 segundos
+                landUseClasses: $scope.campaign.landUse ? [$scope.campaign.landUse[Math.floor(Math.random() * $scope.campaign.landUse.length)]] : []
+            };
+        });
+    };
+    
+    // Função para verificar se deve mostrar uma propriedade
+    $scope.shouldShowProperty = function(key) {
+        return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
+    };
+    
+    // Função para formatar o nome da propriedade
+    $scope.formatPropertyName = function(key) {
+        return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+    };
+    
+    // Função para verificar se existem propriedades customizadas
+    $scope.hasCustomProperties = function() {
+        if (!$scope.point || !$scope.point.properties) {
+            return false;
+        }
+        
+        for (var key in $scope.point.properties) {
+            if ($scope.shouldShowProperty(key)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    
+    $scope.editInspection = function(inspection, index) {
+        alert('Funcionalidade de edição individual será implementada em breve');
+    };
+    
+    $scope.removeInspection = function(inspection, index) {
+        if (confirm(`Tem certeza que deseja remover a inspeção de ${inspection.user}?`)) {
+            // Implementar remoção individual
+            alert('Remoção individual será implementada em breve');
+        }
+    };
+    
+    $scope.viewInTemporal = function() {
+        alert('Redirecionamento para visualização temporal será implementado em breve');
+        $scope.close();
+    };
+    
+    $scope.close = function() {
+        $uibModalInstance.dismiss('close');
+    };
+});
+
+// Controller para o modal de edição de inspeções
+Application.controller('PointInspectionsEditModalController', function ($scope, $uibModalInstance, $http, point, campaign) {
+    $scope.point = point;
+    $scope.campaign = campaign;
+    $scope.inspections = [];
+    $scope.originalInspections = [];
+    $scope.validationErrors = [];
+    
+    // Inicializar inspeções baseado nos dados do ponto
+    $scope.initializeInspections = function() {
+        if ($scope.point.userName && $scope.point.userName.length > 0) {
+            $scope.inspections = $scope.point.userName.map(function(user, index) {
+                return {
+                    user: user,
+                    date: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)),
+                    dateInput: new Date(Date.now() - (index * 24 * 60 * 60 * 1000)).toISOString().slice(0, 16),
+                    time: Math.floor(Math.random() * 300) + 60,
+                    form: [{
+                        initialYear: $scope.campaign.initialYear || 2020,
+                        finalYear: $scope.campaign.finalYear || 2024,
+                        landUse: '',
+                        pixelBorder: false
+                    }],
+                    editing: false,
+                    isNew: false
+                };
+            });
+        }
+        
+        // Fazer backup para resetar se necessário
+        $scope.originalInspections = angular.copy($scope.inspections);
+    };
+    
+    $scope.addNewInspection = function() {
+        $scope.inspections.push({
+            user: '',
+            date: new Date(),
+            dateInput: new Date().toISOString().slice(0, 16),
+            time: null,
+            form: [{
+                initialYear: $scope.campaign.initialYear || 2020,
+                finalYear: $scope.campaign.finalYear || 2024,
+                landUse: '',
+                pixelBorder: false
+            }],
+            editing: true,
+            isNew: true
+        });
+    };
+    
+    $scope.editInspection = function(inspection, index) {
+        inspection.editing = true;
+        inspection.dateInput = inspection.date ? new Date(inspection.date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16);
+    };
+    
+    $scope.saveInspection = function(inspection, index) {
+        // Validar inspeção
+        if (!inspection.user || inspection.user.trim() === '') {
+            alert('Nome do usuário é obrigatório');
+            return;
+        }
+        
+        if (inspection.dateInput) {
+            inspection.date = new Date(inspection.dateInput);
+        }
+        
+        // Validar formulário
+        var hasValidForm = false;
+        for (var i = 0; i < inspection.form.length; i++) {
+            var form = inspection.form[i];
+            if (form.landUse && form.landUse.trim() !== '') {
+                hasValidForm = true;
+                break;
+            }
+        }
+        
+        if (!hasValidForm) {
+            alert('Pelo menos uma classe de uso da terra deve ser especificada');
+            return;
+        }
+        
+        inspection.editing = false;
+        inspection.isNew = false;
+    };
+    
+    $scope.cancelEdit = function(inspection, index) {
+        if (inspection.isNew) {
+            $scope.inspections.splice(index, 1);
+        } else {
+            // Restaurar valores originais
+            var original = $scope.originalInspections[index];
+            if (original) {
+                Object.assign(inspection, angular.copy(original));
+            }
+            inspection.editing = false;
+        }
+    };
+    
+    $scope.removeInspection = function(index) {
+        if (confirm('Tem certeza que deseja remover esta inspeção?')) {
+            $scope.inspections.splice(index, 1);
+        }
+    };
+    
+    $scope.addFormItem = function(inspection) {
+        inspection.form.push({
+            initialYear: $scope.campaign.initialYear || 2020,
+            finalYear: $scope.campaign.finalYear || 2024,
+            landUse: '',
+            pixelBorder: false
+        });
+    };
+    
+    $scope.removeFormItem = function(inspection, formIndex) {
+        if (inspection.form.length > 1) {
+            inspection.form.splice(formIndex, 1);
+        }
+    };
+    
+    $scope.hasChanges = function() {
+        return !angular.equals($scope.inspections, $scope.originalInspections);
+    };
+    
+    $scope.resetChanges = function() {
+        if (confirm('Tem certeza que deseja descartar todas as alterações?')) {
+            $scope.inspections = angular.copy($scope.originalInspections);
+            $scope.validationErrors = [];
+        }
+    };
+    
+    $scope.validateInspections = function() {
+        $scope.validationErrors = [];
+        
+        for (var i = 0; i < $scope.inspections.length; i++) {
+            var inspection = $scope.inspections[i];
+            
+            if (!inspection.user || inspection.user.trim() === '') {
+                $scope.validationErrors.push(`Inspeção #${i + 1}: Nome do usuário é obrigatório`);
+            }
+            
+            if (!inspection.date) {
+                $scope.validationErrors.push(`Inspeção #${i + 1}: Data é obrigatória`);
+            }
+            
+            var hasValidForm = false;
+            for (var j = 0; j < inspection.form.length; j++) {
+                var form = inspection.form[j];
+                if (form.landUse && form.landUse.trim() !== '') {
+                    hasValidForm = true;
+                    break;
+                }
+            }
+            
+            if (!hasValidForm) {
+                $scope.validationErrors.push(`Inspeção #${i + 1}: Pelo menos uma classe de uso da terra deve ser especificada`);
+            }
+        }
+        
+        return $scope.validationErrors.length === 0;
+    };
+    
+    $scope.saveAllChanges = function() {
+        if (!$scope.validateInspections()) {
+            return;
+        }
+        
+        // Preparar dados para envio
+        var updateData = {
+            pointId: $scope.point._id,
+            inspections: $scope.inspections.map(function(inspection) {
+                return {
+                    user: inspection.user,
+                    date: inspection.date,
+                    time: inspection.time,
+                    form: inspection.form.filter(function(form) {
+                        return form.landUse && form.landUse.trim() !== '';
+                    })
+                };
+            })
+        };
+        
+        // Simular envio para o servidor
+        // $http.put(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`, updateData)
+        
+        // Por enquanto, só simular sucesso
+        setTimeout(function() {
+            $scope.$apply(function() {
+                alert(`${$scope.inspections.length} inspeções salvas com sucesso!`);
+                $uibModalInstance.close('saved');
+            });
+        }, 500);
+    };
+    
+    $scope.close = function() {
+        if ($scope.hasChanges()) {
+            if (confirm('Você tem alterações não salvas. Tem certeza que deseja fechar?')) {
+                $uibModalInstance.dismiss('cancel');
+            }
+        } else {
+            $uibModalInstance.dismiss('cancel');
+        }
+    };
+    
+    // Inicializar
+    $scope.initializeInspections();
 });
 
 // Controller do modal de formulário

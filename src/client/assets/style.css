@@ -875,3 +875,46 @@ fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
     height: 350px;
   }
 }
+
+/* Estilos específicos para OpenLayers - sem bordas nos tiles */
+.ol-viewport {
+  position: relative !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.ol-layer {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.ol-layer canvas,
+.ol-layer img {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  image-rendering: auto !important;
+}
+
+/* Remover qualquer linha ou borda de elementos OpenLayers */
+.ol-viewport *,
+.ol-layer *,
+.ol-overlaycontainer *,
+.ol-overlaycontainer-stopevent * {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Garantir que o mapa OpenLayers preencha o container */
+.ee-mapbox .ol-viewport {
+  width: 100% !important;
+  height: 100% !important;
+}
