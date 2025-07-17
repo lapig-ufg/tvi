@@ -624,6 +624,17 @@ module.exports = function(app) {
 		var timePoint = request.body.timeInspection;
 		var agreementPoint = request.body.agreementPoint;
 
+		console.log('Admin - getPointByFilterAdmin called with:', {
+			campaignId,
+			index,
+			landUse,
+			userName,
+			biome,
+			uf,
+			timePoint,
+			agreementPoint
+		});
+
 		if (!campaignId) {
 			return response.status(400).json({ error: 'Campaign ID required' });
 		}
@@ -657,6 +668,12 @@ module.exports = function(app) {
 
 			if (biome) {
 				filter["biome"] = biome;
+			}
+
+			// Se o index for fornecido, tentamos usar o campo index para filtrar
+			// em vez de usar skip que pode causar timeout
+			if (index && !timePoint && !agreementPoint) {
+				filter["index"] = { "$gte": index };
 			}
 
 			var pipeline;
@@ -732,13 +749,25 @@ module.exports = function(app) {
 			}
 
 			if (pipeline == undefined) {
-				pipeline = [
-					{"$match": filter},
-					{"$project": {index: 1, mean: {"$avg": "$inspection.counter"}}},
-					{"$sort": {index: 1}},
-					{"$skip": index - 1},
-					{"$limit": 1}
-				]
+				// Se temos filtro por index, usar find otimizado
+				if (filter["index"]) {
+					console.log('Admin - Using optimized index filter:', filter);
+					pipeline = [
+						{"$match": filter},
+						{"$project": {index: 1, mean: {"$avg": "$inspection.counter"}}},
+						{"$sort": {index: 1}},
+						{"$limit": 1}
+					]
+				} else {
+					console.log('Admin - Using skip-based pagination with index:', index);
+					pipeline = [
+						{"$match": filter},
+						{"$project": {index: 1, mean: {"$avg": "$inspection.counter"}}},
+						{"$sort": {index: 1}},
+						{"$skip": index - 1},
+						{"$limit": 1}
+					]
+				}
 			}
 
 			points.aggregate(pipeline, function (err, aggregateElem) {
