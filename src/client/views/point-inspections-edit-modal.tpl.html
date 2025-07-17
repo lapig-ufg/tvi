@@ -4,7 +4,7 @@
         Editar Inspeções: {{ point._id }}
     </h3>
 </div>
-<div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+<div class="modal-body">
     <!-- Informações do Ponto -->
     <div class="alert alert-info">
         <strong>Ponto:</strong> {{ point._id }} | 
@@ -185,7 +185,7 @@
         </ul>
     </div>
 </div>
-<div class="modal-footer">
+<div class="modal-footer" style="padding: 8px;">
     <button class="btn btn-success" ng-click="saveAllChanges()" ng-disabled="!hasChanges()">
         <i class="glyphicon glyphicon-floppy-disk"></i> Salvar Todas as Alterações
     </button>
@@ -196,6 +196,24 @@
 </div>
 
 <style>
+/* Modal 80% width */
+.modal-80-percent .modal-dialog {
+    width: 80%;
+    max-width: 80%;
+    margin: 30px auto;
+}
+
+.modal-80-percent .modal-content {
+    height: auto;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.modal-80-percent .modal-body {
+    max-height: calc(80vh - 120px);
+    overflow-y: auto;
+}
+
 .inspection-item {
     margin-bottom: 15px;
 }

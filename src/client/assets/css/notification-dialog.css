@@ -1,0 +1,227 @@
+/**
+ * Estilos para o Serviço de Notificação/Diálogo Personalizado
+ */
+
+/* Classes base para os modais de notificação */
+.notification-modal .modal-dialog {
+    margin-top: 100px;
+}
+
+.notification-modal .modal-content {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.notification-modal .modal-header {
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding: 15px 20px;
+}
+
+.notification-modal .modal-header .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.notification-modal .modal-header .glyphicon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.notification-modal .modal-body {
+    padding: 20px;
+    font-size: 16px;
+}
+
+.notification-modal .modal-body p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.notification-modal .modal-footer {
+    border-top: 1px solid #e5e5e5;
+    padding: 15px 20px;
+    background-color: #f8f8f8;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Estilos para toast notifications */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.notification-toast .modal-dialog {
+    margin: 0;
+    width: auto;
+    max-width: 400px;
+}
+
+.notification-toast .modal-content {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.notification-toast .notification-content {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    background-color: white;
+}
+
+.notification-toast .notification-icon {
+    margin-right: 15px;
+    font-size: 24px;
+}
+
+.notification-toast .notification-message {
+    flex: 1;
+}
+
+.notification-toast .notification-message p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Animações para toast */
+.notification-toast.ng-enter {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.notification-toast.ng-leave {
+    animation: slideOutRight 0.3s ease-in;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Estilos específicos por tipo */
+.notification-success .notification-icon {
+    color: #5cb85c;
+}
+
+.notification-error .notification-icon {
+    color: #d9534f;
+}
+
+.notification-warning .notification-icon {
+    color: #f0ad4e;
+}
+
+.notification-info .notification-icon {
+    color: #5bc0de;
+}
+
+.notification-confirm .notification-icon {
+    color: #337ab7;
+}
+
+/* Toast com cores de fundo */
+.notification-toast.notification-success .notification-content {
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+}
+
+.notification-toast.notification-error .notification-content {
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    color: #a94442;
+}
+
+.notification-toast.notification-warning .notification-content {
+    background-color: #fcf8e3;
+    border: 1px solid #faebcc;
+    color: #8a6d3b;
+}
+
+.notification-toast.notification-info .notification-content {
+    background-color: #d9edf7;
+    border: 1px solid #bce8f1;
+    color: #31708f;
+}
+
+/* Estilo para diálogo de progresso */
+.notification-progress .modal-body {
+    padding: 30px 20px;
+}
+
+.notification-progress .progress {
+    margin-top: 20px;
+    height: 25px;
+}
+
+.notification-progress .progress-bar {
+    font-size: 14px;
+    line-height: 25px;
+}
+
+/* Estilo para prompt */
+.notification-prompt .modal-body input {
+    margin-top: 15px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .notification-modal .modal-dialog {
+        margin: 20px;
+        width: auto;
+    }
+    
+    .notification-toast {
+        left: 10px;
+        right: 10px;
+    }
+    
+    .notification-toast .modal-dialog {
+        max-width: none;
+    }
+}
+
+/* Melhorias de acessibilidade */
+.notification-modal .close:focus,
+.notification-modal .btn:focus {
+    outline: 2px solid #337ab7;
+    outline-offset: 2px;
+}
+
+/* Animação de entrada para modais */
+.notification-modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate(0, -50px);
+}
+
+.notification-modal.in .modal-dialog {
+    transform: translate(0, 0);
+}
+
+/* Overlay customizado */
+.modal-backdrop.in {
+    opacity: 0.5;
+}

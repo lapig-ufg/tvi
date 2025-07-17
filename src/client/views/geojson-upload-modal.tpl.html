@@ -1,88 +1,111 @@
-<style>
-.modal-90-width .modal-dialog {
-    width: 90%;
-    max-width: none;
-    margin: 30px auto;
-}
-
-.modal-90-width .modal-content {
-    min-height: 80vh;
-}
-</style>
-
-<div class="modal-header" ng-class="{'bg-success': uploadProgress.isCompleted && uploadProgress.success, 'bg-danger': uploadProgress.isCompleted && !uploadProgress.success}">
-    <h3 class="modal-title">
-        <i class="glyphicon" ng-class="{
-            'glyphicon-upload': !uploadProgress.isUploading && !uploadProgress.isCompleted,
-            'glyphicon-cog fa-spin': uploadProgress.isUploading,
-            'glyphicon-ok': uploadProgress.isCompleted && uploadProgress.success,
-            'glyphicon-remove': uploadProgress.isCompleted && !uploadProgress.success
-        }"></i>
-        <span ng-if="!uploadProgress.isUploading && !uploadProgress.isCompleted">Importar Pontos da Campanha</span>
-        <span ng-if="uploadProgress.isUploading">Processando Importação...</span>
-        <span ng-if="uploadProgress.isCompleted && uploadProgress.success">Importação Concluída</span>
-        <span ng-if="uploadProgress.isCompleted && !uploadProgress.success">Falha na Importação</span>
-    </h3>
-</div>
-<div class="modal-body">
-    <form ng-if="!uploadProgress.isUploading">
-        <div class="form-group">
-            <label>Arquivo GeoJSON</label>
-            <input type="file" class="form-control" accept=".geojson,.zip" onchange="angular.element(this).scope().setFile(this)">
-            <p class="help-block">Selecione um arquivo GeoJSON ou um arquivo ZIP contendo o GeoJSON</p>
+<!-- GeoJSON Upload Modal - Interface Moderna -->
+<div class="modal-dialog upload-modal">
+    <div class="modal-content">
+        <div class="modal-header" ng-class="{
+            'success': uploadProgress.isCompleted && uploadProgress.success,
+            'error': uploadProgress.isCompleted && !uploadProgress.success,
+            'processing': uploadProgress.isUploading
+        }">
+            <h3 class="modal-title">
+                <i class="fas" ng-class="{
+                    'fa-upload': !uploadProgress.isUploading && !uploadProgress.isCompleted,
+                    'fa-spinner fa-spin': uploadProgress.isUploading,
+                    'fa-check-circle': uploadProgress.isCompleted && uploadProgress.success,
+                    'fa-times-circle': uploadProgress.isCompleted && !uploadProgress.success
+                }"></i>
+                <span ng-if="!uploadProgress.isUploading && !uploadProgress.isCompleted">Importar Pontos da Campanha</span>
+                <span ng-if="uploadProgress.isUploading">Processando Importação...</span>
+                <span ng-if="uploadProgress.isCompleted && uploadProgress.success">Importação Concluída</span>
+                <span ng-if="uploadProgress.isCompleted && !uploadProgress.success">Falha na Importação</span>
+            </h3>
         </div>
-        
-        <div class="alert alert-info">
-            <strong>Informações importantes:</strong>
-            <ul>
-                <li>O upload será processado em tempo real</li>
-                <li>Você pode acompanhar o progresso e logs durante o processamento</li>
-                <li>Aceita arquivos GeoJSON ou arquivos ZIP contendo GeoJSON</li>
-                <li>Não é necessário geoprocessamento - use as propriedades do GeoJSON</li>
-                <li>Propriedades esperadas: biome, uf, county, countyCode, path, row</li>
-            </ul>
-        </div>
-    </form>
-    
-    <!-- Progresso do Upload -->
-    <div ng-if="uploadProgress.isUploading">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <h4>
-                    <i class="fa fa-spinner fa-spin"></i> 
-                    Processando Upload...
-                    <span class="label label-warning pull-right">{{uploadProgress.filename}}</span>
-                </h4>
-            </div>
-            <div class="panel-body">
-                <!-- Status Principal -->
-                <div class="alert alert-info text-center" style="margin-bottom: 20px;">
-                    <h4 style="margin: 0;">
-                        <i class="glyphicon glyphicon-time"></i>
-                        Processando arquivo GeoJSON... Por favor, aguarde.
-                    </h4>
-                    <p style="margin: 5px 0 0 0;">
-                        <small>Este processo pode levar alguns minutos dependendo do tamanho do arquivo.</small>
-                    </p>
-                </div>
-                
-                <!-- Barra de Progresso Principal -->
-                <div style="margin-bottom: 20px;">
-                    <h5><strong>Progresso do Processamento:</strong></h5>
-                    <div class="progress" style="height: 30px; margin-bottom: 10px;">
-                        <div class="progress-bar progress-bar-striped active" 
-                             ng-class="{'progress-bar-success': uploadProgress.progress === 100, 'progress-bar-primary': uploadProgress.progress < 100}"
-                             style="width: {{uploadProgress.progress}}%">
-                            <strong>{{uploadProgress.progress}}%</strong>
+        <div class="modal-body">
+            <!-- Upload Form -->
+            <div ng-if="!uploadProgress.isUploading" class="upload-form">
+                <div class="file-upload-section">
+                    <div class="file-upload-area">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-content">
+                            <h4 class="upload-title">Selecionar Arquivo GeoJSON</h4>
+                            <p class="upload-desc">Arraste e solte o arquivo aqui ou clique para selecionar</p>
+                            <input type="file" class="file-input" accept=".geojson,.zip" onchange="angular.element(this).scope().setFile(this)">
+                            <div class="upload-formats">
+                                <span class="format-badge">GeoJSON</span>
+                                <span class="format-badge">ZIP</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="text-center">
-                        <p><i class="glyphicon glyphicon-time"></i> <strong>Tempo decorrido:</strong> {{uploadProgress.elapsedTime}}</p>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-card">
+                        <div class="info-header">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Informações Importantes</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <i class="fas fa-bolt"></i>
+                                <span>O upload será processado em tempo real</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Você pode acompanhar o progresso durante o processamento</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-file-archive"></i>
+                                <span>Aceita arquivos GeoJSON ou ZIP contendo GeoJSON</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-tags"></i>
+                                <span>Propriedades esperadas: biome, uf, county, countyCode, path, row</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+    
+            <!-- Upload Progress -->
+            <div ng-if="uploadProgress.isUploading" class="upload-progress">
+                <div class="progress-header">
+                    <div class="progress-title">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Processando Upload
+                    </div>
+                    <div class="file-badge">
+                        {{uploadProgress.filename}}
+                    </div>
+                </div>
+                
+                <div class="progress-content">
+                    <div class="status-message">
+                        <div class="status-icon">
+                            <i class="fas fa-cog fa-spin"></i>
+                        </div>
+                        <div class="status-text">
+                            <h4>Processando arquivo GeoJSON...</h4>
+                            <p>Este processo pode levar alguns minutos dependendo do tamanho do arquivo.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span class="progress-label">Progresso do Processamento</span>
+                            <span class="progress-percentage">{{uploadProgress.progress}}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" ng-style="{'width': uploadProgress.progress + '%'}" 
+                                 ng-class="{'completed': uploadProgress.progress === 100}"></div>
+                        </div>
+                        <div class="progress-time">
+                            <i class="fas fa-clock"></i>
+                            <span>Tempo decorrido: {{uploadProgress.elapsedTime}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
     
     <!-- Resultado do Upload -->
     <div ng-if="uploadProgress.isCompleted">
@@ -225,14 +248,461 @@
         </div>
     </div>
 </div>
-<div class="modal-footer">
-    <button class="btn btn-primary" ng-click="upload()" ng-disabled="!file || uploadProgress.isUploading" ng-if="!uploadProgress.isCompleted">
-        <i class="glyphicon glyphicon-upload"></i> Iniciar Upload
-    </button>
-    <button class="btn btn-success" ng-click="close()" ng-if="uploadProgress.isCompleted && uploadProgress.success">
-        <i class="glyphicon glyphicon-ok"></i> Concluir
-    </button>
-    <button class="btn btn-default" ng-click="cancel()" ng-disabled="uploadProgress.isUploading && !uploadProgress.isCompleted">
-        {{uploadProgress.isUploading ? 'Aguarde...' : 'Cancelar'}}
-    </button>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn primary" ng-click="upload()" ng-disabled="!file || uploadProgress.isUploading" ng-if="!uploadProgress.isCompleted">
+                <i class="fas fa-upload"></i>
+                Iniciar Upload
+            </button>
+            <button class="btn success" ng-click="close()" ng-if="uploadProgress.isCompleted && uploadProgress.success">
+                <i class="fas fa-check"></i>
+                Concluir
+            </button>
+            <button class="btn secondary" ng-click="cancel()" ng-disabled="uploadProgress.isUploading && !uploadProgress.isCompleted">
+                <i class="fas" ng-class="uploadProgress.isUploading ? 'fa-clock' : 'fa-times'"></i>
+                {{uploadProgress.isUploading ? 'Aguarde...' : 'Cancelar'}}
+            </button>
+        </div>
+    </div>
 </div>
+
+<style>
+/* GeoJSON Upload Modal - Modern Interface */
+.upload-modal {
+    width: 90%;
+    max-width: 800px;
+    margin: 30px auto;
+}
+
+.upload-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    overflow: hidden;
+    min-height: 60vh;
+}
+
+/* Modal Header */
+.upload-modal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border: none;
+    text-align: center;
+}
+
+.upload-modal .modal-header.success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.upload-modal .modal-header.error {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+
+.upload-modal .modal-header.processing {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+
+.upload-modal .modal-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Modal Body */
+.upload-modal .modal-body {
+    padding: 2rem;
+    background: #f8f9fa;
+}
+
+/* Upload Form */
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.file-upload-section {
+    display: flex;
+    justify-content: center;
+}
+
+.file-upload-area {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    min-height: 200px;
+    border: 3px dashed #cbd5e0;
+    border-radius: 16px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.file-upload-area:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+    transition: all 0.3s;
+}
+
+.file-upload-area:hover .upload-icon {
+    color: #667eea;
+    transform: scale(1.1);
+}
+
+.upload-content {
+    text-align: center;
+    width: 100%;
+}
+
+.upload-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.upload-desc {
+    color: #718096;
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+}
+
+.file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-formats {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.format-badge {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Info Section */
+.info-section {
+    display: flex;
+    justify-content: center;
+}
+
+.info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    width: 100%;
+    max-width: 600px;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: #4a5568;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.info-item i {
+    color: #667eea;
+    margin-top: 0.125rem;
+    min-width: 16px;
+}
+
+/* Upload Progress */
+.upload-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.progress-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.file-badge {
+    background: #4299e1;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.status-message {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #ebf8ff;
+    border-radius: 12px;
+    border-left: 4px solid #4299e1;
+}
+
+.status-icon {
+    font-size: 2rem;
+    color: #4299e1;
+}
+
+.status-text h4 {
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.status-text p {
+    color: #718096;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 1rem;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 1.25rem;
+}
+
+.progress-bar-container {
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4299e1, #3182ce);
+    border-radius: 6px;
+    transition: all 0.5s ease;
+    position: relative;
+}
+
+.progress-bar-fill.completed {
+    background: linear-gradient(90deg, #48bb78, #38a169);
+}
+
+.progress-time {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #718096;
+    font-size: 0.875rem;
+    justify-content: center;
+}
+
+/* Modal Footer */
+.upload-modal .modal-footer {
+    background: white;
+    padding: 1.5rem 2rem;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn.primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn.success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.btn.success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+}
+
+.btn.secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn.secondary:hover:not(:disabled) {
+    background: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .upload-modal {
+        width: 95%;
+        margin: 20px auto;
+    }
+    
+    .upload-modal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .upload-modal .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1.5rem;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .file-upload-area {
+        min-height: 150px;
+        padding: 1.5rem;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+    }
+    
+    .progress-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .status-message {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+}
+
+/* Animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s infinite linear;
+}
+</style>

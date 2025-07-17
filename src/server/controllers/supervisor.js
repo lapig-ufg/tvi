@@ -1,6 +1,7 @@
 const csv = require('fast-csv');
 const proj4 = require('proj4');
 const {exec} = require("child_process");
+const logger = require('../services/logger');
 
 module.exports = function (app) {
 
@@ -27,8 +28,33 @@ module.exports = function (app) {
         })
     }
 
-    Points.csv = function (request, response) {
-        var campaign = request.session.user.campaign;
+    Points.csv = async function (request, response) {
+        try {
+            var campaign = request.session.user.campaign;
+
+            if (!campaign || !campaign._id) {
+                const errorCode = await logger.warn('CSV export attempted without valid campaign', {
+                    req: request,
+                    module: 'supervisor',
+                    function: 'csv',
+                    metadata: { hasCampaign: !!campaign }
+                });
+                
+                return response.status(400).json({ 
+                    error: 'Valid campaign required',
+                    errorCode
+                });
+            }
+
+            await logger.info('Starting CSV export for campaign', {
+                req: request,
+                module: 'supervisor',
+                function: 'csv',
+                metadata: {
+                    campaignId: campaign._id,
+                    campaignName: campaign.name
+                }
+            });
 
         infoCampaign.find({'_id': campaign._id}).forEach(function (data) {
             var initialYear = data.initialYear;
@@ -109,9 +135,36 @@ module.exports = function (app) {
                 }
                 csvStream.end();
 
-                csvStream.pipe(response).on('end', () => response.end());
+                csvStream.pipe(response).on('end', async () => {
+                    await logger.info('CSV export completed successfully', {
+                        req: request,
+                        module: 'supervisor',
+                        function: 'csv',
+                        metadata: {
+                            campaignId: campaign._id,
+                            recordCount: csvResult.length
+                        }
+                    });
+                    response.end();
+                });
             })
         });
+        } catch (error) {
+            const errorCode = await logger.error('Error in CSV export', {
+                req: request,
+                module: 'supervisor',
+                function: 'csv',
+                metadata: {
+                    error: error.message,
+                    stack: error.stack
+                }
+            });
+
+            response.status(500).json({
+                error: 'Error exporting CSV',
+                errorCode
+            });
+        }
     }
 
     getWindow = function (point) {
@@ -380,13 +433,64 @@ module.exports = function (app) {
         });
     }
 
-    Points.updatedClassConsolidated = function (request, response) {
-        var classArray = request.body.class;
-        var pointId = request.body._id
+    Points.updatedClassConsolidated = async function (request, response) {
+        try {
+            var classArray = request.body.class;
+            var pointId = request.body._id;
 
-        pointsCollection.update({'_id': pointId}, {$set: {'classConsolidated': classArray, 'pointEdited': true}})
+            if (!pointId) {
+                const errorCode = await logger.warn('Update class consolidated attempted without point ID', {
+                    req: request,
+                    module: 'supervisor',
+                    function: 'updatedClassConsolidated',
+                    metadata: { hasPointId: !!pointId }
+                });
+                
+                return response.status(400).json({ 
+                    error: 'Point ID required',
+                    errorCode
+                });
+            }
 
-        response.end()
+            await logger.info('Updating consolidated classification', {
+                req: request,
+                module: 'supervisor',
+                function: 'updatedClassConsolidated',
+                metadata: {
+                    pointId: pointId,
+                    classArray: classArray
+                }
+            });
+
+            await pointsCollection.update({'_id': pointId}, {$set: {'classConsolidated': classArray, 'pointEdited': true}});
+
+            await logger.info('Consolidated classification updated successfully', {
+                req: request,
+                module: 'supervisor',
+                function: 'updatedClassConsolidated',
+                metadata: {
+                    pointId: pointId
+                }
+            });
+
+            response.end();
+        } catch (error) {
+            const errorCode = await logger.error('Error updating consolidated classification', {
+                req: request,
+                module: 'supervisor',
+                function: 'updatedClassConsolidated',
+                metadata: {
+                    error: error.message,
+                    stack: error.stack,
+                    pointId: request.body._id
+                }
+            });
+
+            response.status(500).json({
+                error: 'Error updating classification',
+                errorCode
+            });
+        }
     }
 
     Points.landUseFilter = function (request, response) {
@@ -694,6 +798,94 @@ module.exports = function (app) {
         });
     }
 
+
+    // ===== MÉTODOS ADMIN (sem dependência de sessão) =====
+    
+    Points.getCampaignConfigAdmin = function(request, response) {
+        var campaignId = request.query.campaignId;
+        
+        if (!campaignId) {
+            return response.status(400).json({ error: 'Campaign ID is required' });
+        }
+        
+        infoCampaign.findOne({'_id': campaignId}, function(err, campaign) {
+            if (err) {
+                response.status(500).json({ error: 'Erro ao buscar configurações da campanha' });
+                return;
+            }
+            
+            if (campaign) {
+                // Retornar apenas as configurações relevantes
+                response.json({
+                    _id: campaign._id,
+                    name: campaign.name,
+                    typesUse: campaign.typesUse,
+                    initialYear: campaign.initialYear,
+                    finalYear: campaign.finalYear,
+                    numInspec: campaign.numInspec
+                });
+            } else {
+                response.status(404).json({ error: 'Campanha não encontrada' });
+            }
+        });
+    }
+    
+    Points.correctCampaignAdmin = async (request, response) => {
+        const campaignId = request.query.campaignId;
+        
+        if (!campaignId) {
+            return response.status(400).json({ error: 'Campaign ID is required' });
+        }
+        
+        // Buscar dados da campanha
+        infoCampaign.findOne({'_id': campaignId}, async function(err, campaign) {
+            if (err || !campaign) {
+                return response.status(404).json({ error: 'Campaign not found' });
+            }
+            
+            const points = await pointsCollection.find({ 'campaign': campaign._id }).toArray();
+            const numInspections = campaign.numInspec;
+            const msgs = [];
+            
+            for (const [idx, point] of points.entries() ){
+                if(point.inspection.length !== numInspections) {
+                    if(point.inspection.length > numInspections) {
+                        const numExceededInspection = point.inspection.length - numInspections
+                        const inspection = point.inspection.slice(0, -1*numExceededInspection)
+                        const userName = point.userName.slice(0, -1*numExceededInspection)
+                        const result = await pointsCollection.updateOne({ _id: point._id }, { $set: {
+                                inspection: inspection,
+                                userName: userName,
+                                updateAt: new Date()
+                            }})
+                        msgs.push(`Foi removido ${numExceededInspection} inspecoes do ponto ${idx} - ${JSON.stringify(result)}`)
+                    }
+                    if(point.inspection.length < numInspections){
+                        const result = await pointsCollection.updateOne({ _id: point._id }, { $set: { underInspection: numInspections - point.inspection.length }})
+                        msgs.push(`Foi ajustado o controle de inspections do ponto ${idx}  - ${JSON.stringify(result)}`)
+                    }
+                }
+            }
+            response.status(200).send(msgs);
+        });
+    }
+    
+    Points.removeInspectionAdmin = async (request, response) => {
+        const {pointId} = request.query;
+        
+        if (pointId) {
+            const result = await pointsCollection.update({ _id: pointId }, { $set: {
+                    inspection: [],
+                    userName: [],
+                    classConsolidated: [],
+                    underInspection: 0,
+                    updateAt: new Date()
+                }})
+            response.status(200).send(result);
+        } else {
+            response.status(400).send("PointId não encontrado.");
+        }
+    }
 
     return Points;
 };

@@ -1,0 +1,397 @@
+<!-- Admin Home - Dashboard Moderno e Minimalista -->
+<div class="admin-home-container" ng-controller="AdminHomeController">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="header-content">
+            <h1 class="header-title">Painel Administrativo</h1>
+            <div class="header-user">
+                <span class="user-info">
+                    <i class="fas fa-user-shield"></i>
+                    {{ adminUser.username }}
+                </span>
+                <button class="logout-btn" ng-click="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sair
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos Grid -->
+    <div class="modules-grid">
+        <!-- Campanhas -->
+        <div class="module-card" ng-click="navigateTo('/admin/campaigns')">
+            <div class="module-icon campaigns">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <div class="module-content">
+                <h2 class="module-title">Campanhas</h2>
+                <p class="module-description">Gerencie campanhas de mapeamento e pontos de inspeção</p>
+                <div class="module-stats" ng-if="stats.campaigns">
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.campaigns.total }}</span>
+                        <span class="stat-label">Total</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.campaigns.active }}</span>
+                        <span class="stat-label">Ativas</span>
+                    </span>
+                </div>
+            </div>
+            <div class="module-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
+
+        <!-- Cache -->
+        <div class="module-card" ng-click="navigateTo('/admin/cache')">
+            <div class="module-icon cache">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="module-content">
+                <h2 class="module-title">Gerenciador de Cache</h2>
+                <p class="module-description">Monitore e gerencie o cache de imagens e dados</p>
+                <div class="module-stats" ng-if="stats.cache">
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.cache.totalConfigs || 0 }}</span>
+                        <span class="stat-label">Configurações</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.cache.activeConfigs || 0 }}</span>
+                        <span class="stat-label">Ativas</span>
+                    </span>
+                </div>
+            </div>
+            <div class="module-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="module-card" ng-click="navigateTo('/admin/logs')">
+            <div class="module-icon logs">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="module-content">
+                <h2 class="module-title">Logs do Sistema</h2>
+                <p class="module-description">Monitore atividades e erros do sistema</p>
+                <div class="module-stats" ng-if="stats.logs">
+                    <span class="stat-item" ng-class="{'has-errors': stats.logs.errors > 0}">
+                        <span class="stat-value">{{ stats.logs.errors }}</span>
+                        <span class="stat-label">Erros</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.logs.today }}</span>
+                        <span class="stat-label">Hoje</span>
+                    </span>
+                </div>
+            </div>
+            <div class="module-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <h3 class="stats-title">Visão Geral do Sistema</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ stats.users || 0 }}</div>
+                    <div class="stat-desc">Usuários Ativos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-map-pin"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ stats.points || 0 }}</div>
+                    <div class="stat-desc">Pontos Mapeados</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ stats.inspections || 0 }}</div>
+                    <div class="stat-desc">Inspeções Realizadas</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ systemHealth.status }}</div>
+                    <div class="stat-desc">Status do Sistema</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container Principal */
+.admin-home-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.admin-header {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-info {
+    color: #4a5568;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.logout-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 1.125rem;
+}
+
+.logout-btn:hover {
+    background: #c53030;
+    transform: translateY(-1px);
+}
+
+/* Grid de Módulos */
+.modules-grid {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.module-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    transform: translateY(-4px);
+}
+
+.module-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.module-icon.campaigns {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.module-icon.cache {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.module-icon.logs {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.module-content {
+    flex: 1;
+}
+
+.module-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.module-description {
+    color: #718096;
+    font-size: 1.125rem;
+    margin: 0 0 1rem 0;
+}
+
+.module-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-item.has-errors .stat-value {
+    color: #e53e3e;
+}
+
+.module-arrow {
+    position: absolute;
+    right: 2rem;
+    color: #cbd5e0;
+    font-size: 1.25rem;
+    transition: all 0.3s;
+}
+
+.module-card:hover .module-arrow {
+    color: #4a5568;
+    transform: translateX(4px);
+}
+
+/* Quick Stats */
+.quick-stats {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 2rem 3rem;
+}
+
+.stats-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 2rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: #edf2f7;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #4a5568;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    line-height: 1;
+}
+
+.stat-desc {
+    color: #718096;
+    font-size: 1.125rem;
+    margin-top: 0.25rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .modules-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-content {
+        padding: 1rem;
+    }
+    
+    .modules-grid,
+    .quick-stats {
+        padding: 0 1rem;
+    }
+}
+</style>

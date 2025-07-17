@@ -1,0 +1,958 @@
+<!-- Admin Logs - Sistema de Monitoramento de Logs -->
+<div class="admin-logs-container" ng-controller="AdminLogsController">
+    <!-- Header -->
+    <div class="logs-header">
+        <div class="header-left">
+            <button class="back-btn" ng-click="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="page-title">Logs do Sistema</h1>
+        </div>
+        <div class="header-actions">
+            <button class="refresh-btn" ng-click="refreshLogs()" ng-disabled="loading">
+                <i class="fas fa-sync" ng-class="{'fa-spin': loading}"></i>
+                Atualizar
+            </button>
+            <button class="cleanup-btn" ng-click="showCleanupModal()">
+                <i class="fas fa-trash"></i>
+                Limpar Logs
+            </button>
+        </div>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+    <div class="logs-stats">
+        <div class="stat-box error" ng-if="stats.levelStats">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.levelStats.error || 0 }}</div>
+                <div class="stat-label">Erros</div>
+            </div>
+        </div>
+        <div class="stat-box warning" ng-if="stats.levelStats">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.levelStats.warn || 0 }}</div>
+                <div class="stat-label">Avisos</div>
+            </div>
+        </div>
+        <div class="stat-box info" ng-if="stats.levelStats">
+            <div class="stat-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.levelStats.info || 0 }}</div>
+                <div class="stat-label">Informações</div>
+            </div>
+        </div>
+        <div class="stat-box total">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ stats.totalLogs || 0 }}</div>
+                <div class="stat-label">Total ({{ selectedPeriod }} dias)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="logs-filters">
+        <div class="filter-group">
+            <label>Nível</label>
+            <select ng-model="filters.level" ng-change="applyFilters()">
+                <option value="">Todos</option>
+                <option value="error">Erro</option>
+                <option value="warn">Aviso</option>
+                <option value="info">Informação</option>
+                <option value="debug">Debug</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Módulo</label>
+            <select ng-model="filters.module" ng-change="applyFilters()">
+                <option value="">Todos</option>
+                <option ng-repeat="module in availableModules" value="{{ module }}">{{ module }}</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Período</label>
+            <select ng-model="selectedPeriod" ng-change="changePeriod()">
+                <option value="1">Hoje</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+            </select>
+        </div>
+        <div class="filter-group search">
+            <label>Buscar</label>
+            <input type="text" 
+                   ng-model="filters.search" 
+                   ng-change="applyFilters()"
+                   placeholder="ID do log ou mensagem...">
+        </div>
+    </div>
+
+    <!-- Gráfico de Atividade -->
+    <div class="activity-chart" ng-if="chartData">
+        <h3 class="chart-title">Atividade dos Últimos {{ selectedPeriod }} Dias</h3>
+        <div class="chart-container">
+            <canvas id="logsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Lista de Logs -->
+    <div class="logs-list">
+        <div class="list-header">
+            <h3>Logs Recentes</h3>
+            <span class="list-count" ng-if="pagination">
+                Mostrando {{ pagination.limit }} de {{ pagination.total }} logs
+            </span>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading-container" ng-if="loading">
+            <div class="spinner"></div>
+            <p>Carregando logs...</p>
+        </div>
+        
+        <!-- Logs Table -->
+        <div class="logs-table" ng-if="!loading && logs.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="150">Timestamp</th>
+                        <th width="80">Nível</th>
+                        <th width="120">Módulo</th>
+                        <th width="100">Usuário</th>
+                        <th>Mensagem</th>
+                        <th width="120">ID do Log</th>
+                        <th width="80">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="log in logs" ng-class="'log-' + log.level">
+                        <td>{{ formatDate(log.timestamp) }}</td>
+                        <td>
+                            <span class="log-level" ng-class="'level-' + log.level">
+                                {{ log.level | uppercase }}
+                            </span>
+                        </td>
+                        <td>{{ log.application.module }}</td>
+                        <td>{{ log.user.username || '-' }}</td>
+                        <td class="log-message">{{ log.message }}</td>
+                        <td class="log-id">{{ log.logId }}</td>
+                        <td>
+                            <button class="view-btn" ng-click="viewLogDetails(log)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- No logs -->
+        <div class="no-logs" ng-if="!loading && logs.length === 0">
+            <i class="fas fa-inbox"></i>
+            <p>Nenhum log encontrado com os filtros aplicados</p>
+        </div>
+        
+        <!-- Paginação -->
+        <div class="pagination" ng-if="pagination && pagination.pages > 1">
+            <button class="page-btn" 
+                    ng-click="goToPage(pagination.page - 1)" 
+                    ng-disabled="pagination.page === 1">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">
+                Página {{ pagination.page }} de {{ pagination.pages }}
+            </span>
+            <button class="page-btn" 
+                    ng-click="goToPage(pagination.page + 1)" 
+                    ng-disabled="pagination.page === pagination.pages">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Log -->
+<div class="modal" ng-show="showDetailsModal">
+    <div class="modal-backdrop" ng-click="closeDetailsModal()"></div>
+    <div class="modal-content log-details-modal">
+        <div class="modal-header">
+            <h2>Detalhes do Log</h2>
+            <button class="close-btn" ng-click="closeDetailsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" ng-if="selectedLog">
+            <div class="detail-section">
+                <h3>Informações Básicas</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>ID do Log:</label>
+                        <span class="mono">{{ selectedLog.logId }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Timestamp:</label>
+                        <span>{{ formatDate(selectedLog.timestamp) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Nível:</label>
+                        <span class="log-level level-{{ selectedLog.level }}">
+                            {{ selectedLog.level | uppercase }}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Módulo:</label>
+                        <span>{{ selectedLog.application.module }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Função:</label>
+                        <span>{{ selectedLog.application.function }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h3>Mensagem</h3>
+                <div class="message-box">{{ selectedLog.message }}</div>
+            </div>
+            
+            <div class="detail-section" ng-if="selectedLog.user.id">
+                <h3>Informações do Usuário</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>ID:</label>
+                        <span>{{ selectedLog.user.id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Nome:</label>
+                        <span>{{ selectedLog.user.username || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Papel:</label>
+                        <span>{{ selectedLog.user.role || '-' }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section" ng-if="selectedLog.request.method">
+                <h3>Informações da Requisição</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Método:</label>
+                        <span>{{ selectedLog.request.method }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>URL:</label>
+                        <span>{{ selectedLog.request.url }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>IP:</label>
+                        <span>{{ selectedLog.request.ip }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-section" ng-if="selectedLog.metadata && hasMetadata(selectedLog.metadata)">
+                <h3>Metadados</h3>
+                <pre class="metadata-box">{{ selectedLog.metadata | json }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Limpeza -->
+<div class="modal" ng-show="showCleanupModalFlag">
+    <div class="modal-backdrop" ng-click="closeCleanupModal()"></div>
+    <div class="modal-content cleanup-modal">
+        <div class="modal-header">
+            <h2>Limpar Logs Antigos</h2>
+            <button class="close-btn" ng-click="closeCleanupModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Esta ação irá remover permanentemente os logs mais antigos que o período selecionado.</p>
+            <div class="cleanup-options">
+                <label>Remover logs mais antigos que:</label>
+                <select ng-model="cleanupDays">
+                    <option value="7">7 dias</option>
+                    <option value="15">15 dias</option>
+                    <option value="30">30 dias</option>
+                    <option value="60">60 dias</option>
+                    <option value="90">90 dias</option>
+                </select>
+            </div>
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Esta ação não pode ser desfeita!</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn" ng-click="closeCleanupModal()">Cancelar</button>
+            <button class="confirm-btn danger" ng-click="performCleanup()">
+                <i class="fas fa-trash"></i>
+                Limpar Logs
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container Principal */
+.admin-logs-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.logs-header {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.page-title {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.refresh-btn,
+.cleanup-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 1.125rem;
+}
+
+.refresh-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.cleanup-btn {
+    color: #e53e3e;
+    border-color: #feb2b2;
+}
+
+.cleanup-btn:hover {
+    background: #fff5f5;
+    border-color: #fc8181;
+}
+
+/* Estatísticas */
+.logs-stats {
+    max-width: 1200px;
+    margin: 2rem auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-box {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.stat-box.error .stat-icon {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
+.stat-box.warning .stat-icon {
+    background: #fffaf0;
+    color: #dd6b20;
+}
+
+.stat-box.info .stat-icon {
+    background: #ebf8ff;
+    color: #3182ce;
+}
+
+.stat-box.total .stat-icon {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    line-height: 1;
+}
+
+.stat-label {
+    color: #718096;
+    font-size: 1.125rem;
+    margin-top: 0.25rem;
+}
+
+/* Filtros */
+.logs-filters {
+    max-width: 1200px;
+    margin: 2rem auto;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    font-size: 1.125rem;
+    min-width: 150px;
+}
+
+.filter-group.search {
+    flex: 1;
+}
+
+.filter-group.search input {
+    width: 100%;
+}
+
+/* Gráfico */
+.activity-chart {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.chart-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1.5rem 0;
+}
+
+.chart-container {
+    height: 200px;
+}
+
+/* Lista de Logs */
+.logs-list {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.list-header h3 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.list-count {
+    color: #718096;
+    font-size: 1.125rem;
+}
+
+/* Loading */
+.loading-container {
+    text-align: center;
+    padding: 3rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3182ce;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tabela de Logs */
+.logs-table {
+    overflow-x: auto;
+}
+
+.logs-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table th {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.logs-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f7fafc;
+    font-size: 1.125rem;
+    color: #2d3748;
+}
+
+.logs-table tr:hover {
+    background: #f7fafc;
+}
+
+.log-level {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.level-error {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
+.level-warn {
+    background: #fffaf0;
+    color: #dd6b20;
+}
+
+.level-info {
+    background: #ebf8ff;
+    color: #3182ce;
+}
+
+.level-debug {
+    background: #f7fafc;
+    color: #718096;
+}
+
+.log-message {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.log-id {
+    font-family: monospace;
+    font-size: 1rem;
+    color: #718096;
+}
+
+.view-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+/* No Logs */
+.no-logs {
+    text-align: center;
+    padding: 3rem;
+    color: #a0aec0;
+}
+
+.no-logs i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Paginação */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.page-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    color: #4a5568;
+    font-size: 1.125rem;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.log-details-modal {
+    width: 800px;
+}
+
+.cleanup-modal {
+    width: 500px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #a0aec0;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #4a5568;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Detalhes do Log */
+.detail-section {
+    margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1rem 0;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detail-item span {
+    font-size: 1.125rem;
+    color: #2d3748;
+}
+
+.mono {
+    font-family: monospace;
+}
+
+.message-box,
+.metadata-box {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 1.125rem;
+    color: #2d3748;
+}
+
+.metadata-box {
+    font-family: monospace;
+    overflow-x: auto;
+}
+
+/* Cleanup Modal */
+.cleanup-options {
+    margin: 2rem 0;
+}
+
+.cleanup-options label {
+    display: block;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.cleanup-options select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1.125rem;
+}
+
+.warning-message {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #c53030;
+    font-size: 1.125rem;
+}
+
+.warning-message i {
+    font-size: 1.125rem;
+}
+
+/* Botões */
+.cancel-btn,
+.confirm-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 1.125rem;
+}
+
+.cancel-btn {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.cancel-btn:hover {
+    background: #cbd5e0;
+}
+
+.confirm-btn {
+    background: #3182ce;
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: #2c5282;
+}
+
+.confirm-btn.danger {
+    background: #e53e3e;
+}
+
+.confirm-btn.danger:hover {
+    background: #c53030;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .logs-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .logs-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .logs-filters {
+        flex-direction: column;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .logs-table {
+        font-size: 0.75rem;
+    }
+    
+    .logs-table th,
+    .logs-table td {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+    }
+}
+</style>

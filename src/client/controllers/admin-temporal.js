@@ -1,22 +1,22 @@
-'uses trict';
+'use strict';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog) {
-    $scope.showCharts = false
-    $scope.showChartsLandsat = false
-    $scope.showChartsNDDI = false
+Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http) {
+    $scope.showCharts = false;
+    $scope.showChartsLandsat = false;
+    $scope.showChartsNDDI = false;
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
-    $scope.sentinelMosaics   = [];
+    $scope.sentinelMosaics = [];
     $scope.tilesCapabilities = [];
     
     // Estados para lazy loading
-    $scope.mapStates = {}; // { index: { visible: boolean, loading: boolean } }
+    $scope.mapStates = {};
     
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
     $scope.showPointInfo = true;
-    $scope.useDynamicMaps = false; // Default to inspection-map
+    $scope.useDynamicMaps = false;
     
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
@@ -27,7 +27,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
         localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
-        // Broadcast para todas as diretivas landsat-map atualizarem
         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
     };
 
@@ -44,36 +43,150 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
     };
 
-    // Função para determinar a classe CSS da seção de informações do ponto
-    $scope.getPointInfoClass = function() {
-        // Sempre mostrar o painel lateral - showPointInfo controla apenas a seção de localização
-        return 'col-xs-12 col-sm-6 col-md-4 col-lg-3';
-    };
-
-    // Função para determinar a classe CSS da seção da tabela
-    $scope.getTableClass = function() {
-        // Sempre usar o layout padrão - showPointInfo não afeta o tamanho da tabela
-        return 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
-    };
-
-    $rootScope.campaignFinished = false
-    util.waitUserData(function () {
-        $scope.showloading = false;
-        $scope.size = 4;
-        $scope.onSubmission = false;
-        $scope.period = 'DRY';
-        $scope.periodo = i18nService.translate('PERIODS.DRY');
-        $scope.pointEnabled = true;
-        $scope.config = {
-            initialYear: $rootScope.user.campaign.initialYear,
-            finalYear: $rootScope.user.campaign.finalYear,
-            zoomLevel: 13,
-            landUse: $rootScope.user.campaign.landUse
+    $rootScope.campaignFinished = false;
+    
+    // Carregar campanha do ponto ou usar campanha padrão
+    var loadCampaignAndInit = function() {
+        // Obter ID da campanha a partir do URL ou usar padrão
+        var urlParams = $location.search();
+        var campaignId = urlParams.campaignId || localStorage.getItem('currentCampaignId');
+        
+        if (!campaignId) {
+            // Se não tiver campanha, tentar buscar do ponto
+            if (urlParams.pointId) {
+                $http.get('/service/admin/points/' + urlParams.pointId).then(function(response) {
+                    if (response.data && response.data.campaign) {
+                        campaignId = response.data.campaign;
+                        initializeWithCampaign(campaignId);
+                    } else {
+                        NotificationDialog.error('Não foi possível identificar a campanha');
+                        $scope.showloading = false;
+                    }
+                }).catch(function(error) {
+                    NotificationDialog.error('Erro ao carregar informações do ponto');
+                    $scope.showloading = false;
+                });
+            } else {
+                NotificationDialog.error('Campanha não especificada');
+                $scope.showloading = false;
+            }
+        } else {
+            initializeWithCampaign(campaignId);
         }
+    };
+    
+    var initializeWithCampaign = function(campaignId) {
+        // Buscar dados da campanha
+        $http.get('/api/campaigns/' + campaignId).then(function(response) {
+            var campaign = response.data;
+            
+            // Simular estrutura do user para compatibilidade
+            $rootScope.user = {
+                campaign: campaign
+            };
+            
+            $scope.showloading = false;
+            $scope.size = 4;
+            $scope.onSubmission = false;
+            $scope.period = 'DRY';
+            $scope.periodo = i18nService.translate('PERIODS.DRY');
+            $scope.pointEnabled = true;
+            $scope.config = {
+                initialYear: campaign.initialYear,
+                finalYear: campaign.finalYear,
+                zoomLevel: 13,
+                landUse: campaign.landUse
+            };
 
-        $scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
-        $scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
-        $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
+            $scope.isChaco = (campaign._id.indexOf('chaco') != -1);
+            $scope.isRaisg = (campaign._id.indexOf('samples') != -1 || campaign._id.indexOf('raisg') != -1);
+            $scope.isSentinel = campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a';
+            
+            // Inicializar o resto após carregar a campanha
+            initializeController();
+        }).catch(function(error) {
+            NotificationDialog.error('Erro ao carregar dados da campanha');
+            $scope.showloading = false;
+        });
+    };
+    
+    // Função para sincronizar filtros com a URL
+    var syncFiltersWithUrl = function() {
+        var urlParams = $location.search();
+        
+        // Sincronizar index
+        if (urlParams.index) {
+            $scope.currentIndex = parseInt(urlParams.index);
+        }
+        
+        // Sincronizar filtros
+        if (urlParams.landUse) {
+            $scope.selectedLandUse = decodeURIComponent(urlParams.landUse);
+        }
+        
+        if (urlParams.userName) {
+            $scope.selectUserNames = decodeURIComponent(urlParams.userName);
+        }
+        
+        if (urlParams.biome) {
+            $scope.selectBiomes = decodeURIComponent(urlParams.biome);
+        }
+        
+        if (urlParams.uf) {
+            $scope.selectUf = decodeURIComponent(urlParams.uf);
+        }
+        
+        if (urlParams.typeSort) {
+            $scope.typeSort = urlParams.typeSort;
+        }
+    };
+    
+    // Função para atualizar a URL com os filtros atuais
+    var updateUrlWithFilters = function(filter) {
+        var params = {};
+        
+        // Sempre incluir campaignId
+        if ($scope.campaign && $scope.campaign._id) {
+            params.campaignId = $scope.campaign._id;
+        }
+        
+        // Incluir index
+        if (filter.index) {
+            params.index = filter.index;
+        }
+        
+        var allText = i18nService.translate('COMMON.ALL');
+        
+        // Incluir filtros apenas se não forem "ALL"
+        if (filter.landUse && filter.landUse !== allText) {
+            params.landUse = encodeURIComponent(filter.landUse);
+        }
+        
+        if (filter.userName && filter.userName !== allText) {
+            params.userName = encodeURIComponent(filter.userName);
+        }
+        
+        if (filter.biome && filter.biome !== allText) {
+            params.biome = encodeURIComponent(filter.biome);
+        }
+        
+        if (filter.uf && filter.uf !== allText) {
+            params.uf = encodeURIComponent(filter.uf);
+        }
+        
+        if (filter.timeInspection) {
+            params.typeSort = 'timeInspection';
+        } else if (filter.agreementPoint) {
+            params.typeSort = 'agreementPoint';
+        }
+        
+        // Atualizar URL sem recarregar a página
+        $location.search(params);
+    };
+
+    var initializeController = function() {
+        // Sincronizar filtros com a URL
+        syncFiltersWithUrl();
 
         $scope.dataTab = [
             {"name": i18nService.translate('TABS.USERS'), "checked": true},
@@ -89,36 +202,32 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             angular.forEach($scope.dataTab, function (elem) {
                 elem.checked = false;
             });
-
             element.checked = !element.checked;
-        }
+        };
 
         $scope.formPlus = function () {
             var prevIndex = $scope.answers.length - 1;
-            var initialYear = $scope.answers[prevIndex].finalYear + 1
+            var initialYear = $scope.answers[prevIndex].finalYear + 1;
 
             if ($scope.answers[prevIndex].finalYear == $scope.config.finalYear)
                 return;
 
             var finalYear = $scope.config.finalYear;
-
             generateOptionYears(initialYear, finalYear);
 
-            $scope.answers.push(
-                {
-                    initialYear: initialYear,
-                    finalYear: finalYear,
-                    landUse: $scope.config.landUse[1]
-                }
-            )
-        }
+            $scope.answers.push({
+                initialYear: initialYear,
+                finalYear: finalYear,
+                landUse: $scope.config.landUse[1]
+            });
+        };
 
         $scope.formSubtraction = function () {
             if ($scope.answers.length >= 1) {
                 $scope.answers.splice(-1, 1);
                 $scope.optionYears.splice(-1, 1);
             }
-        }
+        };
 
         $scope.submitForm = function () {
             var formPoint = {
@@ -127,12 +236,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     counter: $scope.counter,
                     form: $scope.answers
                 }
-            }
+            };
 
             $scope.onSubmission = true;
-
-            requester._post('points/next-point', {"point": formPoint}, loadPoint);
-        }
+            requester._post('admin/points/next-point', {"point": formPoint, "campaignId": $scope.campaign._id}, loadPoint);
+        };
 
         $scope.changePeriod = function () {
             if ($scope.newValue == undefined)
@@ -142,7 +250,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.WET') : i18nService.translate('PERIODS.DRY');
             generateMaps();
-        }
+        };
 
         var generateOptionYears = function (initialYear, finalYear) {
             var options = [];
@@ -150,18 +258,18 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 options.push(year);
             }
             $scope.optionYears.push(options);
-        }
+        };
 
         var getDateImages = function () {
-            date = []
+            var date = [];
             for (var i = 0; i < $scope.maps.length; i++) {
                 date.push(new Date($scope.maps[i].date));
             }
             return date;
-        }
+        };
 
         var trace2NDVI = function (values, date) {
-            ndvi = []
+            var ndvi = [];
             for (var i = 0; i < date.length; i++) {
                 for (var j = 0; j < values.length; j = j + 2) {
                     var dateFromValues = new Date(values[j][0]);
@@ -170,19 +278,16 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     if (((dateFromDate.getUTCMonth() + 1) == (dateFromValues.getUTCMonth() + 1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())) {
                         ndvi.push(values[j][1]);
                     }
-
                 }
             }
-
             return ndvi;
-        }
+        };
 
         var getPrecipitationData = function (callback) {
-            requester._get('spatial/precipitation', {
+            requester._get('admin/spatial/precipitation', {
                 "longitude": $scope.point.lon,
                 "latitude": $scope.point.lat
             }, function (data) {
-
                 var precipit = [];
                 var date = [];
                 var text = [];
@@ -204,33 +309,32 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 };
 
                 callback(result);
-            })
-        }
+            });
+        };
 
         var getDryDate = function (dates, tmsIdList) {
             var dry = [];
-            for (key in dates) {
+            for (var key in dates) {
                 for (var i = 0; i < tmsIdList.length; i++) {
                     if (key == tmsIdList[i]) {
                         var year = parseInt(dates[key].split('-')[0]);
                         if (year >= 2000) {
-                            dry.push(dates[key])
+                            dry.push(dates[key]);
                         }
                     }
                 }
             }
-            return dry.sort()
-        }
+            return dry.sort();
+        };
 
         var createModisChart = function (datesFromService) {
             Plotly.purge('NDVI');
-            requester._get('time-series/MOD13Q1_NDVI', {
+            requester._get('admin/time-series/MOD13Q1_NDVI', {
                 "longitude": $scope.point.lon,
                 "latitude": $scope.point.lat
             }, function (data) {
                 if(data){
                     getPrecipitationData(function (dataPrecip) {
-
                         var ndvi = [];
                         var ndviSg = [];
                         var date = [];
@@ -238,7 +342,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         $scope.showCharts = data.values.length > 0;
 
                         for (var i = 0; i < data.values.length; i++) {
-                            var dateObj = new Date(data.values[i][0])
+                            var dateObj = new Date(data.values[i][0]);
                             var month = dateObj.getUTCMonth() + 1;
                             var day = dateObj.getUTCDate();
                             var year = dateObj.getUTCFullYear();
@@ -252,7 +356,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
 
                         var d3 = Plotly.d3;
-                        var gd3 = d3.select('#NDVI')
+                        var gd3 = d3.select('#NDVI');
                         var gd = gd3.node();
 
                         var trace1 = {
@@ -321,14 +425,13 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                         var count = 0;
                         for (var i = 0; i < dataPrecip.text.length; i++) {
-                            initPrec = dataPrecip.text[i].split("-")
+                            initPrec = dataPrecip.text[i].split("-");
 
                             if (initPrec[0] >= initDate[0]) {
                                 precData[count] = dataPrecip.text[i];
                                 precValue[count] = dataPrecip.precipit[i];
                                 var temp = dataPrecip.text[i].split("-");
                                 precText[count] = temp[0] + '-' + temp[1];
-
                                 count++;
                             }
                         }
@@ -382,22 +485,20 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         };
 
                         var dataChart = [trace1, trace2, trace3, trace4, trace5];
-
                         Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
 
                         window.onresize = function () {
                             Plotly.Plots.resize(gd);
                         };
-
                     });
                 }
             });
-        }
+        };
 
         var createLandsatChart = function () {
             Plotly.purge('LANDSAT');
 
-            requester._get(`timeseries/landsat/ndvi`, {
+            requester._get(`admin/timeseries/landsat/ndvi`, {
                 "lon": $scope.point.lon,
                 "lat": $scope.point.lat
             }, function (data) {
@@ -407,7 +508,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     let gd3 = d3.select('#LANDSAT');
                     let gd = gd3.node();
 
-                    // Criando os traços diretamente dos dados retornados
                     let trace1 = {
                         x: data[0].x,
                         y: data[0].y,
@@ -480,20 +580,23 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             });
         };
+
         var createNDDIChart = function () {
             Plotly.purge('NDDI');
 
-            requester._get(`timeseries/nddi`, {
-                "lon": $scope.point.lon,
-                "lat": $scope.point.lat
-            }, function (data) {
+            $http.get('/service/admin/timeseries/nddi', {
+                params: {
+                    "lon": $scope.point.lon,
+                    "lat": $scope.point.lat
+                }
+            }).then(function (response) {
+                var data = response.data;
                 if (data && data.length > 0) {
                     $scope.showChartsNDDI = true;
                     let d3 = Plotly.d3;
                     let gd3 = d3.select('#NDDI');
                     let gd = gd3.node();
 
-                    // Criando os traços diretamente dos dados retornados
                     let trace = {
                         x: data[0].x,
                         y: data[0].y,
@@ -536,39 +639,39 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         var generateMaps = function () {
             $scope.maps = [];
-            $scope.mapStates = {}; // Resetar estados
-            mapLoadingService.reset(); // Limpar serviço de loading
+            $scope.mapStates = {};
+            mapLoadingService.reset();
             
             var tmsIdList = [];
-
             $scope.tmsIdListWet = [];
             $scope.tmsIdListDry = [];
 
             for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
-                sattelite = 'L7';
+                var sattelite = 'L7';
                 if (year > 2012) {
-                    sattelite = 'L8'
+                    sattelite = 'L8';
                 } else if (year > 2011) {
-                    sattelite = 'L7'
+                    sattelite = 'L7';
                 } else if (year > 2003 || year < 2000) {
-                    sattelite = 'L5'
+                    sattelite = 'L5';
                 }
 
-                tmsId = sattelite + '_' + year + '_' + $scope.period;
-                tmsIdDry = sattelite + '_' + year + '_DRY';
-                tmsIdWet = sattelite + '_' + year + '_WET';
+                var tmsId = sattelite + '_' + year + '_' + $scope.period;
+                var tmsIdDry = sattelite + '_' + year + '_DRY';
+                var tmsIdWet = sattelite + '_' + year + '_WET';
 
-                $scope.tmsIdListDry.push(tmsIdDry)
-                $scope.tmsIdListWet.push(tmsIdWet)
+                $scope.tmsIdListDry.push(tmsIdDry);
+                $scope.tmsIdListWet.push(tmsIdWet);
 
                 var host = location.host;
-                var url = "http://" + host + '/image/' + tmsId + '/' + $scope.point._id + "?campaign=" + $rootScope.user.campaign._id;
+                var campaignId = $rootScope.user && $rootScope.user.campaign ? $rootScope.user.campaign._id : localStorage.getItem('currentCampaignId');
+                var url = "http://" + host + '/image/' + tmsId + '/' + $scope.point._id + "?campaign=" + campaignId;
 
-                let date =  ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/' + year;
-                if( $scope.point.hasOwnProperty('images')){
-                    const image = $scope.point['images'].find(img => img.image_index === tmsId)
+                let date = ($scope.point.dates[tmsId]) ? $scope.point.dates[tmsId] : '00/00/' + year;
+                if($scope.point.hasOwnProperty('images')){
+                    const image = $scope.point['images'].find(img => img.image_index === tmsId);
                     if (image && image.datetime) {
-                        date = image.datetime
+                        date = image.datetime;
                     }
                 }
 
@@ -581,16 +684,13 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     index: mapIndex
                 });
                 
-                // Inicializar estado do mapa
                 $scope.mapStates[mapIndex] = {
                     visible: false,
                     loading: false
                 };
             }
             
-            // Carregar automaticamente os primeiros mapas após um pequeno delay
             $timeout(function() {
-                // Carregar os primeiros 2-3 mapas automaticamente
                 const initialMapsToLoad = Math.min(3, $scope.maps.length);
                 for (let i = 0; i < initialMapsToLoad; i++) {
                     if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
@@ -598,17 +698,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     }
                 }
             }, 1000);
-        }
+        };
         
-        // Função chamada quando um mapa se torna visível
         $scope.onMapVisible = function(index) {
             if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
                 
-                // Simular carregamento completo após o mapa carregar
-                // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
                 $timeout(function() {
                     $scope.mapStates[index].loading = false;
                     mapLoadingService.finishLoading(index);
@@ -616,7 +713,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
         };
         
-        // Listener para pré-carregar mapas
         $scope.$on('preloadMaps', function(event, indices) {
             indices.forEach(function(index) {
                 if (index >= 0 && index < $scope.maps.length && 
@@ -624,7 +720,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     !mapLoadingService.isLoaded(index) &&
                     !mapLoadingService.isLoading(index)) {
                     
-                    // Agendar pré-carregamento
                     $timeout(function() {
                         $scope.onMapVisible(index);
                     }, 200);
@@ -636,28 +731,25 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             var lon = $scope.point.lon;
             var lat = $scope.point.lat;
             var county = $scope.point.county;
-            var url = window.location.origin + window.location.pathname
+            var url = window.location.origin + window.location.pathname;
             $window.open(url + "service/kml?longitude=" + lon + "&latitude=" + lat + "&county=" + county);
-        }
+        };
 
         var initCounter = function () {
             $scope.counter = 0;
             $interval(function () {
                 $scope.counter = $scope.counter + 1;
             }, 1000);
-        }
+        };
 
         var initFormViewVariables = function () {
             $scope.optionYears = [];
-
-            $scope.answers = [
-                {
-                    initialYear: $scope.config.initialYear,
-                    finalYear: $scope.config.finalYear,
-                    landUse: $scope.config.landUse[1]
-                }
-            ];
-        }
+            $scope.answers = [{
+                initialYear: $scope.config.initialYear,
+                finalYear: $scope.config.finalYear,
+                landUse: $scope.config.landUse[1]
+            }];
+        };
 
         $scope.submit = function (index) {
             $scope.showloading = true;
@@ -667,9 +759,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
             $scope.changeClass = function (index) {
                 for (var i = index; i < $scope.selectedLandUses.length; i++) {
-                    $scope.selectedLandUses[i] = $scope.selectedLandUses[index]
+                    $scope.selectedLandUses[i] = $scope.selectedLandUses[index];
                 }
-            }
+            };
 
             var allText = i18nService.translate('COMMON.ALL');
             
@@ -693,40 +785,48 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 filter["agreementPoint"] = true;
             }
 
-            updatedClassConsolidated(filter)
+            // Atualizar URL com os filtros atuais
+            updateUrlWithFilters(filter);
+            
+            updatedClassConsolidated(filter);
             getClassLandUse(filter);
             landUseFilter(filter);
             usersFilter(filter);
             biomeFilter(filter);
             ufFilter(filter);
 
-            requester._post('points/get-point', filter, loadPoint);
+            var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
+            $http.post('/service/admin/points/get-point', params).then(function(response) {
+                loadPoint(response.data);
+            }).catch(function(error) {
+                console.error('Error loading point:', error);
+                $scope.showloading = false;
+            });
             $scope.showloading = false;
-        }
+        };
 
         var updatedClassConsolidated = function (callback) {
             $scope.saveClass = function (element) {
-                var result = {}
-                $scope.objConsolidated = $scope.selectedLandUses
+                var result = {};
+                $scope.objConsolidated = $scope.selectedLandUses;
 
-                result._id = $scope.point._id
-                result.class = $scope.objConsolidated
+                result._id = $scope.point._id;
+                result.class = $scope.objConsolidated;
 
-                requester._post('points/updatedClassConsolidated', result, function (data) {
+                requester._post('admin/points/updatedClassConsolidated', result, function (data) {
                     var aux = 0;
-                    var flagError = true
+                    var flagError = true;
 
                     for (var i = 0; i < $scope.objConsolidated.length; i++) {
                         if ($scope.objConsolidated[i] == i18nService.translate('COMMON.NOT_CONSOLIDATED')) {
                             if (flagError)
                                 NotificationDialog.error(i18nService.translate('ALERTS.FILL_ALL_FIELDS'));
                             flagError = false;
-
                         } else {
-                            aux++
+                            aux++;
 
                             if (aux == $scope.objConsolidated.length) {
-                                $scope.submit(1)
+                                $scope.submit(1);
                                 $scope.modeEdit = false;
                                 $scope.buttonEdit = false;
                             }
@@ -735,29 +835,33 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                     aux = 0;
                 });
-            }
-        }
+            };
+        };
 
         var getClassLandUse = function (filter) {
-            requester._get('points/landUses', function (getLandUses) {
-                $scope.getLandUses = getLandUses;
+            $http.get('/service/admin/points/landUses', { params: { campaignId: $scope.campaign._id } }).then(function (response) {
+                $scope.getLandUses = response.data;
                 $scope.buttonEdit = false;
 
                 $scope.editClass = function (element) {
-                    var arrayConsolid = $scope.objConsolidated
-                    $scope.selectedLandUses = []
+                    var arrayConsolid = $scope.objConsolidated;
+                    $scope.selectedLandUses = [];
                     $scope.modeEdit = true;
 
                     for (var i = 0; i < arrayConsolid.length; i++) {
-                        $scope.selectedLandUses.push(arrayConsolid[i])
+                        $scope.selectedLandUses.push(arrayConsolid[i]);
                     }
                     $scope.buttonEdit = true;
-                }
+                };
+            }).catch(function(error) {
+                console.error('Error loading land uses:', error);
             });
-        }
+        };
 
         var landUseFilter = function (filter) {
-            requester._get('points/landUses', filter, function (landUses) {
+            var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
+            $http.get('/service/admin/points/landUses', { params: params }).then(function (response) {
+                var landUses = response.data;
                 landUses.unshift(i18nService.translate('COMMON.ALL'));
                 landUses.push(i18nService.translate('COMMON.NOT_CONSOLIDATED'));
 
@@ -766,11 +870,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                 $scope.selectedLandUse = filter.landUse;
                 $scope.landUses = landUses;
+            }).catch(function(error) {
+                console.error('Error loading land uses:', error);
             });
-        }
+        };
 
         var usersFilter = function (filter) {
-            requester._get('points/users', filter, function (userNames) {
+            var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
+            $http.get('/service/admin/points/users', { params: params }).then(function (response) {
+                var userNames = response.data;
                 userNames.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.userName == undefined)
@@ -778,11 +886,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                 $scope.selectUserNames = filter.userName;
                 $scope.userNames = userNames;
+            }).catch(function(error) {
+                console.error('Error loading users:', error);
             });
-        }
+        };
 
         var biomeFilter = function (filter) {
-            requester._get('points/biome', filter, function (biomes) {
+            var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
+            $http.get('/service/admin/points/biome', { params: params }).then(function (response) {
+                var biomes = response.data;
                 biomes.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.biome == undefined)
@@ -790,11 +902,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                 $scope.selectBiomes = filter.biome;
                 $scope.biomes = biomes;
+            }).catch(function(error) {
+                console.error('Error loading biomes:', error);
             });
-        }
+        };
 
         var ufFilter = function (filter) {
-            requester._get('points/uf', filter, function (stateUF) {
+            var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
+            $http.get('/service/admin/points/uf', { params: params }).then(function (response) {
+                var stateUF = response.data;
                 stateUF.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.uf == undefined)
@@ -802,33 +918,30 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                 $scope.selectUf = filter.uf;
                 $scope.stateUF = stateUF;
+            }).catch(function(error) {
+                console.error('Error loading UFs:', error);
             });
-        }
+        };
 
         var loadCampaignConfig = function(callback) {
-            requester._get('campaign/config', {}, function(config) {
+            requester._get('admin/campaign/config', {campaignId: $scope.campaign._id}, function(config) {
                 if (config) {
-                    // Atualizar as configurações de visualização
                     $scope.showTimeseries = config.showTimeseries;
                     $scope.showPointInfo = config.showPointInfo;
                     $scope.useDynamicMaps = config.useDynamicMaps;
                     $scope.hasVisParam = config.visParam !== null;
                     
-                    // Se houver visParam, atualizar o landsatVisparam
                     if (config.visParam) {
                         $scope.landsatVisparam = config.visParam;
                         localStorage.setItem('landsatVisparam', config.visParam);
-                        // Broadcast para atualizar as diretivas
                         $scope.$broadcast('landsatVisparamChanged', config.visParam);
                     }
                     
-                    // Verificar se é Sentinel baseado no imageType
                     if (config.imageType) {
                         $scope.isSentinel = config.imageType === 'sentinel-2-l2a';
                     }
                 }
                 
-                // Chamar callback se fornecido
                 if (callback) {
                     callback();
                 }
@@ -840,16 +953,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 
-            // Se não há pontos com o filtro atual, avisar o usuário mas continuar
             if(data.totalPoints === 0){
-                // Não bloquear - apenas informar o usuário
                 console.warn('No points found with current filters');
-                // Podemos opcionalmente mostrar uma mensagem mais amigável
                 if (!data.point) {
                     NotificationDialog.warning(i18nService.translate('ALERTS.NO_UNCONSOLIDATED_POINTS'));
                     return;
                 }
             }
+            
             $scope.campaign = data.campaign;
             $scope.objConsolidated = data.point.classConsolidated;
             $scope.onSubmission = false;
@@ -862,13 +973,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.timeInspectionPoint = data.point.dataPointTime.slice(-1)[0].totalPointTime * data.point.userName.length;
 
             initFormViewVariables();
-            //generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
             generateMaps();
             getCampaignMatadata();
 
-            // Buscar configurações da campanha do novo endpoint
             loadCampaignConfig(function() {
-                // Mostrar gráficos apenas se showTimeseries for true (após carregar as configurações)
                 if (!$scope.isChaco && $scope.showTimeseries) {
                     createModisChart(data.point.dates);
                     createLandsatChart();
@@ -877,18 +985,39 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
             
             $scope.counter = 0;
-
             $scope.total = data.totalPoints;
-        }
+        };
 
         initCounter();
-
-        $scope.submit(1);
+        
+        // Verificar se há um pointId na URL
+        var urlParams = $location.search();
+        if (urlParams.pointId) {
+            // Carregar ponto específico por ID
+            $scope.showloading = true;
+            requester._post('admin/points/get-point-by-id', {
+                pointId: urlParams.pointId
+            }, function(data) {
+                if (data && data.point) {
+                    loadPoint(data);
+                } else {
+                    NotificationDialog.warning('Ponto não encontrado');
+                    $scope.submit($scope.currentIndex || 1);
+                }
+            }, function(error) {
+                NotificationDialog.error('Erro ao carregar ponto');
+                $scope.submit($scope.currentIndex || 1);
+            });
+        } else {
+            // Usar o index da URL se disponível, senão usar 1
+            $scope.submit($scope.currentIndex || 1);
+        }
 
         var correctCampain = () => {
             $scope.showloading = true;
-            requester._get(`campaign/correct`, {
-                "campaign": $rootScope.user.campaign._id
+            var campaignId = $rootScope.user && $rootScope.user.campaign ? $rootScope.user.campaign._id : localStorage.getItem('currentCampaignId');
+            requester._get(`admin/campaign/correct`, {
+                campaignId: $scope.campaign._id
             }, function (data) {
                 $scope.showloading = false;
                 if (data) {
@@ -897,32 +1026,33 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     NotificationDialog.info(i18nService.translate('ALERTS.CAMPAIGN_NO_ISSUES'));
                 }
             });
-        }
+        };
 
         const getCampaignMatadata = () => {
             $scope.showloading = true;
-            requester._get(`dashboard/points-inspection`, function (data) {
+            requester._get(`admin/dashboard/points-inspection`, {campaignId: $scope.campaign._id}, function (data) {
                 $scope.showloading = false;
                 $rootScope.campaignFinished = data.pointsInspection === 0 && data.pointsNoComplet === 0;
             });
+        };
 
-        }
         $window.addEventListener("keydown", (event) => {
-                if (event.key !== undefined) {
-                    if (event.key === 'F10') {
-                        correctCampain()
-                        event.preventDefault();
-                    }
+            if (event.key !== undefined) {
+                if (event.key === 'F10') {
+                    correctCampain();
+                    event.preventDefault();
                 }
-            }, true);
+            }
+        }, true);
 
         $scope.downloadCSVBorda = function() {
-            window.open('service/campaign/csv-borda', '_blank')
+            window.open('service/campaign/csv-borda', '_blank');
         };
+
         $scope.removeInspections = () => {
             NotificationDialog.confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: $scope.point._id})).then(function(confirmed) {
                 if (confirmed) {
-                    requester._get(`campaign/removeInspections?pointId=${$scope.point._id}`, function (data) {
+                    requester._get(`admin/campaign/removeInspections?pointId=${$scope.point._id}`, function (data) {
                         if(data) {
                             NotificationDialog.success(i18nService.translate('ALERTS.INSPECTIONS_REMOVED', {pointId: $scope.point._id}));
                             $scope.submit($scope.point.index);
@@ -932,27 +1062,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         };
 
-        // requester._get('mapbiomas/capabilities', function(mosaics) {
-        //     if (mosaics && mosaics.length > 0) {
-        //         $scope.planetMosaics = mosaics.map(mosaic => ({
-        //             name: mosaic.name,
-        //             firstAcquired: moment(mosaic.date).toDate(),
-        //             lastAcquired: moment(mosaic.date).toDate(),
-        //         }));
-        //     }
-        // });
-
-
-        // $scope.hasPlanetMosaicForYear = function(year) {
-        //     return $scope.planetMosaics.some(mosaic => {
-        //         const firstYear = mosaic.firstAcquired.getFullYear();
-        //         const lastYear = mosaic.lastAcquired.getFullYear();
-        //         return year >= firstYear && year <= lastYear;
-        //     });
-        // };
-
         $scope.hasMosaicForYear = function (year) {
-            // garante que o ano é number e evita erro se a lista ainda não chegou
             const y = Number(year);
             if (!Array.isArray($scope.sentinelMosaics)) {
                 return false;
@@ -962,37 +1072,31 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             );
         };
 
-
-        requester._get('sentinel/capabilities', function(capabilities) {
+        requester._get('admin/sentinel/capabilities', function(capabilities) {
             $scope.tilesCapabilities = capabilities;
             $scope.sentinelMosaics = capabilities
                 .filter(c => c.name === 's2_harmonized')
                 .map(c => ({
                     name: c.name,
-                    years: c.year,          // [2017 … 2025]
-                    periods: c.period,      // ["WET","DRY","MONTH"]
-                    visparams: c.visparam   // ["tvi-green", …]
+                    years: c.year,
+                    periods: c.period,
+                    visparams: c.visparam
                 }));
         });
 
-        // Função para verificar se deve mostrar uma propriedade
         $scope.shouldShowProperty = function(key) {
             return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
         };
         
-        // Função para formatar o nome da propriedade
         $scope.formatPropertyName = function(key) {
-            // Capitalizar primeira letra e substituir underscores por espaços
             return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
         };
         
-        // Função para verificar se existem propriedades customizadas
         $scope.hasCustomProperties = function() {
             if (!$scope.point || !$scope.point.properties) {
                 return false;
             }
             
-            // Verificar se existe alguma propriedade que não está na lista de defaultProperties
             for (var key in $scope.point.properties) {
                 if ($scope.shouldShowProperty(key)) {
                     return true;
@@ -1002,10 +1106,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         };
         
         $scope.openMosaicDialog = function(map, point, config) {
-            // ano do “thumbnail” que o usuário clicou
             const mapYear = map.year || Number(new Date(map.date).getFullYear());
-
-            // Sentinel-2 harmonizado cobre o ano?
             const mosaicsForYear = $scope.sentinelMosaics.filter(m =>
                 Array.isArray(m.years) && m.years.includes(mapYear)
             );
@@ -1036,5 +1137,8 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             });
         };
-    });
+    };
+    
+    // Iniciar carregamento da campanha
+    loadCampaignAndInit();
 });

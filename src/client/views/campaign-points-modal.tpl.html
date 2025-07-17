@@ -1,480 +1,1000 @@
+<style>
+/* Modal - seguindo padrão admin-home */
+.points-modal-wide .modal-dialog {
+    width: 95vw;
+    max-width: 1600px;
+    margin: 20px auto;
+}
+
+.points-modal-wide .modal-content {
+    border: none;
+    border-radius: 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.points-modal-wide .modal-header {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 2rem 3rem;
+    position: relative;
+}
+
+.points-modal-wide .modal-title {
+    font-size: 2.25rem;
+    font-weight: 300;
+    color: #333;
+    margin: 0;
+}
+
+.points-modal-wide .modal-header .close {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2.5rem;
+    font-weight: 300;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    border: none;
+    background: none;
+    padding: 0.5rem;
+    line-height: 1;
+    width: auto;
+    height: auto;
+}
+
+.points-modal-wide .modal-header .close:hover {
+    opacity: 1;
+}
+
+.points-modal-wide .modal-body {
+    padding: 0;
+    background: #fafafa;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.points-modal-wide .modal-footer {
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+    padding: 1.5rem 3rem;
+}
+
+/* Cards de estatísticas */
+.points-modal-wide .stats-section {
+    background: #fff;
+    padding: 2rem 3rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.points-modal-wide .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.points-modal-wide .stat-card {
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.points-modal-wide .stat-card:hover {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.points-modal-wide .stat-value {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.points-modal-wide .stat-label {
+    font-size: 1.125rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Tabs */
+.points-modal-wide .tabs-section {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.points-modal-wide .tab-buttons {
+    display: flex;
+    padding: 0;
+}
+
+.points-modal-wide .tab-btn {
+    flex: 1;
+    padding: 1.5rem 2rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #666;
+    font-size: 1.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.points-modal-wide .tab-btn:hover {
+    color: #333;
+    background: #fafafa;
+}
+
+.points-modal-wide .tab-btn.active {
+    color: #333;
+    border-bottom-color: #333;
+}
+
+/* Tab content */
+.points-modal-wide .tab-content {
+    background: #fff;
+    padding: 2rem 3rem;
+}
+
+/* Filtros */
+.points-modal-wide .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.points-modal-wide .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.points-modal-wide .filter-label {
+    font-size: 1.125rem;
+    color: #666;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+}
+
+.points-modal-wide .filter-input,
+.points-modal-wide .filter-select {
+    padding: 0.875rem 1rem;
+    border: 1px solid #e5e5e5;
+    font-size: 1.125rem;
+    transition: all 0.2s;
+    background: #fff;
+}
+
+.points-modal-wide .filter-input:focus,
+.points-modal-wide .filter-select:focus {
+    outline: none;
+    border-color: #333;
+}
+
+.points-modal-wide .filter-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: space-between;
+}
+
+/* Tabela de pontos */
+.points-modal-wide .points-table-container {
+    background: #fff;
+    margin: 0;
+    max-height: 29vh;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 2rem 3rem 1rem;
+}
+
+.points-modal-wide .table-header {
+    /*padding: 2rem 3rem 1rem;*/
+    background: #fff;
+}
+
+.points-modal-wide .search-box {
+    position: relative;
+}
+
+.points-modal-wide .search-box input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+    border: 1px solid #e5e5e5;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.points-modal-wide .search-box input:focus {
+    outline: none;
+    border-color: #333;
+}
+
+.points-modal-wide .search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+/* Tabela minimalista */
+.points-modal-wide .points-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.points-modal-wide .points-table thead tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.points-modal-wide .points-table th {
+    padding: 1.5rem 1.5rem;
+    text-align: left;
+    font-weight: 400;
+    color: #666;
+    font-size: 1.125rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.points-modal-wide .points-table tbody tr {
+    border-bottom: 1px solid #fafafa;
+    transition: background-color 0.15s;
+}
+
+.points-modal-wide .points-table tbody tr:hover {
+    background-color: #fafafa;
+}
+
+.points-modal-wide .points-table td {
+    padding: 1.5rem 1.5rem;
+    font-size: 1.125rem;
+    color: #333;
+    vertical-align: middle;
+}
+
+/* Badges de status */
+.points-modal-wide .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.625rem 1rem;
+    font-size: 1.125rem;
+    font-weight: 500;
+    border: 1px solid;
+    border-radius: 4px;
+}
+
+.points-modal-wide .status-badge.completed {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.points-modal-wide .status-badge.in-progress {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fed7aa;
+}
+
+.points-modal-wide .status-badge.not-started {
+    background: #fafafa;
+    color: #6b7280;
+    border-color: #e5e7eb;
+}
+
+/* Progress bar - escopado para campaign-points-modal */
+.points-modal-wide .progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.points-modal-wide .progress-bar-mini {
+    flex: 1;
+    height: 4px;
+    background: #f0f0f0;
+    position: relative;
+    overflow: hidden;
+    max-width: 100px;
+}
+
+.points-modal-wide .progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #333;
+    transition: width 0.3s ease;
+}
+
+.points-modal-wide .progress-text {
+    font-size: 1.125rem;
+    color: #666;
+    min-width: 3.5rem;
+    text-align: right;
+    font-weight: 500;
+}
+
+/* Botões de ação */
+.points-modal-wide .actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.points-modal-wide .btn-action {
+    padding: 0.75rem 1.125rem;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 4px;
+}
+
+.points-modal-wide .btn-action:hover {
+    background: #fafafa;
+    border-color: #333;
+}
+
+/* Paginação */
+.points-modal-wide .table-footer {
+    padding: 2rem 3rem;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.points-modal-wide .pagination-info {
+    color: #666;
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.points-modal-wide .pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.points-modal-wide .page-btn {
+    padding: 0.875rem 1.125rem;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 3.5rem;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.points-modal-wide .page-btn:hover:not(:disabled) {
+    background: #fafafa;
+}
+
+.points-modal-wide .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.points-modal-wide .page-btn.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+/* Estados vazios/carregando */
+.points-modal-wide .empty-state,
+.points-modal-wide .loading-state {
+    padding: 4rem;
+    text-align: center;
+    color: #666;
+}
+
+.points-modal-wide .empty-state i {
+    font-size: 3rem;
+    color: #e5e5e5;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* Loading */
+.points-modal-wide .loading-spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #f0f0f0;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Botões padrão */
+.points-modal-wide .btn {
+    padding: 0.875rem 1.75rem;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 400;
+    border-radius: 4px;
+}
+
+.points-modal-wide .btn:hover {
+    background: #fafafa;
+    border-color: #d4d4d4;
+}
+
+.points-modal-wide .btn-primary {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+.points-modal-wide .btn-primary:hover {
+    background: #111;
+    border-color: #111;
+}
+
+.points-modal-wide .btn-success {
+    color: #15803d;
+    border-color: #15803d;
+}
+
+.points-modal-wide .btn-success:hover {
+    background: #f0fdf4;
+}
+
+.points-modal-wide .btn-warning {
+    color: #b45309;
+    border-color: #b45309;
+}
+
+.points-modal-wide .btn-warning:hover {
+    background: #fffbeb;
+}
+
+.points-modal-wide .btn-danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.points-modal-wide .btn-danger:hover {
+    background: #fef2f2;
+}
+
+/* Alerts */
+.points-modal-wide .alert {
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid;
+    font-size: 1rem;
+}
+
+.points-modal-wide .alert-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #dbeafe;
+}
+
+/* Select customizado para itens por página */
+.points-modal-wide .items-per-page-select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e5e5;
+    font-size: 1.25rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fff;
+    border-radius: 4px;
+}
+
+.points-modal-wide .items-per-page-select:focus {
+    outline: none;
+    border-color: #333;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    .points-modal-wide .modal-dialog {
+        width: 98vw;
+        margin: 10px auto;
+    }
+    
+    .points-modal-wide .modal-body {
+        max-height: calc(100vh - 160px);
+    }
+    
+    .points-modal-wide .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .points-modal-wide .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .points-modal-wide .table-footer {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .points-modal-wide .pagination-info {
+        order: 2;
+    }
+    
+    .points-modal-wide .table-header > div {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .points-modal-wide .search-box {
+        min-width: auto !important;
+    }
+    
+    .points-modal-wide .pagination-controls {
+        order: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .points-modal-wide .modal-dialog {
+        width: 100vw;
+        margin: 0;
+        height: 100vh;
+    }
+    
+    .points-modal-wide .modal-content {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .points-modal-wide .modal-body {
+        max-height: calc(100vh - 120px);
+        flex: 1;
+    }
+    
+    .points-modal-wide .modal-header {
+        padding: 1.5rem 2rem;
+    }
+    
+    .points-modal-wide .modal-title {
+        font-size: 1.75rem;
+    }
+    
+    .points-modal-wide .stats-section {
+        padding: 1.5rem 2rem;
+    }
+    
+    .points-modal-wide .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .points-modal-wide .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .points-modal-wide .tab-content {
+        padding: 1.5rem 2rem;
+    }
+    
+    .points-modal-wide .tab-buttons {
+        flex-direction: column;
+    }
+    
+    .points-modal-wide .tab-btn {
+        border-bottom: none;
+        border-left: 2px solid transparent;
+        padding: 1rem 2rem;
+        text-align: left;
+    }
+    
+    .points-modal-wide .tab-btn.active {
+        border-left-color: #333;
+    }
+    
+    .points-modal-wide .table-header {
+        padding: 1.5rem 2rem 1rem;
+    }
+    
+    .points-modal-wide .table-footer {
+        padding: 1.5rem 2rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .points-modal-wide .pagination-info {
+        order: 2;
+        text-align: center;
+    }
+    
+    .points-modal-wide .table-header > div {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .points-modal-wide .search-box {
+        min-width: auto !important;
+    }
+    
+    .points-modal-wide .pagination-controls {
+        order: 1;
+        justify-content: center;
+    }
+    
+    .points-modal-wide .modal-footer {
+        padding: 1.5rem 2rem;
+    }
+    
+    .points-modal-wide .actions-cell {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .points-modal-wide .btn-action {
+        padding: 0.625rem 0.875rem;
+        font-size: 1rem;
+    }
+}
+</style>
+
 <div class="modal-header">
     <h3 class="modal-title">
-        <i class="glyphicon glyphicon-map-marker"></i> 
         Gestão de Pontos: {{ campaign._id }}
     </h3>
 </div>
-<div class="modal-body" style="max-height: 700px; overflow-y: auto;">
-    <!-- Header com estatísticas -->
-    <div class="row">
-        <div class="col-md-8">
-            <div class="row">
-                <div class="col-xs-3">
-                    <div class="well well-sm text-center">
-                        <h4 class="text-primary">{{ totalPoints }}</h4>
-                        <small>Total</small>
-                    </div>
-                </div>
-                <div class="col-xs-3">
-                    <div class="well well-sm text-center">
-                        <h4 class="text-success">{{ campaign.completedPoints }}</h4>
-                        <small>Completos</small>
-                    </div>
-                </div>
-                <div class="col-xs-3">
-                    <div class="well well-sm text-center">
-                        <h4 class="text-warning">{{ totalPoints - campaign.completedPoints }}</h4>
-                        <small>Pendentes</small>
-                    </div>
-                </div>
-                <div class="col-xs-3">
-                    <div class="well well-sm text-center">
-                        <h4 class="text-info">{{ campaign.progress }}%</h4>
-                        <small>Progresso</small>
-                    </div>
-                </div>
+
+<div class="modal-body">
+    <!-- Estatísticas -->
+    <div class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ totalPoints }}</div>
+                <div class="stat-label">Total de Pontos</div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="btn-group-vertical btn-block">
-                <button class="btn btn-info btn-sm" ng-click="toggleAdvancedFilters()">
-                    <i class="glyphicon glyphicon-filter"></i> 
-                    {{ showAdvancedFilters ? 'Ocultar Filtros' : 'Filtros Avançados' }}
-                </button>
-                <button class="btn btn-warning btn-sm" ng-click="toggleInspectionViewer()">
-                    <i class="glyphicon glyphicon-eye-open"></i> 
-                    Visualizar Inspeções
-                </button>
-                <button class="btn btn-danger btn-sm" ng-click="toggleInspectionRemover()">
-                    <i class="glyphicon glyphicon-trash"></i> 
-                    Remover Inspeções
-                </button>
+            <div class="stat-card">
+                <div class="stat-value">{{ campaign.completedPoints }}</div>
+                <div class="stat-label">Completos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ totalPoints - campaign.completedPoints }}</div>
+                <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ campaign.progress }}%</div>
+                <div class="stat-label">Progresso</div>
             </div>
         </div>
     </div>
 
-    <!-- Filtros Avançados -->
-    <div ng-show="showAdvancedFilters" class="panel panel-default" style="margin-top: 15px;">
-        <div class="panel-heading">
-            <h5><i class="glyphicon glyphicon-filter"></i> Filtros Avançados</h5>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>ID do Ponto:</label>
-                        <input type="text" 
-                               class="form-control input-sm" 
-                               ng-model="filters.pointId" 
-                               placeholder="Buscar por ID...">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select class="form-control input-sm" 
-                                ng-model="filters.status">
-                            <option value="">Todos</option>
-                            <option value="completed">Completos</option>
-                            <option value="in_progress">Em Andamento</option>
-                            <option value="not_started">Não Iniciados</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Usuário/Inspetor:</label>
-                        <select class="form-control input-sm" 
-                                ng-model="filters.user">
-                            <option value="">Todos</option>
-                            <option ng-repeat="user in availableUsers" value="{{user}}">{{user}}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Bioma:</label>
-                        <select class="form-control input-sm" 
-                                ng-model="filters.biome">
-                            <option value="">Todos</option>
-                            <option ng-repeat="biome in availableBiomes" value="{{biome}}">{{biome}}</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Estado (UF):</label>
-                        <select class="form-control input-sm" 
-                                ng-model="filters.uf">
-                            <option value="">Todos</option>
-                            <option ng-repeat="uf in availableUfs" value="{{uf}}">{{uf}}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Município:</label>
-                        <select class="form-control input-sm" 
-                                ng-model="filters.county">
-                            <option value="">Todos</option>
-                            <option ng-repeat="county in availableCounties" value="{{county}}">{{county}}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Min. Inspeções:</label>
-                        <input type="number" 
-                               class="form-control input-sm" 
-                               ng-model="filters.minInspections" 
-                               placeholder="0"
-                               min="0">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Max. Inspeções:</label>
-                        <input type="number" 
-                               class="form-control input-sm" 
-                               ng-model="filters.maxInspections" 
-                               placeholder="Sem limite"
-                               min="0">
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <button class="btn btn-default btn-sm" ng-click="clearAllFilters()">
-                        <i class="glyphicon glyphicon-remove"></i> Limpar Filtros
-                    </button>
-                    <button class="btn btn-primary btn-sm" ng-click="applyFilters()" style="margin-left: 5px;">
-                        <i class="glyphicon glyphicon-search"></i> Aplicar Filtros
-                    </button>
-                    <span class="text-muted pull-right">
-                        <small ng-if="hasActiveFilters()">{{ totalPoints }} pontos encontrados com os filtros aplicados</small>
-                        <small ng-if="!hasActiveFilters()">{{ totalPoints }} pontos no total</small>
-                    </span>
-                </div>
-            </div>
+    <!-- Tabs -->
+    <div class="tabs-section">
+        <div class="tab-buttons">
+            <button class="tab-btn" ng-class="{active: activeTab === 'filters'}" ng-click="setActiveTab('filters')">
+                <i class="glyphicon glyphicon-filter"></i> Filtros e Busca
+            </button>
+            <button class="tab-btn" ng-class="{active: activeTab === 'inspectors'}" ng-click="setActiveTab('inspectors')">
+                <i class="glyphicon glyphicon-user"></i> Inspeções por Usuário
+            </button>
+            <button class="tab-btn" ng-class="{active: activeTab === 'remove'}" ng-click="setActiveTab('remove')">
+                <i class="glyphicon glyphicon-trash"></i> Remover Inspeções
+            </button>
         </div>
     </div>
 
-    <!-- Visualizador de Inspeções -->
-    <div ng-show="showInspectionViewer" class="panel panel-info" style="margin-top: 15px;">
-        <div class="panel-heading">
-            <h5><i class="glyphicon glyphicon-eye-open"></i> Visualizador de Inspeções por Inspetor</h5>
-        </div>
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Selecionar Inspetor:</label>
-                        <select class="form-control" 
-                                ng-model="selectedInspector" 
-                                ng-change="loadInspectorDetails()">
-                            <option value="">Escolha um inspetor...</option>
-                            <option ng-repeat="inspector in inspectorsList" value="{{inspector.name}}">
-                                {{inspector.name}} ({{inspector.inspectionCount}} inspeções)
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6" ng-show="selectedInspector">
-                    <div class="well well-sm">
-                        <strong>Estatísticas do Inspetor:</strong><br>
-                        <small>
-                            Total de inspeções: {{ inspectorStats.totalInspections }}<br>
-                            Pontos únicos: {{ inspectorStats.uniquePoints }}<br>
-                            Tempo médio: {{ inspectorStats.averageTime }} segundos
-                        </small>
-                    </div>
-                </div>
+    <!-- Tab Content -->
+    <div class="tab-content" ng-show="activeTab === 'filters'">
+        <h4 style="font-size: 1.25rem; font-weight: 300; margin: 0 0 1.5rem;">Filtros Avançados</h4>
+        
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label">ID do Ponto</label>
+                <input type="text" class="filter-input" ng-model="filters.pointId" placeholder="Ex: P001">
             </div>
-            <div ng-show="selectedInspector && inspectorPoints.length > 0">
-                <table class="table table-striped table-condensed">
-                    <thead>
-                        <tr>
-                            <th>ID Ponto</th>
-                            <th>Lat/Lon</th>
-                            <th>Município</th>
-                            <th>Data Inspeção</th>
-                            <th>Tempo (s)</th>
-                            <th>Classes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr ng-repeat="point in inspectorPoints | limitTo:10">
-                            <td>{{ point._id }}</td>
-                            <td>{{ point.lat | number:4 }}, {{ point.lon | number:4 }}</td>
-                            <td>{{ point.county || '-' }}</td>
-                            <td>{{ point.inspectionDate | date:'dd/MM/yyyy HH:mm' }}</td>
-                            <td>{{ point.inspectionTime || '-' }}</td>
-                            <td>
-                                <span ng-repeat="cls in point.landUseClasses" class="label label-default" style="margin-right: 2px;">
-                                    {{ cls }}
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div ng-show="inspectorPoints.length > 10" class="text-center">
-                    <small class="text-muted">Mostrando apenas os primeiros 10 resultados</small>
-                </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select class="filter-select" ng-model="filters.status">
+                    <option value="">Todos</option>
+                    <option value="completed">Completo</option>
+                    <option value="in-progress">Em andamento</option>
+                    <option value="not-started">Não iniciado</option>
+                </select>
             </div>
-        </div>
-    </div>
-
-    <!-- Removedor de Inspeções -->
-    <div ng-show="showInspectionRemover" class="panel panel-danger" style="margin-top: 15px;">
-        <div class="panel-heading">
-            <h5><i class="glyphicon glyphicon-trash"></i> Remoção Segura de Inspeções</h5>
-        </div>
-        <div class="panel-body">
-            <div class="alert alert-warning">
-                <strong>Atenção:</strong> Esta ferramenta permite remover inspeções indesejadas. 
-                Use com cuidado para evitar perda de dados.
+            
+            <div class="filter-group">
+                <label class="filter-label">Inspetor</label>
+                <select class="filter-select" ng-model="filters.user">
+                    <option value="">Todos</option>
+                    <option ng-repeat="user in availableUsers" value="{{ user }}">{{ user }}</option>
+                </select>
             </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Critério de Remoção:</label>
-                        <select class="form-control" ng-model="removalCriteria.type">
-                            <option value="">Selecione um critério...</option>
-                            <option value="by_user">Por Usuário</option>
-                            <option value="by_point">Por Ponto Específico</option>
-                            <option value="by_time_range">Por Período</option>
-                            <option value="incomplete_only">Apenas Incompletas</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6" ng-show="removalCriteria.type">
-                    <div class="form-group" ng-show="removalCriteria.type === 'by_user'">
-                        <label>Usuário:</label>
-                        <select class="form-control" ng-model="removalCriteria.user">
-                            <option value="">Selecione o usuário...</option>
-                            <option ng-repeat="user in availableUsers" value="{{user}}">{{user}}</option>
-                        </select>
-                    </div>
-                    <div class="form-group" ng-show="removalCriteria.type === 'by_point'">
-                        <label>ID do Ponto:</label>
-                        <input type="text" class="form-control" ng-model="removalCriteria.pointId" placeholder="Digite o ID do ponto">
-                    </div>
-                    <div ng-show="removalCriteria.type === 'by_time_range'">
-                        <label>Data Inicial:</label>
-                        <input type="date" class="form-control" ng-model="removalCriteria.startDate">
-                        <label style="margin-top: 5px;">Data Final:</label>
-                        <input type="date" class="form-control" ng-model="removalCriteria.endDate">
-                    </div>
-                </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Bioma</label>
+                <select class="filter-select" ng-model="filters.biome">
+                    <option value="">Todos</option>
+                    <option ng-repeat="biome in availableBiomes" value="{{ biome }}">{{ biome }}</option>
+                </select>
             </div>
-            <div ng-show="removalCriteria.type" style="margin-top: 15px;">
-                <button class="btn btn-warning" ng-click="previewRemoval()" ng-disabled="!isRemovalCriteriaValid()">
-                    <i class="glyphicon glyphicon-search"></i> Visualizar Impacto
-                </button>
-                <button class="btn btn-danger" ng-click="confirmRemoval()" ng-disabled="!removalPreview.length" style="margin-left: 10px;">
-                    <i class="glyphicon glyphicon-trash"></i> Remover Inspeções
-                </button>
+            
+            <div class="filter-group">
+                <label class="filter-label">Estado (UF)</label>
+                <select class="filter-select" ng-model="filters.uf">
+                    <option value="">Todos</option>
+                    <option ng-repeat="uf in availableUfs" value="{{ uf }}">{{ uf }}</option>
+                </select>
             </div>
-            <div ng-show="removalPreview.length > 0" style="margin-top: 15px;">
-                <div class="alert alert-info">
-                    <strong>Impacto da Remoção:</strong> {{ removalPreview.length }} inspeções serão removidas de {{ removalPreview.pointsAffected }} pontos.
-                </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table class="table table-condensed">
-                        <thead>
-                            <tr>
-                                <th>Ponto</th>
-                                <th>Usuário</th>
-                                <th>Data</th>
-                                <th>Impacto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr ng-repeat="preview in removalPreview | limitTo:20">
-                                <td>{{ preview.pointId }}</td>
-                                <td>{{ preview.user }}</td>
-                                <td>{{ preview.date | date:'dd/MM/yyyy' }}</td>
-                                <td>
-                                    <span class="label" ng-class="preview.impact === 'safe' ? 'label-success' : 'label-warning'">
-                                        {{ preview.impact === 'safe' ? 'Seguro' : 'Atenção' }}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div ng-if="loading" class="text-center">
-        <i class="glyphicon glyphicon-refresh glyphicon-spin"></i> Carregando pontos...
-    </div>
-    
-    <table ng-if="!loading && points.length > 0" class="table table-striped table-condensed">
-        <thead>
-            <tr>
-                <th>
-                    <input type="checkbox" ng-model="selectAll" ng-change="toggleSelectAll()"> ID
-                </th>
-                <th>Lat</th>
-                <th>Lon</th>
-                <th>Bioma</th>
-                <th>UF</th>
-                <th>Município</th>
-                <th>Inspeções</th>
-                <th>Status</th>
-                <th>Usuários</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr ng-repeat="point in points" ng-class="{'warning': point.selected}">
-                <td>
-                    <input type="checkbox" ng-model="point.selected" ng-change="updateSelection()">
-                    {{ point._id }}
-                </td>
-                <td>{{ point.lat | number:6 }}</td>
-                <td>{{ point.lon | number:6 }}</td>
-                <td>{{ point.biome || '-' }}</td>
-                <td>{{ point.uf || '-' }}</td>
-                <td>{{ point.county || '-' }}</td>
-                <td>
-                    <span class="badge" ng-class="getInspectionBadgeClass(getInspectionCount(point), campaign.numInspec)">
-                        {{ getInspectionCount(point) }}
-                    </span>
-                </td>
-                <td>
-                    <span ng-if="getInspectionCount(point) >= campaign.numInspec" class="label label-success">Completo</span>
-                    <span ng-if="getInspectionCount(point) < campaign.numInspec && getInspectionCount(point) > 0" class="label label-warning">Em andamento</span>
-                    <span ng-if="getInspectionCount(point) == 0" class="label label-default">Não iniciado</span>
-                </td>
-                <td>
-                    <div ng-if="getInspectionCount(point) > 0" style="max-width: 150px;">
-                        <span ng-repeat="user in point.userName | limitTo:3" class="label label-info" style="margin-right: 2px; font-size: 10px;">
-                            {{ user | limitTo:8 }}{{ user.length > 8 ? '...' : '' }}
-                        </span>
-                        <span ng-if="getInspectionCount(point) > 3" class="text-muted">
-                            +{{ getInspectionCount(point) - 3 }}
-                        </span>
-                    </div>
-                    <span ng-if="getInspectionCount(point) == 0" class="text-muted">-</span>
-                </td>
-                <td>
-                    <div class="btn-group btn-group-xs">
-                        <button class="btn btn-default" ng-click="viewPointDetails(point)" title="Ver detalhes">
-                            <i class="glyphicon glyphicon-eye-open"></i>
-                        </button>
-                        <button class="btn btn-warning" ng-click="editPointInspections(point)" title="Editar inspeções" ng-disabled="getInspectionCount(point) == 0">
-                            <i class="glyphicon glyphicon-edit"></i>
-                        </button>
-                        <button class="btn btn-danger" ng-click="removePointInspections(point)" title="Remover inspeções" ng-disabled="getInspectionCount(point) == 0">
-                            <i class="glyphicon glyphicon-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <!-- Ações em lote para pontos selecionados -->
-    <div ng-show="selectedPoints.length > 0" class="alert alert-info">
-        <strong>{{ selectedPoints.length }} pontos selecionados:</strong>
-        <div class="btn-group" style="margin-left: 10px;">
-            <button class="btn btn-warning btn-sm" ng-click="bulkEditInspections()">
-                <i class="glyphicon glyphicon-edit"></i> Editar em Lote
-            </button>
-            <button class="btn btn-danger btn-sm" ng-click="bulkRemoveInspections()">
-                <i class="glyphicon glyphicon-trash"></i> Remover em Lote
-            </button>
-            <button class="btn btn-info btn-sm" ng-click="exportSelectedPoints()">
-                <i class="glyphicon glyphicon-download-alt"></i> Exportar
-            </button>
-        </div>
-    </div>
-    
-    <div ng-if="!loading && points.length == 0" class="alert alert-info">
-        <span ng-if="hasActiveFilters()">Nenhum ponto encontrado com os filtros aplicados.</span>
-        <span ng-if="searchId && !hasActiveFilters()">Nenhum ponto encontrado com o ID "{{searchId}}".</span>
-        <span ng-if="!searchId && !hasActiveFilters()">Nenhum ponto encontrado para esta campanha.</span>
-    </div>
-    
-    <!-- Informações de paginação -->
-    <div ng-if="!loading && (totalPoints > 0 || searchId)" class="row" style="margin-top: 15px;">
-        <div class="col-md-6">
-            <p class="text-muted">
-                <span ng-if="!searchId">
-                    Mostrando {{points.length}} de {{totalPoints}} pontos
-                    (Página {{currentPage}} de {{getTotalPages()}})
-                </span>
-                <span ng-if="searchId && points.length > 0">
-                    {{points.length}} resultado(s) encontrado(s) para "{{searchId}}"
-                </span>
-                <span ng-if="hasActiveFilters()" class="label label-warning">Filtrado</span>
-            </p>
-        </div>
-        <div class="col-md-6 text-right">
-            <div class="form-inline">
-                <label>Pontos por página:</label>
-                <select class="form-control input-sm" 
-                        ng-model="pageSize" 
-                        ng-change="changePageSize()"
-                        ng-disabled="searchId"
-                        style="width: 80px; margin-left: 5px;">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
+            
+            <div class="filter-group">
+                <label class="filter-label">Município</label>
+                <select class="filter-select" ng-model="filters.county">
+                    <option value="">Todos</option>
+                    <option ng-repeat="county in availableCounties" value="{{ county }}">{{ county }}</option>
                 </select>
             </div>
         </div>
+        
+        <div class="filter-actions">
+            <div class="table-header">
+                <div style="display: flex; gap: 2rem; align-items: end; flex-wrap: wrap;">
+                    <div class="search-box" style="flex: 1; min-width: 300px;">
+                        <i class="glyphicon glyphicon-search"></i>
+                        <input type="text"
+                               placeholder="Buscar por ID do ponto..."
+                               ng-model="searchId"
+                               ng-change="searchPointById()">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="font-weight: normal; margin: 0; font-size: 1.125rem; white-space: nowrap;">
+                            Itens por página:
+                        </label>
+                        <select ng-model="pageSize" ng-change="changePageSize()" class="items-per-page-select">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-primary" ng-click="applyFilters()">
+                    <i class="glyphicon glyphicon-search"></i> Aplicar Filtros
+                </button>
+                <button class="btn" ng-click="clearFilters()">
+                    <i class="glyphicon glyphicon-remove"></i> Limpar Filtros
+                </button>
+            </div>
+
+            <span class="filter-info" ng-if="filteredCount !== null && filteredCount > 0" style="margin-left: auto; color: #666;">
+                {{ filteredCount }} pontos encontrados
+            </span>
+        </div>
     </div>
-    
-    <!-- Controles de paginação -->
-    <div ng-if="!searchId && getTotalPages() > 1" class="row" style="margin-top: 10px;">
-        <div class="col-lg-12">
-            <nav class="text-center">
-                <ul class="pagination pagination-sm">
-                    <!-- Primeira página -->
-                    <li ng-class="{disabled: currentPage <= 1}">
-                        <a href="" ng-click="goToPage(1); $event.preventDefault()" ng-disabled="currentPage <= 1">
-                            <i class="glyphicon glyphicon-fast-backward"></i>
-                        </a>
-                    </li>
-                    
-                    <!-- Página anterior -->
-                    <li ng-class="{disabled: currentPage <= 1}">
-                        <a href="" ng-click="goToPage(currentPage - 1); $event.preventDefault()" ng-disabled="currentPage <= 1">
-                            <i class="glyphicon glyphicon-chevron-left"></i>
-                        </a>
-                    </li>
-                    
-                    <!-- Páginas numeradas -->
-                    <li ng-repeat="page in getPages()" 
-                        ng-class="{active: page === currentPage}">
-                        <a href="" ng-click="goToPage(page); $event.preventDefault()">{{page}}</a>
-                    </li>
-                    
-                    <!-- Próxima página -->
-                    <li ng-class="{disabled: currentPage >= getTotalPages()}">
-                        <a href="" ng-click="goToPage(currentPage + 1); $event.preventDefault()" ng-disabled="currentPage >= getTotalPages()">
-                            <i class="glyphicon glyphicon-chevron-right"></i>
-                        </a>
-                    </li>
-                    
-                    <!-- Última página -->
-                    <li ng-class="{disabled: currentPage >= getTotalPages()}">
-                        <a href="" ng-click="goToPage(getTotalPages()); $event.preventDefault()" ng-disabled="currentPage >= getTotalPages()">
-                            <i class="glyphicon glyphicon-fast-forward"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+
+    <div class="tab-content" ng-show="activeTab === 'inspectors'">
+        <h4 style="font-size: 1.25rem; font-weight: 300; margin: 0 0 1.5rem;">Visualizar Inspeções por Usuário</h4>
+        
+        <div class="filter-group" style="max-width: 400px; margin-bottom: 2rem;">
+            <label class="filter-label">Selecione o Inspetor</label>
+            <select class="filter-select" ng-model="selectedInspector" ng-change="viewInspectorPoints()">
+                <option value="">Selecione um inspetor...</option>
+                <option ng-repeat="inspector in inspectorsList" value="{{ inspector.name }}">
+                    {{ inspector.name }} ({{ inspector.inspectionCount }} inspeções)
+                </option>
+            </select>
+        </div>
+        
+        <div ng-if="selectedInspector && inspectorStats">
+            <div class="inspector-stats" style="background: #fafafa; padding: 1.5rem; margin-bottom: 2rem;">
+                <h5 style="font-size: 1rem; font-weight: 400; margin: 0 0 1rem;">Estatísticas do Inspetor</h5>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <span style="color: #666;">Total de Inspeções:</span>
+                        <strong style="margin-left: 0.5rem;">{{ inspectorStats.inspectionCount }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #666;">Pontos Únicos:</span>
+                        <strong style="margin-left: 0.5rem;">{{ inspectorStats.uniquePoints }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #666;">Tempo Médio:</span>
+                        <strong style="margin-left: 0.5rem;">{{ inspectorStats.averageTime }}s</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" ng-show="activeTab === 'remove'">
+        <h4 style="font-size: 1.25rem; font-weight: 300; margin: 0 0 1.5rem;">Remover Inspeções</h4>
+        
+        <div class="alert alert-info">
+            <i class="glyphicon glyphicon-info-sign"></i>
+            Esta ação permite remover inspeções específicas. As remoções são permanentes e não podem ser desfeitas.
+        </div>
+        
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label">Tipo de Remoção</label>
+                <select class="filter-select" ng-model="removalCriteria.type">
+                    <option value="">Selecione o tipo...</option>
+                    <option value="user">Por Usuário</option>
+                    <option value="point">Por Ponto</option>
+                    <option value="date">Por Data</option>
+                </select>
+            </div>
+            
+            <div class="filter-group" ng-if="removalCriteria.type === 'user'">
+                <label class="filter-label">Usuário</label>
+                <select class="filter-select" ng-model="removalCriteria.user">
+                    <option value="">Selecione o usuário...</option>
+                    <option ng-repeat="user in availableUsers" value="{{ user }}">{{ user }}</option>
+                </select>
+            </div>
+            
+            <div class="filter-group" ng-if="removalCriteria.type === 'point'">
+                <label class="filter-label">ID do Ponto</label>
+                <input type="text" class="filter-input" ng-model="removalCriteria.pointId" placeholder="Ex: P001">
+            </div>
+        </div>
+    </div>
+    <!-- Tabela de Pontos -->
+    <div class="points-table-container">
+        <!-- Loading -->
+        <div ng-if="loading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Carregando pontos...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div ng-if="!loading && points.length === 0" class="empty-state">
+            <i class="glyphicon glyphicon-map-marker"></i>
+            <p>Nenhum ponto encontrado</p>
+        </div>
+
+        <!-- Tabela -->
+        <div ng-if="!loading && points.length > 0">
+            <table class="points-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">
+                            <input type="checkbox" ng-model="selectAll" ng-change="toggleSelectAll()">
+                        </th>
+                        <th>ID do Ponto</th>
+                        <th>Coordenadas</th>
+                        <th>Localização</th>
+                        <th>Status</th>
+                        <th>Progresso</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="point in getDisplayPoints()">
+                        <td>
+                            <input type="checkbox" ng-model="point.selected" ng-change="updateSelection()">
+                        </td>
+                        <td>{{ point._id }}</td>
+                        <td>
+                            <div style="font-family: monospace; font-size: 1.125rem; line-height: 1.4;">
+                                <div>{{ point.lat | number:6 }}</div>
+                                <div>{{ point.lon | number:6 }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 1.125rem; line-height: 1.4;">{{ point.county || 'N/A' }} - {{ point.uf || 'N/A' }}</div>
+                            <div style="font-size: 1rem; color: #666;">{{ point.biome || 'N/A' }}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge {{ point._statusClass }}">
+                                {{ point._statusText }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="progress-wrapper">
+                                <div class="progress-bar-mini">
+                                    <div class="progress-fill" style="width: {{ point._progress }}%"></div>
+                                </div>
+                                <span class="progress-text">{{ point._inspectionCount }}/{{ campaign.numInspec }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn-action"
+                                        ng-click="viewPointDetails(point)"
+                                        title="Ver detalhes">
+                                    <i class="glyphicon glyphicon-eye-open"></i>
+                                </button>
+                                <button class="btn-action"
+                                        ng-click="editPoint(point)"
+                                        title="Editar inspeções">
+                                    <i class="glyphicon glyphicon-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Footer com paginação -->
+
         </div>
     </div>
 </div>
+
 <div class="modal-footer">
-    <button class="btn btn-default" ng-click="close()">Fechar</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="pagination-info">
+                    <span style="font-size: 1.125rem; color: #666;">
+                        Mostrando {{ ((currentPage - 1) * pageSize) + 1 }} -
+                        {{ Math.min(currentPage * pageSize, totalPoints) }}
+                        de {{ totalPoints }} pontos
+                    </span>
+            </div>
+
+            <div class="pagination-controls">
+                <button class="page-btn"
+                        ng-disabled="currentPage === 1"
+                        ng-click="previousPage()">
+                    <i class="glyphicon glyphicon-chevron-left"></i>
+                </button>
+
+                <button ng-repeat="page in getPageNumbers()"
+                        class="page-btn"
+                        ng-class="{active: page === currentPage}"
+                        ng-click="goToPage(page)">
+                    {{ page }}
+                </button>
+
+                <button class="page-btn"
+                        ng-disabled="currentPage === getTotalPages()"
+                        ng-click="nextPage()">
+                    <i class="glyphicon glyphicon-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        <div ng-if="selectedPoints.length > 0">
+            <span style="color: #666; margin-right: 1rem;">{{ selectedPoints.length }} pontos selecionados</span>
+            <button class="btn btn-success" ng-click="downloadSelected()">
+                <i class="glyphicon glyphicon-download"></i> Baixar Selecionados
+            </button>
+            <button class="btn btn-warning" ng-click="bulkEditSelected()">
+                <i class="glyphicon glyphicon-edit"></i> Editar em Massa
+            </button>
+            <button class="btn btn-danger" ng-click="bulkRemoveSelected()">
+                <i class="glyphicon glyphicon-trash"></i> Remover Selecionados
+            </button>
+        </div>
+        <div style="margin-left: 15px">
+            <button class="btn" ng-click="$close()">Fechar</button>
+        </div>
+    </div>
 </div>

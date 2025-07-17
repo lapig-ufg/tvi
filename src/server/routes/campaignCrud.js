@@ -30,7 +30,7 @@ module.exports = function (app) {
     
     // Rotas para CRUD de campanhas - protegidas por autenticação de super-admin
     app.get('/api/campaigns', requireSuperAdmin, campaignCrud.list);
-    app.get('/api/campaigns/:id', requireSuperAdmin, campaignCrud.get);
+    app.get('/api/campaigns/:id', campaignCrud.get); // Acesso público para leitura
     app.get('/api/campaigns/:id/details', requireSuperAdmin, campaignCrud.getDetails);
     app.post('/api/campaigns', requireSuperAdmin, campaignCrud.create);
     app.put('/api/campaigns/:id', requireSuperAdmin, campaignCrud.update);

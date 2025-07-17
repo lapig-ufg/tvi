@@ -1,322 +1,1012 @@
-<div class="container-fluid" style="margin-top: 60px;">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="clearfix">
-                <h2 class="pull-left">
-                    <i class="glyphicon glyphicon-tasks"></i> Gerenciamento de Campanhas
-                </h2>
-                <div class="pull-right" style="margin-top: 15px;">
-                    <span class="text-muted">Logado como: <strong>{{user.username}}</strong></span>
-                    <button class="btn btn-success" ng-click="createCampaign()" style="margin-left: 15px;">
-                        <i class="glyphicon glyphicon-plus"></i> Nova Campanha
-                    </button>
-                    <a href="#/admin/cache" class="btn btn-info" style="margin-left: 5px;">
-                        <i class="glyphicon glyphicon-hdd"></i> Cache Manager
-                    </a>
-                    <button class="btn btn-default" ng-click="logout()" style="margin-left: 5px;">
-                        <i class="glyphicon glyphicon-log-out"></i> Sair
+<!-- Admin Campaigns - Interface Moderna -->
+<div class="admin-campaigns-container" ng-controller="AdminCampaignController">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="back-btn" ng-click="navigateBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="header-title">Gerenciamento de Campanhas</h1>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn primary" ng-click="createCampaign()">
+                    <i class="fas fa-plus"></i>
+                    Nova Campanha
+                </button>
+                <div class="header-user">
+                    <span class="user-info">
+                        <i class="fas fa-user-shield"></i>
+                        {{ user.username }}
+                    </span>
+                    <button class="logout-btn" ng-click="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
                     </button>
                 </div>
             </div>
-            <hr>
         </div>
     </div>
-    
-    <div class="row" ng-show="loading">
-        <div class="col-lg-12 text-center">
-            <h3><i class="fa fa-spinner fa-spin"></i> Carregando campanhas...</h3>
+
+    <!-- Quick Stats -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-value">{{ stats.total || 0 }}</span>
+            <span class="stat-label">Total de Campanhas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">{{ stats.active || 0 }}</span>
+            <span class="stat-label">Campanhas Ativas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">{{ stats.completed || 0 }}</span>
+            <span class="stat-label">Campanhas Completas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">{{ stats.totalPoints || 0 }}</span>
+            <span class="stat-label">Total de Pontos</span>
         </div>
     </div>
-    
-    <div class="row" ng-hide="loading">
-        <div class="col-lg-12">
-            <!-- Filtros Avançados -->
-            <div class="panel panel-default" style="margin-bottom: 20px;">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                        <a data-toggle="collapse"  aria-expanded="false" ng-click="toggleFilters()">
-                            <i class="glyphicon" ng-class="{'glyphicon-chevron-down': !showFilters, 'glyphicon-chevron-up': showFilters}"></i>
-                            Filtros Avançados
-                            <span class="label label-info" ng-show="hasActiveFilters()">{{getActiveFiltersCount()}} ativo(s)</span>
-                        </a>
-                    </h4>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filters-header" ng-click="toggleFilters()">
+            <h3 class="filters-title">
+                <i class="fas" ng-class="{'fa-chevron-down': !showFilters, 'fa-chevron-up': showFilters}"></i>
+                Filtros Avançados
+            </h3>
+            <span class="filter-badge" ng-show="hasActiveFilters()">
+                {{ getActiveFiltersCount() }} filtro(s) ativo(s)
+            </span>
+        </div>
+        
+        <div class="filters-content" ng-show="showFilters">
+            <div class="filters-grid">
+                <!-- ID da Campanha -->
+                <div class="filter-group">
+                    <label class="filter-label">ID da Campanha</label>
+                    <input type="text" class="filter-input" 
+                           ng-model="filters.campaignId" 
+                           placeholder="Digite o ID">
                 </div>
-                <div id="advancedFilters" class="panel-collapse collapse" ng-class="{in: showFilters}">
-                    <div class="panel-body">
-                        <div class="row">
-                            <!-- Filtro por ID/Nome -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>ID da Campanha:</label>
-                                    <input type="text" class="form-control input-sm" 
-                                           ng-model="filters.campaignId" 
-                                           placeholder="Digite ID da campanha">
-                                </div>
-                            </div>
-                            
-                            <!-- Filtro por Período -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Ano Inicial:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.initialYear">
-                                        <option value="">Todos</option>
-                                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Ano Final:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.finalYear">
-                                        <option value="">Todos</option>
-                                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Filtro por Número de Inspeções -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Nº Inspeções:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.numInspec">
-                                        <option value="">Todos</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <!-- Filtro por Status -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Status do Progresso:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.progressStatus">
-                                        <option value="">Todos</option>
-                                        <option value="empty">Sem pontos (0%)</option>
-                                        <option value="started">Iniciada (1-99%)</option>
-                                        <option value="completed">Completa (100%)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Filtro por Tipo de Imagem -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Tipo de Imagem:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.imageType">
-                                        <option value="">Todos</option>
-                                        <option value="landsat">Landsat</option>
-                                        <option value="sentinel">Sentinel</option>
-                                        <option value="planet">Planet</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Filtro por Configurações -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Configurações:</label>
-                                    <div class="checkbox-inline">
-                                        <label>
-                                            <input type="checkbox" ng-model="filters.showTimeseries">
-                                            Timeseries
-                                        </label>
-                                    </div>
-                                    <div class="checkbox-inline">
-                                        <label>
-                                            <input type="checkbox" ng-model="filters.showPointInfo">
-                                            Point Info
-                                        </label>
-                                    </div>
-                                    <div class="checkbox-inline">
-                                        <label>
-                                            <input type="checkbox" ng-model="filters.useDynamicMaps">
-                                            Dynamic Maps
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Ordenação -->
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Ordenar por:</label>
-                                    <select class="form-control input-sm" 
-                                            ng-model="filters.sortBy">
-                                        <option value="_id">Data de Criação (Mais recente)</option>
-                                        <option value="campaignId">ID da Campanha</option>
-                                        <option value="initialYear">Ano Inicial</option>
-                                        <option value="finalYear">Ano Final</option>
-                                        <option value="totalPoints">Número de Pontos</option>
-                                        <option value="progress">Progresso</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12 text-right">
-                                <button class="btn btn-default btn-sm" ng-click="clearFilters()">
-                                    <i class="glyphicon glyphicon-remove"></i> Limpar Filtros
-                                </button>
-                                <button class="btn btn-primary btn-sm" ng-click="applyFilters()" style="margin-left: 5px;">
-                                    <i class="glyphicon glyphicon-search"></i> Aplicar Filtros
-                                </button>
-                            </div>
-                        </div>
+
+                <!-- Período -->
+                <div class="filter-group">
+                    <label class="filter-label">Ano Inicial</label>
+                    <select class="filter-select" ng-model="filters.initialYear">
+                        <option value="">Todos</option>
+                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Ano Final</label>
+                    <select class="filter-select" ng-model="filters.finalYear">
+                        <option value="">Todos</option>
+                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
+                    </select>
+                </div>
+
+                <!-- Número de Inspeções -->
+                <div class="filter-group">
+                    <label class="filter-label">Nº de Inspeções</label>
+                    <select class="filter-select" ng-model="filters.numInspec">
+                        <option value="">Todos</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="filter-group">
+                    <label class="filter-label">Status do Progresso</label>
+                    <select class="filter-select" ng-model="filters.progressStatus">
+                        <option value="">Todos</option>
+                        <option value="empty">Sem pontos (0%)</option>
+                        <option value="started">Iniciada (1-99%)</option>
+                        <option value="completed">Completa (100%)</option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Imagem -->
+                <div class="filter-group">
+                    <label class="filter-label">Tipo de Imagem</label>
+                    <select class="filter-select" ng-model="filters.imageType">
+                        <option value="">Todos</option>
+                        <option value="landsat">Landsat</option>
+                        <option value="sentinel">Sentinel</option>
+                        <option value="planet">Planet</option>
+                    </select>
+                </div>
+
+                <!-- Configurações -->
+                <div class="filter-group">
+                    <label class="filter-label">Configurações</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" ng-model="filters.showTimeseries">
+                            <span>Timeseries</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" ng-model="filters.showPointInfo">
+                            <span>Point Info</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" ng-model="filters.useDynamicMaps">
+                            <span>Dynamic Maps</span>
+                        </label>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Informações de paginação -->
-            <div class="row" style="margin-bottom: 15px;">
-                <div class="col-sm-6">
-                    <p class="text-muted">
-                        Mostrando {{campaigns.length}} de {{pagination.totalCampaigns}} campanhas
-                        (Página {{pagination.currentPage}} de {{pagination.totalPages}})
-                        <span ng-show="hasActiveFilters()" class="label label-warning">Filtrado</span>
-                    </p>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <div class="form-inline">
-                        <label>Itens por página:</label>
-                        <select class="form-control input-sm" ng-model="pagination.limit" 
-                                ng-change="loadCampaigns(1)" style="width: 80px; margin-left: 5px;">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
+
+                <!-- Ordenação -->
+                <div class="filter-group">
+                    <label class="filter-label">Ordenar por</label>
+                    <select class="filter-select" ng-model="filters.sortBy">
+                        <option value="_id">Data de Criação</option>
+                        <option value="campaignId">ID da Campanha</option>
+                        <option value="initialYear">Ano Inicial</option>
+                        <option value="finalYear">Ano Final</option>
+                        <option value="totalPoints">Número de Pontos</option>
+                        <option value="progress">Progresso</option>
+                    </select>
                 </div>
             </div>
-            
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Período</th>
-                            <th>Inspeções</th>
-                            <th>Pontos</th>
-                            <th>Progresso</th>
-                            <th>Configurações</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr ng-repeat="campaign in campaigns">
-                            <td>{{campaign._id}}</td>
-                            <td>{{campaign.initialYear}} - {{campaign.finalYear}}</td>
-                            <td>{{campaign.numInspec}}</td>
-                            <td>{{campaign.totalPoints || 0}}</td>
-                            <td>
-                                <div class="progress" style="margin-bottom: 0;">
-                                    <div class="progress-bar" 
-                                         ng-class="getProgressClass(campaign.progress)"
-                                         style="width: {{campaign.progress || 0}}%">
-                                        {{campaign.progress || 0}}%
-                                    </div>
+
+            <div class="filter-actions">
+                <button class="filter-btn clear" ng-click="clearFilters()">
+                    <i class="fas fa-times"></i>
+                    Limpar Filtros
+                </button>
+                <button class="filter-btn apply" ng-click="applyFilters()">
+                    <i class="fas fa-check"></i>
+                    Aplicar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" ng-show="loading">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p class="loading-text">Carregando campanhas...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="campaigns-content" ng-hide="loading">
+        <!-- Table Header Info -->
+        <div class="table-info">
+            <div class="info-text">
+                Mostrando {{ campaigns.length }} de {{ pagination.totalCampaigns }} campanhas
+                <span class="page-info">(Página {{ pagination.currentPage }} de {{ pagination.totalPages }})</span>
+                <span class="filter-indicator" ng-show="hasActiveFilters()">
+                    <i class="fas fa-filter"></i> Filtrado
+                </span>
+            </div>
+            <div class="items-per-page">
+                <label>Itens por página:</label>
+                <select class="page-select" ng-model="pagination.limit" ng-change="loadCampaigns(1)">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Campaigns Table -->
+        <div class="table-container">
+            <table class="campaigns-table">
+                <thead>
+                    <tr>
+                        <th>ID da Campanha</th>
+                        <th>Período</th>
+                        <th>Inspeções</th>
+                        <th>Pontos</th>
+                        <th>Progresso</th>
+                        <th>Configurações</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="campaign in campaigns" class="campaign-row">
+                        <td class="campaign-id">{{ campaign._id }}</td>
+                        <td class="campaign-period">{{ campaign.initialYear }} - {{ campaign.finalYear }}</td>
+                        <td class="campaign-inspections">{{ campaign.numInspec }}</td>
+                        <td class="campaign-points">{{ campaign.totalPoints || 0 }}</td>
+                        <td class="campaign-progress">
+                            <div class="progress-container">
+                                <div class="progress-bar" ng-style="{'width': (campaign.progress || 0) + '%'}"
+                                     ng-class="getProgressClass(campaign.progress)">
+                                    <span class="progress-text">{{ campaign.progress || 0 }}%</span>
                                 </div>
-                            </td>
-                            <td>
-                                <span class="label label-info" ng-show="campaign.showTimeseries">Timeseries</span>
-                                <span class="label label-info" ng-show="campaign.showPointInfo">Point Info</span>
-                                <span class="label label-warning" ng-show="campaign.visParam">{{campaign.visParam}}</span>
-                                <span class="label label-success" ng-show="campaign.useDynamicMaps">Dynamic Maps</span>
-                                <span class="label label-primary">{{campaign.imageType || 'landsat'}}</span>
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-success" ng-click="manageCampaign(campaign)" 
-                                            title="Gerenciar campanha">
-                                        <i class="glyphicon glyphicon-cog"></i>
-                                    </button>
-                                    <button class="btn btn-primary" ng-click="editCampaign(campaign)" 
-                                            title="Editar campanha">
-                                        <i class="glyphicon glyphicon-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-info" ng-click="uploadGeoJSON(campaign)"
-                                            title="Upload GeoJSON">
-                                        <i class="glyphicon glyphicon-upload"></i>
-                                    </button>
-                                    <button class="btn btn-default" ng-click="viewPoints(campaign)"
-                                            title="Ver pontos" ng-disabled="!campaign.totalPoints">
-                                        <i class="glyphicon glyphicon-map-marker"></i>
-                                    </button>
-                                    <button class="btn btn-warning" ng-click="deletePoints(campaign)"
-                                            title="Deletar pontos" ng-disabled="!campaign.totalPoints">
-                                        <i class="glyphicon glyphicon-trash"></i>
-                                    </button>
-                                    <button class="btn btn-danger" ng-click="deleteCampaign(campaign)"
-                                            title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
-                                        <i class="glyphicon glyphicon-remove"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr ng-show="campaigns.length === 0">
-                            <td colspan="7" class="text-center text-muted">
-                                <em>Nenhuma campanha encontrada</em>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Controles de paginação -->
-            <div class="row" ng-show="pagination.totalPages > 1">
-                <div class="col-lg-12">
-                    <nav class="text-center">
-                        <ul class="pagination">
-                            <!-- Primeira página -->
-                            <li ng-class="{disabled: !pagination.hasPrev}">
-                                <a href="" ng-click="goToPage(1); $event.preventDefault()" ng-disabled="!pagination.hasPrev">
-                                    <i class="glyphicon glyphicon-fast-backward"></i>
-                                </a>
-                            </li>
-                            
-                            <!-- Página anterior -->
-                            <li ng-class="{disabled: !pagination.hasPrev}">
-                                <a href="" ng-click="prevPage(); $event.preventDefault()" ng-disabled="!pagination.hasPrev">
-                                    <i class="glyphicon glyphicon-chevron-left"></i>
-                                </a>
-                            </li>
-                            
-                            <!-- Páginas numeradas -->
-                            <li ng-repeat="page in getPages()" 
-                                ng-class="{active: page === pagination.currentPage}">
-                                <a href="" ng-click="goToPage(page); $event.preventDefault()">{{page}}</a>
-                            </li>
-                            
-                            <!-- Próxima página -->
-                            <li ng-class="{disabled: !pagination.hasNext}">
-                                <a href="" ng-click="nextPage(); $event.preventDefault()" ng-disabled="!pagination.hasNext">
-                                    <i class="glyphicon glyphicon-chevron-right"></i>
-                                </a>
-                            </li>
-                            
-                            <!-- Última página -->
-                            <li ng-class="{disabled: !pagination.hasNext}">
-                                <a href="" ng-click="goToPage(pagination.totalPages); $event.preventDefault()" ng-disabled="!pagination.hasNext">
-                                    <i class="glyphicon glyphicon-fast-forward"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                            </div>
+                        </td>
+                        <td class="campaign-configs">
+                            <span class="config-badge timeseries" ng-show="campaign.showTimeseries">
+                                <i class="fas fa-chart-line"></i> Timeseries
+                            </span>
+                            <span class="config-badge info" ng-show="campaign.showPointInfo">
+                                <i class="fas fa-info-circle"></i> Point Info
+                            </span>
+                            <span class="config-badge dynamic" ng-show="campaign.useDynamicMaps">
+                                <i class="fas fa-map"></i> Dynamic
+                            </span>
+                            <span class="config-badge image-type">
+                                <i class="fas fa-satellite"></i> {{ campaign.imageType || 'landsat' }}
+                            </span>
+                        </td>
+                        <td class="campaign-actions">
+                            <div class="action-buttons">
+                                <button class="action-btn manage" ng-click="manageCampaign(campaign)" 
+                                        title="Gerenciar campanha">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <button class="action-btn edit" ng-click="editCampaign(campaign)" 
+                                        title="Editar campanha">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn upload" ng-click="uploadGeoJSON(campaign)"
+                                        title="Upload GeoJSON">
+                                    <i class="fas fa-upload"></i>
+                                </button>
+                                <button class="action-btn view" ng-click="viewPoints(campaign)"
+                                        title="Ver pontos" ng-disabled="!campaign.totalPoints">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </button>
+                                <button class="action-btn delete-points" ng-click="deletePoints(campaign)"
+                                        title="Deletar pontos" ng-disabled="!campaign.totalPoints">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <button class="action-btn delete" ng-click="deleteCampaign(campaign)"
+                                        title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr ng-show="campaigns.length === 0">
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>Nenhuma campanha encontrada</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container" ng-show="pagination.totalPages > 1">
+            <div class="pagination">
+                <button class="page-btn" ng-click="goToPage(1)" ng-disabled="!pagination.hasPrev">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="page-btn" ng-click="prevPage()" ng-disabled="!pagination.hasPrev">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                
+                <button ng-repeat="page in getPages()" 
+                        class="page-btn" 
+                        ng-class="{active: page === pagination.currentPage}"
+                        ng-click="goToPage(page)">
+                    {{ page }}
+                </button>
+                
+                <button class="page-btn" ng-click="nextPage()" ng-disabled="!pagination.hasNext">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="page-btn" ng-click="goToPage(pagination.totalPages)" ng-disabled="!pagination.hasNext">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Container Principal */
+.admin-campaigns-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.admin-header {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #4a5568;
+}
+
+.back-btn:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.header-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.action-btn {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: #3182ce;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid #e2e8f0;
+}
+
+.user-info {
+    color: #4a5568;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logout-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #c53030;
+    transform: translateY(-1px);
+}
+
+/* Stats Bar */
+.stats-bar {
+    background: white;
+    margin: 1.5rem auto;
+    max-width: 1400px;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.stat-label {
+    font-size: 1.25rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Filters Section */
+.filters-section {
+    background: white;
+    margin: 0 auto 1.5rem;
+    max-width: 1400px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.filters-header {
+    padding: 1.25rem 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.filters-header:hover {
+    background: #f7fafc;
+}
+
+.filters-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.filter-badge {
+    background: #4299e1;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.filters-content {
+    padding: 0 2rem 2rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.filter-input,
+.filter-select {
+    padding: 0.625rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    transition: all 0.2s;
+    background: white;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 1.25rem;
+    color: #4a5568;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.filter-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 1.25rem;
+}
+
+.filter-btn.clear {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.filter-btn.clear:hover {
+    background: #cbd5e0;
+}
+
+.filter-btn.apply {
+    background: #4299e1;
+    color: white;
+}
+
+.filter-btn.apply:hover {
+    background: #3182ce;
+}
+
+/* Loading State */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    font-size: 3rem;
+    color: #4299e1;
+}
+
+.loading-text {
+    color: #718096;
+    font-size: 1.125rem;
+}
+
+/* Main Content */
+.campaigns-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Table Info */
+.table-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.info-text {
+    color: #4a5568;
+    font-size: 1.25rem;
+}
+
+.page-info {
+    color: #718096;
+    margin-left: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.filter-indicator {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    margin-left: 0.75rem;
+}
+
+.items-per-page {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    color: #4a5568;
+}
+
+.page-select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1.25rem;
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.campaigns-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.campaigns-table thead {
+    background: #f7fafc;
+}
+
+.campaigns-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.campaign-row {
+    transition: background 0.2s;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.campaign-row:hover {
+    background: #f7fafc;
+}
+
+.campaigns-table td {
+    padding: 1rem 1.5rem;
+    color: #2d3748;
+    font-size: 1.25rem;
+}
+
+.campaign-id {
+    font-weight: 600;
+    color: #4299e1;
+    font-size: 1.5rem;
+}
+
+.campaign-period,
+.campaign-inspections,
+.campaign-points {
+    font-size: 1.25rem;
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #48bb78;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-bar.warning {
+    background: #ed8936;
+}
+
+.progress-bar.danger {
+    background: #e53e3e;
+}
+
+.progress-text {
+    position: absolute;
+    top: -24px;
+    right: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+/* Config Badges */
+.config-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.config-badge.timeseries {
+    background: #e6fffa;
+    color: #319795;
+}
+
+.config-badge.info {
+    background: #ebf8ff;
+    color: #3182ce;
+}
+
+.config-badge.dynamic {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.config-badge.image-type {
+    background: #faf5ff;
+    color: #805ad5;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+    transform: none;
+}
+
+.action-btn.manage {
+    background: #48bb78;
+    color: white;
+}
+
+.action-btn.manage:hover {
+    background: #38a169;
+}
+
+.action-btn.edit {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.edit:hover {
+    background: #3182ce;
+}
+
+.action-btn.upload {
+    background: #667eea;
+    color: white;
+}
+
+.action-btn.upload:hover {
+    background: #5a67d8;
+}
+
+.action-btn.view {
+    background: #38b2ac;
+    color: white;
+}
+
+.action-btn.view:hover {
+    background: #319795;
+}
+
+.action-btn.delete-points {
+    background: #ed8936;
+    color: white;
+}
+
+.action-btn.delete-points:hover {
+    background: #dd6b20;
+}
+
+.action-btn.delete {
+    background: #e53e3e;
+    color: white;
+}
+
+.action-btn.delete:hover {
+    background: #c53030;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem !important;
+    color: #a0aec0;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    font-size: 1.125rem;
+    margin: 0;
+}
+
+/* Pagination */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.page-btn {
+    min-width: 44px;
+    height: 44px;
+    padding: 0 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #4a5568;
+    font-weight: 500;
+    font-size: 1.25rem;
+}
+
+.page-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-btn:disabled:hover {
+    background: white;
+    border-color: #e2e8f0;
+}
+
+.page-btn.active {
+    background: #4299e1;
+    color: white;
+    border-color: #4299e1;
+}
+
+.page-btn.active:hover {
+    background: #3182ce;
+    border-color: #3182ce;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .header-left,
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions {
+        flex-wrap: wrap;
+    }
+    
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .campaigns-table {
+        min-width: 800px;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
+    }
+}
+</style>

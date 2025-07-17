@@ -3,11 +3,13 @@ const path = require('path');
 const async = require('async');
 const exec = require('child_process').exec;
 const AdmZip = require('adm-zip');
+// Logger será acessado via app
 
 module.exports = function(app) {
     const config = app.config;
     const campaignCollection = app.repository.collections.campaign;
     const pointsCollection = app.repository.collections.points;
+    const logger = app.services.logger;
     
     // Try to load PropertyAnalyzer with error handling
     let PropertyAnalyzer;
@@ -41,7 +43,17 @@ module.exports = function(app) {
             const { username, password } = req.body;
             
             if (!username || !password) {
-                return res.status(400).json({ error: 'Username and password are required' });
+                const errorCode = await logger.warn('Admin login attempted without credentials', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'adminLogin',
+                    metadata: { missingFields: { username: !username, password: !password } }
+                });
+                
+                return res.status(400).json({ 
+                    error: 'Username and password are required',
+                    errorCode
+                });
             }
             
             // Verificar se o usuário existe na coleção users
@@ -52,12 +64,32 @@ module.exports = function(app) {
             });
             
             if (!user) {
-                return res.status(401).json({ error: 'Invalid credentials' });
+                const errorCode = await logger.warn('Admin login failed - user not found', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'adminLogin',
+                    metadata: { username: username }
+                });
+                
+                return res.status(401).json({ 
+                    error: 'Invalid credentials',
+                    errorCode
+                });
             }
             
             // Verificação simples de senha (em produção usar hash)
             if (user.password !== password) {
-                return res.status(401).json({ error: 'Invalid credentials' });
+                const errorCode = await logger.warn('Admin login failed - invalid password', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'adminLogin',
+                    metadata: { username: username }
+                });
+                
+                return res.status(401).json({ 
+                    error: 'Invalid credentials',
+                    errorCode
+                });
             }
             
             // Criar sessão separada para admin
@@ -69,6 +101,13 @@ module.exports = function(app) {
                 username: user.username
             };
             
+            await logger.info('Admin login successful', {
+                req,
+                module: 'campaignCrud',
+                function: 'adminLogin',
+                metadata: { username: username, userId: user._id }
+            });
+            
             res.json({ 
                 success: true, 
                 user: { 
@@ -77,45 +116,115 @@ module.exports = function(app) {
                 } 
             });
         } catch (error) {
-            console.error('Error in admin login:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    };
-
-    CampaignCrud.adminLogout = (req, res) => {
-        if (req.session && req.session.admin) {
-            delete req.session.admin;
-        }
-        // Garantir que a sessão seja salva sem destruir outras partes
-        req.session.save((err) => {
-            if (err) {
-                console.error('Error saving session after admin logout:', err);
-            }
-            res.json({ success: true });
-        });
-    };
-
-    CampaignCrud.checkAdminAuth = (req, res) => {
-        console.log('[AUTH CHECK ENDPOINT]', {
-            hasSession: !!req.session,
-            sessionId: req.sessionID,
-            adminData: req.session && req.session.admin,
-            cookies: req.cookies
-        });
-        
-        if (req.session && req.session.admin && req.session.admin.superAdmin) {
-            res.json({ 
-                authenticated: true, 
-                user: req.session.admin.superAdmin 
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'adminLogin'
             });
-        } else {
-            res.json({ 
-                authenticated: false,
-                debug: {
-                    hasSession: !!req.session,
-                    hasAdmin: !!(req.session && req.session.admin),
-                    hasSuperAdmin: !!(req.session && req.session.admin && req.session.admin.superAdmin)
+            
+            res.status(500).json({ 
+                error: 'Internal server error',
+                errorCode
+            });
+        }
+    };
+
+    CampaignCrud.adminLogout = async (req, res) => {
+        try {
+            const userId = req.session && req.session.admin && req.session.admin.superAdmin && req.session.admin.superAdmin.id;
+            
+            if (req.session && req.session.admin) {
+                delete req.session.admin;
+            }
+            
+            // Garantir que a sessão seja salva sem destruir outras partes
+            req.session.save(async (err) => {
+                if (err) {
+                    const errorCode = await logger.logError(err, req, {
+                        module: 'campaignCrud',
+                        function: 'adminLogout'
+                    });
+                    
+                    return res.status(500).json({ 
+                        error: 'Error saving session after logout',
+                        errorCode
+                    });
                 }
+                
+                await logger.info('Admin logout successful', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'adminLogout',
+                    metadata: { userId }
+                });
+                
+                res.json({ success: true });
+            });
+        } catch (error) {
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'adminLogout'
+            });
+            
+            res.status(500).json({ 
+                error: 'Internal server error',
+                errorCode
+            });
+        }
+    };
+
+    CampaignCrud.checkAdminAuth = async (req, res) => {
+        try {
+            const authData = {
+                hasSession: !!req.session,
+                sessionId: req.sessionID,
+                adminData: req.session && req.session.admin,
+                cookies: req.cookies
+            };
+            
+            if (req.session && req.session.admin && req.session.admin.superAdmin) {
+                await logger.debug('Admin auth check - authenticated', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'checkAdminAuth',
+                    metadata: {
+                        userId: req.session.admin.superAdmin.id,
+                        sessionId: req.sessionID
+                    }
+                });
+                
+                res.json({ 
+                    authenticated: true, 
+                    user: req.session.admin.superAdmin 
+                });
+            } else {
+                await logger.warn('Admin auth check - not authenticated', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'checkAdminAuth',
+                    metadata: {
+                        authData,
+                        sessionId: req.sessionID
+                    }
+                });
+                
+                res.json({ 
+                    authenticated: false,
+                    debug: {
+                        hasSession: !!req.session,
+                        hasAdmin: !!(req.session && req.session.admin),
+                        hasSuperAdmin: !!(req.session && req.session.admin && req.session.admin.superAdmin)
+                    }
+                });
+            }
+        } catch (error) {
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'checkAdminAuth'
+            });
+            
+            res.status(500).json({ 
+                error: 'Internal server error',
+                errorCode
             });
         }
     };
@@ -123,6 +232,18 @@ module.exports = function(app) {
     // Listar todas as campanhas com paginação, filtros e ordenação
     CampaignCrud.list = async (req, res) => {
         try {
+            const startTime = Date.now();
+            
+            await logger.info('Campaign list requested', {
+                req,
+                module: 'campaignCrud',
+                function: 'list',
+                metadata: {
+                    page: req.query.page || 1,
+                    limit: req.query.limit || 10,
+                    filters: req.query
+                }
+            });
             // Parâmetros de paginação
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
@@ -309,6 +430,21 @@ module.exports = function(app) {
                 }
             }
             
+            const duration = Date.now() - startTime;
+            
+            await logger.info('Campaign list completed', {
+                req,
+                module: 'campaignCrud',
+                function: 'list',
+                metadata: {
+                    duration,
+                    totalCampaigns,
+                    returnedCampaigns: campaigns.length,
+                    page,
+                    limit
+                }
+            });
+            
             // Resposta paginada
             res.json({
                 campaigns,
@@ -322,8 +458,15 @@ module.exports = function(app) {
                 }
             });
         } catch (error) {
-            console.error('Error listing campaigns:', error);
-            res.status(500).json({ error: 'Failed to list campaigns' });
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'list'
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to list campaigns',
+                errorCode
+            });
         }
     };
 
@@ -331,10 +474,28 @@ module.exports = function(app) {
     CampaignCrud.get = async (req, res) => {
         try {
             const campaignId = req.params.id;
+            
+            await logger.info('Campaign get requested', {
+                req,
+                module: 'campaignCrud',
+                function: 'get',
+                metadata: { campaignId }
+            });
+            
             const campaign = await campaignCollection.findOne({ _id: campaignId });
             
             if (!campaign) {
-                return res.status(404).json({ error: 'Campaign not found' });
+                const errorCode = await logger.warn('Campaign not found', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'get',
+                    metadata: { campaignId }
+                });
+                
+                return res.status(404).json({ 
+                    error: 'Campaign not found',
+                    errorCode
+                });
             }
             
             // Contar pontos
@@ -356,10 +517,30 @@ module.exports = function(app) {
             campaign.completedPoints = completedPoints;
             campaign.progress = totalPoints > 0 ? (completedPoints / totalPoints * 100).toFixed(2) : 0;
             
+            await logger.info('Campaign get completed', {
+                req,
+                module: 'campaignCrud',
+                function: 'get',
+                metadata: {
+                    campaignId,
+                    totalPoints,
+                    completedPoints,
+                    progress: campaign.progress
+                }
+            });
+            
             res.json(campaign);
         } catch (error) {
-            console.error('Error getting campaign:', error);
-            res.status(500).json({ error: 'Failed to get campaign' });
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'get',
+                metadata: { campaignId: req.params.id }
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to get campaign',
+                errorCode
+            });
         }
     };
 
@@ -692,10 +873,32 @@ module.exports = function(app) {
         try {
             const campaignData = req.body;
             
+            await logger.info('Campaign create requested', {
+                req,
+                module: 'campaignCrud',
+                function: 'create',
+                metadata: {
+                    campaignId: campaignData._id,
+                    initialYear: campaignData.initialYear,
+                    finalYear: campaignData.finalYear,
+                    numInspec: campaignData.numInspec
+                }
+            });
+            
             // Verificar se a campanha já existe
             const existing = await campaignCollection.findOne({ _id: campaignData._id });
             if (existing) {
-                return res.status(400).json({ error: 'Campaign ID already exists' });
+                const errorCode = await logger.warn('Campaign creation failed - ID already exists', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'create',
+                    metadata: { campaignId: campaignData._id }
+                });
+                
+                return res.status(400).json({ 
+                    error: 'Campaign ID already exists',
+                    errorCode
+                });
             }
             
             // Adicionar configurações padrão se não fornecidas
@@ -718,10 +921,32 @@ module.exports = function(app) {
             };
             
             await campaignCollection.insertOne(campaign);
+            
+            await logger.info('Campaign created successfully', {
+                req,
+                module: 'campaignCrud',
+                function: 'create',
+                metadata: {
+                    campaignId: campaign._id,
+                    initialYear: campaign.initialYear,
+                    finalYear: campaign.finalYear,
+                    numInspec: campaign.numInspec,
+                    properties: campaign.properties.length
+                }
+            });
+            
             res.json({ success: true, campaign: campaign });
         } catch (error) {
-            console.error('Error creating campaign:', error);
-            res.status(500).json({ error: 'Failed to create campaign' });
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'create',
+                metadata: { campaignId: req.body && req.body._id }
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to create campaign',
+                errorCode
+            });
         }
     };
 
@@ -730,6 +955,19 @@ module.exports = function(app) {
         try {
             const campaignId = req.params.id;
             const updateData = req.body;
+            
+            await logger.info('Campaign update requested', {
+                req,
+                module: 'campaignCrud',
+                function: 'update',
+                metadata: {
+                    campaignId,
+                    updateFields: Object.keys(updateData),
+                    initialYear: updateData.initialYear,
+                    finalYear: updateData.finalYear,
+                    numInspec: updateData.numInspec
+                }
+            });
             
             // Remover _id do objeto de atualização
             delete updateData._id;
@@ -755,13 +993,42 @@ module.exports = function(app) {
             );
             
             if (result.matchedCount === 0) {
-                return res.status(404).json({ error: 'Campaign not found' });
+                const errorCode = await logger.warn('Campaign update failed - campaign not found', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'update',
+                    metadata: { campaignId }
+                });
+                
+                return res.status(404).json({ 
+                    error: 'Campaign not found',
+                    errorCode
+                });
             }
+            
+            await logger.info('Campaign updated successfully', {
+                req,
+                module: 'campaignCrud',
+                function: 'update',
+                metadata: {
+                    campaignId,
+                    modifiedCount: result.modifiedCount,
+                    updateFields: Object.keys(updateData)
+                }
+            });
             
             res.json({ success: true, message: 'Campaign updated successfully' });
         } catch (error) {
-            console.error('Error updating campaign:', error);
-            res.status(500).json({ error: 'Failed to update campaign' });
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'update',
+                metadata: { campaignId: req.params.id }
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to update campaign',
+                errorCode
+            });
         }
     };
 
@@ -770,25 +1037,65 @@ module.exports = function(app) {
         try {
             const campaignId = req.params.id;
             
+            await logger.info('Campaign delete requested', {
+                req,
+                module: 'campaignCrud',
+                function: 'delete',
+                metadata: { campaignId }
+            });
+            
             // Verificar se existem pontos associados
             const pointsCount = await pointsCollection.count({ campaign: campaignId });
             if (pointsCount > 0) {
+                const errorCode = await logger.warn('Campaign deletion failed - has associated points', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'delete',
+                    metadata: { campaignId, pointsCount }
+                });
+                
                 return res.status(400).json({ 
                     error: 'Cannot delete campaign with associated points',
-                    pointsCount: pointsCount 
+                    pointsCount: pointsCount,
+                    errorCode
                 });
             }
             
             const result = await campaignCollection.deleteOne({ _id: campaignId });
             
             if (result.deletedCount === 0) {
-                return res.status(404).json({ error: 'Campaign not found' });
+                const errorCode = await logger.warn('Campaign deletion failed - campaign not found', {
+                    req,
+                    module: 'campaignCrud',
+                    function: 'delete',
+                    metadata: { campaignId }
+                });
+                
+                return res.status(404).json({ 
+                    error: 'Campaign not found',
+                    errorCode
+                });
             }
+            
+            await logger.info('Campaign deleted successfully', {
+                req,
+                module: 'campaignCrud',
+                function: 'delete',
+                metadata: { campaignId }
+            });
             
             res.json({ success: true, message: 'Campaign deleted successfully' });
         } catch (error) {
-            console.error('Error deleting campaign:', error);
-            res.status(500).json({ error: 'Failed to delete campaign' });
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'delete',
+                metadata: { campaignId: req.params.id }
+            });
+            
+            res.status(500).json({ 
+                error: 'Failed to delete campaign',
+                errorCode
+            });
         }
     };
 
@@ -820,6 +1127,19 @@ module.exports = function(app) {
         };
         
         try {
+            await logger.info('GeoJSON upload request started', {
+                req,
+                module: 'campaignCrud',
+                function: 'uploadGeoJSON',
+                metadata: {
+                    hasBody: !!req.body,
+                    bodyKeys: req.body ? Object.keys(req.body) : [],
+                    contentLength: req.get('Content-Length'),
+                    contentType: req.get('Content-Type'),
+                    requestId
+                }
+            });
+            
             logError('INFO', 'GeoJSON upload request started', null, {
                 hasBody: !!req.body,
                 bodyKeys: req.body ? Object.keys(req.body) : [],
@@ -1079,6 +1399,21 @@ module.exports = function(app) {
             const result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId, requestId);
             
             const processingTime = new Date() - startTime;
+            
+            await logger.info('GeoJSON processing completed successfully', {
+                req,
+                module: 'campaignCrud',
+                function: 'uploadGeoJSON',
+                metadata: {
+                    processingTimeMs: processingTime,
+                    result: result,
+                    featuresProcessed: result.processedCount,
+                    featuresInserted: result.insertedCount,
+                    errors: result.errorCount,
+                    requestId
+                }
+            });
+            
             logError('INFO', 'GeoJSON processing completed successfully', null, {
                 processingTimeMs: processingTime,
                 result: result,
@@ -2006,20 +2341,54 @@ module.exports = function(app) {
     CampaignCrud.listPoints = async (req, res) => {
         try {
             const campaignId = req.params.id;
+            const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 100;
-            const skip = parseInt(req.query.skip) || 0;
+            const skip = (page - 1) * limit;
             const search = req.query.search;
+            
+            // Novos filtros
+            const status = req.query.status;
+            const user = req.query.user;
+            const biome = req.query.biome;
+            const uf = req.query.uf;
+            const county = req.query.county;
+            const pointId = req.query.pointId;
             
             // Construir query base
             let query = { campaign: campaignId };
             
-            // Adicionar filtro de busca se fornecido
+            // Adicionar filtro de busca por ID se fornecido
             if (search && search.trim()) {
                 const searchTrim = search.trim();
-                // Buscar por ID que contenha o termo de busca
                 query._id = { $regex: searchTrim, $options: 'i' };
             }
             
+            // Filtro por ID específico do ponto
+            if (pointId && pointId.trim()) {
+                query._id = { $regex: pointId.trim(), $options: 'i' };
+            }
+            
+            // Filtro por bioma
+            if (biome && biome.trim()) {
+                query.biome = biome.trim();
+            }
+            
+            // Filtro por UF
+            if (uf && uf.trim()) {
+                query.uf = uf.trim();
+            }
+            
+            // Filtro por município
+            if (county && county.trim()) {
+                query.county = county.trim();
+            }
+            
+            // Filtro por usuário
+            if (user && user.trim()) {
+                query.userName = { $in: [user.trim()] };
+            }
+            
+            // Buscar pontos
             const points = await pointsCollection
                 .find(query)
                 .limit(limit)
@@ -2027,14 +2396,56 @@ module.exports = function(app) {
                 .sort({ index: 1 })
                 .toArray();
                 
+            // Calcular status para cada ponto
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            const numInspec = campaign ? campaign.numInspec : 2;
+            
+            const processedPoints = points.map(point => {
+                const inspectionCount = point.userName ? point.userName.length : 0;
+                let statusClass = 'not-started';
+                let statusText = 'Não iniciado';
+                
+                if (inspectionCount >= numInspec) {
+                    statusClass = 'completed';
+                    statusText = 'Completo';
+                } else if (inspectionCount > 0) {
+                    statusClass = 'in-progress';
+                    statusText = 'Em andamento';
+                }
+                
+                return {
+                    ...point,
+                    _inspectionCount: inspectionCount,
+                    _statusClass: statusClass,
+                    _statusText: statusText,
+                    _progress: Math.min(100, (inspectionCount / numInspec) * 100)
+                };
+            });
+            
+            // Aplicar filtro de status após processamento
+            let filteredPoints = processedPoints;
+            if (status && status.trim()) {
+                filteredPoints = processedPoints.filter(point => point._statusClass === status.trim());
+            }
+            
+            // Contar total considerando todos os filtros
             const total = await pointsCollection.count(query);
             
             res.json({
-                points: points,
+                points: filteredPoints,
                 total: total,
+                page: page,
                 limit: limit,
-                skip: skip,
-                search: search || null
+                pages: Math.ceil(total / limit),
+                search: search || null,
+                filters: {
+                    status,
+                    user,
+                    biome,
+                    uf,
+                    county,
+                    pointId
+                }
             });
         } catch (error) {
             console.error('Error listing points:', error);

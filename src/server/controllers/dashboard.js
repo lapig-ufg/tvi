@@ -364,5 +364,41 @@ module.exports = function(app){
 		});
 	}
 
+	// ===== MÉTODOS ADMIN (sem dependência de sessão) =====
+	
+	Dashboard.pointsInspectionAdmin = function(request, response) {
+		// Para admin, precisamos receber o campaignId como parâmetro
+		var campaignId = request.query.campaignId;
+		
+		if (!campaignId) {
+			return response.status(400).json({ error: 'Campaign ID is required' });
+		}
+		
+		// Buscar dados da campanha
+		campaigns.findOne({ '_id': campaignId }, function(err, campaign) {
+			if (err || !campaign) {
+				return response.status(404).json({ error: 'Campaign not found' });
+			}
+			
+			var result = {
+				pointsComplet: 0,
+				pointsNoComplet: 0,
+				pointsInspection: 0
+			};
+			
+			points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspec} }, function(err, pointsComplet) {
+				points.count({ 'campaign': campaign._id, 'userName': { '$size': 0} }, function(err, pointsNoComplet) {
+					points.count({ 'campaign': campaign._id }, function(err, pointsInspection) {
+						result.pointsComplet = pointsComplet;
+						result.pointsNoComplet = pointsNoComplet;
+						result.pointsInspection = pointsInspection - (pointsComplet + pointsNoComplet)
+						response.send(result);
+						response.end();
+					});
+				});
+			});
+		});
+	}
+
 	return Dashboard;
 }

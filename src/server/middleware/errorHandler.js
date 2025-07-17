@@ -226,9 +226,15 @@ module.exports = function(app) {
                 next(timeoutError);
             }, timeout);
             
-            res.on('finish', () => {
+            // Limpar timer em qualquer evento que termine a requisição
+            const clearTimer = () => {
                 clearTimeout(timer);
-            });
+            };
+            
+            res.on('finish', clearTimer);
+            res.on('close', clearTimer);
+            res.on('error', clearTimer);
+            req.on('abort', clearTimer);
             
             next();
         };

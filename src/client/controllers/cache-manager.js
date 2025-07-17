@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('CacheManagerController', function ($scope, $interval, requester) {
+Application.controller('CacheManagerController', function ($scope, $interval, requester, NotificationDialog) {
     
     // Conectar socket para atualizações em tempo real com configuração otimizada
     var socket = io({
@@ -284,7 +284,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 $scope.updateCampaignsTotalPages();
             } else {
                 console.error('Erro ao carregar status do cache:', data.error);
-                alert('Erro ao carregar status do cache: ' + data.error);
+                NotificationDialog.error('Erro ao carregar status do cache: ' + data.error);
             }
         });
     };
@@ -298,9 +298,10 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
             
             if (data.success) {
                 $scope.uncachedPoints = data;
+                $scope.updateCampaignsForSelection();
             } else {
                 console.error('Erro ao carregar pontos não cacheados:', data.error);
-                alert('Erro ao carregar pontos não cacheados: ' + data.error);
+                NotificationDialog.error('Erro ao carregar pontos não cacheados: ' + data.error);
             }
         });
     };
@@ -308,7 +309,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     // Iniciar simulação/processamento de cache
     $scope.startCacheProcess = function() {
         if ($scope.processing.isProcessing) {
-            alert('Já existe um processamento em andamento');
+            NotificationDialog.warning('Já existe um processamento em andamento');
             return;
         }
 
@@ -316,35 +317,37 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
             ? `Simular cache para ${$scope.processing.limitPoints} pontos?`
             : `ATENÇÃO: Fazer cache REAL para ${$scope.processing.limitPoints} pontos?\nIsto irá consumir recursos do servidor!`;
         
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-
-        $scope.processing.isProcessing = true;
-        $scope.processing.results = [];
-        $scope.loading.processing = true;
-
-        var requestData = {
-            campaignId: $scope.processing.campaignId,
-            limitPoints: $scope.processing.limitPoints,
-            simulate: $scope.processing.simulateMode
-        };
-
-        requester._post('cache/simulate', requestData, function(data) {
-            $scope.loading.processing = false;
-            $scope.processing.isProcessing = false;
-            
-            if (data.success) {
-                $scope.processing.results = data.points || [];
-                alert(`Processamento concluído!\nPontos processados: ${data.processed}`);
-                
-                // Atualizar dados
-                $scope.loadCacheStatus();
-                $scope.loadUncachedPoints();
-            } else {
-                console.error('Erro no processamento:', data.error);
-                alert('Erro no processamento: ' + data.error);
+        NotificationDialog.confirm(confirmMessage).then(function(confirmed) {
+            if (!confirmed) {
+                return;
             }
+
+            $scope.processing.isProcessing = true;
+            $scope.processing.results = [];
+            $scope.loading.processing = true;
+
+            var requestData = {
+                campaignId: $scope.processing.campaignId,
+                limitPoints: $scope.processing.limitPoints,
+                simulate: $scope.processing.simulateMode
+            };
+
+            requester._post('cache/simulate', requestData, function(data) {
+                $scope.loading.processing = false;
+                $scope.processing.isProcessing = false;
+                
+                if (data.success) {
+                    $scope.processing.results = data.points || [];
+                    NotificationDialog.success(`Processamento concluído!\nPontos processados: ${data.processed}`);
+                    
+                    // Atualizar dados
+                    $scope.loadCacheStatus();
+                    $scope.loadUncachedPoints();
+                } else {
+                    console.error('Erro no processamento:', data.error);
+                    NotificationDialog.error('Erro no processamento: ' + data.error);
+                }
+            });
         });
     };
 
@@ -357,20 +360,26 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
 
         requester._put('cache/campaign-priority', requestData, function(data) {
             if (data.success) {
-                alert('Prioridade atualizada com sucesso!');
+                NotificationDialog.success('Prioridade atualizada com sucesso!');
                 $scope.loadUncachedPoints();
             } else {
                 console.error('Erro ao atualizar prioridade:', data.error);
-                alert('Erro ao atualizar prioridade: ' + data.error);
+                NotificationDialog.error('Erro ao atualizar prioridade: ' + data.error);
             }
         });
     };
 
+    // Lista de campanhas para seleção (evita loop infinito no template)
+    $scope.campaignsForSelection = [];
+    
     // Filtrar campanhas para seleção
-    $scope.getCampaignsForSelection = function() {
-        if (!$scope.uncachedPoints.campaigns) return [];
+    $scope.updateCampaignsForSelection = function() {
+        if (!$scope.uncachedPoints.campaigns) {
+            $scope.campaignsForSelection = [];
+            return;
+        }
         
-        return $scope.uncachedPoints.campaigns.map(function(campaign) {
+        $scope.campaignsForSelection = $scope.uncachedPoints.campaigns.map(function(campaign) {
             return {
                 id: campaign._id,
                 name: campaign._id,
@@ -428,7 +437,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 }
             } else {
                 console.error('Erro ao carregar status do job:', data.error);
-                alert('Erro ao carregar status do job: ' + data.error);
+                NotificationDialog.error('Erro ao carregar status do job: ' + data.error);
             }
         });
     };
@@ -436,17 +445,17 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     // Atualizar configuração do job
     $scope.updateJobConfig = function() {
         if (!$scope.jobConfig.batchSize || !$scope.jobConfig.maxPointsPerRun) {
-            alert('Por favor, preencha todos os campos obrigatórios');
+            NotificationDialog.error('Por favor, preencha todos os campos obrigatórios');
             return;
         }
 
         if ($scope.jobConfig.batchSize < 1 || $scope.jobConfig.batchSize > 10) {
-            alert('Batch Size deve estar entre 1 e 10');
+            NotificationDialog.error('Batch Size deve estar entre 1 e 10');
             return;
         }
 
         if ($scope.jobConfig.maxPointsPerRun < 5 || $scope.jobConfig.maxPointsPerRun > 100) {
-            alert('Máximo de pontos deve estar entre 5 e 100');
+            NotificationDialog.error('Máximo de pontos deve estar entre 5 e 100');
             return;
         }
 
@@ -454,18 +463,20 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
             ? 'Atualizar configuração do job para modo SIMULAÇÃO?'
             : 'ATENÇÃO: Atualizar configuração do job para modo REAL?\nIsto fará com que o job execute cache real automaticamente!';
         
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-
-        requester._put('cache/job-config', $scope.jobConfig, function(data) {
-            if (data.success) {
-                alert('Configuração do job atualizada com sucesso!');
-                $scope.loadJobStatus(); // Recarregar status
-            } else {
-                console.error('Erro ao atualizar configuração:', data.error);
-                alert('Erro ao atualizar configuração: ' + data.error);
+        NotificationDialog.confirm(confirmMessage).then(function(confirmed) {
+            if (!confirmed) {
+                return;
             }
+
+            requester._put('cache/job-config', $scope.jobConfig, function(data) {
+                if (data.success) {
+                    NotificationDialog.success('Configuração do job atualizada com sucesso!');
+                    $scope.loadJobStatus(); // Recarregar status
+                } else {
+                    console.error('Erro ao atualizar configuração:', data.error);
+                    NotificationDialog.error('Erro ao atualizar configuração: ' + data.error);
+                }
+            });
         });
     };
 
@@ -475,31 +486,33 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
             ? 'Executar job manualmente em modo SIMULAÇÃO?'
             : 'ATENÇÃO: Executar job manualmente em modo REAL?\nIsto irá consumir recursos do servidor!';
         
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-
-        // Usar configuração atual para execução manual
-        var manualParams = {
-            batchSize: $scope.jobConfig.batchSize,
-            maxPointsPerRun: $scope.jobConfig.maxPointsPerRun,
-            simulate: $scope.jobConfig.simulate
-        };
-
-        requester._post('cache/trigger-job', manualParams, function(data) {
-            if (data.success) {
-                alert('Job executado manualmente com sucesso!\nVerifique os logs para acompanhar o progresso.');
-                
-                // Aguardar um pouco e recarregar status e logs
-                setTimeout(function() {
-                    $scope.loadJobStatus();
-                    $scope.loadCacheStatus();
-                    $scope.loadUncachedPoints();
-                }, 2000);
-            } else {
-                console.error('Erro ao executar job:', data.error);
-                alert('Erro ao executar job: ' + data.error);
+        NotificationDialog.confirm(confirmMessage).then(function(confirmed) {
+            if (!confirmed) {
+                return;
             }
+
+            // Usar configuração atual para execução manual
+            var manualParams = {
+                batchSize: $scope.jobConfig.batchSize,
+                maxPointsPerRun: $scope.jobConfig.maxPointsPerRun,
+                simulate: $scope.jobConfig.simulate
+            };
+
+            requester._post('cache/trigger-job', manualParams, function(data) {
+                if (data.success) {
+                    NotificationDialog.success('Job executado manualmente com sucesso!\nVerifique os logs para acompanhar o progresso.');
+                    
+                    // Aguardar um pouco e recarregar status e logs
+                    setTimeout(function() {
+                        $scope.loadJobStatus();
+                        $scope.loadCacheStatus();
+                        $scope.loadUncachedPoints();
+                    }, 2000);
+                } else {
+                    console.error('Erro ao executar job:', data.error);
+                    NotificationDialog.error('Erro ao executar job: ' + data.error);
+                }
+            });
         });
     };
 
@@ -530,7 +543,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     // Confirmar e remover cache
     $scope.removeCacheConfirm = function() {
         if (!$scope.canRemoveCache()) {
-            alert('Por favor, preencha todos os campos obrigatórios');
+            NotificationDialog.error('Por favor, preencha todos os campos obrigatórios');
             return;
         }
 
@@ -568,18 +581,23 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
         
         confirmMessage += '\n\nDeseja continuar?';
         
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-
-        // Segunda confirmação para operações mais perigosas
-        if ($scope.cacheRemoval.type === 'all') {
-            if (!confirm('Esta é uma operação MUITO perigosa! Tem certeza absoluta que deseja remover TODO o cache?')) {
+        NotificationDialog.confirm(confirmMessage).then(function(confirmed) {
+            if (!confirmed) {
                 return;
             }
-        }
 
-        $scope.removeCache();
+            // Segunda confirmação para operações mais perigosas
+            if ($scope.cacheRemoval.type === 'all') {
+                NotificationDialog.confirm('Esta é uma operação MUITO perigosa! Tem certeza absoluta que deseja remover TODO o cache?').then(function(doubleConfirmed) {
+                    if (!doubleConfirmed) {
+                        return;
+                    }
+                    $scope.removeCache();
+                });
+            } else {
+                $scope.removeCache();
+            }
+        });
     };
 
     // Executar remoção de cache
@@ -647,7 +665,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                     removed: data.removed || 0
                 };
                 
-                alert(`Cache removido com sucesso!\n${data.removed || 0} itens removidos.`);
+                NotificationDialog.success(`Cache removido com sucesso!\n${data.removed || 0} itens removidos.`);
                 
                 // Atualizar status do cache
                 $scope.loadCacheStatus();
@@ -659,7 +677,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
                 };
                 
                 console.error('Erro ao remover cache:', data.error);
-                alert('Erro ao remover cache: ' + (data.error || 'Erro desconhecido'));
+                NotificationDialog.error('Erro ao remover cache: ' + (data.error || 'Erro desconhecido'));
             }
         });
     };
@@ -922,7 +940,7 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
     // Resetar cache no MongoDB
     $scope.resetMongoCache = function() {
         if (!$scope.canResetMongoCache()) {
-            alert('Por favor, preencha todos os campos obrigatórios');
+            NotificationDialog.error('Por favor, preencha todos os campos obrigatórios');
             return;
         }
         
@@ -944,67 +962,69 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
         
         confirmMessage += '\n\nDeseja continuar?';
         
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-        
-        $scope.mongoReset.isResetting = true;
-        $scope.mongoReset.lastResult = null;
-        
-        // Montar parâmetros
-        var params = {};
-        
-        switch($scope.mongoReset.type) {
-            case 'campaign':
-                // Processar múltiplas campanhas
-                var campaignIds = $scope.mongoReset.campaignIds.split(',').map(function(id) {
-                    return id.trim();
-                }).filter(function(id) {
-                    return id.length > 0;
-                });
-                params.campaignIds = campaignIds;
-                break;
-                
-            case 'point':
-                // Processar múltiplos pontos
-                var pointIds = $scope.mongoReset.pointIds.split(',').map(function(id) {
-                    return id.trim();
-                }).filter(function(id) {
-                    return id.length > 0;
-                });
-                params.campaignId = $scope.mongoReset.campaignId;
-                params.pointIds = pointIds;
-                break;
-                
-            case 'all':
-                params.resetAll = true;
-                break;
-        }
-        
-        // Fazer chamada para API de reset
-        requester._post('cache/reset-mongo', params, function(data) {
-            $scope.mongoReset.isResetting = false;
-            
-            if (data.success) {
-                $scope.mongoReset.lastResult = {
-                    success: true,
-                    updated: data.updated || 0
-                };
-                
-                alert(`Cache resetado com sucesso!\n${data.updated || 0} pontos marcados como não cacheados.`);
-                
-                // Atualizar status
-                $scope.loadCacheStatus();
-                $scope.loadUncachedPoints();
-            } else {
-                $scope.mongoReset.lastResult = {
-                    success: false,
-                    error: data.error || 'Erro desconhecido'
-                };
-                
-                console.error('Erro ao resetar cache:', data.error);
-                alert('Erro ao resetar cache: ' + (data.error || 'Erro desconhecido'));
+        NotificationDialog.confirm(confirmMessage).then(function(confirmed) {
+            if (!confirmed) {
+                return;
             }
+            
+            $scope.mongoReset.isResetting = true;
+            $scope.mongoReset.lastResult = null;
+            
+            // Montar parâmetros
+            var params = {};
+            
+            switch($scope.mongoReset.type) {
+                case 'campaign':
+                    // Processar múltiplas campanhas
+                    var campaignIds = $scope.mongoReset.campaignIds.split(',').map(function(id) {
+                        return id.trim();
+                    }).filter(function(id) {
+                        return id.length > 0;
+                    });
+                    params.campaignIds = campaignIds;
+                    break;
+                    
+                case 'point':
+                    // Processar múltiplos pontos
+                    var pointIds = $scope.mongoReset.pointIds.split(',').map(function(id) {
+                        return id.trim();
+                    }).filter(function(id) {
+                        return id.length > 0;
+                    });
+                    params.campaignId = $scope.mongoReset.campaignId;
+                    params.pointIds = pointIds;
+                    break;
+                    
+                case 'all':
+                    params.resetAll = true;
+                    break;
+            }
+            
+            // Fazer chamada para API de reset
+            requester._post('cache/reset-mongo', params, function(data) {
+                $scope.mongoReset.isResetting = false;
+                
+                if (data.success) {
+                    $scope.mongoReset.lastResult = {
+                        success: true,
+                        updated: data.updated || 0
+                    };
+                    
+                    NotificationDialog.success(`Cache resetado com sucesso!\n${data.updated || 0} pontos marcados como não cacheados.`);
+                    
+                    // Atualizar status
+                    $scope.loadCacheStatus();
+                    $scope.loadUncachedPoints();
+                } else {
+                    $scope.mongoReset.lastResult = {
+                        success: false,
+                        error: data.error || 'Erro desconhecido'
+                    };
+                    
+                    console.error('Erro ao resetar cache:', data.error);
+                    NotificationDialog.error('Erro ao resetar cache: ' + (data.error || 'Erro desconhecido'));
+                }
+            });
         });
     };
     

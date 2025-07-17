@@ -38,6 +38,21 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/cache-manager.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin/home', {
+			controller: 'AdminHomeController',
+			templateUrl: 'views/admin-home.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/logs', {
+			controller: 'AdminLogsController',
+			templateUrl: 'views/admin-logs.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/temporal', {
+			controller: 'adminTemporalController',
+			templateUrl: 'views/admin-temporal.tpl.html',
+			reloadOnSearch: false
+		})
 		.when('/login', {
 			controller: 'LoginController',
 			templateUrl: 'views/login.tpl.html',
@@ -85,10 +100,6 @@ Application.config(function($routeProvider, $locationProvider) {
 		// [app] i18n translations loaded successfully
 	}).catch(function(error) {
 		console.error('[app] Failed to load i18n translations:', error);
-	});
-
-	var socket = io.connect('/', {
-		transports: [ 'websocket' ]
 	});
 
 	$http.defaults.headers.post['Content-Type'] = 'application/json';

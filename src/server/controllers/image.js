@@ -4,6 +4,7 @@ var proj4 = require('proj4');
 var path = require('path');
 var request = require('request');
 var async = require('async');
+const logger = require('../services/logger');
 
 module.exports = function(app) {
 	
@@ -82,19 +83,78 @@ module.exports = function(app) {
 
 	}
 
-	Image.access = function(request, response) {
-		var layerId = request.params.layerId
-		var pointId = request.params.pointId
-		var campaignId = request.query.campaign
+	Image.access = async function(request, response) {
+		try {
+			var layerId = request.params.layerId
+			var pointId = request.params.pointId
+			var campaignId = request.query.campaign
+
+			if (!layerId || !pointId || !campaignId) {
+				const errorCode = await logger.warn('Image access attempted with missing parameters', {
+					req: request,
+					module: 'image',
+					function: 'access',
+					metadata: {
+						layerId: layerId,
+						pointId: pointId,
+						campaignId: campaignId
+					}
+				});
+				
+				return response.status(400).json({ 
+					error: 'LayerId, pointId and campaignId are required',
+					errorCode
+				});
+			}
+
+			await logger.info('Accessing image for point', {
+				req: request,
+				module: 'image',
+				function: 'access',
+				metadata: {
+					layerId: layerId,
+					pointId: pointId,
+					campaignId: campaignId
+				}
+			});
 
 		var sourceUrl = 'http://localhost:3000/source/'+layerId+'?campaign='+campaignId
 
-		campaigns.findOne({ "_id": campaignId }, function(err, campaign) {
+		campaigns.findOne({ "_id": campaignId }, async function(err, campaign) {
 			if(err){
-				console.error(err)
-				response.end()
+				const errorCode = await logger.error('Database error finding campaign for image access', {
+					req: request,
+					module: 'image',
+					function: 'access',
+					metadata: {
+						errorMessage: err.message,
+						campaignId: campaignId
+					}
+				});
+				
+				return response.status(500).json({
+					error: 'Database error',
+					errorCode
+				});
 			} else {
-				points.findOne({ _id: pointId }, function(err, point) {
+				points.findOne({ _id: pointId }, async function(err, point) {
+					if (err) {
+						const errorCode = await logger.error('Database error finding point for image access', {
+							req: request,
+							module: 'image',
+							function: 'access',
+							metadata: {
+								errorMessage: err.message,
+								pointId: pointId
+							}
+						});
+						
+						return response.status(500).json({
+							error: 'Database error finding point',
+							errorCode
+						});
+					}
+
 					if (point) {
 						var imagePath = path.join(config.imgDir, point.campaign, pointId, layerId +'.png')
 						if(campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a'){
@@ -137,11 +197,37 @@ module.exports = function(app) {
 							}
 						})
 					} else {
-						response.end()
+						await logger.warn('Point not found for image access', {
+							req: request,
+							module: 'image',
+							function: 'access',
+							metadata: {
+								pointId: pointId
+							}
+						});
+						response.status(404).json({
+							error: 'Point not found'
+						});
 					}
 				})
 			}
 		});
+		} catch (error) {
+			const errorCode = await logger.error('Unexpected error in image access', {
+				req: request,
+				module: 'image',
+				function: 'access',
+				metadata: {
+					error: error.message,
+					stack: error.stack
+				}
+			});
+
+			response.status(500).json({
+				error: 'Internal server error',
+				errorCode
+			});
+		}
 	}
 
 	Image.populateCache = function(requestPointCache, pointCacheCompĺete, finished) {
@@ -232,6 +318,38 @@ module.exports = function(app) {
 
  		async.doUntil(startCacheJob, cacheJobCanStop, onComplete);
 
+	}
+
+	// ===== MÉTODOS ADMIN (sem dependência de sessão) =====
+	
+	Image.mosaicAdmin = function(request, response) {
+		var mosaicId = request.params.mosaicId;
+		// Lógica para retornar imagem do mosaico para admin
+		response.json({
+			mosaicId: mosaicId,
+			url: `/service/image/${mosaicId}`,
+			success: true
+		});
+	}
+	
+	Image.planetMosaicAdmin = function(request, response) {
+		var mosaicId = request.params.mosaicId;
+		// Lógica para retornar imagem Planet para admin
+		response.json({
+			mosaicId: mosaicId,
+			type: 'planet',
+			success: true
+		});
+	}
+	
+	Image.sentinelMosaicAdmin = function(request, response) {
+		var date = request.params.date;
+		// Lógica para retornar imagem Sentinel para admin
+		response.json({
+			date: date,
+			type: 'sentinel',
+			success: true
+		});
 	}
 
 	return Image;

@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, mapLoadingService, $timeout) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, mapLoadingService, $timeout, NotificationDialog) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false
@@ -109,7 +109,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }
             
             if (hasInvalidAnswer) {
-                alert(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
+                NotificationDialog.error(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
                 return;
             }
             

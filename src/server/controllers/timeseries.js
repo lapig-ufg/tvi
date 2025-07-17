@@ -154,6 +154,58 @@ module.exports = function (app) {
         }
     };
 
+    // ===== MÉTODOS ADMIN (sem dependência de sessão) =====
+    
+    Timeseries.getTimeSeriesLandsatNdviByLonLatAdmin = async function (request, response) {
+        const { lon, lat } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        const url = `https://tiles.lapig.iesa.ufg.br/api/timeseries/landsat/${lat}/${lon}`;
+
+        try {
+            const res = await axios.get(url, {
+                headers: {
+                    "User-Agent": "Node.js",
+                },
+                httpsAgent: agent,
+            });
+
+            response.status(200).send(res.data);
+        } catch (error) {
+            console.error("Admin - Error fetching timeseries:", error.message);
+            response.status(500).send({ error: "Failed to fetch timeseries data" });
+        }
+    };
+
+    Timeseries.getTimeSeriesLandsatNDDIByLonLatAdmin = async function (request, response) {
+        const { lon, lat } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        const url = `https://tiles.lapig.iesa.ufg.br/api/timeseries/nddi/${lat}/${lon}`;
+
+        try {
+            const res = await axios.get(url, {
+                headers: {
+                    "User-Agent": "Node.js",
+                },
+                httpsAgent: agent,
+            });
+
+            response.status(200).send(res.data);
+        } catch (error) {
+            console.error("Admin - Error fetching timeseries:", error.message);
+            response.status(500).send({ error: "Failed to fetch timeseries data" });
+        }
+    };
+
     return Timeseries;
 
 }

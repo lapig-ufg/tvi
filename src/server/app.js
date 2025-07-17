@@ -20,6 +20,7 @@ const sharedsession = require("express-socket.io-session");
 load('config.js', {'verbose': false})
 .then('libs')
 .then('middleware')
+.then('services')
 .into(app);
 
 app.middleware.repository.init(() => {
@@ -37,7 +38,11 @@ app.middleware.repository.init(() => {
 			saveUninitialized: true,
 			key: 'sid',
 			cookie: {
-				maxAge: 1000 * 60 * 60 * 24
+				maxAge: 1000 * 60 * 60 * 8, // 8 horas (exemplo)
+				httpOnly: true, // previne acesso via JavaScript
+				secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+				sameSite: 'strict', // proteção CSRF
+				rolling: true // renovar tempo a cada requisição
 			}
 		})
 
@@ -51,20 +56,6 @@ app.middleware.repository.init(() => {
 		app.use(express.static(app.config.clientDir));
 		app.set('views', __dirname + '/templates');
 		app.set('view engine', 'ejs');
-
-		const publicDir = path.join(__dirname, '');
-
-		/*
-        app.use(requestTimeout({
-            'timeout': 1000 * 60 * 30,
-            'callback': function(err, options) {
-                var response = options.res;
-                if (err) {
-                    util.log('Timeout: ' + err);
-                }
-                response.end();
-            }
-        }));*/
 
 		app.use(responseTime());
 		
@@ -128,11 +119,14 @@ app.middleware.repository.init(() => {
 		// Carregar o middleware de erro
 		const errorHandler = app.middleware.errorHandler;
 		
-		// Aplicar o logger de requisições ANTES das rotas
-		app.use(errorHandler.requestLogger);
+		// Carregar o middleware de logging
+		const logMiddleware = app.middleware.logMiddleware;
 		
-		// Aplicar timeout global de requisições (5 minutos por padrão)
-		app.use(errorHandler.requestTimeout(300000));
+		// Aplicar o logger de requisições ANTES das rotas
+		app.use(logMiddleware.requestLogger);
+		
+		// Aplicar timeout global de requisições (2 minutos por padrão)
+		app.use(errorHandler.requestTimeout(120000));
 		
 		load('models', {'verbose': false})
 			.then('controllers')
@@ -143,8 +137,8 @@ app.middleware.repository.init(() => {
 		// Handler específico para erros de upload
 		app.use(errorHandler.uploadErrorHandler);
 		
-		// Handler global de erros (deve ser o último middleware)
-		app.use(errorHandler.globalErrorHandler);
+		// Handler global de erros com logging (deve ser o último middleware)
+		app.use(logMiddleware.errorLogger);
 
 
 		const httpServer = http.listen(app.config.port, function () {

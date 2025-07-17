@@ -1,138 +1,169 @@
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-xs-12">
-            <h2>
-                <i class="glyphicon glyphicon-hdd"></i> 
-                Gerenciador de Cache de Imagens
-            </h2>
-            <p class="text-muted">
-                Sistema para gerenciar o cache das imagens de satélite, simulando as requisições do Leaflet
-            </p>
-        </div>
-    </div>
-
-    <!-- Status Geral do Cache -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-dashboard"></i> 
-                        Status Geral do Cache
-                        <button class="btn btn-xs btn-default pull-right" ng-click="loadCacheStatus()" ng-disabled="loading.status">
-                            <i class="glyphicon glyphicon-refresh" ng-class="{'glyphicon-refresh-animate': loading.status}"></i>
-                            Atualizar
-                        </button>
-                    </h4>
+<!-- Cache Manager - Interface Moderna -->
+<div class="cache-manager-container">
+    <!-- Header -->
+    <div class="cache-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-server"></i>
                 </div>
-                <div class="panel-body">
-                    <div class="row" ng-if="!loading.status">
-                        <div class="col-sm-3">
-                            <div class="well text-center">
-                                <h3 class="text-primary">{{cacheStatus.totals.totalPoints || 0}}</h3>
-                                <span>Total de Pontos</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
-                            <div class="well text-center">
-                                <h3 class="text-success">{{cacheStatus.totals.cachedPoints || 0}}</h3>
-                                <span>Pontos Cacheados</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
-                            <div class="well text-center">
-                                <h3 class="text-danger">{{cacheStatus.totals.uncachedPoints || 0}}</h3>
-                                <span>Pontos Não Cacheados</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
-                            <div class="well text-center">
-                                <h3 ng-class="'text-' + getCachePercentageClass(cacheStatus.totals.cachePercentage)">
-                                    {{(cacheStatus.totals.cachePercentage || 0) | number:1}}%
-                                </h3>
-                                <span>Percentual Cacheado</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center" ng-if="loading.status">
-                        <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i>
-                        Carregando status...
-                    </div>
+                <div class="header-info">
+                    <h1 class="header-title">Gerenciador de Cache</h1>
+                    <p class="header-desc">Sistema para gerenciar o cache das imagens de satélite</p>
                 </div>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn refresh" ng-click="loadCacheStatus()" ng-disabled="loading.status">
+                    <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.status}"></i>
+                    Atualizar Status
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Status em Tempo Real -->
-    <div class="row" ng-if="liveProgress.isRunning">
-        <div class="col-xs-12">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-hourglass"></i> 
-                        Processamento em Tempo Real
-                        <span class="label label-info pull-right">
-                            {{liveProgress.simulate ? 'SIMULAÇÃO' : 'REAL'}}
-                        </span>
-                    </h4>
+    <!-- Main Content -->
+    <div class="cache-content">
+        <!-- Status Overview -->
+        <div class="status-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Status Geral do Cache
+                </h2>
+            </div>
+            
+            <div ng-if="loading.status" class="loading-state">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
                 </div>
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h5><strong>Progresso:</strong></h5>
-                            <div class="progress" style="height: 25px;">
-                                <div class="progress-bar progress-bar-striped active" 
-                                     style="width: {{liveProgress.progress}}%">
-                                    {{liveProgress.progress}}% 
-                                    ({{liveProgress.processedCount}}/{{liveProgress.totalPoints}})
-                                </div>
+                <p class="loading-text">Carregando status...</p>
+            </div>
+            
+            <div ng-if="!loading.status" class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{cacheStatus.totals.totalPoints || 0}}</div>
+                        <div class="stat-label">Total de Pontos</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card cached">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{cacheStatus.totals.cachedPoints || 0}}</div>
+                        <div class="stat-label">Pontos Cacheados</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card uncached">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{cacheStatus.totals.uncachedPoints || 0}}</div>
+                        <div class="stat-label">Pontos Não Cacheados</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card percentage">
+                    <div class="stat-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" ng-class="getCachePercentageClass(cacheStatus.totals.cachePercentage)">
+                            {{(cacheStatus.totals.cachePercentage || 0) | number:1}}%
+                        </div>
+                        <div class="stat-label">Percentual Cacheado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Progress Section -->
+        <div class="live-progress-section" ng-if="liveProgress.isRunning">
+            <div class="progress-card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-play-circle"></i>
+                        Processamento em Tempo Real
+                    </h3>
+                    <div class="mode-badge" ng-class="liveProgress.simulate ? 'simulation' : 'real'">
+                        <i class="fas" ng-class="liveProgress.simulate ? 'fa-flask' : 'fa-rocket'"></i>
+                        {{liveProgress.simulate ? 'SIMULAÇÃO' : 'PRODUÇÃO'}}
+                    </div>
+                </div>
+                
+                <div class="progress-content">
+                    <div class="progress-main">
+                        <div class="progress-info">
+                            <div class="progress-header">
+                                <span class="progress-label">Progresso Geral</span>
+                                <span class="progress-percentage">{{liveProgress.progress}}%</span>
                             </div>
-                            
-                            <div class="row">
-                                <div class="col-sm-3">
-                                    <div class="well text-center" style="margin-bottom: 10px;">
-                                        <h4 class="text-primary">{{liveProgress.currentBatch}}/{{liveProgress.totalBatches}}</h4>
-                                        <small>Batches</small>
-                                    </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill animated" ng-style="{'width': liveProgress.progress + '%'}"></div>
+                            </div>
+                            <div class="progress-details">
+                                <span>{{liveProgress.processedCount}} de {{liveProgress.totalPoints}} pontos</span>
+                            </div>
+                        </div>
+                        
+                        <div class="live-stats">
+                            <div class="live-stat">
+                                <div class="stat-value">{{liveProgress.currentBatch}}/{{liveProgress.totalBatches}}</div>
+                                <div class="stat-label">Batches</div>
+                            </div>
+                            <div class="live-stat">
+                                <div class="stat-value">{{liveProgress.processedCount}}</div>
+                                <div class="stat-label">Processados</div>
+                            </div>
+                            <div class="live-stat">
+                                <div class="stat-value">{{liveProgress.errorCount}}</div>
+                                <div class="stat-label">Erros</div>
+                            </div>
+                            <div class="live-stat" ng-if="liveProgress.pointsPerMinute">
+                                <div class="stat-value">{{liveProgress.pointsPerMinute}}</div>
+                                <div class="stat-label">pts/min</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-sidebar">
+                        <div class="logs-section">
+                            <h4 class="logs-title">
+                                <i class="fas fa-terminal"></i>
+                                Log em Tempo Real
+                            </h4>
+                            <div class="logs-container">
+                                <div ng-repeat="log in liveProgress.recentLogs track by $index" class="log-entry">
+                                    <span class="log-time">{{log.timestamp | date:'HH:mm:ss'}}</span>
+                                    <span class="log-message">{{log.message}}</span>
                                 </div>
-                                <div class="col-sm-3">
-                                    <div class="well text-center" style="margin-bottom: 10px;">
-                                        <h4 class="text-success">{{liveProgress.processedCount}}</h4>
-                                        <small>Processados</small>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="well text-center" style="margin-bottom: 10px;">
-                                        <h4 class="text-danger">{{liveProgress.errorCount}}</h4>
-                                        <small>Erros</small>
-                                    </div>
-                                </div>
-                                <div class="col-sm-3">
-                                    <div class="well text-center" style="margin-bottom: 10px;">
-                                        <h4 class="text-info">{{liveProgress.totalPoints}}</h4>
-                                        <small>Total</small>
-                                    </div>
+                                <div ng-if="liveProgress.recentLogs.length === 0" class="log-empty">
+                                    <i class="fas fa-clock"></i>
+                                    Aguardando logs...
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="col-md-4">
-                            <h5><strong>Log em Tempo Real:</strong></h5>
-                            <div class="well" style="max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px;">
-                                <div ng-repeat="log in liveProgress.recentLogs track by $index" style="margin-bottom: 2px;">
-                                    <small class="text-muted">{{log.timestamp | date:'HH:mm:ss'}}</small> {{log.message}}
+                        <div class="estimates-section" ng-if="liveProgress.estimatedTime">
+                            <h4 class="estimates-title">
+                                <i class="fas fa-stopwatch"></i>
+                                Estimativas
+                            </h4>
+                            <div class="estimates-grid">
+                                <div class="estimate-item">
+                                    <span class="estimate-label">Tempo decorrido</span>
+                                    <span class="estimate-value">{{liveProgress.elapsedTime}}</span>
                                 </div>
-                                <div ng-if="liveProgress.recentLogs.length === 0" class="text-muted">
-                                    <em>Aguardando logs...</em>
-                                </div>
-                            </div>
-                            
-                            <div ng-if="liveProgress.estimatedTime" style="margin-top: 10px;">
-                                <h5><strong>Estimativas:</strong></h5>
-                                <div class="well well-sm">
-                                    <p style="margin: 0;"><small>Tempo decorrido: {{liveProgress.elapsedTime}}</small></p>
-                                    <p style="margin: 0;"><small>Tempo restante: {{liveProgress.estimatedTime}}</small></p>
-                                    <p style="margin: 0;"><small>Taxa: {{liveProgress.pointsPerMinute}} pontos/min</small></p>
+                                <div class="estimate-item">
+                                    <span class="estimate-label">Tempo restante</span>
+                                    <span class="estimate-value">{{liveProgress.estimatedTime}}</span>
                                 </div>
                             </div>
                         </div>
@@ -140,98 +171,120 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Gerenciamento de Jobs em Background -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-cog"></i> 
+        <!-- Job Management Section -->
+        <div class="job-section">
+            <div class="job-card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs"></i>
                         Job de Cache Automático
-                        <span ng-if="liveProgress.isRunning" class="label label-warning pull-right" style="margin-right: 10px;">
-                            <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i> EXECUTANDO
-                        </span>
-                        <button class="btn btn-xs btn-default pull-right" ng-click="loadJobStatus()" ng-disabled="loading.job">
-                            <i class="glyphicon glyphicon-refresh" ng-class="{'glyphicon-refresh-animate': loading.job}"></i>
+                    </h3>
+                    <div class="header-actions">
+                        <div ng-if="liveProgress.isRunning" class="status-badge running">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            EXECUTANDO
+                        </div>
+                        <button class="action-btn refresh" ng-click="loadJobStatus()" ng-disabled="loading.job">
+                            <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.job}"></i>
                             Atualizar
                         </button>
-                    </h4>
-                </div>
-                <div class="panel-body">
-                    <div ng-if="loading.job" class="text-center">
-                        <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i>
-                        Carregando status do job...
                     </div>
-                    
-                    <div ng-if="!loading.job">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5><strong>Status do Job:</strong></h5>
-                                <p>
-                                    <span class="label" ng-class="jobStatus.isEnabled ? 'label-success' : 'label-danger'">
-                                        <i class="glyphicon" ng-class="jobStatus.isEnabled ? 'glyphicon-ok' : 'glyphicon-remove'"></i>
-                                        {{jobStatus.isEnabled ? 'Ativo' : 'Inativo'}}
-                                    </span>
-                                </p>
-                                
-                                <p ng-if="jobStatus.lastExecution">
-                                    <strong>Última Execução:</strong> {{jobStatus.lastExecution}}
-                                </p>
-                                
-                                <div class="form-group">
-                                    <h5><strong>Configuração Atual:</strong></h5>
-                                    <table class="table table-condensed">
-                                        <tr>
-                                            <td>Tamanho do Batch:</td>
-                                            <td>{{jobStatus.configuration.batchSize}} pontos</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Máximo por Execução:</td>
-                                            <td>{{jobStatus.configuration.maxPointsPerRun}} pontos</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Modo:</td>
-                                            <td>
-                                                <span class="label" ng-class="jobStatus.configuration.simulate ? 'label-info' : 'label-warning'">
-                                                    {{jobStatus.configuration.simulate ? 'Simulação' : 'Real'}}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </table>
+                </div>
+                
+                <div ng-if="loading.job" class="loading-state">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p class="loading-text">Carregando status do job...</p>
+                </div>
+                
+                <div ng-if="!loading.job" class="job-content">
+                    <div class="job-status">
+                        <h4 class="subsection-title">
+                            <i class="fas fa-info-circle"></i>
+                            Status do Job
+                        </h4>
+                        
+                        <div class="status-info">
+                            <div class="status-item">
+                                <span class="status-label">Estado</span>
+                                <div class="status-badge" ng-class="jobStatus.isEnabled ? 'active' : 'inactive'">
+                                    <i class="fas" ng-class="jobStatus.isEnabled ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                    {{jobStatus.isEnabled ? 'Ativo' : 'Inativo'}}
                                 </div>
                             </div>
                             
-                            <div class="col-md-6">
-                                <h5><strong>Configurar Job:</strong></h5>
-                                <form class="form-horizontal">
-                                    <div class="form-group">
-                                        <label class="col-sm-5 control-label">Batch Size:</label>
-                                        <div class="col-sm-7">
-                                            <input type="number" class="form-control" ng-model="jobConfig.batchSize" 
-                                                   min="1" max="10" placeholder="3">
-                                        </div>
+                            <div class="status-item" ng-if="jobStatus.lastExecution">
+                                <span class="status-label">Última Execução</span>
+                                <span class="status-value">{{jobStatus.lastExecution}}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="config-current">
+                            <h5 class="config-title">Configuração Atual</h5>
+                            <div class="config-grid">
+                                <div class="config-item">
+                                    <span class="config-label">Tamanho do Batch</span>
+                                    <span class="config-value">{{jobStatus.configuration.batchSize}} pontos</span>
+                                </div>
+                                <div class="config-item">
+                                    <span class="config-label">Máximo por Execução</span>
+                                    <span class="config-value">{{jobStatus.configuration.maxPointsPerRun}} pontos</span>
+                                </div>
+                                <div class="config-item">
+                                    <span class="config-label">Modo de Operação</span>
+                                    <div class="mode-badge" ng-class="jobStatus.configuration.simulate ? 'simulation' : 'production'">
+                                        <i class="fas" ng-class="jobStatus.configuration.simulate ? 'fa-flask' : 'fa-rocket'"></i>
+                                        {{jobStatus.configuration.simulate ? 'Simulação' : 'Produção'}}
                                     </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="col-sm-5 control-label">Max Pontos:</label>
-                                        <div class="col-sm-7">
-                                            <input type="number" class="form-control" ng-model="jobConfig.maxPointsPerRun" 
-                                                   min="5" max="100" placeholder="15">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-config">
+                        <h4 class="subsection-title">
+                            <i class="fas fa-sliders-h"></i>
+                            Configurar Job
+                        </h4>
+                        
+                        <div class="config-form">
+                            <div class="form-group">
+                                <label class="form-label">Tamanho do Batch</label>
+                                <input type="number" class="form-input" ng-model="jobConfig.batchSize" 
+                                       min="1" max="10" placeholder="3">
+                                <span class="form-hint">Número de pontos processados simultaneamente</span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Máximo de Pontos por Execução</label>
+                                <input type="number" class="form-input" ng-model="jobConfig.maxPointsPerRun" 
+                                       min="5" max="100" placeholder="15">
+                                <span class="form-hint">Limite de pontos processados a cada execução do job</span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Modo de Operação</label>
+                                <div class="radio-group">
+                                    <label class="radio-option">
+                                        <input type="radio" ng-model="jobConfig.simulate" ng-value="true">
+                                        <div class="radio-content">
+                                            <i class="fas fa-flask"></i>
+                                            <span class="radio-label">Simulação</span>
+                                            <span class="radio-desc">Apenas simular, sem fazer cache real</span>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="col-sm-5 control-label">Modo:</label>
-                                        <div class="col-sm-7">
-                                            <label class="radio-inline">
-                                                <input type="radio" ng-model="jobConfig.simulate" ng-value="true"> Simulação
-                                            </label>
-                                            <label class="radio-inline">
-                                                <input type="radio" ng-model="jobConfig.simulate" ng-value="false"> Real
-                                            </label>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" ng-model="jobConfig.simulate" ng-value="false">
+                                        <div class="radio-content">
+                                            <i class="fas fa-rocket"></i>
+                                            <span class="radio-label">Produção</span>
+                                            <span class="radio-desc">Executar cache real nos servidores</span>
                                         </div>
+                                    </label>
+                                </div>
+                            </div>
                                     </div>
                                     
                                     <div class="form-group">
@@ -553,7 +606,7 @@
                             <div class="col-sm-9">
                                 <select class="form-control" ng-model="processing.campaignId">
                                     <option value="">Todas as campanhas</option>
-                                    <option ng-repeat="campaign in getCampaignsForSelection()" 
+                                    <option ng-repeat="campaign in campaignsForSelection" 
                                             ng-value="campaign.id">
                                         {{campaign.name}} ({{campaign.uncachedCount}} pontos não cacheados)
                                     </option>
@@ -876,5 +929,809 @@
                 </div>
             </div>
         </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+/* Cache Manager - Modern Interface */
+.cache-manager-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.cache-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.header-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-desc {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+    font-size: 1rem;
+}
+
+.action-btn.refresh {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn.refresh:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Main Content */
+.cache-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Section Headers */
+.section-header {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.subsection-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Loading States */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    font-size: 2.5rem;
+    color: #667eea;
+}
+
+.loading-text {
+    color: #718096;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.stat-card.total {
+    border-left-color: #667eea;
+}
+
+.stat-card.cached {
+    border-left-color: #48bb78;
+}
+
+.stat-card.uncached {
+    border-left-color: #e53e3e;
+}
+
+.stat-card.percentage {
+    border-left-color: #ed8936;
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+}
+
+.stat-card.total .stat-icon {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.stat-card.cached .stat-icon {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.stat-card.uncached .stat-icon {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+}
+
+.stat-card.percentage .stat-icon {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1a202c;
+    line-height: 1;
+}
+
+.stat-value.success {
+    color: #38a169;
+}
+
+.stat-value.warning {
+    color: #dd6b20;
+}
+
+.stat-value.danger {
+    color: #c53030;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+/* Live Progress Section */
+.live-progress-section {
+    margin-top: 1rem;
+}
+
+.progress-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 2px solid #48bb78;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mode-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.mode-badge.simulation {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
+.mode-badge.real,
+.mode-badge.production {
+    background: #fed7e2;
+    color: #b83280;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-badge.running {
+    background: #fed7e2;
+    color: #b83280;
+}
+
+.status-badge.active {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.status-badge.inactive {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.progress-content {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.progress-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.progress-info {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 1rem;
+}
+
+.progress-percentage {
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 1.25rem;
+}
+
+.progress-bar-container {
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 0.75rem;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    border-radius: 6px;
+    transition: all 0.5s ease;
+    position: relative;
+}
+
+.progress-bar-fill.animated {
+    background: linear-gradient(90deg, #48bb78, #38a169, #48bb78);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.progress-details {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.live-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.live-stat {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.live-stat .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.live-stat .stat-label {
+    font-size: 0.75rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
+.progress-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.logs-section,
+.estimates-section {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.logs-title,
+.estimates-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logs-container {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    padding: 0.75rem;
+}
+
+.log-entry {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.log-time {
+    color: #718096;
+    font-weight: 500;
+    min-width: 60px;
+}
+
+.log-message {
+    color: #2d3748;
+    flex: 1;
+}
+
+.log-empty {
+    color: #a0aec0;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.estimates-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.estimate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.estimate-label {
+    font-size: 0.875rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.estimate-value {
+    font-size: 0.875rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+/* Job Section */
+.job-section {
+    margin-top: 1rem;
+}
+
+.job-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.job-content {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.job-status,
+.job-config {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.status-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 1rem;
+}
+
+.status-value {
+    color: #2d3748;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.config-current {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.config-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin: 0 0 1rem 0;
+}
+
+.config-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.config-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.config-label {
+    font-size: 0.875rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.config-value {
+    font-size: 0.875rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.form-input {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-hint {
+    font-size: 0.875rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.radio-option:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+}
+
+.radio-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"]:checked + .radio-content {
+    color: #667eea;
+}
+
+.radio-option:has(input:checked) {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.radio-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.radio-content i {
+    font-size: 1.25rem;
+    opacity: 0.7;
+}
+
+.radio-label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1rem;
+}
+
+.radio-desc {
+    font-size: 0.875rem;
+    color: #718096;
+    margin-left: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .header-left {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .cache-content {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+    }
+    
+    .progress-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .job-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .live-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .radio-option {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .radio-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .radio-desc {
+        margin-left: 0;
+    }
+}
+
+/* Animation for spinning icons */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s infinite linear;
+}
+</style>
