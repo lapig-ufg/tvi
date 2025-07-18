@@ -54,13 +54,14 @@ module.exports = function(app) {
 					"params": {}
 				},
 				{
-					"name": "smartCacheProcessor",
-					"cron": '0 0 3,4,5 * * *', // Executar às 3h, 4h e 5h da manhã
+					"name": "logsCleaner",
+					"cron": '0 0 2 */7 * *',
 					"runOnAppStart": false,
 					"params": {
-						"batchSize": 5,
-						"maxPointsPerRun": 100,
-						"simulate": true // Começar em modo simulação
+						"daysToKeep": 30,
+						"keepErrors": true,
+						"batchSize": 1000,
+						"simulate": false
 					}
 				}
 			]
@@ -72,6 +73,7 @@ module.exports = function(app) {
 		config["mongo"]["port"] = "27017";
 		config.jobs.toRun[0].runOnAppStart = false;
 		config.jobs.toRun[1].runOnAppStart = false;
+		config.jobs.toRun[2].runOnAppStart = false;
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
 		// Ensure log directory exists in production
 		if (!require('fs').existsSync(config.logDir)) {

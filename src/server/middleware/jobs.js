@@ -458,6 +458,211 @@ module.exports = function(app) {
 		}); // Fecha a função cacheConfigCollection.findOne
 	}
 
+	/**
+	 * Job para limpar logs antigos do MongoDB
+	 */
+	Jobs.logsCleaner = function(params, logStream, callback) {
+		writeLog(logStream, 'Iniciando limpeza de logs...');
+		
+		var logsCollection = app.repository.collections.logs;
+		var logsConfigCollection = app.repository.collections.logsConfig;
+		
+		// Se não existir a coleção logsConfig, criar
+		if (!logsConfigCollection) {
+			logsConfigCollection = app.repository.db.collection('logsConfig');
+			app.repository.collections.logsConfig = logsConfigCollection;
+		}
+		
+		// Função para emitir eventos via socket
+		var emitLogsUpdate = function(event, data) {
+			if (app.io) {
+				app.io.to('logs-updates').emit(event, {
+					timestamp: new Date().toISOString(),
+					...data
+				});
+			}
+		};
+		
+		// Buscar configurações do MongoDB
+		logsConfigCollection.findOne({ configType: 'logsCleaner' }, function(err, mongoConfig) {
+			if (err) {
+				writeLog(logStream, 'Erro ao buscar configuração no MongoDB: ' + err.message);
+				return callback(err);
+			}
+			
+			// Se não há configuração no MongoDB, usar parâmetros passados ou padrões
+			var config = mongoConfig || params || {
+				daysToKeep: 30,        // Manter logs dos últimos 30 dias
+				keepErrors: true,      // Sempre manter logs de erro
+				batchSize: 1000,       // Deletar em lotes de 1000
+				simulate: false        // Por padrão, executar de verdade
+			};
+			
+			// Verificar se o job está habilitado
+			if (mongoConfig && mongoConfig.isEnabled === false) {
+				writeLog(logStream, 'Job desabilitado na configuração - pulando execução');
+				return callback();
+			}
+			
+			// Configurações do job
+			var daysToKeep = config.daysToKeep || 30;
+			var keepErrors = config.keepErrors !== false;
+			var batchSize = config.batchSize || 1000;
+			var simulate = config.simulate || false;
+			
+			writeLog(logStream, `Configuração: Manter logs dos últimos ${daysToKeep} dias, ${keepErrors ? 'preservar erros' : 'incluir erros'}, lotes de ${batchSize}, modo: ${simulate ? 'SIMULAÇÃO' : 'REAL'}`);
+			
+			// Calcular data de corte
+			var cutoffDate = new Date();
+			cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+			
+			writeLog(logStream, `Data de corte: ${cutoffDate.toISOString()}`);
+			
+			// Construir query de busca
+			var deleteQuery = {
+				timestamp: { $lt: cutoffDate }
+			};
+			
+			if (keepErrors) {
+				// Excluir logs de erro da limpeza
+				deleteQuery.level = { $ne: 'error' };
+			}
+			
+			// Primeiro, contar quantos logs serão removidos
+			logsCollection.count(deleteQuery, function(err, totalToDelete) {
+				if (err) {
+					writeLog(logStream, 'Erro ao contar logs para remoção: ' + err.message);
+					return callback(err);
+				}
+				
+				writeLog(logStream, `Total de logs a remover: ${totalToDelete}`);
+				
+				// Emitir evento de início
+				emitLogsUpdate('logs-cleanup-started', {
+					totalToDelete: totalToDelete,
+					cutoffDate: cutoffDate,
+					keepErrors: keepErrors,
+					simulate: simulate
+				});
+				
+				if (totalToDelete === 0) {
+					writeLog(logStream, 'Nenhum log para remover');
+					emitLogsUpdate('logs-cleanup-completed', {
+						deletedCount: 0,
+						simulate: simulate
+					});
+					return callback();
+				}
+				
+				if (simulate) {
+					// Modo simulação - apenas reportar o que seria feito
+					writeLog(logStream, `[SIMULAÇÃO] ${totalToDelete} logs seriam removidos`);
+					
+					// Buscar alguns exemplos de logs que seriam removidos
+					logsCollection.find(deleteQuery)
+						.limit(10)
+						.toArray(function(err, sampleLogs) {
+							if (err) {
+								writeLog(logStream, 'Erro ao buscar amostras: ' + err.message);
+							} else {
+								writeLog(logStream, 'Exemplos de logs que seriam removidos:');
+								sampleLogs.forEach(function(log) {
+									writeLog(logStream, `  - ${log.timestamp} | ${log.level} | ${log.message}`);
+								});
+							}
+							
+							emitLogsUpdate('logs-cleanup-completed', {
+								deletedCount: 0,
+								wouldDelete: totalToDelete,
+								simulate: true
+							});
+							
+							return callback();
+						});
+				} else {
+					// Modo real - executar remoção em lotes
+					var totalDeleted = 0;
+					var errors = 0;
+					
+					var processBatch = function() {
+						logsCollection.find(deleteQuery)
+							.limit(batchSize)
+							.toArray(function(err, logsToDelete) {
+								if (err) {
+									writeLog(logStream, 'Erro ao buscar lote para remoção: ' + err.message);
+									errors++;
+									return processNextBatch();
+								}
+								
+								if (logsToDelete.length === 0) {
+									// Não há mais logs para deletar
+									writeLog(logStream, `Limpeza concluída. Total removido: ${totalDeleted}`);
+									
+									emitLogsUpdate('logs-cleanup-completed', {
+										deletedCount: totalDeleted,
+										errors: errors,
+										simulate: false
+									});
+									
+									return callback();
+								}
+								
+								// Extrair IDs para deletar
+								var idsToDelete = logsToDelete.map(function(log) {
+									return log._id;
+								});
+								
+								// Deletar o lote
+								logsCollection.deleteMany(
+									{ _id: { $in: idsToDelete } },
+									function(err, result) {
+										if (err) {
+											writeLog(logStream, 'Erro ao deletar lote: ' + err.message);
+											errors++;
+										} else {
+											var deletedInBatch = result.deletedCount || 0;
+											totalDeleted += deletedInBatch;
+											writeLog(logStream, `Lote processado: ${deletedInBatch} logs removidos (Total: ${totalDeleted}/${totalToDelete})`);
+											
+											// Emitir progresso
+											emitLogsUpdate('logs-cleanup-progress', {
+												deletedInBatch: deletedInBatch,
+												totalDeleted: totalDeleted,
+												totalToDelete: totalToDelete,
+												progress: (totalDeleted / totalToDelete) * 100
+											});
+										}
+										
+										// Processar próximo lote após pequena pausa
+										setTimeout(processNextBatch, 100);
+									}
+								);
+							});
+					};
+					
+					var processNextBatch = function() {
+						if (totalDeleted < totalToDelete) {
+							processBatch();
+						} else {
+							writeLog(logStream, `Limpeza concluída. Total removido: ${totalDeleted}`);
+							
+							emitLogsUpdate('logs-cleanup-completed', {
+								deletedCount: totalDeleted,
+								errors: errors,
+								simulate: false
+							});
+							
+							return callback();
+						}
+					};
+					
+					// Iniciar processamento
+					processBatch();
+				}
+			});
+		});
+	}
+
 	Jobs.publishLayers = function(params, logStream, callback) {
 		
 		var onEach = function(key, next) {

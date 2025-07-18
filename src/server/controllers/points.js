@@ -1,7 +1,8 @@
-const logger = require('../services/logger');
 const proj4 = require('proj4');
 
 module.exports = function(app) {
+	// Usar o logger do app
+	const logger = app.services.logger;
 
 	var Points = {};
 	var points = app.repository.collections.points;
@@ -12,7 +13,20 @@ module.exports = function(app) {
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
 		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
 
+		// Timeout para evitar travamentos
+		var timeoutId = setTimeout(function() {
+			console.warn(`getImageDates timeout for path: ${path}, row: ${row}`);
+			callback({}); // Retorna resultado vazio em caso de timeout
+		}, 10000); // 10 segundos
+
 		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
+			clearTimeout(timeoutId);
+			
+			if (err) {
+				console.error('Error in getImageDates:', err);
+				return callback({});
+			}
+
 			var result = {}
 
 			docs.forEach(function(doc) {
@@ -41,6 +55,7 @@ module.exports = function(app) {
 	}
 
 	var findPoint = function(campaign, username, callback) {
+		console.log('[FINDPOINT] Starting findPoint for:', { campaign: campaign._id, username, numInspec: campaign.numInspec });
 
 		var findOneFilter = {
 			"$and": [
@@ -76,12 +91,35 @@ module.exports = function(app) {
 		var findOneUpdate = {'$inc': {'underInspection': 1}}
 
 		//points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
+		console.log('[FINDPOINT] Executing findAndModify with filter:', JSON.stringify(findOneFilter));
 		points.findAndModify(findOneFilter, findOneSort, findOneUpdate, {}, function(err, object) {
+			console.log('[FINDPOINT] findAndModify completed:', { err: !!err, hasObject: !!object, hasValue: !!(object && object.value) });
+			
+			if (err) {
+				console.error('[FINDPOINT] findAndModify error:', err);
+				return callback({ error: 'Database error in findAndModify' });
+			}
+			
 			point = object.value
 			if(point) {
+				console.log('[FINDPOINT] Point found, getting counts:', point._id);
 				points.count(totalFilter, function(err, total) {
+					console.log('[FINDPOINT] Total count completed:', { err: !!err, total });
+					if (err) {
+						console.error('[FINDPOINT] Total count error:', err);
+						return callback({ error: 'Database error in total count' });
+					}
+					
 					points.count(countFilter, function (err, count) {
+						console.log('[FINDPOINT] User count completed:', { err: !!err, count });
+						if (err) {
+							console.error('[FINDPOINT] User count error:', err);
+							return callback({ error: 'Database error in user count' });
+						}
+						
+						console.log('[FINDPOINT] Getting image dates for:', { path: point.path, row: point.row });
 						getImageDates(point.path, point.row, function(dates) {
+							console.log('[FINDPOINT] Image dates completed, finalizing result');
 							point.dates = dates
 
 							point.bounds = getWindow(point)
@@ -105,19 +143,35 @@ module.exports = function(app) {
 							result['user'] = username;
 							result['count'] = count;
 
+							console.log('[FINDPOINT] Sending result back to callback');
 							callback(result);
 						})
 					})
 				});
 			} else {
+				console.log('[FINDPOINT] No point found, getting counts for empty result');
 				points.count(totalFilter, function(err, total) {
+					console.log('[FINDPOINT] Total count (no point) completed:', { err: !!err, total });
+					if (err) {
+						console.error('[FINDPOINT] Total count (no point) error:', err);
+						return callback({ error: 'Database error in total count (no point)' });
+					}
+					
 					points.count(countFilter, function(err, count) {
+						console.log('[FINDPOINT] User count (no point) completed:', { err: !!err, count });
+						if (err) {
+							console.error('[FINDPOINT] User count (no point) error:', err);
+							return callback({ error: 'Database error in user count (no point)' });
+						}
+						
 						var result = {};
 						result['point'] = {};
 						result['total'] = total;
 						result['current'] = total
 						result['user'] = username;
 						result['count'] = count;
+						
+						console.log('[FINDPOINT] Sending empty result back to callback');
 						callback(result);
 					})
 				});
@@ -184,14 +238,28 @@ module.exports = function(app) {
 
 	Points.getCurrentPoint = async function(request, response) {
 		try {
+			// Verificar se a sessão existe antes de acessar
+			if (!request.session) {
+				console.error('[POINTS] No session middleware configured');
+				return response.status(500).json({ 
+					error: 'Session middleware not configured'
+				});
+			}
+
 			var user = request.session.user;
 
 			if (!user || !user.campaign) {
+				// Não passar o request completo para o logger para evitar referências circulares
 				const errorCode = await logger.warn('Get current point attempted without valid user session', {
-					req: request,
 					module: 'points',
 					function: 'getCurrentPoint',
-					metadata: { hasUser: !!user, hasCampaign: !!(user && user.campaign) }
+					metadata: { 
+						hasUser: !!user, 
+						hasSession: !!request.session,
+						sessionId: request.sessionID,
+						url: request.url,
+						method: request.method
+					}
 				});
 				
 				return response.status(401).json({ 
@@ -201,13 +269,14 @@ module.exports = function(app) {
 			}
 
 			await logger.info('Getting current point for user', {
-				req: request,
 				module: 'points',
 				function: 'getCurrentPoint',
 				metadata: {
 					username: user.name,
 					campaignId: user.campaign._id,
-					campaignName: user.campaign.name
+					campaignName: user.campaign.name,
+					sessionId: request.sessionID,
+					url: request.url
 				}
 			});
 
@@ -218,7 +287,6 @@ module.exports = function(app) {
 					result.campaign = user.campaign;
 
 					await logger.info('Current point retrieved successfully', {
-						req: request,
 						module: 'points',
 						function: 'getCurrentPoint',
 						metadata: {
@@ -226,7 +294,8 @@ module.exports = function(app) {
 							pointIndex: result.current,
 							totalPoints: result.total,
 							userCount: result.count,
-							username: user.name
+							username: user.name,
+							sessionId: request.sessionID
 						}
 					});
 
@@ -234,8 +303,7 @@ module.exports = function(app) {
 					response.end();
 				} catch (error) {
 					const errorCode = await logger.error('Error processing current point result', {
-						req: request,
-						module: 'points',
+								module: 'points',
 						function: 'getCurrentPoint',
 						metadata: {
 							error: error.message,
@@ -251,7 +319,6 @@ module.exports = function(app) {
 			})
 		} catch (error) {
 			const errorCode = await logger.error('Unexpected error in getCurrentPoint', {
-				req: request,
 				module: 'points',
 				function: 'getCurrentPoint',
 				metadata: {
@@ -274,8 +341,7 @@ module.exports = function(app) {
 
 			if (!user || !user.campaign) {
 				const errorCode = await logger.warn('Update point attempted without valid user session', {
-					req: request,
-					module: 'points',
+						module: 'points',
 					function: 'updatePoint',
 					metadata: { hasUser: !!user, hasCampaign: !!(user && user.campaign) }
 				});
@@ -288,8 +354,7 @@ module.exports = function(app) {
 
 			if (!point || !point._id) {
 				const errorCode = await logger.warn('Update point attempted without valid point data', {
-					req: request,
-					module: 'points',
+						module: 'points',
 					function: 'updatePoint',
 					metadata: {
 						username: user.name,
@@ -305,7 +370,6 @@ module.exports = function(app) {
 			}
 
 			await logger.info('Starting point update', {
-				req: request,
 				module: 'points',
 				function: 'updatePoint',
 				metadata: {
@@ -329,8 +393,7 @@ module.exports = function(app) {
 				try {
 					if (err) {
 						const errorCode = await logger.error('Database error finding point for update', {
-							req: request,
-							module: 'points',
+										module: 'points',
 							function: 'updatePoint',
 							metadata: {
 								pointId: point._id,
@@ -347,8 +410,7 @@ module.exports = function(app) {
 
 					if (!pointDb) {
 						const errorCode = await logger.warn('Point not found for update', {
-							req: request,
-							module: 'points',
+										module: 'points',
 							function: 'updatePoint',
 							metadata: {
 								pointId: point._id,
@@ -366,8 +428,7 @@ module.exports = function(app) {
 						updateStruct['$set'] = classConsolidate(point, pointDb, user);
 						
 						await logger.info('Point inspection complete - consolidating classification', {
-							req: request,
-							module: 'points',
+										module: 'points',
 							function: 'updatePoint',
 							metadata: {
 								pointId: point._id,
@@ -382,8 +443,7 @@ module.exports = function(app) {
 						try {
 							if (err) {
 								const errorCode = await logger.error('Database error updating point', {
-									req: request,
-									module: 'points',
+														module: 'points',
 									function: 'updatePoint',
 									metadata: {
 										pointId: point._id,
@@ -399,8 +459,7 @@ module.exports = function(app) {
 							}
 
 							await logger.info('Point updated successfully', {
-								req: request,
-								module: 'points',
+												module: 'points',
 								function: 'updatePoint',
 								metadata: {
 									pointId: point._id,
@@ -415,8 +474,7 @@ module.exports = function(app) {
 							response.end();
 						} catch (error) {
 							const errorCode = await logger.error('Error processing point update result', {
-								req: request,
-								module: 'points',
+												module: 'points',
 								function: 'updatePoint',
 								metadata: {
 									pointId: point._id,
@@ -433,8 +491,7 @@ module.exports = function(app) {
 					});
 				} catch (error) {
 					const errorCode = await logger.error('Error in point update database operation', {
-						req: request,
-						module: 'points',
+								module: 'points',
 						function: 'updatePoint',
 						metadata: {
 							pointId: point._id,
@@ -451,7 +508,6 @@ module.exports = function(app) {
 			});
 		} catch (error) {
 			const errorCode = await logger.error('Unexpected error in updatePoint', {
-				req: request,
 				module: 'points',
 				function: 'updatePoint',
 				metadata: {

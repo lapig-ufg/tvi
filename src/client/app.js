@@ -53,6 +53,10 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/admin-temporal.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin', {
+			controller: 'AdminRedirectController',
+			template: '<div>Redirecionando...</div>'
+		})
 		.when('/login', {
 			controller: 'LoginController',
 			templateUrl: 'views/login.tpl.html',

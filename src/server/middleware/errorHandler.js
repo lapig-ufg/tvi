@@ -15,11 +15,51 @@ module.exports = function(app) {
         return `ERR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     };
     
+    // Função para extrair informações seguras do request object
+    const getSafeRequestInfo = (req) => {
+        return {
+            method: req.method,
+            url: req.url,
+            originalUrl: req.originalUrl,
+            headers: {
+                'content-type': req.get('Content-Type'),
+                'user-agent': req.get('User-Agent'),
+                'accept': req.get('Accept'),
+                'authorization': req.get('Authorization') ? '[REDACTED]' : undefined
+            },
+            query: req.query,
+            params: req.params,
+            body: req.body && typeof req.body === 'object' ? 
+                JSON.stringify(req.body).length > 1000 ? '[Body too large]' : req.body : 
+                req.body,
+            ip: req.ip || (req.connection && req.connection.remoteAddress),
+            sessionId: req.sessionID,
+            requestId: req.requestId
+        };
+    };
+    
+    // Export da função para uso em outros módulos
+    ErrorHandler.getSafeRequestInfo = getSafeRequestInfo;
+    
     // Função para escrever logs em arquivo
     const writeErrorLog = (errorData) => {
         const date = new Date();
         const logFile = path.join(logDir, `errors_${date.toISOString().split('T')[0]}.log`);
-        const logEntry = JSON.stringify(errorData) + '\n';
+        
+        // Serialize with circular reference handling
+        const logEntry = JSON.stringify(errorData, (key, value) => {
+            // Remove circular references and large objects
+            if (key === 'req' || key === 'request' || key === 'res' || key === 'response') {
+                return '[Circular Reference Removed]';
+            }
+            if (typeof value === 'object' && value !== null && value.constructor && value.constructor.name === 'Socket') {
+                return '[Socket Object Removed]';
+            }
+            if (typeof value === 'function') {
+                return '[Function Removed]';
+            }
+            return value;
+        }) + '\n';
         
         fs.appendFile(logFile, logEntry, (err) => {
             if (err) console.error('Failed to write error log:', err);
@@ -217,12 +257,51 @@ module.exports = function(app) {
     };
     
     // Middleware para timeout de requisições
-    ErrorHandler.requestTimeout = (timeout = 300000) => { // 5 minutos default
+    ErrorHandler.requestTimeout = (timeout = 120000) => { // 2 minutos default
         return (req, res, next) => {
+            const startTime = Date.now();
+            const requestId = generateErrorId();
+            
+            // Capturar stack trace no momento da criação do timer
+            const originalStack = new Error().stack;
+            
             const timer = setTimeout(() => {
-                const timeoutError = new Error('Request timeout');
+                const duration = Date.now() - startTime;
+                
+                // Coletar informações detalhadas sobre o timeout
+                const timeoutDetails = {
+                    requestId: requestId,
+                    route: req.route ? req.route.path : req.originalUrl || req.url,
+                    method: req.method,
+                    duration: duration,
+                    timeout: timeout,
+                    timestamp: new Date().toISOString(),
+                    userAgent: req.get('User-Agent'),
+                    ip: req.ip || req.connection.remoteAddress,
+                    headers: {
+                        contentType: req.get('Content-Type'),
+                        contentLength: req.get('Content-Length'),
+                        accept: req.get('Accept')
+                    },
+                    params: req.params,
+                    query: req.query,
+                    bodySize: req.body ? JSON.stringify(req.body).length : 0,
+                    sessionExists: !!req.session,
+                    sessionUser: (req.session && req.session.user && req.session.user.name) || 'anonymous',
+                    originalStack: originalStack,
+                    requestStack: new Error('Request timeout location').stack,
+                    responseStatus: res.statusCode,
+                    headersSent: res.headersSent
+                };
+                
+                console.error('[REQUEST TIMEOUT DETAILS]', timeoutDetails);
+                
+                const timeoutError = new Error(`Request timeout after ${duration}ms on ${req.method} ${req.originalUrl || req.url}`);
                 timeoutError.statusCode = 408;
                 timeoutError.code = 'REQUEST_TIMEOUT';
+                timeoutError.details = timeoutDetails;
+                timeoutError.originalStack = originalStack;
+                
                 next(timeoutError);
             }, timeout);
             

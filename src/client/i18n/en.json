@@ -15,7 +15,8 @@
     "SECONDS": "seconds",
     "CHOOSE": "Choose",
     "ALL": "All",
-    "NOT_CONSOLIDATED": "Not Consolidated"
+    "NOT_CONSOLIDATED": "Not Consolidated",
+    "USER": "User"
   },
   "NAVBAR": {
     "POINTS": "Points",
@@ -41,7 +42,8 @@
       "USERS": "Users",
       "BIOME": "Biome",
       "REGION": "Region",
-      "STATE": "State"
+      "STATE": "State",
+      "PERIOD": "Period"
     },
     "POINT_INFO": {
       "POINT_NUMBER": "Point #",
@@ -66,7 +68,8 @@
       "SENTINEL_IMAGES": "Sentinel-2 L2A Images",
       "NATURAL_COLOR": "Natural Color",
       "AGRICULTURE": "Agriculture",
-      "FALSE_COLOR": "False Color"
+      "FALSE_COLOR": "False Color",
+      "VISUALIZATION": "Visualization"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "LANDSAT time series",
@@ -76,6 +79,9 @@
   },
   "TEMPORAL": {
     "TITLE": "Temporal",
+    "NAVIGATION_FILTERS": "Navigation and Filters",
+    "POINT_INFO_TABLE": "Point Information and Table",
+    "TIMESERIES": "Time Series",
     "LOCATION_INFO": {
       "TITLE": "Location information",
       "BIOME": "Biome",
@@ -229,5 +235,8 @@
     "USERNAME_PASSWORD_REQUIRED": "Username and password are required",
     "LOGIN_SUCCESS": "Login successful, redirecting to admin/campaigns",
     "LOGIN_ERROR": "Login error"
+  },
+  "CAMPAIGN": {
+    "CAMPAIGN": "Campaign"
   }
 }

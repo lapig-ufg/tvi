@@ -1,9 +1,10 @@
 const csv = require('fast-csv');
 const proj4 = require('proj4');
 const {exec} = require("child_process");
-const logger = require('../services/logger');
 
 module.exports = function (app) {
+    // Usar o logger do app
+    const logger = app.services.logger;
 
     var Points = {};
     var pointsCollection = app.repository.collections.points;

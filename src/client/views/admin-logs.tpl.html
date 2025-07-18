@@ -17,6 +17,14 @@
                 <i class="fas fa-trash"></i>
                 Limpar Logs
             </button>
+            <button class="job-config-btn" ng-click="showJobConfigModal()">
+                <i class="fas fa-cog"></i>
+                Configurar Job
+            </button>
+            <button class="export-btn" ng-click="exportLogs()">
+                <i class="fas fa-download"></i>
+                Exportar CSV
+            </button>
         </div>
     </div>
 
@@ -97,7 +105,7 @@
     </div>
 
     <!-- Gráfico de Atividade -->
-    <div class="activity-chart" ng-if="chartData">
+    <div class="activity-chart">
         <h3 class="chart-title">Atividade dos Últimos {{ selectedPeriod }} Dias</h3>
         <div class="chart-container">
             <canvas id="logsChart"></canvas>
@@ -178,132 +186,6 @@
             </button>
         </div>
     </div>
-</div>
-
-<!-- Modal de Detalhes do Log -->
-<div class="modal" ng-show="showDetailsModal">
-    <div class="modal-backdrop" ng-click="closeDetailsModal()"></div>
-    <div class="modal-content log-details-modal">
-        <div class="modal-header">
-            <h2>Detalhes do Log</h2>
-            <button class="close-btn" ng-click="closeDetailsModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body" ng-if="selectedLog">
-            <div class="detail-section">
-                <h3>Informações Básicas</h3>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <label>ID do Log:</label>
-                        <span class="mono">{{ selectedLog.logId }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Timestamp:</label>
-                        <span>{{ formatDate(selectedLog.timestamp) }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Nível:</label>
-                        <span class="log-level level-{{ selectedLog.level }}">
-                            {{ selectedLog.level | uppercase }}
-                        </span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Módulo:</label>
-                        <span>{{ selectedLog.application.module }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Função:</label>
-                        <span>{{ selectedLog.application.function }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="detail-section">
-                <h3>Mensagem</h3>
-                <div class="message-box">{{ selectedLog.message }}</div>
-            </div>
-            
-            <div class="detail-section" ng-if="selectedLog.user.id">
-                <h3>Informações do Usuário</h3>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <label>ID:</label>
-                        <span>{{ selectedLog.user.id }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Nome:</label>
-                        <span>{{ selectedLog.user.username || '-' }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>Papel:</label>
-                        <span>{{ selectedLog.user.role || '-' }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="detail-section" ng-if="selectedLog.request.method">
-                <h3>Informações da Requisição</h3>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <label>Método:</label>
-                        <span>{{ selectedLog.request.method }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>URL:</label>
-                        <span>{{ selectedLog.request.url }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <label>IP:</label>
-                        <span>{{ selectedLog.request.ip }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="detail-section" ng-if="selectedLog.metadata && hasMetadata(selectedLog.metadata)">
-                <h3>Metadados</h3>
-                <pre class="metadata-box">{{ selectedLog.metadata | json }}</pre>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Limpeza -->
-<div class="modal" ng-show="showCleanupModalFlag">
-    <div class="modal-backdrop" ng-click="closeCleanupModal()"></div>
-    <div class="modal-content cleanup-modal">
-        <div class="modal-header">
-            <h2>Limpar Logs Antigos</h2>
-            <button class="close-btn" ng-click="closeCleanupModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <p>Esta ação irá remover permanentemente os logs mais antigos que o período selecionado.</p>
-            <div class="cleanup-options">
-                <label>Remover logs mais antigos que:</label>
-                <select ng-model="cleanupDays">
-                    <option value="7">7 dias</option>
-                    <option value="15">15 dias</option>
-                    <option value="30">30 dias</option>
-                    <option value="60">60 dias</option>
-                    <option value="90">90 dias</option>
-                </select>
-            </div>
-            <div class="warning-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>Esta ação não pode ser desfeita!</span>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="cancel-btn" ng-click="closeCleanupModal()">Cancelar</button>
-            <button class="confirm-btn danger" ng-click="performCleanup()">
-                <i class="fas fa-trash"></i>
-                Limpar Logs
-            </button>
-        </div>
-    </div>
-</div>
 
 <style>
 /* Container Principal */
@@ -363,7 +245,9 @@
 }
 
 .refresh-btn,
-.cleanup-btn {
+.cleanup-btn,
+.job-config-btn,
+.export-btn {
     background: white;
     border: 1px solid #e2e8f0;
     padding: 0.5rem 1rem;
@@ -708,44 +592,29 @@
     font-size: 1.125rem;
 }
 
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Modal - Estilos para $uibModal */
+.modal-backdrop {
+    opacity: 0.5;
 }
 
-.modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+.log-details-modal .modal-dialog {
+    width: 800px;
+    max-width: 90%;
+}
+
+.cleanup-modal .modal-dialog {
+    width: 500px;
+    max-width: 90%;
+}
+
+.job-config-modal .modal-dialog {
+    width: 600px;
+    max-width: 90%;
 }
 
 .modal-content {
-    position: relative;
-    background: white;
     border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    max-width: 90%;
-    max-height: 90vh;
-    overflow: auto;
-}
-
-.log-details-modal {
-    width: 800px;
-}
-
-.cleanup-modal {
-    width: 500px;
+    overflow: visible;
 }
 
 .modal-header {
@@ -754,6 +623,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
 }
 
 .modal-header h2 {
@@ -761,6 +631,7 @@
     font-weight: 600;
     color: #2d3748;
     margin: 0;
+    flex: 1;
 }
 
 .close-btn {
@@ -770,6 +641,13 @@
     color: #a0aec0;
     cursor: pointer;
     transition: color 0.2s;
+    padding: 0;
+    width: auto;
+    height: auto;
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .close-btn:hover {
@@ -778,6 +656,8 @@
 
 .modal-body {
     padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .modal-footer {
@@ -920,6 +800,154 @@
 
 .confirm-btn.danger:hover {
     background: #c53030;
+}
+
+.trigger-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 1.125rem;
+    background: #f6ad55;
+    color: white;
+}
+
+.trigger-btn:hover {
+    background: #ed8936;
+}
+
+/* Job Config Form */
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group > label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 1.125rem;
+}
+
+.form-group input[type="number"] {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1.125rem;
+}
+
+.form-group small {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.input-with-suffix {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-with-suffix input {
+    flex: 1;
+}
+
+.suffix {
+    color: #718096;
+    font-size: 1.125rem;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-switch input[type="checkbox"] {
+    width: 3rem;
+    height: 1.5rem;
+    cursor: pointer;
+}
+
+.toggle-text {
+    margin-left: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.job-info {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.info-item {
+    margin-bottom: 0.5rem;
+}
+
+.info-item label {
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.job-logs {
+    margin-top: 2rem;
+}
+
+.job-logs h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.logs-output {
+    background: #1a202c;
+    color: #a0aec0;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.cleanup-checkbox {
+    margin: 1rem 0;
+}
+
+.cleanup-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.cleanup-checkbox input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+.job-config-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.export-btn {
+    color: #38a169;
+    border-color: #9ae6b4;
+}
+
+.export-btn:hover {
+    background: #f0fff4;
+    border-color: #68d391;
 }
 
 /* Responsividade */

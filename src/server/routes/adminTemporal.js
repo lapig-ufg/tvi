@@ -5,6 +5,8 @@ module.exports = function (app) {
     var dashboard = app.controllers.dashboard;
     var supervisor = app.controllers.supervisor;
     var image = app.controllers.image;
+    var sentinelCapabilities = app.controllers.sentinelCapabilities;
+    var landsatCapabilities = app.controllers.landsatCapabilities;
     
     // Middleware de autenticação para admin
     var checkAdminAuth = function(req, res, next) {
@@ -50,11 +52,8 @@ module.exports = function (app) {
     app.get('/service/admin/campaign/correct', checkAdminAuth, supervisor.correctCampaignAdmin);
     app.get('/service/admin/campaign/removeInspections', checkAdminAuth, supervisor.removeInspectionAdmin);
     
-    app.get('/service/admin/sentinel/capabilities', checkAdminAuth, function(req, res) {
-        // Retorna capabilities do Sentinel para admin
-        // TODO: Implementar busca real de capabilities do Sentinel
-        res.json([]);
-    });
+    app.get('/service/admin/sentinel/capabilities', checkAdminAuth, sentinelCapabilities.getCapabilities);
+    app.get('/service/admin/landsat/capabilities', checkAdminAuth, landsatCapabilities.getCapabilities);
     
     // Rotas de imagens para admin
     app.get('/service/admin/images/:mosaicId', checkAdminAuth, image.mosaicAdmin);

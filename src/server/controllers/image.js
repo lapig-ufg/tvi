@@ -4,9 +4,10 @@ var proj4 = require('proj4');
 var path = require('path');
 var request = require('request');
 var async = require('async');
-const logger = require('../services/logger');
 
 module.exports = function(app) {
+	// Usar o logger do app
+	const logger = app.services.logger;
 	
 	var Image = {};
 	var Internal = {};

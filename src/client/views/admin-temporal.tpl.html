@@ -1,32 +1,107 @@
 <style>
-/* Admin Temporal - Layout moderno e minimalista */
+/* Admin Temporal - Layout com accordions */
 .admin-temporal {
-    background: #fafafa;
+    background: #f8f9fa;
     min-height: 100vh;
-    padding-top: 50px;
+    padding: 1rem;
 }
 
-/* Header com navegação e filtros */
-.temporal-header {
+.admin-container {
+    margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+    margin: unset !important;
     background: #fff;
-    border-bottom: 1px solid #f0f0f0;
-    position: fixed;
-    top: 40px;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #2563eb;
 }
 
-.temporal-nav {
-    padding: 1.5rem 2rem;
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
     display: flex;
     align-items: center;
-    gap: 2rem;
-    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
-/* Navegação de pontos */
+.page-subtitle {
+    font-size: 1.375rem;
+    color: #6b7280;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Accordion Styles */
+.accordion-section {
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.accordion-header {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.accordion-header:hover {
+    background: #e9ecef;
+}
+
+.accordion-header.active {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.accordion-title {
+    font-size: 1.625rem;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.accordion-chevron {
+    transition: transform 0.2s;
+    font-size: 1.5rem;
+}
+
+.accordion-chevron.rotated {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 1.5rem;
+    display: none;
+}
+
+.accordion-content.active {
+    display: block;
+}
+
+/* Navigation Section */
+.navigation-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
 .point-navigation {
     display: flex;
     align-items: center;
@@ -34,176 +109,174 @@
 }
 
 .point-input {
-    width: 100px;
-    padding: 0.5rem 1rem;
-    border: 1px solid #e5e5e5;
-    font-size: 1rem;
+    width: 120px;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1.375rem;
     text-align: center;
     transition: all 0.2s;
 }
 
 .point-input:focus {
     outline: none;
-    border-color: #333;
-    box-shadow: 0 0 0 2px rgba(51,51,51,0.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .nav-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e5e5e5;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid #d1d5db;
     background: #fff;
-    font-size: 1rem;
+    border-radius: 6px;
+    font-size: 1.375rem;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background: #fafafa;
-    border-color: #333;
+    background: #f3f4f6;
+    border-color: #9ca3af;
 }
 
 .nav-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
 .nav-btn.primary {
-    background: #333;
+    background: #2563eb;
     color: #fff;
-    border-color: #333;
+    border-color: #2563eb;
 }
 
 .nav-btn.primary:hover:not(:disabled) {
-    background: #111;
-    border-color: #111;
+    background: #1d4ed8;
+    border-color: #1d4ed8;
 }
 
 .point-counter {
-    font-size: 1rem;
-    color: #666;
-    font-weight: 400;
+    font-size: 1.5rem;
+    color: #6b7280;
+    font-weight: 500;
 }
 
-/* Filtros modernos */
-.temporal-filters {
-    padding: 1rem 2rem;
-    background: #fafafa;
-    border-top: 1px solid #f0f0f0;
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-    flex-wrap: wrap;
+/* Filters */
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
 }
 
 .filter-group {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .filter-label {
-    font-size: 0.875rem;
-    color: #666;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #374151;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
 }
 
 .filter-select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e5e5e5;
+    padding: 0.625rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
     background: #fff;
-    font-size: 1rem;
-    min-width: 150px;
+    font-size: 1.25rem;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .filter-select:focus {
     outline: none;
-    border-color: #333;
-    box-shadow: 0 0 0 2px rgba(51,51,51,0.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* Radio buttons modernos */
-.radio-group {
+/* Sort Options */
+.sort-options {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
 }
 
-.radio-option {
+.sort-option {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
 }
 
-.radio-option input[type="radio"] {
+.sort-option input[type="radio"] {
     width: 16px;
     height: 16px;
-    accent-color: #333;
+    accent-color: #2563eb;
 }
 
-.radio-option label {
-    font-size: 0.875rem;
-    color: #333;
+.sort-option label {
+    font-size: 1.25rem;
+    color: #374151;
     cursor: pointer;
     user-select: none;
 }
 
-/* Container principal */
-.temporal-content {
-    margin-top: 140px;
-    padding: 2rem;
-}
-
-/* Grid de informações e tabela */
-.content-grid {
+/* Info and Table Grid */
+.info-table-grid {
     display: grid;
     grid-template-columns: 350px 1fr;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
 }
 
-/* Painel de informações do ponto */
+/* Point Info Panel */
 .point-info-panel {
     background: #fff;
-    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
     height: fit-content;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.panel-header {
+.info-panel-header {
     padding: 1.5rem;
-    border-bottom: 1px solid #f0f0f0;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
     text-align: center;
 }
 
-.panel-title {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: #333;
+.info-panel-title {
+    font-size: 1.625rem;
+    font-weight: 600;
+    color: #1f2937;
     margin: 0;
 }
 
-.panel-section {
+.info-section {
     padding: 1.5rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.panel-section:last-child {
+.info-section:last-child {
     border-bottom: none;
 }
 
-.section-title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #666;
+.info-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
     margin-bottom: 1rem;
 }
 
@@ -212,7 +285,7 @@
     justify-content: space-between;
     align-items: baseline;
     margin-bottom: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 1.25rem;
 }
 
 .info-item:last-child {
@@ -220,108 +293,105 @@
 }
 
 .info-label {
-    color: #666;
+    color: #6b7280;
+    font-weight: 500;
 }
 
 .info-value {
-    color: #333;
-    font-weight: 500;
+    color: #1f2937;
+    font-weight: 600;
 }
 
-/* Coordenadas */
 .coordinates-box {
-    background: #fafafa;
+    background: #f3f4f6;
     padding: 1rem;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.875rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.25rem;
+    color: #374151;
 }
 
-/* Estatísticas */
 .stats-box {
-    background: #e3f2fd;
+    background: #dbeafe;
     padding: 1rem;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .stats-value {
-    color: #1976d2;
-    font-weight: 500;
+    color: #1d4ed8;
+    font-weight: 600;
 }
 
-/* Botões de ação */
+/* Action Buttons */
 .action-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     padding: 1.5rem;
+    background: #f8f9fa;
 }
 
 .action-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e5e5e5;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid #d1d5db;
     background: #fff;
-    font-size: 0.875rem;
+    border-radius: 6px;
+    font-size: 1.25rem;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
 }
 
 .action-btn:hover {
-    border-color: #333;
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.action-btn.warning {
-    color: #f59e0b;
-}
+.action-btn.warning { color: #d97706; border-color: #fed7aa; }
+.action-btn.warning:hover { background: #fef3c7; }
 
-.action-btn.success {
-    color: #10b981;
-}
+.action-btn.success { color: #059669; border-color: #a7f3d0; }
+.action-btn.success:hover { background: #d1fae5; }
 
-.action-btn.primary {
-    color: #3b82f6;
-}
+.action-btn.primary { color: #2563eb; border-color: #bfdbfe; }
+.action-btn.primary:hover { background: #dbeafe; }
 
-.action-btn.danger {
-    color: #ef4444;
-}
+.action-btn.danger { color: #dc2626; border-color: #fecaca; }
+.action-btn.danger:hover { background: #fee2e2; }
 
-.action-btn.info {
-    color: #6b7280;
-}
+.action-btn.info { color: #6b7280; border-color: #e5e7eb; }
+.action-btn.info:hover { background: #f9fafb; }
 
-/* Tabela de inspeções */
-.inspection-panel {
+/* Inspection Table */
+.inspection-table-panel {
     background: #fff;
-    border: 1px solid #f0f0f0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     overflow: hidden;
 }
 
 .table-tabs {
     display: flex;
-    border-bottom: 1px solid #f0f0f0;
-    background: #fafafa;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .table-tab {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.875rem;
     border: none;
     background: none;
-    font-size: 0.875rem;
-    color: #666;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #6b7280;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
 }
 
 .table-tab.active {
-    color: #333;
+    color: #2563eb;
     background: #fff;
 }
 
@@ -332,11 +402,11 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #333;
+    background: #2563eb;
 }
 
 .table-container {
-    max-height: 300px;
+    max-height: 400px;
     overflow: auto;
 }
 
@@ -346,55 +416,96 @@
 }
 
 .inspection-table th {
-    padding: 1rem;
+    padding: 1.25rem;
     text-align: left;
-    font-weight: 500;
-    color: #666;
-    background: #fafafa;
-    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+    color: #374151;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
     position: sticky;
     top: 0;
     z-index: 10;
+    font-size: 1.25rem;
 }
 
 .inspection-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #fafafa;
+    padding: 1.25rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+    font-size: 1.25rem;
 }
 
 .inspection-table tbody tr:hover {
-    background: #fafafa;
+    background: #f8f9fa;
 }
 
 .table-footer {
-    background: #fafafa;
+    background: #f8f9fa;
+    padding: 1.25rem;
+    font-weight: 600;
+    border-top: 2px solid #e9ecef;
+    font-size: 1.25rem;
+}
+
+/* Maps Grid */
+.maps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    position: relative;
+}
+
+.map-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.map-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.map-header {
     padding: 1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.map-date {
+    font-size: 1.25rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.map-period {
+    font-size: 1.125rem;
+    color: #6b7280;
+    text-transform: uppercase;
     font-weight: 500;
-    border-top: 2px solid #f0f0f0;
 }
 
-/* Grid de mapas */
-.maps-section {
-    margin-top: 3rem;
-}
-
-.maps-header {
+.map-placeholder {
+    height: 300px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
+    justify-content: center;
+    color: #6b7280;
+    background: #f8f9fa;
+    font-size: 1.25rem;
 }
 
-.maps-title {
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: #333;
-}
-
-.visparam-selector {
+.visparam-controls {
     display: flex;
     gap: 1rem;
     align-items: center;
+    margin-bottom: 1rem;
 }
 
 .visparam-option {
@@ -403,101 +514,40 @@
     gap: 0.5rem;
 }
 
-.maps-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+.visparam-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
 }
 
-.map-card {
-    background: #fff;
-    border: 1px solid #f0f0f0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    overflow: hidden;
-    transition: all 0.2s;
-}
-
-.map-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.map-header {
-    padding: 1rem;
-    background: #fafafa;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.map-date {
-    font-size: 0.875rem;
-    color: #333;
-    font-weight: 500;
-}
-
-.map-period {
-    font-size: 0.75rem;
-    color: #666;
-    text-transform: uppercase;
-}
-
-.map-placeholder {
-    height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-}
-
-.planet-button {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 20;
-}
-
-.btn-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid #e5e5e5;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.visparam-option label {
+    font-size: 1.25rem;
+    color: #374151;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    user-select: none;
 }
 
-.btn-icon:hover {
-    border-color: #333;
-    transform: scale(1.1);
-}
-
-/* Gráficos */
-.charts-section {
-    margin-top: 3rem;
+/* Charts */
+.charts-grid {
+    display: grid;
+    gap: 1.5rem;
 }
 
 .chart-container {
     background: #fff;
-    border: 1px solid #f0f0f0;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .chart-title {
-    font-size: 1.25rem;
-    font-weight: 400;
-    color: #333;
-    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
 }
 
-/* Loading overlay */
+/* Loading */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -514,8 +564,8 @@
 .loader {
     width: 40px;
     height: 40px;
-    border: 3px solid #f0f0f0;
-    border-top-color: #333;
+    border: 3px solid #f3f4f6;
+    border-top-color: #2563eb;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -524,329 +574,377 @@
     to { transform: rotate(360deg); }
 }
 
-/* Responsividade */
+/* Responsive */
 @media (max-width: 1024px) {
-    .content-grid {
+    .info-table-grid {
         grid-template-columns: 1fr;
     }
     
-    .point-info-panel {
-        max-width: 100%;
+    .navigation-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    .temporal-nav {
+    .admin-temporal {
+        padding: 0.5rem;
+    }
+    
+    .page-header {
         padding: 1rem;
     }
     
-    .temporal-filters {
+    .accordion-content {
         padding: 1rem;
-        gap: 1rem;
-    }
-    
-    .filter-group {
-        width: 100%;
-    }
-    
-    .filter-select {
-        width: 100%;
     }
     
     .maps-grid {
         grid-template-columns: 1fr;
     }
+    
+    .sort-options {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 </style>
 
 <div class="admin-temporal" ng-show="!showloading">
-    <!-- Header com navegação -->
-    <div class="temporal-header">
-        <div class="temporal-nav">
-            <!-- Navegação de pontos -->
-            <div class="point-navigation">
-                <form ng-submit="submit(point.index)" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="number" 
-                           class="point-input"
-                           ng-model="point.index"
-                           ng-disabled="modeEdit"
-                           min="1"
-                           max="{{total}}"
-                           placeholder="Index">
-                    <button type="submit" 
-                            class="nav-btn primary"
-                            ng-disabled="point.index > total || point.index < 1 || modeEdit">
-                        <i class="glyphicon glyphicon-search"></i>
-                        {{ 'COMMON.SEARCH' | i18n }}
-                    </button>
-                </form>
-                
-                <div class="point-navigation">
-                    <button class="nav-btn"
-                            ng-click="submit(point.index-1)"
-                            ng-disabled="point.index <= 1 || point.index > total || modeEdit">
-                        <i class="glyphicon glyphicon-chevron-left"></i>
-                    </button>
-                    <span class="point-counter">{{point.index}} / {{total}}</span>
-                    <button class="nav-btn"
-                            ng-click="submit(point.index+1)"
-                            ng-disabled="point.index >= total || point.index < 1 || modeEdit">
-                        <i class="glyphicon glyphicon-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Ordenação -->
-            <div class="radio-group">
-                <div class="radio-option">
-                    <input type="radio" 
-                           id="sortIndex"
-                           ng-model="typeSort"
-                           value="sortedIndex"
-                           ng-change="submit(1)"
-                           ng-disabled="modeEdit">
-                    <label for="sortIndex">{{ 'SUPERVISOR.FILTERS.INDEX' | i18n }}</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" 
-                           id="sortTime"
-                           ng-model="typeSort"
-                           value="timeInspection"
-                           ng-change="submit(1)"
-                           ng-disabled="modeEdit">
-                    <label for="sortTime">{{ 'SUPERVISOR.FILTERS.TIME' | i18n }}</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" 
-                           id="sortAgreement"
-                           ng-model="typeSort"
-                           value="agreementPoint"
-                           ng-change="submit(1)"
-                           ng-disabled="modeEdit">
-                    <label for="sortAgreement">{{ 'SUPERVISOR.FILTERS.CONSOLIDATED' | i18n }}</label>
-                </div>
-            </div>
+    <div class="admin-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="glyphicon glyphicon-time"></i>
+                {{ 'TEMPORAL.TITLE' | i18n }}
+            </h1>
+            <p class="page-subtitle" ng-if="campaign">
+                {{ 'CAMPAIGN.CAMPAIGN' | i18n }}: {{campaign.name}} | 
+                {{ 'SUPERVISOR.POINT_INFO.POINT_NUMBER' | i18n }} {{point.originalIndex || point.index}}
+            </p>
         </div>
 
-        <!-- Filtros -->
-        <div class="temporal-filters">
-            <div class="filter-group">
-                <label class="filter-label">{{ 'SUPERVISOR.FILTERS.CLASSES' | i18n }}:</label>
-                <select class="filter-select"
-                        ng-model="selectedLandUse"
-                        ng-options="landUse for landUse in landUses"
-                        ng-change="submit(1)"
-                        ng-disabled="modeEdit">
-                </select>
+        <!-- Navigation and Filters Accordion -->
+        <div class="accordion-section" style="margin-top: 1rem">
+            <div class="accordion-header" ng-click="toggleAccordion('navigation')" 
+                 ng-class="{active: accordions.navigation}">
+                <h2 class="accordion-title">
+                    <i class="glyphicon glyphicon-tasks"></i>
+                    {{ 'TEMPORAL.NAVIGATION_FILTERS' | i18n }}
+                </h2>
+                <i class="glyphicon glyphicon-chevron-down accordion-chevron" 
+                   ng-class="{rotated: accordions.navigation}"></i>
             </div>
+            <div class="accordion-content" ng-class="{active: accordions.navigation}">
+                <!-- Navigation Controls -->
+                <div class="navigation-controls">
+                    <div class="point-navigation">
+                        <form ng-submit="submit(point.index)" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" 
+                                   class="point-input"
+                                   ng-model="point.index"
+                                   ng-disabled="modeEdit"
+                                   min="1"
+                                   max="{{total}}"
+                                   placeholder="Index">
+                            <button type="submit" 
+                                    class="nav-btn primary"
+                                    ng-disabled="point.index > total || point.index < 1 || modeEdit">
+                                <i class="glyphicon glyphicon-search"></i>
+                                {{ 'COMMON.SEARCH' | i18n }}
+                            </button>
+                        </form>
+                        
+                        <div class="point-navigation">
+                            <button class="nav-btn"
+                                    ng-click="submit(point.index-1)"
+                                    ng-disabled="point.index <= 1 || point.index > total || modeEdit">
+                                <i class="glyphicon glyphicon-chevron-left"></i>
+                            </button>
+                            <span class="point-counter">{{point.index}} / {{total}}</span>
+                            <button class="nav-btn"
+                                    ng-click="submit(point.index+1)"
+                                    ng-disabled="point.index >= total || point.index < 1 || modeEdit">
+                                <i class="glyphicon glyphicon-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
 
-            <div class="filter-group">
-                <label class="filter-label">{{ 'SUPERVISOR.FILTERS.USERS' | i18n }}:</label>
-                <select class="filter-select"
-                        ng-model="selectUserNames"
-                        ng-options="userName for userName in userNames"
-                        ng-change="submit(1)"
-                        ng-disabled="modeEdit">
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label" ng-hide="isChaco">{{ 'SUPERVISOR.FILTERS.BIOME' | i18n }}:</label>
-                <label class="filter-label" ng-show="isChaco">{{ 'SUPERVISOR.FILTERS.REGION' | i18n }}:</label>
-                <select class="filter-select"
-                        ng-model="selectBiomes"
-                        ng-options="biome for biome in biomes"
-                        ng-change="submit(1)"
-                        ng-disabled="modeEdit">
-                </select>
-            </div>
-
-            <div class="filter-group" ng-hide="isChaco">
-                <label class="filter-label">{{ 'SUPERVISOR.FILTERS.STATE' | i18n }}:</label>
-                <select class="filter-select"
-                        ng-model="selectUf"
-                        ng-options="uf for uf in stateUF"
-                        ng-change="submit(1)"
-                        ng-disabled="modeEdit">
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <!-- Conteúdo principal -->
-    <div class="temporal-content">
-        <div class="content-grid">
-            <!-- Painel de informações do ponto -->
-            <div class="point-info-panel">
-                <div class="panel-header">
-                    <h3 class="panel-title">{{ 'SUPERVISOR.POINT_INFO.POINT_NUMBER' | i18n }} {{ point.originalIndex }}</h3>
-                </div>
-
-                <!-- Localização -->
-                <div class="panel-section" ng-show="showPointInfo">
-                    <h4 class="section-title">{{ 'SUPERVISOR.POINT_INFO.LOCATION' | i18n }}</h4>
-                    <div class="info-item" ng-if="point.biome && !isChaco && !isRaisg">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span>
-                        <span class="info-value">{{point.biome}}</span>
-                    </div>
-                    <div class="info-item" ng-if="point.county && isChaco">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.REGION' | i18n }}:</span>
-                        <span class="info-value">{{point.county}}</span>
-                    </div>
-                    <div class="info-item" ng-if="point.county && isRaisg">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.COUNTRY' | i18n }}:</span>
-                        <span class="info-value">{{point.county}}</span>
-                    </div>
-                    <div class="info-item" ng-if="point.county && !isChaco && !isRaisg">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.MUNICIPALITY' | i18n }}:</span>
-                        <span class="info-value">{{point.county}}<span ng-if="point.uf"> - {{point.uf}}</span></span>
-                    </div>
-                    <div class="info-item" ng-if="point.biome && isChaco">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.MAP' | i18n }}:</span>
-                        <span class="info-value">{{point.biome}}</span>
-                    </div>
-                    <div class="info-item" ng-if="point.biome && isRaisg">
-                        <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span>
-                        <span class="info-value">{{point.biome}}</span>
-                    </div>
-                    
-                    <!-- Propriedades customizadas -->
-                    <div ng-if="point.properties && hasCustomProperties()" style="margin-top: 1rem;">
-                        <div class="info-item" ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)">
-                            <span class="info-label">{{formatPropertyName(key)}}:</span>
-                            <span class="info-value">{{value}}</span>
+                    <!-- Sort Options -->
+                    <div class="sort-options">
+                        <div class="sort-option">
+                            <input type="radio" 
+                                   id="sortIndex"
+                                   ng-model="typeSort"
+                                   value="sortedIndex"
+                                   ng-change="submit(1)"
+                                   ng-disabled="modeEdit">
+                            <label for="sortIndex">{{ 'SUPERVISOR.FILTERS.INDEX' | i18n }}</label>
+                        </div>
+                        <div class="sort-option">
+                            <input type="radio" 
+                                   id="sortTime"
+                                   ng-model="typeSort"
+                                   value="timeInspection"
+                                   ng-change="submit(1)"
+                                   ng-disabled="modeEdit">
+                            <label for="sortTime">{{ 'SUPERVISOR.FILTERS.TIME' | i18n }}</label>
+                        </div>
+                        <div class="sort-option">
+                            <input type="radio" 
+                                   id="sortAgreement"
+                                   ng-model="typeSort"
+                                   value="agreementPoint"
+                                   ng-change="submit(1)"
+                                   ng-disabled="modeEdit">
+                            <label for="sortAgreement">{{ 'SUPERVISOR.FILTERS.CONSOLIDATED' | i18n }}</label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Coordenadas -->
-                <div class="panel-section">
-                    <h4 class="section-title">{{ 'SUPERVISOR.POINT_INFO.COORDINATES' | i18n }}</h4>
-                    <div class="coordinates-box">
-                        <div>Lat/Lon: {{point.lat | number:4}}, {{point.lon | number:4}}</div>
-                        <div>Lon/Lat: {{point.lon | number:4}}, {{point.lat | number:4}}</div>
+                <!-- Filters -->
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">{{ 'SUPERVISOR.FILTERS.CLASSES' | i18n }}</label>
+                        <select class="filter-select"
+                                ng-model="selectedLandUse"
+                                ng-options="landUse for landUse in landUses"
+                                ng-change="submit(1)"
+                                ng-disabled="modeEdit">
+                        </select>
                     </div>
-                </div>
 
-                <!-- Estatísticas -->
-                <div class="panel-section">
-                    <h4 class="section-title">{{ 'SUPERVISOR.POINT_INFO.STATISTICS' | i18n }}</h4>
-                    <div class="stats-box">
-                        <div class="info-item">
-                            <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.INSPECTION_TIME' | i18n }}:</span>
-                            <span class="stats-value">{{timeInspectionPoint}} {{ 'COMMON.SECONDS' | i18n }}</span>
-                        </div>
+                    <div class="filter-group">
+                        <label class="filter-label">{{ 'SUPERVISOR.FILTERS.USERS' | i18n }}</label>
+                        <select class="filter-select"
+                                ng-model="selectUserNames"
+                                ng-options="userName for userName in userNames"
+                                ng-change="submit(1)"
+                                ng-disabled="modeEdit">
+                        </select>
                     </div>
-                </div>
 
-                <!-- Botões de ação -->
-                <div class="action-buttons">
-                    <button class="action-btn warning" ng-click="changePeriod()">
-                        <i class="glyphicon glyphicon-calendar"></i>
-                        {{ 'SUPERVISOR.ACTIONS.CHANGE_PERIOD' | i18n }}
-                    </button>
-                    <button class="action-btn success" ng-click="getKml()">
-                        <i class="glyphicon glyphicon-globe"></i>
-                        {{ 'SUPERVISOR.ACTIONS.GOOGLE_EARTH' | i18n }}
-                    </button>
-                    <button class="action-btn primary" 
-                            ng-if="objConsolidated.length > 0" 
-                            ng-hide="buttonEdit == true"
-                            ng-click="editClass()">
-                        <i class="glyphicon glyphicon-pencil"></i>
-                        {{ 'COMMON.EDIT' | i18n }}
-                    </button>
-                    <button class="action-btn primary" 
-                            ng-hide="buttonEdit == false" 
-                            ng-click="saveClass()">
-                        <i class="glyphicon glyphicon-floppy-disk"></i>
-                        {{ 'COMMON.SAVE' | i18n }}
-                    </button>
-                    <button class="action-btn danger" 
-                            ng-if="point.inspection.length > 0" 
-                            ng-click="removeInspections()">
-                        <i class="glyphicon glyphicon-trash"></i>
-                        {{ 'COMMON.REMOVE' | i18n }}
-                    </button>
-                    <button class="action-btn info" ng-click="downloadCSVBorda()">
-                        <i class="glyphicon glyphicon-download-alt"></i>
-                        {{ 'SUPERVISOR.ACTIONS.DOWNLOAD_CSV' | i18n }}
-                    </button>
-                </div>
-            </div>
+                    <div class="filter-group">
+                        <label class="filter-label" ng-hide="isChaco">{{ 'SUPERVISOR.FILTERS.BIOME' | i18n }}</label>
+                        <label class="filter-label" ng-show="isChaco">{{ 'SUPERVISOR.FILTERS.REGION' | i18n }}</label>
+                        <select class="filter-select"
+                                ng-model="selectBiomes"
+                                ng-options="biome for biome in biomes"
+                                ng-change="submit(1)"
+                                ng-disabled="modeEdit">
+                        </select>
+                    </div>
 
-            <!-- Tabela de inspeções -->
-            <div class="inspection-panel">
-                <div class="table-tabs">
-                    <button class="table-tab" 
-                            ng-class="{active: dataTab[0].checked}"
-                            ng-click="sortTimeInspection(dataTab[0])"
-                            ng-disabled="modeEdit">
-                        {{dataTab[0].name}}
-                    </button>
-                    <button class="table-tab" 
-                            ng-class="{active: dataTab[1].checked}"
-                            ng-click="sortTimeInspection(dataTab[1])"
-                            ng-disabled="modeEdit">
-                        {{dataTab[1].name}}
-                    </button>
-                </div>
-
-                <div class="table-container">
-                    <table class="inspection-table">
-                        <thead ng-hide="point.inspection == 0">
-                            <tr>
-                                <th style="width: 200px;">
-                                    <span ng-if="dataTab[0].checked">User</span>
-                                    <span ng-if="dataTab[1].checked">{{ 'CHARTS.POINT_INSPECTION_TIME' | i18n }}</span>
-                                </th>
-                                <th ng-if="dataTab[0].checked" ng-repeat="year in point.years">{{year}}</th>
-                                <th ng-if="dataTab[1].checked">{{ 'CHARTS.AVG_TIME_ALL_POINTS' | i18n }}</th>
-                            </tr>
-                        </thead>
-                        <tbody ng-hide="point.inspection == 0">
-                            <tr ng-if="dataTab[0].checked" ng-repeat="inspection in point.inspection">
-                                <td>{{inspection.userName}}</td>
-                                <td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
-                            </tr>
-                            <tr ng-if="dataTab[1].checked" 
-                                ng-repeat="p in point.dataPointTime track by $index"
-                                ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}">
-                                <td>{{p.name}}</td>
-                                <td>{{p.totalPointTime}}</td>
-                                <td>{{p.meanPointTime | number:2}}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-footer" ng-if="buttonEdit">
-                                <td>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
-                                <td ng-repeat="x in objConsolidated track by $index">
-                                    <select ng-options="landUse for landUse in getLandUses track by landUse"
-                                            ng-model="selectedLandUses[$index]" 
-                                            ng-change="changeClass($index)">
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr class="table-footer" ng-if="!buttonEdit && dataTab[0].checked">
-                                <td>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
-                                <td ng-repeat="landUse in objConsolidated track by $index">{{landUse}}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <div class="filter-group" ng-hide="isChaco">
+                        <label class="filter-label">{{ 'SUPERVISOR.FILTERS.STATE' | i18n }}</label>
+                        <select class="filter-select"
+                                ng-model="selectUf"
+                                ng-options="uf for uf in stateUF"
+                                ng-change="submit(1)"
+                                ng-disabled="modeEdit">
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Seção de mapas -->
-        <div class="maps-section">
-            <div class="maps-header">
-                <h3 class="maps-title">
+        <!-- Point Info and Table Accordion -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('info')" 
+                 ng-class="{active: accordions.info}">
+                <h2 class="accordion-title">
+                    <i class="glyphicon glyphicon-info-sign"></i>
+                    {{ 'TEMPORAL.POINT_INFO_TABLE' | i18n }}
+                </h2>
+                <i class="glyphicon glyphicon-chevron-down accordion-chevron" 
+                   ng-class="{rotated: accordions.info}"></i>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.info}">
+                <div class="info-table-grid">
+                    <!-- Point Info Panel -->
+                    <div class="point-info-panel">
+                        <div class="info-panel-header">
+                            <h3 class="info-panel-title">{{ 'SUPERVISOR.POINT_INFO.POINT_NUMBER' | i18n }} {{ point.originalIndex }}</h3>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="info-section" ng-show="showPointInfo">
+                            <h4 class="info-section-title">{{ 'SUPERVISOR.POINT_INFO.LOCATION' | i18n }}</h4>
+                            <div class="info-item" ng-if="point.biome && !isChaco && !isRaisg">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span>
+                                <span class="info-value">{{point.biome}}</span>
+                            </div>
+                            <div class="info-item" ng-if="point.county && isChaco">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.REGION' | i18n }}:</span>
+                                <span class="info-value">{{point.county}}</span>
+                            </div>
+                            <div class="info-item" ng-if="point.county && isRaisg">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.COUNTRY' | i18n }}:</span>
+                                <span class="info-value">{{point.county}}</span>
+                            </div>
+                            <div class="info-item" ng-if="point.county && !isChaco && !isRaisg">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.MUNICIPALITY' | i18n }}:</span>
+                                <span class="info-value">{{point.county}}<span ng-if="point.uf"> - {{point.uf}}</span></span>
+                            </div>
+                            <div class="info-item" ng-if="point.biome && isChaco">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.MAP' | i18n }}:</span>
+                                <span class="info-value">{{point.biome}}</span>
+                            </div>
+                            <div class="info-item" ng-if="point.biome && isRaisg">
+                                <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.BIOME' | i18n }}:</span>
+                                <span class="info-value">{{point.biome}}</span>
+                            </div>
+                            
+                            <!-- Custom Properties -->
+                            <div ng-if="point.properties && hasCustomProperties()" style="margin-top: 1rem;">
+                                <div class="info-item" ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)">
+                                    <span class="info-label">{{formatPropertyName(key)}}:</span>
+                                    <span class="info-value">{{value}}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coordinates -->
+                        <div class="info-section">
+                            <h4 class="info-section-title">{{ 'SUPERVISOR.POINT_INFO.COORDINATES' | i18n }}</h4>
+                            <div class="coordinates-box">
+                                <div>Lat/Lon: {{point.lat | number:4}}, {{point.lon | number:4}}</div>
+                                <div>Lon/Lat: {{point.lon | number:4}}, {{point.lat | number:4}}</div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div class="info-section">
+                            <h4 class="info-section-title">{{ 'SUPERVISOR.POINT_INFO.STATISTICS' | i18n }}</h4>
+                            <div class="stats-box">
+                                <div class="info-item">
+                                    <span class="info-label">{{ 'SUPERVISOR.POINT_INFO.INSPECTION_TIME' | i18n }}:</span>
+                                    <span class="stats-value">{{timeInspectionPoint}} {{ 'COMMON.SECONDS' | i18n }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <button class="action-btn warning" ng-click="changePeriod()">
+                                <i class="glyphicon glyphicon-calendar"></i>
+                                {{ 'SUPERVISOR.ACTIONS.CHANGE_PERIOD' | i18n }}
+                            </button>
+                            <button class="action-btn success" ng-click="getKml()">
+                                <i class="glyphicon glyphicon-globe"></i>
+                                {{ 'SUPERVISOR.ACTIONS.GOOGLE_EARTH' | i18n }}
+                            </button>
+                            <button class="action-btn primary" 
+                                    ng-if="objConsolidated.length > 0" 
+                                    ng-hide="buttonEdit == true"
+                                    ng-click="editClass()">
+                                <i class="glyphicon glyphicon-pencil"></i>
+                                {{ 'COMMON.EDIT' | i18n }}
+                            </button>
+                            <button class="action-btn primary" 
+                                    ng-hide="buttonEdit == false" 
+                                    ng-click="saveClass()">
+                                <i class="glyphicon glyphicon-floppy-disk"></i>
+                                {{ 'COMMON.SAVE' | i18n }}
+                            </button>
+                            <button class="action-btn danger" 
+                                    ng-if="point.inspection.length > 0" 
+                                    ng-click="removeInspections()">
+                                <i class="glyphicon glyphicon-trash"></i>
+                                {{ 'COMMON.REMOVE' | i18n }}
+                            </button>
+                            <button class="action-btn info" ng-click="downloadCSVBorda()">
+                                <i class="glyphicon glyphicon-download-alt"></i>
+                                {{ 'SUPERVISOR.ACTIONS.DOWNLOAD_CSV' | i18n }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Inspection Table -->
+                    <div class="inspection-table-panel">
+                        <div class="table-tabs">
+                            <button class="table-tab" 
+                                    ng-class="{active: dataTab[0].checked}"
+                                    ng-click="sortTimeInspection(dataTab[0])"
+                                    ng-disabled="modeEdit">
+                                {{dataTab[0].name}}
+                            </button>
+                            <button class="table-tab" 
+                                    ng-class="{active: dataTab[1].checked}"
+                                    ng-click="sortTimeInspection(dataTab[1])"
+                                    ng-disabled="modeEdit">
+                                {{dataTab[1].name}}
+                            </button>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="inspection-table">
+                                <thead ng-hide="point.inspection == 0">
+                                    <tr>
+                                        <th style="width: 200px;">
+                                            <span ng-if="dataTab[0].checked">{{ 'COMMON.USER' | i18n }}</span>
+                                            <span ng-if="dataTab[1].checked">{{ 'COMMON.USER' | i18n }}</span>
+                                        </th>
+                                        <th ng-if="dataTab[0].checked" ng-repeat="year in point.years">{{year}}</th>
+                                        <th ng-if="dataTab[1].checked">{{ 'CHARTS.POINT_INSPECTION_TIME' | i18n }}</th>
+                                        <th ng-if="dataTab[1].checked">{{ 'CHARTS.AVG_TIME_ALL_POINTS' | i18n }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody ng-hide="point.inspection == 0">
+                                    <tr ng-if="dataTab[0].checked" ng-repeat="inspection in point.inspection">
+                                        <td>{{inspection.userName}}</td>
+                                        <td ng-repeat="landUse in inspection.landUse track by $index">{{landUse}}</td>
+                                    </tr>
+                                    <tr ng-if="dataTab[1].checked" 
+                                        ng-repeat="p in point.dataPointTime track by $index"
+                                        ng-class="{boldElem: ($index == (point.dataPointTime.length - 1))}">
+                                        <td>{{p.name}}</td>
+                                        <td>{{p.totalPointTime}}</td>
+                                        <td>{{p.meanPointTime | number:2}}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-footer" ng-if="buttonEdit">
+                                        <td>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
+                                        <td ng-repeat="x in objConsolidated track by $index">
+                                            <select ng-options="landUse for landUse in getLandUses track by landUse"
+                                                    ng-model="selectedLandUses[$index]" 
+                                                    ng-change="changeClass($index)"
+                                                    class="filter-select">
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-footer" ng-if="!buttonEdit && dataTab[0].checked">
+                                        <td>{{ 'SUPERVISOR.POINT_INFO.CONSOLIDATED_CLASS' | i18n }}</td>
+                                        <td ng-repeat="landUse in objConsolidated track by $index">{{landUse}}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maps Accordion -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('maps')" 
+                 ng-class="{active: accordions.maps}">
+                <h2 class="accordion-title">
+                    <i class="glyphicon glyphicon-picture"></i>
                     <span ng-hide="isSentinel">{{ 'SUPERVISOR.MAP.LANDSAT_IMAGES' | i18n }}</span>
                     <span ng-show="isSentinel">{{ 'SUPERVISOR.MAP.SENTINEL_IMAGES' | i18n }}</span>
-                </h3>
-                
-                <!-- Seletor de visparam Landsat -->
-                <div ng-show="!isSentinel && hasVisParam && point" class="visparam-selector">
+                </h2>
+                <i class="glyphicon glyphicon-chevron-down accordion-chevron" 
+                   ng-class="{rotated: accordions.maps}"></i>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.maps}">
+                <!-- Landsat Visparam Controls (igual ao supervisor) -->
+                <div ng-show="!isSentinel && hasVisParam && point" class="visparam-controls">
                     <div class="visparam-option">
                         <input type="radio" 
                                id="visNatural"
@@ -872,78 +970,142 @@
                         <label for="visFalse">{{ 'SUPERVISOR.MAP.FALSE_COLOR' | i18n }}</label>
                     </div>
                 </div>
-            </div>
 
-            <div class="maps-grid">
-                <div ng-repeat="map in maps" 
-                     class="map-card"
-                     lazy-map
-                     map-index="{{map.index}}"
-                     total-maps="{{maps.length}}"
-                     on-visible="onMapVisible(map.index)">
-                    
-                    <!-- Placeholder enquanto carrega -->
-                    <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
-                        <div class="loader"></div>
+                <!-- Landsat Controls -->
+                <div ng-show="!isSentinel && landsatMosaics.length > 0 && point" class="visparam-controls">
+                    <!-- Period Selection -->
+                    <div class="visparam-option">
+                        <label style="font-weight: 600; margin-right: 1rem;">{{ 'SUPERVISOR.FILTERS.PERIOD' | i18n }}:</label>
+                        <select ng-model="period" 
+                                ng-change="generateMaps()"
+                                class="filter-select"
+                                style="width: auto; min-width: 120px; margin-right: 2rem;">
+                            <option ng-repeat="period in landsatMosaics[0].periods" value="{{period}}">{{period}}</option>
+                        </select>
                     </div>
                     
-                    <!-- Conteúdo do mapa -->
-                    <div ng-if="mapStates[map.index].visible">
-                        <div class="map-header">
-                            <span class="map-date">{{map.date | date: 'dd/MM/yyyy'}}</span>
-                            <span class="map-period">{{periodo}}</span>
+                    <!-- Visparam Selection -->
+                    <div class="visparam-option">
+                        <label style="font-weight: 600; margin-right: 1rem;">{{ 'SUPERVISOR.MAP.VISUALIZATION' | i18n }}:</label>
+                        <select ng-model="landsatVisparam" 
+                                ng-change="generateMaps()"
+                                class="filter-select"
+                                style="width: auto; min-width: 150px;">
+                            <option ng-repeat="visparam in landsatMosaics[0].visparams" value="{{visparam}}">{{visparam}}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sentinel Controls -->
+                <div ng-show="isSentinel && sentinelMosaics.length > 0 && point" class="visparam-controls">
+                    <!-- Period Selection -->
+                    <div class="visparam-option">
+                        <label style="font-weight: 600; margin-right: 1rem;">{{ 'SUPERVISOR.FILTERS.PERIOD' | i18n }}:</label>
+                        <select ng-model="sentinelPeriod" 
+                                ng-change="updateSentinelPeriod()"
+                                class="filter-select"
+                                style="width: auto; min-width: 120px; margin-right: 2rem;">
+                            <option ng-repeat="period in sentinelMosaics[0].periods" value="{{period}}">{{period}}</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Visparam Selection -->
+                    <div class="visparam-option">
+                        <label style="font-weight: 600; margin-right: 1rem;">{{ 'SUPERVISOR.MAP.VISUALIZATION' | i18n }}:</label>
+                        <select ng-model="sentinelVisparam" 
+                                ng-change="updateSentinelVisparam()"
+                                class="filter-select"
+                                style="width: auto; min-width: 150px;">
+                            <option ng-repeat="visparam in sentinelMosaics[0].visparams" value="{{visparam}}">{{visparam}}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Maps Grid -->
+                <div class="maps-grid">
+                    <div ng-repeat="map in maps" 
+                         class="map-card"
+                         lazy-map
+                         map-index="{{map.index}}"
+                         total-maps="{{maps.length}}"
+                         on-visible="onMapVisible(map.index)">
+                        
+                        <!-- Placeholder -->
+                        <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
+                            <div class="loader"></div>
                         </div>
                         
-                        <!-- Botão Planet -->
-                        <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')">
-                            <button class="btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
-                                <i class="fa fa-camera"></i>
-                            </button>
-                        </span>
+                        <!-- Map Content -->
+                        <div ng-if="mapStates[map.index].visible">
+                            <div class="map-header">
+                                <span class="map-date">{{map.date | date: 'dd/MM/yyyy'}}</span>
+                                <span class="map-period">{{periodo}}</span>
+                            </div>
+                            
+                            <!-- Planet Button -->
+                            <span style="position: absolute; top: 1rem; right: 1rem; z-index: 20;" ng-if="hasMosaicForYear(map.date | date: 'yyyy')">
+                                <button class="action-btn info" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
+                                    <i class="fa fa-camera"></i>
+                                </button>
+                            </span>
 
-                        <!-- Mapa dinâmico ou estático -->
-                        <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
-                                     lon="point.lon"
-                                     lat="point.lat"
-                                     zoom="config.zoomLevel"
-                                     period="period"
-                                     year="map.year"
-                                     visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
-                        </landsat-map>
+                            <!-- Map Component -->
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                         lon="point.lon"
+                                         lat="point.lat"
+                                         zoom="config.zoomLevel"
+                                         period="period"
+                                         year="map.year"
+                                         visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                            </landsat-map>
 
-                        <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                        lon="point.lon"
-                                        lat="point.lat"
-                                        bounds="map.bounds"
-                                        zoom="config.zoomLevel"
-                                        tms-url="map.url">
-                        </inspection-map>
+                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                            lon="point.lon"
+                                            lat="point.lat"
+                                            bounds="map.bounds"
+                                            zoom="config.zoomLevel"
+                                            tms-url="map.url">
+                            </inspection-map>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Gráficos -->
-        <div class="charts-section" ng-show="showTimeseries">
-            <div class="chart-container" ng-show="showChartsLandsat">
-                <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.LANDSAT_SERIES' | i18n }}</h4>
-                <div id="LANDSAT"></div>
+        <!-- Timeseries Accordion -->
+        <div class="accordion-section" ng-show="showTimeseries">
+            <div class="accordion-header" ng-click="toggleAccordion('timeseries')" 
+                 ng-class="{active: accordions.timeseries}">
+                <h2 class="accordion-title">
+                    <i class="glyphicon glyphicon-stats"></i>
+                    {{ 'TEMPORAL.TIMESERIES' | i18n }}
+                </h2>
+                <i class="glyphicon glyphicon-chevron-down accordion-chevron" 
+                   ng-class="{rotated: accordions.timeseries}"></i>
             </div>
-            
-            <div class="chart-container" ng-show="showCharts">
-                <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.MODIS_SERIES' | i18n }}</h4>
-                <div id="NDVI"></div>
-            </div>
-            
-            <div class="chart-container" ng-show="showChartsNDDI">
-                <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.NDDI_SERIES' | i18n }}</h4>
-                <div id="NDDI"></div>
+            <div class="accordion-content" ng-class="{active: accordions.timeseries}">
+                <div class="charts-grid">
+                    <div class="chart-container" ng-show="showChartsLandsat">
+                        <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.LANDSAT_SERIES' | i18n }}</h4>
+                        <div id="LANDSAT"></div>
+                    </div>
+                    
+                    <div class="chart-container" ng-show="showCharts">
+                        <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.MODIS_SERIES' | i18n }}</h4>
+                        <div id="NDVI"></div>
+                    </div>
+                    
+                    <div class="chart-container" ng-show="showChartsNDDI">
+                        <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.NDDI_SERIES' | i18n }}</h4>
+                        <div id="NDDI"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Loading overlay -->
+<!-- Loading Overlay -->
 <div class="loading-overlay" ng-show="showloading">
     <div class="loader"></div>
 </div>

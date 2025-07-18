@@ -52,3 +52,25 @@ Application.controller('AdminLoginController', function ($scope, $http, $window,
     // Verificar autenticação ao carregar
     $scope.checkAuth();
 });
+
+/**
+ * Controller para redirecionar /admin para /admin/home ou /admin/login
+ */
+Application.controller('AdminRedirectController', function ($scope, $http, $location) {
+    // Marcar que estamos no sistema admin
+    $scope.$root.isAdminMode = true;
+    
+    // Verificar se já está autenticado
+    $http.get('/api/admin/check').then(function(response) {
+        if (response.data.authenticated) {
+            // Se autenticado, redirecionar para /admin/home
+            $location.path('/admin/home');
+        } else {
+            // Se não autenticado, redirecionar para /admin/login
+            $location.path('/admin/login');
+        }
+    }, function(error) {
+        // Em caso de erro, redirecionar para login
+        $location.path('/admin/login');
+    });
+});

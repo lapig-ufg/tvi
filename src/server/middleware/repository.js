@@ -61,7 +61,7 @@ module.exports = function (app) {
                     if (err) return callback(err);
                     
                     // Garantir que as coleções necessárias existam
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs'];
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {

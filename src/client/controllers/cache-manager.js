@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('CacheManagerController', function ($scope, $interval, requester, NotificationDialog) {
+Application.controller('CacheManagerController', function ($scope, $interval, requester, NotificationDialog, $location) {
     
     // Conectar socket para atualizações em tempo real com configuração otimizada
     var socket = io({
@@ -98,6 +98,25 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
 
     // Disponibilizar Math no escopo
     $scope.Math = Math;
+
+    // === ACCORDION FUNCTIONALITY ===
+    
+    // Estado dos accordions
+    $scope.accordions = {
+        jobManagement: false,
+        cacheRemoval: false,
+        mongoReset: false,
+        manualProcessing: false,
+        uncachedPoints: false,
+        campaignStatus: false
+    };
+    
+    // Função para toggle de accordions
+    $scope.toggleAccordion = function(sectionName) {
+        if ($scope.accordions.hasOwnProperty(sectionName)) {
+            $scope.accordions[sectionName] = !$scope.accordions[sectionName];
+        }
+    };
 
     // === EVENTOS DE SOCKET PARA ATUALIZAÇÕES EM TEMPO REAL ===
     
@@ -1038,6 +1057,11 @@ Application.controller('CacheManagerController', function ($scope, $interval, re
         }
     });
 
+    // Função para voltar ao admin home
+    $scope.goBack = function() {
+        $location.path('/admin/home');
+    };
+    
     // Inicializar
     $scope.init();
 });

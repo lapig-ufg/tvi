@@ -15,7 +15,8 @@
     "SECONDS": "segundos",
     "CHOOSE": "Escolher",
     "ALL": "Todos",
-    "NOT_CONSOLIDATED": "Não Consolidados"
+    "NOT_CONSOLIDATED": "Não Consolidados",
+    "USER": "Usuário"
   },
   "NAVBAR": {
     "POINTS": "Pontos",
@@ -41,7 +42,8 @@
       "USERS": "Usuários",
       "BIOME": "Bioma",
       "REGION": "Região",
-      "STATE": "Estado(UF)"
+      "STATE": "Estado(UF)",
+      "PERIOD": "Período"
     },
     "POINT_INFO": {
       "POINT_NUMBER": "Ponto #",
@@ -66,7 +68,8 @@
       "SENTINEL_IMAGES": "Imagens Sentinel-2 L2A",
       "NATURAL_COLOR": "Cor Natural",
       "AGRICULTURE": "Agricultura",
-      "FALSE_COLOR": "Falsa Cor"
+      "FALSE_COLOR": "Falsa Cor",
+      "VISUALIZATION": "Visualização"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Série temporal LANDSAT",
@@ -76,6 +79,9 @@
   },
   "TEMPORAL": {
     "TITLE": "Temporal",
+    "NAVIGATION_FILTERS": "Navegação e Filtros",
+    "POINT_INFO_TABLE": "Informações do Ponto e Tabela",
+    "TIMESERIES": "Séries Temporais",
     "LOCATION_INFO": {
       "TITLE": "Informação de localização",
       "BIOME": "Bioma",
@@ -229,5 +235,8 @@
     "USERNAME_PASSWORD_REQUIRED": "Username e senha são obrigatórios",
     "LOGIN_SUCCESS": "Login bem-sucedido, redirecionando para admin/campaigns",
     "LOGIN_ERROR": "Erro no login"
+  },
+  "CAMPAIGN": {
+    "CAMPAIGN": "Campanha"
   }
 }

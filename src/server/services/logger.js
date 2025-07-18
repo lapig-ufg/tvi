@@ -19,9 +19,17 @@ class Logger {
      */
     async init() {
         try {
+            console.log('[Logger.init] Starting initialization...');
+            console.log('[Logger.init] Environment:', this.environment);
+            console.log('[Logger.init] Has app:', !!this.app);
+            console.log('[Logger.init] Has repository:', !!(this.app && this.app.repository));
+            console.log('[Logger.init] Has db:', !!(this.app && this.app.repository && this.app.repository.db));
+            
             // Obter coleção de logs do repository
             this.logCollection = this.app.repository.collections.logs || 
                                 await this.app.repository.db.collection('logs');
+            
+            console.log('[Logger.init] Log collection obtained:', !!this.logCollection);
             
             // Criar modelo se não existir na coleção
             if (!this.app.repository.collections.logs) {
@@ -31,12 +39,15 @@ class Logger {
             // Carregar modelo de log
             this.logModel = require('../models/log')(this.app);
             
+            console.log('[Logger.init] Log model loaded:', !!this.logModel);
+            
             // Criar índices
             await this.logModel.createIndexes(this.logCollection);
             
-            console.log('Logger initialized successfully');
+            console.log('[Logger.init] Logger initialized successfully - logs will be saved to MongoDB');
         } catch (error) {
-            console.error('Failed to initialize logger:', error);
+            console.error('[Logger.init] Failed to initialize logger:', error);
+            console.error('[Logger.init] Stack:', error.stack);
         }
     }
 
@@ -160,15 +171,30 @@ class Logger {
             
             // Se não tiver coleção, apenas log no console
             if (!this.logCollection) {
-                console.log(`[${level.toUpperCase()}] ${message}`, options.metadata || '');
+                console.log(`[${level.toUpperCase()}] [NO COLLECTION] ${message}`, options.metadata || '');
+                console.log('[Logger.saveLog] logCollection is null - logs will not be saved to MongoDB');
                 return logId;
             }
 
-            // Inserir no MongoDB
+            // Não salvar logs de info e debug no MongoDB
+            if (level === 'info' || level === 'debug') {
+                // Apenas log no console em desenvolvimento
+                if (this.environment === 'development') {
+                    console.log(`[${level.toUpperCase()}] ${message}`, options.metadata || '');
+                }
+                return logId;
+            }
+
+            // Debug: verificar se a coleção está funcionando
+            console.log(`[Logger.saveLog] Attempting to save ${level} log to MongoDB...`);
+            
+            // Inserir no MongoDB apenas logs de error e warn
             await this.logCollection.insertOne(document);
             
-            // Log também no console em desenvolvimento
-            if (this.environment === 'development') {
+            console.log(`[Logger.saveLog] Successfully saved to MongoDB with logId: ${logId}`);
+            
+            // Log também no console em desenvolvimento ou se for erro
+            if (this.environment === 'development' || level === 'error') {
                 const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
                 console[consoleMethod](`[${level.toUpperCase()}] ${message}`, options.metadata || '');
                 if (options.details && options.details.stack) {
@@ -179,7 +205,8 @@ class Logger {
             return logId;
         } catch (error) {
             // Fallback para console se falhar
-            console.error('Failed to save log to MongoDB:', error);
+            console.error('[Logger.saveLog] Failed to save log to MongoDB:', error);
+            console.error('[Logger.saveLog] Error details:', error.message);
             console.log(`[${level.toUpperCase()}] ${message}`, options.metadata || '');
             return this.generateLogId();
         }
@@ -296,12 +323,24 @@ class Logger {
     }
 }
 
+// Singleton instance
+let loggerInstance = null;
+
 // Função factory para criar instância do logger
 module.exports = function(app) {
-    if (!module.exports._instance) {
-        module.exports._instance = new Logger(app);
+    // Se já existe uma instância, retorná-la
+    if (loggerInstance) {
+        // Se a instância existe mas não foi inicializada com app.repository, tentar inicializar
+        if (!loggerInstance.logCollection && app && app.repository) {
+            loggerInstance.app = app;
+            loggerInstance.init();
+        }
+        return loggerInstance;
     }
-    return module.exports._instance;
+    
+    // Criar nova instância
+    loggerInstance = new Logger(app);
+    return loggerInstance;
 };
 
 // Também exportar diretamente se não houver app

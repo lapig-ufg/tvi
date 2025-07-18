@@ -8,6 +8,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
     $scope.showloading = true;
     $scope.planetMosaics = [];
     $scope.sentinelMosaics = [];
+    $scope.landsatMosaics = [];
     $scope.tilesCapabilities = [];
     
     // Estados para lazy loading
@@ -21,13 +22,42 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
     
+    // Inicializar visparam e período do Sentinel
+    $scope.sentinelVisparam = localStorage.getItem('sentinelVisparam') || 'default';
+    $scope.sentinelPeriod = localStorage.getItem('sentinelPeriod') || 'DRY';
+    
     // Lista de propriedades padrão que não devem ser mostradas nas propriedades customizadas
     $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
+    
+    // Configuração dos accordions
+    $scope.accordions = {
+        navigation: true,  // Navegação aberta por padrão
+        info: true,        // Informações abertas por padrão
+        maps: true,        // Mapas abertos por padrão
+        timeseries: false  // Timeseries fechado por padrão
+    };
+    
+    // Função para toggle dos accordions
+    $scope.toggleAccordion = function(section) {
+        $scope.accordions[section] = !$scope.accordions[section];
+    };
     
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
         localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+    };
+    
+    // Funções para atualizar parâmetros do Sentinel
+    $scope.updateSentinelVisparam = function() {
+        localStorage.setItem('sentinelVisparam', $scope.sentinelVisparam);
+        generateMaps(); // Regenerar mapas com novo visparam
+    };
+    
+    $scope.updateSentinelPeriod = function() {
+        localStorage.setItem('sentinelPeriod', $scope.sentinelPeriod);
+        $scope.period = $scope.sentinelPeriod; // Sincronizar com o período global
+        generateMaps(); // Regenerar mapas com novo período
     };
 
     // Função para determinar a classe CSS do mapa individual baseado no número de mapas
@@ -85,6 +115,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 campaign: campaign
             };
             
+            // Definir campaign no scope para uso nas funções
+            $scope.campaign = campaign;
+            
             $scope.showloading = false;
             $scope.size = 4;
             $scope.onSubmission = false;
@@ -100,7 +133,26 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
             $scope.isChaco = (campaign._id.indexOf('chaco') != -1);
             $scope.isRaisg = (campaign._id.indexOf('samples') != -1 || campaign._id.indexOf('raisg') != -1);
-            $scope.isSentinel = campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a';
+            
+            // Detectar tipo de imagem baseado na campanha
+            if (campaign.imageType) {
+                $scope.isSentinel = campaign.imageType === 'sentinel-2-l2a';
+            } else {
+                // Fallback para detecção legacy
+                $scope.isSentinel = campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a';
+            }
+            
+            // Aplicar configurações da campanha como no supervisor
+            $scope.showTimeseries = campaign.showTimeseries !== undefined ? campaign.showTimeseries : true;
+            $scope.showPointInfo = campaign.showPointInfo !== undefined ? campaign.showPointInfo : true;
+            $scope.useDynamicMaps = campaign.useDynamicMaps !== undefined ? campaign.useDynamicMaps : false;
+            $scope.hasVisParam = campaign.visParam !== null && campaign.visParam !== undefined;
+            
+            // Definir visparam padrão da campanha
+            if (campaign.visParam) {
+                $scope.landsatVisparam = campaign.visParam;
+                localStorage.setItem('landsatVisparam', campaign.visParam);
+            }
             
             // Inicializar o resto após carregar a campanha
             initializeController();
@@ -642,6 +694,114 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.mapStates = {};
             mapLoadingService.reset();
             
+            if ($scope.isSentinel) {
+                generateSentinelMaps();
+            } else {
+                generateLandsatMaps();
+            }
+            
+            $timeout(function() {
+                const initialMapsToLoad = Math.min(3, $scope.maps.length);
+                for (let i = 0; i < initialMapsToLoad; i++) {
+                    if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
+                        $scope.onMapVisible(i);
+                    }
+                }
+            }, 1000);
+        };
+        
+        var generateSentinelMaps = function() {
+            if (!$scope.sentinelMosaics || $scope.sentinelMosaics.length === 0) {
+                console.warn('No Sentinel capabilities loaded yet');
+                return;
+            }
+            
+            const sentinelData = $scope.sentinelMosaics[0]; // s2_harmonized collection
+            if (!sentinelData || !sentinelData.years) {
+                console.warn('No Sentinel years data available');
+                return;
+            }
+            
+            // Usar período atual ou padrão
+            const currentPeriod = $scope.period || 'DRY';
+            const currentVisparam = $scope.sentinelVisparam || (sentinelData.visparams && sentinelData.visparams[0]) || 'default';
+            
+            sentinelData.years.forEach(function(year, index) {
+                // Construir URL para tiles Sentinel
+                const tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                
+                // Data fictícia para compatibilidade com a interface
+                const date = `01/07/${year}`;
+                
+                const mapIndex = $scope.maps.length;
+                $scope.maps.push({
+                    date: date,
+                    year: year,
+                    url: tileUrl,
+                    bounds: $scope.point.bounds,
+                    index: mapIndex,
+                    period: currentPeriod,
+                    visparam: currentVisparam
+                });
+                
+                $scope.mapStates[mapIndex] = {
+                    visible: false,
+                    loading: false
+                };
+            });
+            
+            console.log(`Generated ${$scope.maps.length} Sentinel maps for period ${currentPeriod}`);
+        };
+        
+        var generateLandsatMaps = function() {
+            // Se temos capabilities do Landsat, usar dados dinâmicos
+            if ($scope.landsatMosaics && $scope.landsatMosaics.length > 0) {
+                generateLandsatMapsFromCapabilities();
+            } else {
+                // Usar código legacy existente
+                generateLandsatMapsLegacy();
+            }
+        };
+        
+        var generateLandsatMapsFromCapabilities = function() {
+            const currentPeriod = $scope.period || 'DRY';
+            const currentVisparam = $scope.landsatVisparam || 'landsat-tvi-false';
+            
+            $scope.landsatMosaics.forEach(function(collection) {
+                if (!collection.years || !Array.isArray(collection.years)) {
+                    return;
+                }
+                
+                collection.years.forEach(function(year) {
+                    // Construir URL para tiles Landsat usando API de capabilities
+                    const tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/${collection.name}/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                    
+                    // Data fictícia para compatibilidade com a interface
+                    const date = `01/07/${year}`;
+                    
+                    const mapIndex = $scope.maps.length;
+                    $scope.maps.push({
+                        date: date,
+                        year: year,
+                        url: tileUrl,
+                        bounds: $scope.point.bounds,
+                        index: mapIndex,
+                        period: currentPeriod,
+                        visparam: currentVisparam,
+                        collection: collection.name
+                    });
+                    
+                    $scope.mapStates[mapIndex] = {
+                        visible: false,
+                        loading: false
+                    };
+                });
+            });
+            
+            console.log(`Generated ${$scope.maps.length} Landsat maps from capabilities for period ${currentPeriod}`);
+        };
+        
+        var generateLandsatMapsLegacy = function() {
             var tmsIdList = [];
             $scope.tmsIdListWet = [];
             $scope.tmsIdListDry = [];
@@ -689,15 +849,6 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     loading: false
                 };
             }
-            
-            $timeout(function() {
-                const initialMapsToLoad = Math.min(3, $scope.maps.length);
-                for (let i = 0; i < initialMapsToLoad; i++) {
-                    if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
-                        $scope.onMapVisible(i);
-                    }
-                }
-            }, 1000);
         };
         
         $scope.onMapVisible = function(index) {
@@ -839,6 +990,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var getClassLandUse = function (filter) {
+            if (!$scope.campaign || !$scope.campaign._id) {
+                console.warn('Campaign not loaded yet, skipping getClassLandUse');
+                return;
+            }
             $http.get('/service/admin/points/landUses', { params: { campaignId: $scope.campaign._id } }).then(function (response) {
                 $scope.getLandUses = response.data;
                 $scope.buttonEdit = false;
@@ -859,6 +1014,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var landUseFilter = function (filter) {
+            if (!$scope.campaign || !$scope.campaign._id) {
+                console.warn('Campaign not loaded yet, skipping landUseFilter');
+                return;
+            }
             var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
             $http.get('/service/admin/points/landUses', { params: params }).then(function (response) {
                 var landUses = response.data;
@@ -876,6 +1035,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var usersFilter = function (filter) {
+            if (!$scope.campaign || !$scope.campaign._id) {
+                console.warn('Campaign not loaded yet, skipping usersFilter');
+                return;
+            }
             var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
             $http.get('/service/admin/points/users', { params: params }).then(function (response) {
                 var userNames = response.data;
@@ -892,6 +1055,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var biomeFilter = function (filter) {
+            if (!$scope.campaign || !$scope.campaign._id) {
+                console.warn('Campaign not loaded yet, skipping biomeFilter');
+                return;
+            }
             var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
             $http.get('/service/admin/points/biome', { params: params }).then(function (response) {
                 var biomes = response.data;
@@ -908,6 +1075,11 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var ufFilter = function (filter) {
+            if (!$scope.campaign || !$scope.campaign._id) {
+                console.warn('Campaign not loaded yet, skipping ufFilter');
+                return;
+            }
+            
             var params = Object.assign({}, filter, { campaignId: $scope.campaign._id });
             $http.get('/service/admin/points/uf', { params: params }).then(function (response) {
                 var stateUF = response.data;
@@ -1083,6 +1255,21 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     visparams: c.visparam
                 }));
         });
+        
+        // Carregar Landsat capabilities apenas se não for Sentinel
+        if (!$scope.isSentinel) {
+            requester._get('admin/landsat/capabilities', function(capabilities) {
+                $scope.landsatMosaics = capabilities
+                    .map(c => ({
+                        name: c.name,
+                        years: c.year,
+                        periods: c.period,
+                        visparams: c.visparam
+                    }));
+                
+                console.log(`Loaded ${$scope.landsatMosaics.length} Landsat collections`);
+            });
+        }
 
         $scope.shouldShowProperty = function(key) {
             return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;

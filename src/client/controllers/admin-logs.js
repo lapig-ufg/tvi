@@ -1,8 +1,8 @@
 /**
  * Controller para gerenciamento de logs do sistema
  */
-Application.controller('AdminLogsController', ['$scope', '$http', '$location', '$interval', '$timeout', 'NotificationDialog',
-    function($scope, $http, $location, $interval, $timeout, NotificationDialog) {
+Application.controller('AdminLogsController', ['$scope', '$http', '$location', '$interval', '$timeout', '$window', 'NotificationDialog', '$uibModal',
+    function($scope, $http, $location, $interval, $timeout, $window, NotificationDialog, $uibModal) {
         
         // Estado inicial
         $scope.logs = [];
@@ -12,6 +12,7 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
         $scope.pagination = null;
         $scope.availableModules = [];
         $scope.chartData = null;
+        $scope.chartInstance = null;
         
         // Filtros
         $scope.filters = {
@@ -22,11 +23,7 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
             limit: 50
         };
         
-        // Modal states
-        $scope.showDetailsModal = false;
-        $scope.showCleanupModalFlag = false;
-        $scope.selectedLog = null;
-        $scope.cleanupDays = 30;
+        // Variáveis removidas após refatoração para uso do $uibModal
         
         /**
          * Inicialização
@@ -34,19 +31,24 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
         $scope.init = function() {
             $scope.loadStats();
             $scope.loadLogs();
-            $scope.loadAvailableModules();
             
             // Atualizar a cada 30 segundos
             const refreshInterval = $interval(function() {
-                if (!$scope.showDetailsModal && !$scope.showCleanupModalFlag) {
-                    $scope.refreshLogs();
-                }
+                $scope.refreshLogs();
             }, 30000);
             
             // Limpar interval ao destruir
             $scope.$on('$destroy', function() {
                 if (refreshInterval) {
                     $interval.cancel(refreshInterval);
+                }
+                if ($scope.chartInstance) {
+                    try {
+                        $scope.chartInstance.destroy();
+                        $scope.chartInstance = null;
+                    } catch (e) {
+                        console.warn('Erro ao destruir gráfico no destroy:', e);
+                    }
                 }
             });
         };
@@ -62,11 +64,29 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
          * Carregar estatísticas
          */
         $scope.loadStats = function() {
-            $http.get('/api/admin/logs/stats?days=' + $scope.selectedPeriod)
+            $http.get('/service/logs/statistics')
                 .success(function(response) {
-                    if (response.success && response.data) {
-                        $scope.stats = response.data;
-                        $scope.updateChart(response.data.dailyStats);
+                    if (response.success && response.statistics) {
+                        const stats = response.statistics;
+                        
+                        // Processar estatísticas por nível
+                        $scope.stats.levelStats = {};
+                        stats.byLevel.forEach(function(item) {
+                            $scope.stats.levelStats[item._id] = item.count;
+                        });
+                        
+                        // Total de logs
+                        $scope.stats.totalLogs = stats.totals.totalLogs;
+                        
+                        // Módulos disponíveis
+                        $scope.availableModules = stats.byModule.map(function(item) {
+                            return item._id;
+                        }).filter(function(module) {
+                            return module && module !== 'unknown';
+                        });
+                        
+                        // Atualizar gráfico com dados por dia
+                        $scope.updateChart(stats.byDay);
                     }
                 })
                 .error(function(error) {
@@ -81,7 +101,6 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
             $scope.loading = true;
             
             const params = {
-                page: $scope.filters.page,
                 limit: $scope.filters.limit
             };
             
@@ -95,15 +114,23 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
             startDate.setDate(startDate.getDate() - $scope.selectedPeriod);
             params.startDate = startDate.toISOString();
             
-            $http.get('/api/admin/logs', { params: params })
+            $http.get('/service/logs/recent', { params: params })
                 .success(function(response) {
-                    if (response.success && response.data) {
-                        $scope.logs = response.data.logs;
-                        $scope.pagination = response.data.pagination;
+                    if (response.success && response.logs) {
+                        $scope.logs = response.logs;
+                        
+                        // Calcular paginação
+                        const total = response.total || response.logs.length;
+                        $scope.pagination = {
+                            page: $scope.filters.page,
+                            limit: $scope.filters.limit,
+                            total: total,
+                            pages: Math.ceil(total / $scope.filters.limit)
+                        };
                     }
                 })
                 .error(function(error) {
-                    NotificationDialog.error('Erro ao carregar logs', error);
+                    NotificationDialog.error('Erro ao carregar logs');
                 })
                 .finally(function() {
                     $scope.loading = false;
@@ -111,76 +138,63 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
         };
         
         /**
-         * Carregar módulos disponíveis
-         */
-        $scope.loadAvailableModules = function() {
-            // Extrair módulos únicos dos stats
-            $http.get('/api/admin/logs/stats?days=30')
-                .success(function(response) {
-                    if (response.success && response.data && response.data.moduleStats) {
-                        $scope.availableModules = Object.keys(response.data.moduleStats).sort();
-                    }
-                });
-        };
-        
-        /**
          * Atualizar gráfico
          */
-        $scope.updateChart = function(dailyStats) {
-            if (!dailyStats || Object.keys(dailyStats).length === 0) return;
+        $scope.updateChart = function(dailyData) {
+            if (!dailyData || dailyData.length === 0) return;
             
             const labels = [];
             const errorData = [];
-            const warnData = [];
-            const infoData = [];
+            const totalData = [];
             
-            // Ordenar por data
-            const sortedDates = Object.keys(dailyStats).sort();
-            
-            sortedDates.forEach(date => {
-                const stats = dailyStats[date];
-                labels.push(new Date(date).toLocaleDateString('pt-BR', { 
+            // Processar dados
+            dailyData.forEach(item => {
+                const date = new Date(item._id);
+                labels.push(date.toLocaleDateString('pt-BR', { 
                     day: '2-digit', 
                     month: '2-digit' 
                 }));
-                errorData.push(stats.error || 0);
-                warnData.push(stats.warn || 0);
-                infoData.push(stats.info || 0);
+                errorData.push(item.errors || 0);
+                totalData.push(item.count || 0);
             });
             
             // Destruir gráfico anterior se existir
             if ($scope.chartInstance) {
-                $scope.chartInstance.destroy();
+                try {
+                    $scope.chartInstance.destroy();
+                    $scope.chartInstance = null;
+                } catch (e) {
+                    console.warn('Erro ao destruir gráfico:', e);
+                }
             }
             
             // Criar novo gráfico
             $timeout(function() {
                 const ctx = document.getElementById('logsChart');
-                if (ctx) {
+                if (ctx && window.Chart) {
+                    // Limpar qualquer instância existente no canvas
+                    const existingChart = Chart.getChart(ctx);
+                    if (existingChart) {
+                        existingChart.destroy();
+                    }
+                    
                     $scope.chartInstance = new Chart(ctx, {
                         type: 'line',
                         data: {
                             labels: labels,
                             datasets: [
                                 {
+                                    label: 'Total de Logs',
+                                    data: totalData,
+                                    borderColor: '#3182ce',
+                                    backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                                    tension: 0.4
+                                },
+                                {
                                     label: 'Erros',
                                     data: errorData,
                                     borderColor: '#e53e3e',
                                     backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                                    tension: 0.4
-                                },
-                                {
-                                    label: 'Avisos',
-                                    data: warnData,
-                                    borderColor: '#dd6b20',
-                                    backgroundColor: 'rgba(221, 107, 32, 0.1)',
-                                    tension: 0.4
-                                },
-                                {
-                                    label: 'Informações',
-                                    data: infoData,
-                                    borderColor: '#3182ce',
-                                    backgroundColor: 'rgba(49, 130, 206, 0.1)',
                                     tension: 0.4
                                 }
                             ]
@@ -242,17 +256,31 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
          * Ver detalhes do log
          */
         $scope.viewLogDetails = function(log) {
-            $scope.selectedLog = log;
-            $scope.showDetailsModal = true;
+            // Buscar detalhes completos do log
+            $http.get('/service/logs/' + log.logId)
+                .success(function(response) {
+                    if (response.success && response.log) {
+                        // Abrir modal usando $uibModal
+                        const modalInstance = $uibModal.open({
+                            animation: true,
+                            templateUrl: 'views/admin-logs-detail-modal.tpl.html',
+                            controller: 'AdminLogsDetailModalController',
+                            windowClass: 'log-details-modal',
+                            size: 'lg',
+                            resolve: {
+                                logData: function() {
+                                    return response.log;
+                                }
+                            }
+                        });
+                    }
+                })
+                .error(function(error) {
+                    NotificationDialog.error('Erro ao carregar detalhes do log');
+                });
         };
         
-        /**
-         * Fechar modal de detalhes
-         */
-        $scope.closeDetailsModal = function() {
-            $scope.showDetailsModal = false;
-            $scope.selectedLog = null;
-        };
+        // Remover método closeDetailsModal pois será tratado pelo modal controller
         
         /**
          * Verificar se tem metadados
@@ -265,37 +293,108 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
          * Mostrar modal de limpeza
          */
         $scope.showCleanupModal = function() {
-            $scope.showCleanupModalFlag = true;
+            const modalInstance = $uibModal.open({
+                animation: true,
+                templateUrl: 'views/admin-logs-cleanup-modal.tpl.html',
+                controller: 'AdminLogsCleanupModalController',
+                windowClass: 'cleanup-modal',
+                size: 'md',
+                resolve: {
+                    parentScope: function() {
+                        return $scope;
+                    }
+                }
+            });
+            
+            modalInstance.result.then(function(result) {
+                if (result && result.action === 'cleanup') {
+                    $scope.performCleanup(result.cleanupDays, result.keepErrors);
+                }
+            });
         };
         
-        /**
-         * Fechar modal de limpeza
-         */
-        $scope.closeCleanupModal = function() {
-            $scope.showCleanupModalFlag = false;
-        };
+        // Remover método closeCleanupModal pois será tratado pelo modal controller
         
         /**
          * Executar limpeza
          */
-        $scope.performCleanup = function() {
-            $scope.closeCleanupModal();
-            
+        $scope.performCleanup = function(cleanupDays, keepErrors) {
             NotificationDialog.info('Limpando logs antigos...');
             
-            $http.post('/api/admin/logs/cleanup', { days: parseInt($scope.cleanupDays) })
+            const params = {
+                daysToKeep: parseInt(cleanupDays),
+                keepErrors: keepErrors
+            };
+            
+            $http.delete('/service/logs/cleanup', { params: params })
                 .success(function(response) {
-                    if (response.success && response.data) {
+                    if (response.success) {
                         NotificationDialog.success(
                             'Limpeza concluída',
-                            response.data.removedCount + ' logs foram removidos'
+                            response.deleted + ' logs foram removidos'
                         );
                         $scope.refreshLogs();
                     }
                 })
                 .error(function(error) {
-                    NotificationDialog.error('Erro ao limpar logs', error);
+                    NotificationDialog.error('Erro ao limpar logs');
                 });
+        };
+        
+        /**
+         * Mostrar modal de configuração do job
+         */
+        $scope.showJobConfigModal = function() {
+            // Carregar status do job primeiro
+            $http.get('/service/logs/job-status')
+                .success(function(response) {
+                    if (response.success && response.jobStatus) {
+                        const modalInstance = $uibModal.open({
+                            animation: true,
+                            templateUrl: 'views/admin-logs-job-config-modal.tpl.html',
+                            controller: 'AdminLogsJobConfigModalController',
+                            windowClass: 'job-config-modal',
+                            size: 'lg',
+                            resolve: {
+                                jobStatusData: function() {
+                                    return response.jobStatus;
+                                },
+                                parentScope: function() {
+                                    return $scope;
+                                }
+                            }
+                        });
+                    }
+                })
+                .error(function(error) {
+                    NotificationDialog.error('Erro ao carregar configuração do job');
+                });
+        };
+        
+        // Remover método closeJobConfigModal pois será tratado pelo modal controller
+        
+        // Remover método loadJobStatus pois será tratado pelo modal controller
+        
+        // Remover métodos saveJobConfig e triggerJob pois serão tratados pelo modal controller
+        
+        /**
+         * Exportar logs
+         */
+        $scope.exportLogs = function() {
+            const params = {
+                limit: 1000,
+                level: $scope.filters.level,
+                startDate: new Date(Date.now() - $scope.selectedPeriod * 24 * 60 * 60 * 1000).toISOString()
+            };
+            
+            // Construir query string
+            const queryString = Object.keys(params)
+                .filter(key => params[key])
+                .map(key => key + '=' + encodeURIComponent(params[key]))
+                .join('&');
+            
+            // Abrir em nova janela para download
+            $window.open('/service/logs/export?' + queryString, '_blank');
         };
         
         /**
@@ -307,7 +406,113 @@ Application.controller('AdminLogsController', ['$scope', '$http', '$location', '
             return date.toLocaleString('pt-BR');
         };
         
+        
         // Inicializar
         $scope.init();
+    }
+]);
+
+/**
+ * Controller para modal de detalhes do log
+ */
+Application.controller('AdminLogsDetailModalController', ['$scope', '$uibModalInstance', 'logData',
+    function($scope, $uibModalInstance, logData) {
+        $scope.selectedLog = logData;
+        
+        $scope.formatDate = function(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('pt-BR');
+        };
+        
+        $scope.hasMetadata = function(metadata) {
+            return metadata && Object.keys(metadata).length > 0;
+        };
+        
+        $scope.$dismiss = function() {
+            $uibModalInstance.dismiss();
+        };
+    }
+]);
+
+/**
+ * Controller para modal de limpeza
+ */
+Application.controller('AdminLogsCleanupModalController', ['$scope', '$uibModalInstance', 'parentScope',
+    function($scope, $uibModalInstance, parentScope) {
+        $scope.cleanupDays = 30;
+        $scope.keepErrors = true;
+        
+        $scope.performCleanup = function() {
+            $uibModalInstance.close({
+                action: 'cleanup',
+                cleanupDays: $scope.cleanupDays,
+                keepErrors: $scope.keepErrors
+            });
+        };
+        
+        $scope.$dismiss = function() {
+            $uibModalInstance.dismiss();
+        };
+    }
+]);
+
+/**
+ * Controller para modal de configuração do job
+ */
+Application.controller('AdminLogsJobConfigModalController', ['$scope', '$uibModalInstance', '$http', 'NotificationDialog', '$timeout', 'jobStatusData', 'parentScope',
+    function($scope, $uibModalInstance, $http, NotificationDialog, $timeout, jobStatusData, parentScope) {
+        $scope.jobStatus = jobStatusData;
+        $scope.jobConfig = angular.copy(jobStatusData.configuration);
+        $scope.jobConfig.isEnabled = jobStatusData.isEnabled;
+        
+        $scope.saveJobConfig = function() {
+            $http.put('/service/logs/job-config', $scope.jobConfig)
+                .success(function(response) {
+                    if (response.success) {
+                        NotificationDialog.success('Configuração salva com sucesso');
+                        $uibModalInstance.close();
+                        parentScope.refreshLogs();
+                    }
+                })
+                .error(function(error) {
+                    NotificationDialog.error('Erro ao salvar configuração');
+                });
+        };
+        
+        $scope.triggerJob = function() {
+            NotificationDialog.info('Executando job de limpeza...');
+            
+            const params = {
+                daysToKeep: $scope.jobConfig.daysToKeep,
+                keepErrors: $scope.jobConfig.keepErrors,
+                batchSize: $scope.jobConfig.batchSize,
+                simulate: $scope.jobConfig.simulate
+            };
+            
+            $http.post('/service/logs/trigger-job', params)
+                .success(function(response) {
+                    if (response.success) {
+                        NotificationDialog.success('Job executado com sucesso');
+                        // Recarregar status após alguns segundos
+                        $timeout(function() {
+                            // Recarregar job status
+                            $http.get('/service/logs/job-status')
+                                .success(function(response) {
+                                    if (response.success && response.jobStatus) {
+                                        $scope.jobStatus = response.jobStatus;
+                                    }
+                                });
+                        }, 3000);
+                    }
+                })
+                .error(function(error) {
+                    NotificationDialog.error('Erro ao executar job');
+                });
+        };
+        
+        $scope.$dismiss = function() {
+            $uibModalInstance.dismiss();
+        };
     }
 ]);

@@ -27,6 +27,20 @@ app.middleware.repository.init(() => {
 	app.middleware.repository.initTimeseriesDb(() => {
 		const mongodbUrl = 'mongodb://' + app.config.mongo.host + ':' + app.config.mongo.port + '/' + app.config.mongo.dbname;
 		app.repository = app.middleware.repository;
+		
+		// Inicializar o logger após o repository estar pronto
+		if (app.services && app.services.logger) {
+			// Se o logger já foi carregado pelo express-load mas não foi inicializado
+			if (typeof app.services.logger === 'function') {
+				app.services.logger = app.services.logger(app);
+			}
+			// Garantir que o logger seja inicializado com o repository
+			if (app.services.logger && !app.services.logger.logCollection && app.repository) {
+				app.services.logger.app = app;
+				app.services.logger.init();
+			}
+		}
+		
 		const store = new MongoStore({ url: mongodbUrl });
 		io.adapter(mongoAdapter( mongodbUrl ));
 

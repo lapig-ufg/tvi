@@ -1,28 +1,25 @@
-<!-- Cache Manager - Interface Moderna -->
-<div class="cache-manager-container">
+<!-- Cache Manager - Interface Admin -->
+<div class="admin-cache-container">
     <!-- Header -->
-    <div class="cache-header">
+    <div class="admin-header">
         <div class="header-content">
             <div class="header-left">
-                <div class="header-icon">
-                    <i class="fas fa-server"></i>
-                </div>
-                <div class="header-info">
-                    <h1 class="header-title">Gerenciador de Cache</h1>
-                    <p class="header-desc">Sistema para gerenciar o cache das imagens de satélite</p>
-                </div>
+                <button class="back-btn" ng-click="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="header-title">Gerenciador de Cache</h1>
             </div>
             <div class="header-actions">
-                <button class="action-btn refresh" ng-click="loadCacheStatus()" ng-disabled="loading.status">
+                <button class="action-btn" ng-click="loadCacheStatus()" ng-disabled="loading.status">
                     <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.status}"></i>
-                    Atualizar Status
+                    <span>Atualizar Status</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="cache-content">
+    <div class="admin-content">
         <!-- Status Overview -->
         <div class="status-section">
             <div class="section-header">
@@ -31,14 +28,14 @@
                     Status Geral do Cache
                 </h2>
             </div>
-            
+
             <div ng-if="loading.status" class="loading-state">
                 <div class="loading-spinner">
                     <i class="fas fa-spinner fa-spin"></i>
                 </div>
                 <p class="loading-text">Carregando status...</p>
             </div>
-            
+
             <div ng-if="!loading.status" class="stats-grid">
                 <div class="stat-card total">
                     <div class="stat-icon">
@@ -49,7 +46,7 @@
                         <div class="stat-label">Total de Pontos</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card cached">
                     <div class="stat-icon">
                         <i class="fas fa-check-circle"></i>
@@ -59,7 +56,7 @@
                         <div class="stat-label">Pontos Cacheados</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card uncached">
                     <div class="stat-icon">
                         <i class="fas fa-times-circle"></i>
@@ -69,7 +66,7 @@
                         <div class="stat-label">Pontos Não Cacheados</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card percentage">
                     <div class="stat-icon">
                         <i class="fas fa-percentage"></i>
@@ -97,7 +94,7 @@
                         {{liveProgress.simulate ? 'SIMULAÇÃO' : 'PRODUÇÃO'}}
                     </div>
                 </div>
-                
+
                 <div class="progress-content">
                     <div class="progress-main">
                         <div class="progress-info">
@@ -106,16 +103,18 @@
                                 <span class="progress-percentage">{{liveProgress.progress}}%</span>
                             </div>
                             <div class="progress-bar-container">
-                                <div class="progress-bar-fill animated" ng-style="{'width': liveProgress.progress + '%'}"></div>
+                                <div class="progress-bar-fill animated"
+                                     ng-style="{'width': liveProgress.progress + '%'}"></div>
                             </div>
                             <div class="progress-details">
                                 <span>{{liveProgress.processedCount}} de {{liveProgress.totalPoints}} pontos</span>
                             </div>
                         </div>
-                        
+
                         <div class="live-stats">
                             <div class="live-stat">
-                                <div class="stat-value">{{liveProgress.currentBatch}}/{{liveProgress.totalBatches}}</div>
+                                <div class="stat-value">{{liveProgress.currentBatch}}/{{liveProgress.totalBatches}}
+                                </div>
                                 <div class="stat-label">Batches</div>
                             </div>
                             <div class="live-stat">
@@ -132,7 +131,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="progress-sidebar">
                         <div class="logs-section">
                             <h4 class="logs-title">
@@ -150,7 +149,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="estimates-section" ng-if="liveProgress.estimatedTime">
                             <h4 class="estimates-title">
                                 <i class="fas fa-stopwatch"></i>
@@ -173,54 +172,62 @@
         </div>
 
         <!-- Job Management Section -->
-        <div class="job-section">
-            <div class="job-card">
-                <div class="card-header">
-                    <h3 class="card-title">
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('jobManagement')"
+                 ng-class="{active: accordions.jobManagement}">
+                <div>
+                    <h2 class="accordion-title">
                         <i class="fas fa-cogs"></i>
                         Job de Cache Automático
-                    </h3>
-                    <div class="header-actions">
-                        <div ng-if="liveProgress.isRunning" class="status-badge running">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            EXECUTANDO
-                        </div>
-                        <button class="action-btn refresh" ng-click="loadJobStatus()" ng-disabled="loading.job">
-                            <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.job}"></i>
-                            Atualizar
-                        </button>
-                    </div>
+                    </h2>
+                    <p class="accordion-subtitle">Configuração e monitoramento do sistema de cache automático</p>
                 </div>
-                
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div ng-if="liveProgress.isRunning" class="status-badge running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        EXECUTANDO
+                    </div>
+                    <button class="action-btn small" ng-click="loadJobStatus(); $event.stopPropagation()"
+                            ng-disabled="loading.job">
+                        <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.job}"></i>
+                        <span>Atualizar</span>
+                    </button>
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.jobManagement}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.jobManagement}">
+
                 <div ng-if="loading.job" class="loading-state">
                     <div class="loading-spinner">
                         <i class="fas fa-spinner fa-spin"></i>
                     </div>
                     <p class="loading-text">Carregando status do job...</p>
                 </div>
-                
+
                 <div ng-if="!loading.job" class="job-content">
                     <div class="job-status">
                         <h4 class="subsection-title">
                             <i class="fas fa-info-circle"></i>
                             Status do Job
                         </h4>
-                        
+
                         <div class="status-info">
                             <div class="status-item">
                                 <span class="status-label">Estado</span>
                                 <div class="status-badge" ng-class="jobStatus.isEnabled ? 'active' : 'inactive'">
-                                    <i class="fas" ng-class="jobStatus.isEnabled ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                    <i class="fas"
+                                       ng-class="jobStatus.isEnabled ? 'fa-check-circle' : 'fa-times-circle'"></i>
                                     {{jobStatus.isEnabled ? 'Ativo' : 'Inativo'}}
                                 </div>
                             </div>
-                            
+
                             <div class="status-item" ng-if="jobStatus.lastExecution">
                                 <span class="status-label">Última Execução</span>
                                 <span class="status-value">{{jobStatus.lastExecution}}</span>
                             </div>
                         </div>
-                        
+
                         <div class="config-current">
                             <h5 class="config-title">Configuração Atual</h5>
                             <div class="config-grid">
@@ -234,36 +241,38 @@
                                 </div>
                                 <div class="config-item">
                                     <span class="config-label">Modo de Operação</span>
-                                    <div class="mode-badge" ng-class="jobStatus.configuration.simulate ? 'simulation' : 'production'">
-                                        <i class="fas" ng-class="jobStatus.configuration.simulate ? 'fa-flask' : 'fa-rocket'"></i>
+                                    <div class="mode-badge"
+                                         ng-class="jobStatus.configuration.simulate ? 'simulation' : 'production'">
+                                        <i class="fas"
+                                           ng-class="jobStatus.configuration.simulate ? 'fa-flask' : 'fa-rocket'"></i>
                                         {{jobStatus.configuration.simulate ? 'Simulação' : 'Produção'}}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="job-config">
                         <h4 class="subsection-title">
                             <i class="fas fa-sliders-h"></i>
                             Configurar Job
                         </h4>
-                        
+
                         <div class="config-form">
                             <div class="form-group">
                                 <label class="form-label">Tamanho do Batch</label>
-                                <input type="number" class="form-input" ng-model="jobConfig.batchSize" 
+                                <input type="number" class="form-input" ng-model="jobConfig.batchSize"
                                        min="1" max="10" placeholder="3">
                                 <span class="form-hint">Número de pontos processados simultaneamente</span>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label class="form-label">Máximo de Pontos por Execução</label>
-                                <input type="number" class="form-input" ng-model="jobConfig.maxPointsPerRun" 
+                                <input type="number" class="form-input" ng-model="jobConfig.maxPointsPerRun"
                                        min="5" max="100" placeholder="15">
                                 <span class="form-hint">Limite de pontos processados a cada execução do job</span>
                             </div>
-                            
+
                             <div class="form-group">
                                 <label class="form-label">Modo de Operação</label>
                                 <div class="radio-group">
@@ -285,398 +294,402 @@
                                     </label>
                                 </div>
                             </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <div class="col-sm-offset-5 col-sm-7">
-                                            <button type="button" class="btn btn-primary btn-sm" 
-                                                    ng-click="updateJobConfig()">
-                                                <i class="glyphicon glyphicon-save"></i> 
-                                                Salvar Configuração
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                                
-                                <div class="form-group" style="margin-top: 20px;">
-                                    <button class="btn btn-success btn-sm" ng-click="triggerJobManually()">
-                                        <i class="glyphicon glyphicon-play"></i> 
-                                        Executar Job Manualmente
-                                    </button>
-                                </div>
-                            </div>
                         </div>
-                        
-                        <!-- Logs Recentes -->
-                        <div ng-if="jobStatus.recentLogs.length > 0" style="margin-top: 20px;">
-                            <h5><strong>Logs Recentes:</strong></h5>
-                            <div class="well" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px;">
-                                <div ng-repeat="log in jobStatus.recentLogs track by $index">{{log}}</div>
-                            </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="action-btn primary"
+                                    ng-click="updateJobConfig()">
+                                <i class="fas fa-save"></i>
+                                <span>Salvar Configuração</span>
+                            </button>
+
+                            <button class="action-btn success" ng-click="triggerJobManually()">
+                                <i class="fas fa-play"></i>
+                                <span>Executar Job Manualmente</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Controles de Remoção de Cache -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-danger">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-trash"></i> 
+        <!-- Controles de Remoção de Cache -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('cacheRemoval')"
+                 ng-class="{active: accordions.cacheRemoval}">
+                <div>
+                    <h2 class="accordion-title">
+                        <i class="fas fa-trash-alt"></i>
                         Remoção de Cache
-                        <small class="text-muted">(Limpar cache do Redis e S3)</small>
-                    </h4>
+                    </h2>
+                    <p class="accordion-subtitle">Limpar cache do Redis e S3</p>
                 </div>
-                <div class="panel-body">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Tipo de Limpeza:</label>
-                            <div class="col-sm-9">
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="campaign">
-                                    Por Campanha
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="point">
-                                    Por Ponto
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="layer">
-                                    Por Camada
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="year">
-                                    Por Ano
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="tile">
-                                    Por Tile Específico
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="cacheRemoval.type" value="all">
-                                    Tudo
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Opções específicas por tipo -->
-                        <div class="form-group" ng-if="cacheRemoval.type === 'campaign'">
-                            <label class="col-sm-3 control-label">Campanha:</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="cacheRemoval.campaignId" 
-                                       placeholder="Digite o ID da campanha">
-                                <p class="help-block">
-                                    Ex: cana_2020, pastagem_2021
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'point'">
-                            <label class="col-sm-3 control-label">Campanha:</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="cacheRemoval.campaignId" 
-                                       placeholder="Digite o ID da campanha">
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'point'">
-                            <label class="col-sm-3 control-label">Ponto(s):</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="cacheRemoval.pointId" 
-                                       placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
-                                <p class="help-block">
-                                    Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'layer'">
-                            <label class="col-sm-3 control-label">Camada:</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="cacheRemoval.layer" 
-                                       placeholder="Digite o nome da camada">
-                                <p class="help-block">
-                                    Opções: landsat, s2_harmonized
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'year' || cacheRemoval.type === 'layer' || cacheRemoval.type === 'campaign' || cacheRemoval.type === 'point'">
-                            <label class="col-sm-3 control-label">Ano:</label>
-                            <div class="col-sm-9">
-                                <input type="number" class="form-control" ng-model="cacheRemoval.year" 
-                                       min="1985" max="2025" placeholder="Ex: 2023 (opcional)">
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="cacheRemoval.type === 'tile'">
-                            <label class="col-sm-3 control-label">Coordenadas do Tile:</label>
-                            <div class="col-sm-3">
-                                <input type="number" class="form-control" ng-model="cacheRemoval.x" placeholder="X">
-                            </div>
-                            <div class="col-sm-3">
-                                <input type="number" class="form-control" ng-model="cacheRemoval.y" placeholder="Y">
-                            </div>
-                            <div class="col-sm-3">
-                                <input type="number" class="form-control" ng-model="cacheRemoval.z" placeholder="Z">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-sm-offset-3 col-sm-9">
-                                <div class="alert alert-warning">
-                                    <i class="glyphicon glyphicon-warning-sign"></i>
-                                    <strong>Atenção:</strong> Esta operação irá remover permanentemente os tiles do cache!
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div ng-if="cacheRemoval.isRemoving" class="status-badge running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        REMOVENDO
+                    </div>
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.cacheRemoval}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.cacheRemoval}">
+                <div class="section-card danger">
+                    <div class="card-body">
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Tipo de Limpeza:</label>
+                                <div class="col-sm-9">
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="campaign">
+                                        Por Campanha
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="point">
+                                        Por Ponto
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="layer">
+                                        Por Camada
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="year">
+                                        Por Ano
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="tile">
+                                        Por Tile Específico
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="cacheRemoval.type" value="all">
+                                        Tudo
+                                    </label>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <div class="col-sm-offset-3 col-sm-9">
-                                <button type="button" class="btn btn-danger" 
-                                        ng-click="removeCacheConfirm()" 
+                            <!-- Opções específicas por tipo -->
+                            <div class="form-group" ng-if="cacheRemoval.type === 'campaign'">
+                                <label class="col-sm-3 control-label">Campanha:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="cacheRemoval.campaignId"
+                                           placeholder="Digite o ID da campanha">
+                                    <p class="help-block">
+                                        Ex: cana_2020, pastagem_2021
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="cacheRemoval.type === 'point'">
+                                <label class="col-sm-3 control-label">Campanha:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="cacheRemoval.campaignId"
+                                           placeholder="Digite o ID da campanha">
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="cacheRemoval.type === 'point'">
+                                <label class="col-sm-3 control-label">Ponto(s):</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="cacheRemoval.pointId"
+                                           placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
+                                    <p class="help-block">
+                                        Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="cacheRemoval.type === 'layer'">
+                                <label class="col-sm-3 control-label">Camada:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="cacheRemoval.layer"
+                                           placeholder="Digite o nome da camada">
+                                    <p class="help-block">
+                                        Opções: landsat, s2_harmonized
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="form-group"
+                                 ng-if="cacheRemoval.type === 'year' || cacheRemoval.type === 'layer' || cacheRemoval.type === 'campaign' || cacheRemoval.type === 'point'">
+                                <label class="col-sm-3 control-label">Ano:</label>
+                                <div class="col-sm-9">
+                                    <input type="number" class="form-control" ng-model="cacheRemoval.year"
+                                           min="1985" max="2025" placeholder="Ex: 2023 (opcional)">
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="cacheRemoval.type === 'tile'">
+                                <label class="col-sm-3 control-label">Coordenadas do Tile:</label>
+                                <div class="col-sm-3">
+                                    <input type="number" class="form-control" ng-model="cacheRemoval.x" placeholder="X">
+                                </div>
+                                <div class="col-sm-3">
+                                    <input type="number" class="form-control" ng-model="cacheRemoval.y" placeholder="Y">
+                                </div>
+                                <div class="col-sm-3">
+                                    <input type="number" class="form-control" ng-model="cacheRemoval.z" placeholder="Z">
+                                </div>
+                            </div>
+
+                            <div class="alert-box warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Atenção:</strong> Esta operação irá remover permanentemente os tiles do cache!
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="action-btn danger"
+                                        ng-click="removeCacheConfirm()"
                                         ng-disabled="cacheRemoval.isRemoving || !canRemoveCache()">
-                                    <i class="glyphicon" ng-class="{
-                                        'glyphicon-refresh glyphicon-refresh-animate': cacheRemoval.isRemoving,
-                                        'glyphicon-trash': !cacheRemoval.isRemoving
-                                    }"></i>
+                                    <i class="fas" ng-class="{
+                                    'fa-spinner fa-spin': cacheRemoval.isRemoving,
+                                    'fa-trash-alt': !cacheRemoval.isRemoving
+                                }"></i>
                                     <span ng-if="!cacheRemoval.isRemoving">Remover Cache</span>
                                     <span ng-if="cacheRemoval.isRemoving">Removendo...</span>
                                 </button>
-                                
-                                <span ng-if="cacheRemoval.lastResult" class="text-muted" style="margin-left: 15px;">
-                                    <span ng-if="cacheRemoval.lastResult.success" class="text-success">
-                                        <i class="glyphicon glyphicon-ok"></i>
-                                        {{cacheRemoval.lastResult.removed}} itens removidos
-                                    </span>
-                                    <span ng-if="!cacheRemoval.lastResult.success" class="text-danger">
-                                        <i class="glyphicon glyphicon-remove"></i>
-                                        Erro: {{cacheRemoval.lastResult.error}}
-                                    </span>
+
+                                <span ng-if="cacheRemoval.lastResult" class="result-message">
+                                <span ng-if="cacheRemoval.lastResult.success" class="success">
+                                    <i class="fas fa-check-circle"></i>
+                                    {{cacheRemoval.lastResult.removed}} itens removidos
                                 </span>
+                                <span ng-if="!cacheRemoval.lastResult.success" class="error">
+                                    <i class="fas fa-times-circle"></i>
+                                    Erro: {{cacheRemoval.lastResult.error}}
+                                </span>
+                            </span>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Reset Cache MongoDB -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-refresh"></i> 
+        <!-- Reset Cache MongoDB -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('mongoReset')"
+                 ng-class="{active: accordions.mongoReset}">
+                <div>
+                    <h2 class="accordion-title">
+                        <i class="fas fa-sync-alt"></i>
                         Reset Cache MongoDB
-                        <small class="text-muted">(Marcar pontos como não cacheados no banco)</small>
-                    </h4>
+                    </h2>
+                    <p class="accordion-subtitle">Marcar pontos como não cacheados no banco</p>
                 </div>
-                <div class="panel-body">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Tipo de Reset:</label>
-                            <div class="col-sm-9">
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="mongoReset.type" value="campaign">
-                                    Por Campanha(s)
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="mongoReset.type" value="point">
-                                    Por Ponto(s)
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="mongoReset.type" value="all">
-                                    Todos
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Opções por campanha -->
-                        <div class="form-group" ng-if="mongoReset.type === 'campaign'">
-                            <label class="col-sm-3 control-label">Campanha(s):</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="mongoReset.campaignIds" 
-                                       placeholder="Digite o(s) ID(s) da(s) campanha(s), separados por vírgula">
-                                <p class="help-block">
-                                    Ex: cana_2020 ou cana_2020,pastagem_2021,soja_2022 para múltiplas campanhas
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Opções por ponto -->
-                        <div class="form-group" ng-if="mongoReset.type === 'point'">
-                            <label class="col-sm-3 control-label">Campanha:</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="mongoReset.campaignId" 
-                                       placeholder="Digite o ID da campanha (obrigatório para pontos)">
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="mongoReset.type === 'point'">
-                            <label class="col-sm-3 control-label">Ponto(s):</label>
-                            <div class="col-sm-9">
-                                <input type="text" class="form-control" ng-model="mongoReset.pointIds" 
-                                       placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
-                                <p class="help-block">
-                                    Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-sm-offset-3 col-sm-9">
-                                <div class="alert alert-info">
-                                    <i class="glyphicon glyphicon-info-sign"></i>
-                                    <strong>Atenção:</strong> Esta operação marca os pontos como <code>cached: false</code> no MongoDB, 
-                                    permitindo que sejam processados novamente pelo sistema de cache.
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div ng-if="mongoReset.isResetting" class="status-badge running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        RESETANDO
+                    </div>
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.mongoReset}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.mongoReset}">
+                <div class="section-card info">
+                    <div class="card-body">
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Tipo de Reset:</label>
+                                <div class="col-sm-9">
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="mongoReset.type" value="campaign">
+                                        Por Campanha(s)
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="mongoReset.type" value="point">
+                                        Por Ponto(s)
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="mongoReset.type" value="all">
+                                        Todos
+                                    </label>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <div class="col-sm-offset-3 col-sm-9">
-                                <button type="button" class="btn btn-primary" 
-                                        ng-click="resetMongoCache()" 
+                            <!-- Opções por campanha -->
+                            <div class="form-group" ng-if="mongoReset.type === 'campaign'">
+                                <label class="col-sm-3 control-label">Campanha(s):</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="mongoReset.campaignIds"
+                                           placeholder="Digite o(s) ID(s) da(s) campanha(s), separados por vírgula">
+                                    <p class="help-block">
+                                        Ex: cana_2020 ou cana_2020,pastagem_2021,soja_2022 para múltiplas campanhas
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Opções por ponto -->
+                            <div class="form-group" ng-if="mongoReset.type === 'point'">
+                                <label class="col-sm-3 control-label">Campanha:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="mongoReset.campaignId"
+                                           placeholder="Digite o ID da campanha (obrigatório para pontos)">
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="mongoReset.type === 'point'">
+                                <label class="col-sm-3 control-label">Ponto(s):</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" ng-model="mongoReset.pointIds"
+                                           placeholder="Digite o(s) ID(s) do(s) ponto(s), separados por vírgula">
+                                    <p class="help-block">
+                                        Ex: 12345 ou 12345,67890,11111 para múltiplos pontos
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="alert-box info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Atenção:</strong> Esta operação marca os pontos como <code>cached: false</code> no
+                                MongoDB,
+                                permitindo que sejam processados novamente pelo sistema de cache.
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="action-btn primary"
+                                        ng-click="resetMongoCache()"
                                         ng-disabled="mongoReset.isResetting || !canResetMongoCache()">
-                                    <i class="glyphicon" ng-class="{
-                                        'glyphicon-refresh glyphicon-refresh-animate': mongoReset.isResetting,
-                                        'glyphicon-refresh': !mongoReset.isResetting
-                                    }"></i>
+                                    <i class="fas" ng-class="{
+                                    'fa-spinner fa-spin': mongoReset.isResetting,
+                                    'fa-sync-alt': !mongoReset.isResetting
+                                }"></i>
                                     <span ng-if="!mongoReset.isResetting">Resetar Cache no MongoDB</span>
                                     <span ng-if="mongoReset.isResetting">Resetando...</span>
                                 </button>
-                                
-                                <span ng-if="mongoReset.lastResult" class="text-muted" style="margin-left: 15px;">
-                                    <span ng-if="mongoReset.lastResult.success" class="text-success">
-                                        <i class="glyphicon glyphicon-ok"></i>
-                                        {{mongoReset.lastResult.updated}} pontos atualizados
-                                    </span>
-                                    <span ng-if="!mongoReset.lastResult.success" class="text-danger">
-                                        <i class="glyphicon glyphicon-remove"></i>
-                                        Erro: {{mongoReset.lastResult.error}}
-                                    </span>
+
+                                <span ng-if="mongoReset.lastResult" class="result-message">
+                                <span ng-if="mongoReset.lastResult.success" class="success">
+                                    <i class="fas fa-check-circle"></i>
+                                    {{mongoReset.lastResult.updated}} pontos atualizados
                                 </span>
+                                <span ng-if="!mongoReset.lastResult.success" class="error">
+                                    <i class="fas fa-times-circle"></i>
+                                    Erro: {{mongoReset.lastResult.error}}
+                                </span>
+                            </span>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Controles de Processamento Manual -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-warning">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-play"></i> 
+        <!-- Controles de Processamento Manual -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('manualProcessing')"
+                 ng-class="{active: accordions.manualProcessing}">
+                <div>
+                    <h2 class="accordion-title">
+                        <i class="fas fa-play-circle"></i>
                         Processamento Manual
-                        <small class="text-muted">(Para testes ou execução pontual)</small>
-                    </h4>
+                    </h2>
+                    <p class="accordion-subtitle">Para testes ou execução pontual</p>
                 </div>
-                <div class="panel-body">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Modo de Operação:</label>
-                            <div class="col-sm-9">
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="processing.simulateMode" ng-value="true">
-                                    <i class="glyphicon glyphicon-play-circle"></i> Simulação
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" ng-model="processing.simulateMode" ng-value="false">
-                                    <i class="glyphicon glyphicon-warning-sign"></i> Cache Real
-                                </label>
-                                <span class="help-block">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div ng-if="processing.isProcessing" class="status-badge running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        PROCESSANDO
+                    </div>
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.manualProcessing}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.manualProcessing}">
+                <div class="section-card warning">
+                    <div class="card-body">
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Modo de Operação:</label>
+                                <div class="col-sm-9">
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="processing.simulateMode" ng-value="true">
+                                        <i class="glyphicon glyphicon-play-circle"></i> Simulação
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" ng-model="processing.simulateMode" ng-value="false">
+                                        <i class="glyphicon glyphicon-warning-sign"></i> Cache Real
+                                    </label>
+                                    <span class="help-block">
                                     <strong>Simulação:</strong> Apenas testa o sistema sem fazer cache real<br>
                                     <strong>Cache Real:</strong> Faz requisições reais e consome recursos do servidor
                                 </span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Campanha:</label>
-                            <div class="col-sm-9">
-                                <select class="form-control" ng-model="processing.campaignId">
-                                    <option value="">Todas as campanhas</option>
-                                    <option ng-repeat="campaign in campaignsForSelection" 
-                                            ng-value="campaign.id">
-                                        {{campaign.name}} ({{campaign.uncachedCount}} pontos não cacheados)
-                                    </option>
-                                </select>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Campanha:</label>
+                                <div class="col-sm-9">
+                                    <select class="form-control" ng-model="processing.campaignId">
+                                        <option value="">Todas as campanhas</option>
+                                        <option ng-repeat="campaign in campaignsForSelection"
+                                                ng-value="campaign.id">
+                                            {{campaign.name}} ({{campaign.uncachedCount}} pontos não cacheados)
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Limite de Pontos:</label>
-                            <div class="col-sm-9">
-                                <input type="number" class="form-control" ng-model="processing.limitPoints" 
-                                       min="1" max="100" style="width: 100px; display: inline-block;">
-                                <span class="help-block">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label">Limite de Pontos:</label>
+                                <div class="col-sm-9">
+                                    <input type="number" class="form-control" ng-model="processing.limitPoints"
+                                           min="1" max="100" style="width: 100px; display: inline-block;">
+                                    <span class="help-block">
                                     Número máximo de pontos a processar por execução (recomendado: 5-20 para teste)
                                 </span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <div class="col-sm-offset-3 col-sm-9">
-                                <button type="button" class="btn btn-primary btn-lg" 
-                                        ng-click="startCacheProcess()" 
+                            <div class="form-actions">
+                                <button type="button" class="action-btn large primary"
+                                        ng-click="startCacheProcess()"
                                         ng-disabled="processing.isProcessing || loading.processing">
-                                    <i class="glyphicon" ng-class="{
-                                        'glyphicon-refresh glyphicon-refresh-animate': processing.isProcessing,
-                                        'glyphicon-play': !processing.isProcessing && processing.simulateMode,
-                                        'glyphicon-fire': !processing.isProcessing && !processing.simulateMode
-                                    }"></i>
+                                    <i class="fas" ng-class="{
+                                    'fa-spinner fa-spin': processing.isProcessing,
+                                    'fa-play': !processing.isProcessing && processing.simulateMode,
+                                    'fa-rocket': !processing.isProcessing && !processing.simulateMode
+                                }"></i>
                                     <span ng-if="!processing.isProcessing">
-                                        {{processing.simulateMode ? 'Iniciar Simulação' : 'Iniciar Cache Real'}}
-                                    </span>
+                                    {{processing.simulateMode ? 'Iniciar Simulação' : 'Iniciar Cache Real'}}
+                                </span>
                                     <span ng-if="processing.isProcessing">
-                                        Processando...
-                                    </span>
+                                    Processando...
+                                </span>
                                 </button>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Resultados do Processamento -->
-    <div class="row" ng-if="processing.results.length > 0">
-        <div class="col-xs-12">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-list"></i> 
+        <!-- Resultados do Processamento -->
+        <div class="results-section" ng-if="processing.results.length > 0">
+            <div class="section-card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list-ul"></i>
                         Resultados do Último Processamento
-                    </h4>
+                    </h3>
                 </div>
-                <div class="panel-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-condensed">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table">
                             <thead>
-                                <tr>
-                                    <th>Ponto ID</th>
-                                    <th>Campanha</th>
-                                    <th>Status</th>
-                                    <th>Imagens Processadas</th>
-                                    <th>Erros</th>
-                                </tr>
+                            <tr>
+                                <th>Ponto ID</th>
+                                <th>Campanha</th>
+                                <th>Status</th>
+                                <th>Imagens Processadas</th>
+                                <th>Erros</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="result in processing.results">
-                                    <td>{{result.pointId}}</td>
-                                    <td>{{result.campaign}}</td>
-                                    <td>
+                            <tr ng-repeat="result in processing.results">
+                                <td>{{result.pointId}}</td>
+                                <td>{{result.campaign}}</td>
+                                <td>
                                         <span class="label" ng-class="{
                                             'label-success': result.processed && !result.error,
                                             'label-danger': result.error,
@@ -689,54 +702,67 @@
                                             }"></i>
                                             {{result.error ? 'Erro' : (result.processed ? 'Sucesso' : 'Pendente')}}
                                         </span>
-                                    </td>
-                                    <td>{{result.imagesProcessed || 0}}</td>
-                                    <td>
+                                </td>
+                                <td>{{result.imagesProcessed || 0}}</td>
+                                <td>
                                         <span ng-if="result.errors && result.errors.length > 0" class="text-danger">
                                             {{result.errors.length}} erro(s)
                                         </span>
-                                        <span ng-if="result.error" class="text-danger">
+                                    <span ng-if="result.error" class="text-danger">
                                             {{result.error}}
                                         </span>
-                                    </td>
-                                </tr>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Pontos Não Cacheados por Campanha -->
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-list-alt"></i> 
+        <!-- Pontos Não Cacheados por Campanha -->
+        <div class="accordion-section">
+            <div class="accordion-header" ng-click="toggleAccordion('uncachedPoints')"
+                 ng-class="{active: accordions.uncachedPoints}">
+                <div>
+                    <h2 class="accordion-title">
+                        <i class="fas fa-list-alt"></i>
                         Pontos Não Cacheados por Campanha
-                        <span class="badge">{{uncachedPoints.totalUncachedPoints || 0}} pontos</span>
-                        <button class="btn btn-xs btn-default pull-right" ng-click="loadUncachedPoints()" ng-disabled="loading.uncached">
-                            <i class="glyphicon glyphicon-refresh" ng-class="{'glyphicon-refresh-animate': loading.uncached}"></i>
-                            Atualizar
-                        </button>
-                    </h4>
+                        <span class="badge-count">{{uncachedPoints.totalUncachedPoints || 0}} pontos</span>
+                    </h2>
+                    <p class="accordion-subtitle">Lista de campanhas com pontos pendentes para cache</p>
                 </div>
-                <div class="panel-body">
-                    <div ng-if="loading.uncached" class="text-center">
-                        <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i>
-                        Carregando pontos não cacheados...
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div ng-if="loading.uncached" class="status-badge running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        CARREGANDO
                     </div>
-                    
-                    <div ng-if="!loading.uncached && uncachedPoints.campaigns.length === 0" class="text-center text-success">
-                        <i class="glyphicon glyphicon-ok-circle"></i>
-                        <h4>Todos os pontos estão cacheados!</h4>
-                    </div>
+                    <button class="action-btn small" ng-click="loadUncachedPoints(); $event.stopPropagation()"
+                            ng-disabled="loading.uncached">
+                        <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.uncached}"></i>
+                        <span>Atualizar</span>
+                    </button>
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.uncachedPoints}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.uncachedPoints}">
+                <div class="section-card">
+                    <div class="card-body">
+                        <div ng-if="loading.uncached" class="text-center">
+                            <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i>
+                            Carregando pontos não cacheados...
+                        </div>
 
-                    <div class="table-responsive" ng-if="!loading.uncached && uncachedPoints.campaigns.length > 0">
-                        <table class="table table-striped">
-                            <thead>
+                        <div ng-if="!loading.uncached && uncachedPoints.campaigns.length === 0"
+                             class="text-center text-success">
+                            <i class="glyphicon glyphicon-ok-circle"></i>
+                            <h4>Todos os pontos estão cacheados!</h4>
+                        </div>
+
+                        <div class="table-container" ng-if="!loading.uncached && uncachedPoints.campaigns.length > 0">
+                            <table class="data-table">
+                                <thead>
                                 <tr>
                                     <th>Campanha</th>
                                     <th>Prioridade</th>
@@ -744,14 +770,15 @@
                                     <th>Período da Campanha</th>
                                     <th>Ações</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr ng-repeat="campaign in uncachedPoints.campaigns">
                                     <td>
                                         <strong>{{campaign._id}}</strong>
                                     </td>
                                     <td>
-                                        <span class="label" ng-class="'label-' + getPriorityClass(campaign.campaignPriority)">
+                                        <span class="label"
+                                              ng-class="'label-' + getPriorityClass(campaign.campaignPriority)">
                                             {{getPriorityName(campaign.campaignPriority)}}
                                         </span>
                                     </td>
@@ -763,100 +790,111 @@
                                     </td>
                                     <td>
                                         <div class="btn-group">
-                                            <button class="btn btn-xs btn-warning" 
+                                            <button class="action-btn small warning"
                                                     ng-click="updateCampaignPriority(campaign._id, 1)"
                                                     title="Alta Prioridade">
-                                                <i class="glyphicon glyphicon-arrow-up"></i>
+                                                <i class="fas fa-arrow-up"></i>
                                             </button>
-                                            <button class="btn btn-xs btn-info" 
+                                            <button class="action-btn small info"
                                                     ng-click="updateCampaignPriority(campaign._id, 2)"
                                                     title="Média Prioridade">
-                                                <i class="glyphicon glyphicon-minus"></i>
+                                                <i class="fas fa-minus"></i>
                                             </button>
-                                            <button class="btn btn-xs btn-default" 
+                                            <button class="action-btn small default"
                                                     ng-click="updateCampaignPriority(campaign._id, 3)"
                                                     title="Baixa Prioridade">
-                                                <i class="glyphicon glyphicon-arrow-down"></i>
+                                                <i class="fas fa-arrow-down"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Status das Campanhas -->
-    <div class="row" ng-if="cacheStatus.campaigns.length > 0">
-        <div class="col-xs-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>
-                        <i class="glyphicon glyphicon-stats"></i> 
+        <!-- Status das Campanhas -->
+        <div class="accordion-section" ng-if="cacheStatus.campaigns.length > 0">
+            <div class="accordion-header" ng-click="toggleAccordion('campaignStatus')"
+                 ng-class="{active: accordions.campaignStatus}">
+                <div>
+                    <h2 class="accordion-title">
+                        <i class="fas fa-chart-bar"></i>
                         Status Detalhado por Campanha
-                        <span class="badge">{{cacheStatus.campaigns.length}} campanhas</span>
-                    </h4>
+                        <span class="badge-count">{{cacheStatus.campaigns.length}} campanhas</span>
+                    </h2>
+                    <p class="accordion-subtitle">Visualização completa do status de cache por campanha</p>
                 </div>
-                <div class="panel-body">
-                    <!-- Busca por ID -->
-                    <div class="row" style="margin-bottom: 15px;">
-                        <div class="col-md-6">
-                            <div class="input-group">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas fa-chevron-down accordion-chevron"
+                       ng-class="{rotated: accordions.campaignStatus}"></i>
+                </div>
+            </div>
+            <div class="accordion-content" ng-class="{active: accordions.campaignStatus}">
+                <div class="section-card">
+                    <div class="card-body">
+                        <!-- Busca por ID -->
+                        <div class="row" style="margin-bottom: 15px;">
+                            <div class="col-md-6">
+                                <div class="input-group">
                                 <span class="input-group-addon">
                                     <i class="glyphicon glyphicon-search"></i>
                                 </span>
-                                <input type="text" 
-                                       class="form-control" 
-                                       ng-model="campaignSearch.searchId" 
-                                       placeholder="Buscar campanha por ID...">
-                                <span class="input-group-btn" ng-if="campaignSearch.searchId">
-                                    <button class="btn btn-default" 
-                                            type="button" 
+                                    <input type="text"
+                                           class="form-control"
+                                           ng-model="campaignSearch.searchId"
+                                           placeholder="Buscar campanha por ID...">
+                                    <span class="input-group-btn" ng-if="campaignSearch.searchId">
+                                    <button class="btn btn-default"
+                                            type="button"
                                             ng-click="clearCampaignSearch()"
                                             title="Limpar busca">
                                         <i class="glyphicon glyphicon-remove"></i>
                                     </button>
                                 </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-right" ng-if="campaignSearch.searchId">
+                                <p class="text-muted" style="margin-top: 7px;">
+                                    Mostrando {{getFilteredCampaigns().length}} de {{cacheStatus.campaigns.length}} campanhas
+                                </p>
                             </div>
                         </div>
-                        <div class="col-md-6 text-right" ng-if="campaignSearch.searchId">
-                            <p class="text-muted" style="margin-top: 7px;">
-                                Mostrando {{getFilteredCampaigns().length}} de {{cacheStatus.campaigns.length}} campanhas
-                            </p>
-                        </div>
-                    </div>
 
-                    <!-- Controles de paginação no topo -->
-                    <div class="row" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
-                        <div class="col-md-6">
-                            <div class="form-inline">
-                                <label>Mostrar 
-                                    <select class="form-control input-sm" ng-model="campaignsPagination.itemsPerPage" ng-change="updateCampaignsPagination()">
-                                        <option value="10">10</option>
-                                        <option value="25">25</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                    campanhas por página
-                                </label>
+                        <!-- Controles de paginação no topo -->
+                        <div class="row" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
+                            <div class="col-md-6">
+                                <div class="form-inline">
+                                    <label>Mostrar
+                                        <select class="form-control input-sm" ng-model="campaignsPagination.itemsPerPage"
+                                                ng-change="updateCampaignsPagination()">
+                                            <option value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                        campanhas por página
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <p style="margin-top: 5px;">
+                                    Mostrando {{((campaignsPagination.currentPage - 1) * campaignsPagination.itemsPerPage) + 1}}
+                                    a
+                                    {{Math.min(campaignsPagination.currentPage * campaignsPagination.itemsPerPage,
+                                    getFilteredCampaigns().length)}}
+                                    de {{getFilteredCampaigns().length}} campanhas
+                                    <span ng-if="campaignSearch.searchId"> (filtradas)</span>
+                                </p>
                             </div>
                         </div>
-                        <div class="col-md-6 text-right">
-                            <p style="margin-top: 5px;">
-                                Mostrando {{((campaignsPagination.currentPage - 1) * campaignsPagination.itemsPerPage) + 1}} a 
-                                {{Math.min(campaignsPagination.currentPage * campaignsPagination.itemsPerPage, getFilteredCampaigns().length)}} 
-                                de {{getFilteredCampaigns().length}} campanhas
-                                <span ng-if="campaignSearch.searchId"> (filtradas)</span>
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
                                 <tr>
                                     <th>Campanha</th>
                                     <th>Total de Pontos</th>
@@ -865,8 +903,8 @@
                                     <th>Percentual</th>
                                     <th>Progresso</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr ng-repeat="campaign in getCampaignsPaginated()">
                                     <td>
                                         <strong>{{campaign._id}}</strong><br>
@@ -884,51 +922,49 @@
                                     </td>
                                     <td style="min-width: 150px;">
                                         <div class="progress" style="margin-bottom: 0;">
-                                            <div class="progress-bar" 
+                                            <div class="progress-bar"
                                                  ng-class="'progress-bar-' + getCachePercentageClass(campaign.cachePercentage)"
                                                  style="width: {{campaign.cachePercentage}}%">
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Paginação -->
-                    <div class="text-center" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
-                        <ul class="pagination">
-                            <li ng-class="{disabled: campaignsPagination.currentPage === 1}">
-                                <a href ng-click="changeCampaignsPage(1)" aria-label="Primeira">
-                                    <span aria-hidden="true">&laquo;&laquo;</span>
-                                </a>
-                            </li>
-                            <li ng-class="{disabled: campaignsPagination.currentPage === 1}">
-                                <a href ng-click="changeCampaignsPage(campaignsPagination.currentPage - 1)" aria-label="Anterior">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                            
-                            <li ng-repeat="page in getCampaignsPaginationRange()" 
-                                ng-class="{active: page === campaignsPagination.currentPage}">
-                                <a href ng-click="changeCampaignsPage(page)">{{page}}</a>
-                            </li>
-                            
-                            <li ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}">
-                                <a href ng-click="changeCampaignsPage(campaignsPagination.currentPage + 1)" aria-label="Próxima">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                            <li ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}">
-                                <a href ng-click="changeCampaignsPage(campaignsPagination.totalPages)" aria-label="Última">
-                                    <span aria-hidden="true">&raquo;&raquo;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        <div class="text-center" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
+                            <ul class="pagination">
+                                <li ng-class="{disabled: campaignsPagination.currentPage === 1}">
+                                    <a href ng-click="changeCampaignsPage(1)" aria-label="Primeira">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li ng-class="{disabled: campaignsPagination.currentPage === 1}">
+                                    <a href ng-click="changeCampaignsPage(campaignsPagination.currentPage - 1)"
+                                       aria-label="Anterior">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+
+                                <li ng-repeat="page in getCampaignsPaginationRange()"
+                                    ng-class="{active: page === campaignsPagination.currentPage}">
+                                    <a href ng-click="changeCampaignsPage(page)">{{page}}</a>
+                                </li>
+
+                                <li ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}">
+                                    <a href ng-click="changeCampaignsPage(campaignsPagination.currentPage + 1)"
+                                       aria-label="Próxima">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}">
+                                    <a href ng-click="changeCampaignsPage(campaignsPagination.totalPages)" aria-label="Última">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -936,802 +972,1392 @@
         </div>
     </div>
 </div>
-
 <style>
-/* Cache Manager - Modern Interface */
-.cache-manager-container {
-    min-height: 100vh;
-    background: #f5f7fa;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+    /* Admin Cache Manager */
+    .admin-cache-container {
+        min-height: 100vh;
+        background: #f5f7fa;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Admin Header */
+    .admin-header {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid #e2e8f0;
+    }
 
-/* Header */
-.cache-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.header-icon {
-    width: 64px;
-    height: 64px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-}
-
-.header-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.header-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    line-height: 1.2;
-}
-
-.header-desc {
-    font-size: 1.125rem;
-    opacity: 0.9;
-    margin: 0;
-    font-weight: 400;
-}
-
-.header-actions {
-    display: flex;
-    gap: 1rem;
-}
-
-.action-btn {
-    padding: 0.875rem 1.5rem;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    transition: all 0.3s;
-    font-size: 1rem;
-}
-
-.action-btn.refresh {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.action-btn.refresh:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-.action-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Main Content */
-.cache-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-/* Section Headers */
-.section-header {
-    margin-bottom: 1.5rem;
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #2d3748;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.subsection-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #4a5568;
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Loading States */
-.loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem;
-    gap: 1rem;
-}
-
-.loading-spinner {
-    font-size: 2.5rem;
-    color: #667eea;
-}
-
-.loading-text {
-    color: #718096;
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    transition: all 0.3s;
-    border-left: 4px solid transparent;
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-}
-
-.stat-card.total {
-    border-left-color: #667eea;
-}
-
-.stat-card.cached {
-    border-left-color: #48bb78;
-}
-
-.stat-card.uncached {
-    border-left-color: #e53e3e;
-}
-
-.stat-card.percentage {
-    border-left-color: #ed8936;
-}
-
-.stat-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    color: white;
-}
-
-.stat-card.total .stat-icon {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-}
-
-.stat-card.cached .stat-icon {
-    background: linear-gradient(135deg, #48bb78, #38a169);
-}
-
-.stat-card.uncached .stat-icon {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-}
-
-.stat-card.percentage .stat-icon {
-    background: linear-gradient(135deg, #ed8936, #dd6b20);
-}
-
-.stat-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.stat-value {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: #1a202c;
-    line-height: 1;
-}
-
-.stat-value.success {
-    color: #38a169;
-}
-
-.stat-value.warning {
-    color: #dd6b20;
-}
-
-.stat-value.danger {
-    color: #c53030;
-}
-
-.stat-label {
-    font-size: 1rem;
-    color: #718096;
-    font-weight: 500;
-}
-
-/* Live Progress Section */
-.live-progress-section {
-    margin-top: 1rem;
-}
-
-.progress-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow: hidden;
-    border: 2px solid #48bb78;
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #e2e8f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.card-title {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #2d3748;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.mode-badge {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-}
-
-.mode-badge.simulation {
-    background: #bee3f8;
-    color: #2c5282;
-}
-
-.mode-badge.real,
-.mode-badge.production {
-    background: #fed7e2;
-    color: #b83280;
-}
-
-.status-badge {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-}
-
-.status-badge.running {
-    background: #fed7e2;
-    color: #b83280;
-}
-
-.status-badge.active {
-    background: #c6f6d5;
-    color: #276749;
-}
-
-.status-badge.inactive {
-    background: #fed7d7;
-    color: #c53030;
-}
-
-.progress-content {
-    padding: 2rem;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 2rem;
-}
-
-.progress-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.progress-info {
-    background: #f7fafc;
-    border-radius: 12px;
-    padding: 1.5rem;
-}
-
-.progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.progress-label {
-    font-weight: 600;
-    color: #4a5568;
-    font-size: 1rem;
-}
-
-.progress-percentage {
-    font-weight: 700;
-    color: #2d3748;
-    font-size: 1.25rem;
-}
-
-.progress-bar-container {
-    height: 12px;
-    background: #e2e8f0;
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
-    margin-bottom: 0.75rem;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #48bb78, #38a169);
-    border-radius: 6px;
-    transition: all 0.5s ease;
-    position: relative;
-}
-
-.progress-bar-fill.animated {
-    background: linear-gradient(90deg, #48bb78, #38a169, #48bb78);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite linear;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-.progress-details {
-    color: #718096;
-    font-size: 0.875rem;
-}
-
-.live-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 1rem;
-}
-
-.live-stat {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-}
-
-.live-stat .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #2d3748;
-}
-
-.live-stat .stat-label {
-    font-size: 0.75rem;
-    color: #718096;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 0.25rem;
-}
-
-.progress-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.logs-section,
-.estimates-section {
-    background: #f7fafc;
-    border-radius: 12px;
-    padding: 1.5rem;
-}
-
-.logs-title,
-.estimates-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #4a5568;
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.logs-container {
-    max-height: 200px;
-    overflow-y: auto;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    background: white;
-    padding: 0.75rem;
-}
-
-.log-entry {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid #f7fafc;
-}
-
-.log-time {
-    color: #718096;
-    font-weight: 500;
-    min-width: 60px;
-}
-
-.log-message {
-    color: #2d3748;
-    flex: 1;
-}
-
-.log-empty {
-    color: #a0aec0;
-    font-style: italic;
-    text-align: center;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.estimates-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.estimate-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-
-.estimate-label {
-    font-size: 0.875rem;
-    color: #4a5568;
-    font-weight: 500;
-}
-
-.estimate-value {
-    font-size: 0.875rem;
-    color: #2d3748;
-    font-weight: 600;
-}
-
-/* Job Section */
-.job-section {
-    margin-top: 1rem;
-}
-
-.job-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-
-.job-content {
-    padding: 2rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-}
-
-.job-status,
-.job-config {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.status-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.status-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: #f7fafc;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-}
-
-.status-label {
-    font-weight: 600;
-    color: #4a5568;
-    font-size: 1rem;
-}
-
-.status-value {
-    color: #2d3748;
-    font-weight: 500;
-    font-size: 1rem;
-}
-
-.config-current {
-    background: #f7fafc;
-    border-radius: 12px;
-    padding: 1.5rem;
-    border: 1px solid #e2e8f0;
-}
-
-.config-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #4a5568;
-    margin: 0 0 1rem 0;
-}
-
-.config-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.config-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-
-.config-label {
-    font-size: 0.875rem;
-    color: #4a5568;
-    font-weight: 500;
-}
-
-.config-value {
-    font-size: 0.875rem;
-    color: #2d3748;
-    font-weight: 600;
-}
-
-.config-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-label {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #4a5568;
-}
-
-.form-input {
-    padding: 0.75rem 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s;
-    background: white;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-hint {
-    font-size: 0.875rem;
-    color: #718096;
-    font-style: italic;
-}
-
-.radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.radio-option {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-}
-
-.radio-option:hover {
-    border-color: #cbd5e0;
-    background: #f7fafc;
-}
-
-.radio-option input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.radio-option input[type="radio"]:checked + .radio-content {
-    color: #667eea;
-}
-
-.radio-option:has(input:checked) {
-    border-color: #667eea;
-    background: #f0f4ff;
-}
-
-.radio-content {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex: 1;
-}
-
-.radio-content i {
-    font-size: 1.25rem;
-    opacity: 0.7;
-}
-
-.radio-label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 1rem;
-}
-
-.radio-desc {
-    font-size: 0.875rem;
-    color: #718096;
-    margin-left: auto;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
     .header-content {
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 1.5rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.5rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    
+
     .header-left {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
     }
-    
+
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        color: #4a5568;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.125rem;
+    }
+
+    .back-btn:hover {
+        background: #f7fafc;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-title {
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0;
+    }
+
     .header-actions {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .cache-content {
-        padding: 1rem;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
         gap: 1rem;
     }
-    
-    .stat-card {
-        padding: 1.5rem;
+
+    /* Action Buttons */
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        font-size: 1rem;
+        background: white;
+        color: #4a5568;
     }
-    
-    .progress-content {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        padding: 1.5rem;
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    
-    .job-content {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        padding: 1.5rem;
+
+    .action-btn.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
     }
-    
-    .live-stats {
-        grid-template-columns: repeat(2, 1fr);
+
+    .action-btn.primary:hover {
+        background: #1d4ed8;
     }
-    
-    .radio-option {
+
+    .action-btn.success {
+        background: #38a169;
+        color: white;
+        border-color: #38a169;
+    }
+
+    .action-btn.success:hover {
+        background: #2f855a;
+    }
+
+    .action-btn.danger {
+        background: #e53e3e;
+        color: white;
+        border-color: #e53e3e;
+    }
+
+    .action-btn.danger:hover {
+        background: #c53030;
+    }
+
+    .action-btn.warning {
+        background: #ed8936;
+        color: white;
+        border-color: #ed8936;
+    }
+
+    .action-btn.warning:hover {
+        background: #dd6b20;
+    }
+
+    .action-btn.info {
+        background: #4299e1;
+        color: white;
+        border-color: #4299e1;
+    }
+
+    .action-btn.info:hover {
+        background: #3182ce;
+    }
+
+    .action-btn.default {
+        background: #718096;
+        color: white;
+        border-color: #718096;
+    }
+
+    .action-btn.default:hover {
+        background: #4a5568;
+    }
+
+    .action-btn.small {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .action-btn.large {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.125rem;
+    }
+
+    .action-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Admin Content */
+    .admin-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
+        gap: 2rem;
     }
-    
-    .radio-content {
-        flex-direction: column;
-        align-items: flex-start;
+
+    /* Section Headers */
+    .section-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .subsection-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
         gap: 0.5rem;
     }
-    
-    .radio-desc {
-        margin-left: 0;
+
+    /* Loading States */
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        gap: 1rem;
     }
-}
 
-/* Animation for spinning icons */
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+    .loading-spinner {
+        font-size: 2.5rem;
+        color: #667eea;
+    }
 
-.fa-spin {
-    animation: spin 1s infinite linear;
-}
+    .loading-text {
+        color: #718096;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.total {
+        border-left-color: #667eea;
+    }
+
+    .stat-card.cached {
+        border-left-color: #48bb78;
+    }
+
+    .stat-card.uncached {
+        border-left-color: #e53e3e;
+    }
+
+    .stat-card.percentage {
+        border-left-color: #ed8936;
+    }
+
+    .stat-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        color: white;
+    }
+
+    .stat-card.total .stat-icon {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .stat-card.cached .stat-icon {
+        background: linear-gradient(135deg, #48bb78, #38a169);
+    }
+
+    .stat-card.uncached .stat-icon {
+        background: linear-gradient(135deg, #e53e3e, #c53030);
+    }
+
+    .stat-card.percentage .stat-icon {
+        background: linear-gradient(135deg, #ed8936, #dd6b20);
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: #1a202c;
+        line-height: 1;
+    }
+
+    .stat-value.success {
+        color: #38a169;
+    }
+
+    .stat-value.warning {
+        color: #dd6b20;
+    }
+
+    .stat-value.danger {
+        color: #c53030;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* Live Progress Section */
+    .live-progress-section {
+        margin-top: 1rem;
+    }
+
+    .progress-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        border: 2px solid #48bb78;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-title {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .mode-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .mode-badge.simulation {
+        background: #bee3f8;
+        color: #2c5282;
+    }
+
+    .mode-badge.real,
+    .mode-badge.production {
+        background: #fed7e2;
+        color: #b83280;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .status-badge.running {
+        background: #fed7e2;
+        color: #b83280;
+    }
+
+    .status-badge.active {
+        background: #c6f6d5;
+        color: #276749;
+    }
+
+    .status-badge.inactive {
+        background: #fed7d7;
+        color: #c53030;
+    }
+
+    .progress-content {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    .progress-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .progress-info {
+        background: #f7fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .progress-label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+    }
+
+    .progress-percentage {
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 1.25rem;
+    }
+
+    .progress-bar-container {
+        height: 12px;
+        background: #e2e8f0;
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 0.75rem;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #48bb78, #38a169);
+        border-radius: 6px;
+        transition: all 0.5s ease;
+        position: relative;
+    }
+
+    .progress-bar-fill.animated {
+        background: linear-gradient(90deg, #48bb78, #38a169, #48bb78);
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite linear;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .progress-details {
+        color: #718096;
+        font-size: 0.875rem;
+    }
+
+    .live-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+
+    .live-stat {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .live-stat .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+
+    .live-stat .stat-label {
+        font-size: 0.75rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.25rem;
+    }
+
+    .progress-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .logs-section,
+    .estimates-section {
+        background: #f7fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .logs-title,
+    .estimates-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .logs-container {
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        padding: 0.75rem;
+    }
+
+    .log-entry {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #f7fafc;
+    }
+
+    .log-time {
+        color: #718096;
+        font-weight: 500;
+        min-width: 60px;
+    }
+
+    .log-message {
+        color: #2d3748;
+        flex: 1;
+    }
+
+    .log-empty {
+        color: #a0aec0;
+        font-style: italic;
+        text-align: center;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .estimates-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .estimate-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .estimate-label {
+        font-size: 0.875rem;
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    .estimate-value {
+        font-size: 0.875rem;
+        color: #2d3748;
+        font-weight: 600;
+    }
+
+    /* Job Section */
+    .job-section {
+        margin-top: 1rem;
+    }
+
+    .job-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .job-content {
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .job-status,
+    .job-config {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f7fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .status-label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+    }
+
+    .status-value {
+        color: #2d3748;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .config-current {
+        background: #f7fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .config-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin: 0 0 1rem 0;
+    }
+
+    .config-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .config-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .config-label {
+        font-size: 0.875rem;
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    .config-value {
+        font-size: 0.875rem;
+        color: #2d3748;
+        font-weight: 600;
+    }
+
+    .config-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    .form-input {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-hint {
+        font-size: 0.875rem;
+        color: #718096;
+        font-style: italic;
+    }
+
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .radio-option:hover {
+        border-color: #cbd5e0;
+        background: #f7fafc;
+    }
+
+    .radio-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .radio-option input[type="radio"]:checked + .radio-content {
+        color: #667eea;
+    }
+
+    .radio-option:has(input:checked) {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+
+    .radio-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .radio-content i {
+        font-size: 1.25rem;
+        opacity: 0.7;
+    }
+
+    .radio-label {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 1rem;
+    }
+
+    .radio-desc {
+        font-size: 0.875rem;
+        color: #718096;
+        margin-left: auto;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .header-left {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .cache-content {
+            padding: 1rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+        }
+
+        .progress-content {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .job-content {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .live-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .radio-option {
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .radio-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .radio-desc {
+            margin-left: 0;
+        }
+    }
+
+    /* Animation for spinning icons */
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .fa-spin {
+        animation: spin 1s infinite linear;
+    }
+
+    /* Accordion Styles */
+    .accordion-section {
+        background: #fff;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .accordion-header {
+        padding: 1.5rem 2rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s;
+        user-select: none;
+    }
+
+    .accordion-header:hover {
+        background: #e9ecef;
+    }
+
+    .accordion-header.active {
+        background: #e3f2fd;
+        color: #1565c0;
+        border-bottom-color: #bbdefb;
+    }
+
+    .accordion-title {
+        font-size: 1.375rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #2d3748;
+    }
+
+    .accordion-header.active .accordion-title {
+        color: #1565c0;
+    }
+
+    .accordion-subtitle {
+        font-size: 1rem;
+        color: #718096;
+        margin: 0.5rem 0 0 0;
+        font-weight: 400;
+    }
+
+    .accordion-chevron {
+        transition: transform 0.2s;
+        font-size: 1.25rem;
+        color: #718096;
+    }
+
+    .accordion-chevron.rotated {
+        transform: rotate(180deg);
+    }
+
+    .accordion-header.active .accordion-chevron {
+        color: #1565c0;
+    }
+
+    .accordion-content {
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+        background: white;
+    }
+
+    .accordion-content.active {
+        max-height: 5000px;
+        padding: 2rem;
+    }
+
+    /* Accordion subtitles */
+    .accordion-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        margin: 0.25rem 0 0 0;
+        font-weight: 400;
+    }
+
+    /* Section Cards */
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+    }
+
+    .section-card.danger .card-header {
+        background: #fef2f2;
+        border-bottom: 1px solid #fecaca;
+    }
+
+    .section-card.info .card-header {
+        background: #eff6ff;
+        border-bottom: 1px solid #bfdbfe;
+    }
+
+    .section-card.warning .card-header {
+        background: #fffbeb;
+        border-bottom: 1px solid #fde68a;
+    }
+
+    .section-card .card-header {
+        padding: 1.5rem 2rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .section-card .card-title {
+        font-size: 1.375rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-card .card-subtitle {
+        font-size: 1rem;
+        color: #718096;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .section-card .card-body {
+        padding: 2rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* Result Messages */
+    .result-message {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .result-message.success,
+    .result-message .success {
+        color: #38a169;
+    }
+
+    .result-message.error,
+    .result-message .error {
+        color: #e53e3e;
+    }
+
+    /* Alert Boxes */
+    .alert-box {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .alert-box.warning {
+        background: #fefcbf;
+        color: #744210;
+        border: 1px solid #f6e05e;
+    }
+
+    .alert-box.info {
+        background: #bee3f8;
+        color: #2c5282;
+        border: 1px solid #90cdf4;
+    }
+
+    .alert-box.danger {
+        background: #fed7d7;
+        color: #742a2a;
+        border: 1px solid #fc8181;
+    }
+
+    /* Data Tables */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .data-table thead {
+        background: #f7fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .data-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .data-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #2d3748;
+        font-size: 1rem;
+    }
+
+    .data-table tbody tr:hover {
+        background: #f7fafc;
+    }
+
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-count {
+        background: #e2e8f0;
+        color: #4a5568;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .badge-danger {
+        background: #fed7d7;
+        color: #c53030;
+    }
+
+    /* Labels */
+    .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .label-success {
+        background: #c6f6d5;
+        color: #276749;
+    }
+
+    .label-danger {
+        background: #fed7d7;
+        color: #c53030;
+    }
+
+    .label-warning {
+        background: #fefcbf;
+        color: #744210;
+    }
+
+    .label-info {
+        background: #bee3f8;
+        color: #2c5282;
+    }
+
+    .label-default {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    /* Progress Bar */
+    .progress {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-bar-success {
+        background: #48bb78;
+    }
+
+    .progress-bar-warning {
+        background: #ed8936;
+    }
+
+    .progress-bar-danger {
+        background: #e53e3e;
+    }
+
+    /* Sections */
+    .removal-section,
+    .reset-section,
+    .processing-section,
+    .results-section,
+    .uncached-section,
+    .campaigns-section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem 2rem 2rem;
+    }
+
+    /* Legacy Bootstrap Form Overrides */
+    .form-horizontal .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-horizontal .control-label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        text-align: left;
+    }
+
+    .form-horizontal .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .form-horizontal .form-control:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-horizontal .help-block {
+        font-size: 0.875rem;
+        color: #718096;
+        margin-top: 0.25rem;
+    }
+
+    .form-horizontal .radio-inline {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1.5rem;
+        font-weight: 500;
+        color: #2d3748;
+    }
+
+    .form-horizontal .radio-inline input[type="radio"] {
+        margin-right: 0.5rem;
+    }
+
+    /* Button Group */
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* Empty States */
+    .text-center {
+        text-align: center;
+    }
+
+    .text-success {
+        color: #38a169;
+    }
+
+    .text-danger {
+        color: #e53e3e;
+    }
+
+    .text-muted {
+        color: #718096;
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 1.5rem 0 0 0;
+        gap: 0.25rem;
+        justify-content: center;
+    }
+
+    .pagination li {
+        display: flex;
+    }
+
+    .pagination a {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .pagination a:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .pagination li.active a {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+
+    .pagination li.disabled a {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Loading Spinner */
+    .glyphicon-refresh-animate {
+        animation: spin 1s infinite linear;
+    }
+
+    /* Input Group */
+    .input-group {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .input-group-addon {
+        padding: 0.75rem 1rem;
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-right: none;
+        border-radius: 6px 0 0 6px;
+        color: #718096;
+    }
+
+    .input-group .form-control {
+        border-radius: 0;
+        flex: 1;
+    }
+
+    .input-group-btn {
+        display: flex;
+    }
+
+    .input-group-btn .btn {
+        border-radius: 0 6px 6px 0;
+        border-left: none;
+    }
+
+    /* Row and Column Overrides */
+    .row {
+        margin: 0 -1rem;
+    }
+
+    .col-xs-12, .col-sm-3, .col-sm-9, .col-md-6 {
+        padding: 0 1rem;
+    }
+
+    /* Legacy Glyphicon to Font Awesome mapping */
+    .glyphicon-refresh:before {
+        content: "\f021";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-ok:before {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-remove:before {
+        content: "\f00d";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-warning-sign:before {
+        content: "\f071";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-ok-circle:before {
+        content: "\f058";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-play-circle:before {
+        content: "\f144";
+        font-family: "Font Awesome 5 Free";
+    }
+
+    .glyphicon-refresh-animate:before {
+        content: "\f021";
+        font-family: "Font Awesome 5 Free";
+    }
 </style>

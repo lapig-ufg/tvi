@@ -401,15 +401,8 @@ module.exports = function (app) {
                     });
                 }
                 
-                // Também atualizar na memória (para compatibilidade com job atual)
-                var jobConfig = app.config.jobs.toRun.find(job => job.name === 'smartCacheProcessor');
-                if (jobConfig) {
-                    jobConfig.params.batchSize = updateData.batchSize;
-                    jobConfig.params.maxPointsPerRun = updateData.maxPointsPerRun;
-                    jobConfig.params.simulate = updateData.simulate;
-                }
-                
-                // Configuração de cache atualizada
+                // A configuração agora é totalmente gerenciada pelo MongoDB
+                // Não é mais necessário atualizar a configuração em memória
                 
                 response.json({
                     success: true,
