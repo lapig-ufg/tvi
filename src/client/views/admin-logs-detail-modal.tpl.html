@@ -1,0 +1,82 @@
+<!-- Modal de Detalhes do Log -->
+<div class="modal-header">
+    <h2>Detalhes do Log</h2>
+    <button class="close-btn" ng-click="$dismiss()">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+<div class="modal-body" ng-if="selectedLog">
+    <div class="detail-section">
+        <h3>Informações Básicas</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>ID do Log:</label>
+                <span class="mono">{{ selectedLog.logId }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Timestamp:</label>
+                <span>{{ formatDate(selectedLog.timestamp) }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Nível:</label>
+                <span class="log-level level-{{ selectedLog.level }}">
+                    {{ selectedLog.level | uppercase }}
+                </span>
+            </div>
+            <div class="detail-item">
+                <label>Módulo:</label>
+                <span>{{ selectedLog.application.module }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Função:</label>
+                <span>{{ selectedLog.application.function }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-section">
+        <h3>Mensagem</h3>
+        <div class="message-box">{{ selectedLog.message }}</div>
+    </div>
+    
+    <div class="detail-section" ng-if="selectedLog.user.id">
+        <h3>Informações do Usuário</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>ID:</label>
+                <span>{{ selectedLog.user.id }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Nome:</label>
+                <span>{{ selectedLog.user.username || '-' }}</span>
+            </div>
+            <div class="detail-item">
+                <label>Papel:</label>
+                <span>{{ selectedLog.user.role || '-' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-section" ng-if="selectedLog.request.method">
+        <h3>Informações da Requisição</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Método:</label>
+                <span>{{ selectedLog.request.method }}</span>
+            </div>
+            <div class="detail-item">
+                <label>URL:</label>
+                <span>{{ selectedLog.request.url }}</span>
+            </div>
+            <div class="detail-item">
+                <label>IP:</label>
+                <span>{{ selectedLog.request.ip }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-section" ng-if="selectedLog.metadata && hasMetadata(selectedLog.metadata)">
+        <h3>Metadados</h3>
+        <pre class="metadata-box">{{ selectedLog.metadata | json }}</pre>
+    </div>
+</div>

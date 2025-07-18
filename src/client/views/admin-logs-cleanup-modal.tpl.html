@@ -1,0 +1,37 @@
+<!-- Modal de Limpeza -->
+<div class="modal-header">
+    <h2>Limpar Logs Antigos</h2>
+    <button class="close-btn" ng-click="$dismiss()">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+<div class="modal-body">
+    <p>Esta ação irá remover permanentemente os logs mais antigos que o período selecionado.</p>
+    <div class="cleanup-options">
+        <label>Remover logs mais antigos que:</label>
+        <select ng-model="cleanupDays">
+            <option value="7">7 dias</option>
+            <option value="15">15 dias</option>
+            <option value="30">30 dias</option>
+            <option value="60">60 dias</option>
+            <option value="90">90 dias</option>
+        </select>
+    </div>
+    <div class="cleanup-checkbox">
+        <label>
+            <input type="checkbox" ng-model="keepErrors">
+            <span>Preservar logs de erro (recomendado)</span>
+        </label>
+    </div>
+    <div class="warning-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Esta ação não pode ser desfeita!</span>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="cancel-btn" ng-click="$dismiss()">Cancelar</button>
+    <button class="confirm-btn danger" ng-click="performCleanup()">
+        <i class="fas fa-trash"></i>
+        Limpar Logs
+    </button>
+</div>

@@ -1,0 +1,77 @@
+<!-- Modal de Configuração do Job -->
+<div class="modal-header">
+    <h2>Configuração do Job de Limpeza Automática</h2>
+    <button class="close-btn" ng-click="$dismiss()">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+<div class="modal-body" ng-if="jobConfig">
+    <div class="config-form">
+        <div class="form-group">
+            <label>Status do Job</label>
+            <div class="toggle-switch">
+                <input type="checkbox" id="jobEnabled" ng-model="jobConfig.isEnabled">
+                <label for="jobEnabled">
+                    <span class="toggle-text">{{ jobConfig.isEnabled ? 'Ativo' : 'Inativo' }}</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Manter logs dos últimos</label>
+            <div class="input-with-suffix">
+                <input type="number" ng-model="jobConfig.daysToKeep" min="1" max="365">
+                <span class="suffix">dias</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Tamanho do lote</label>
+            <input type="number" ng-model="jobConfig.batchSize" min="100" max="10000">
+            <small>Número de logs a deletar por vez (100 - 10000)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" ng-model="jobConfig.keepErrors">
+                <span>Preservar logs de erro</span>
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" ng-model="jobConfig.simulate">
+                <span>Modo simulação (apenas simular, não deletar)</span>
+            </label>
+        </div>
+        
+        <div class="job-info">
+            <div class="info-item">
+                <label>Agendamento:</label>
+                <span class="mono">{{ jobStatus.configuration.cronExpression || '0 0 2 */7 * *' }}</span>
+                <small>(Executado a cada 7 dias às 2:00 AM)</small>
+            </div>
+            <div class="info-item" ng-if="jobStatus.lastExecution">
+                <label>Última execução:</label>
+                <span>{{ jobStatus.lastExecution }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logs do Job -->
+    <div class="job-logs" ng-if="jobStatus.recentLogs && jobStatus.recentLogs.length > 0">
+        <h3>Logs Recentes do Job</h3>
+        <pre class="logs-output">{{ jobStatus.recentLogs.join('\n') }}</pre>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="cancel-btn" ng-click="$dismiss()">Cancelar</button>
+    <button class="confirm-btn" ng-click="saveJobConfig()">
+        <i class="fas fa-save"></i>
+        Salvar Configuração
+    </button>
+    <button class="trigger-btn" ng-click="triggerJob()">
+        <i class="fas fa-play"></i>
+        Executar Agora
+    </button>
+</div>
