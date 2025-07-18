@@ -187,9 +187,18 @@ module.exports = function(app) {
 								if(campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a') {
 									response.sendFile(`${config.imgDir}/no_image.png`)
 								} else {
-									exec(cmd, function(error, stdout, stderr) {
+									exec(cmd, async function(error, stdout, stderr) {
 										if(error || stderr){
-											console.error(error, stderr)
+											await logger.error('Error executing image download command', {
+												module: 'image',
+												function: 'getImage',
+												metadata: { 
+													error: error ? error.message : 'stderr',
+													stderr: stderr,
+													cmd: cmd,
+													imagePath: imagePath
+												}
+											});
 										}
 										response.sendFile(imagePath)
 									})

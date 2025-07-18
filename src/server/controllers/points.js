@@ -14,16 +14,24 @@ module.exports = function(app) {
 		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
 
 		// Timeout para evitar travamentos
-		var timeoutId = setTimeout(function() {
-			console.warn(`getImageDates timeout for path: ${path}, row: ${row}`);
+		var timeoutId = setTimeout(async function() {
+			await logger.warn(`getImageDates timeout for path: ${path}, row: ${row}`, {
+				module: 'points',
+				function: 'getImageDates',
+				metadata: { path, row }
+			});
 			callback({}); // Retorna resultado vazio em caso de timeout
 		}, 10000); // 10 segundos
 
-		mosaics.find(filterMosaic,projMosaic).toArray(function(err, docs) {
+		mosaics.find(filterMosaic,projMosaic).toArray(async function(err, docs) {
 			clearTimeout(timeoutId);
 			
 			if (err) {
-				console.error('Error in getImageDates:', err);
+				await logger.error('Error in getImageDates', {
+					module: 'points',
+					function: 'getImageDates',
+					metadata: { error: err.message, path, row }
+				});
 				return callback({});
 			}
 
@@ -54,8 +62,12 @@ module.exports = function(app) {
 		return [[ul[1], ul[0]], [lr[1], lr[0]]]
 	}
 
-	var findPoint = function(campaign, username, callback) {
-		console.log('[FINDPOINT] Starting findPoint for:', { campaign: campaign._id, username, numInspec: campaign.numInspec });
+	var findPoint = async function(campaign, username, callback) {
+		await logger.info('Starting findPoint', {
+			module: 'points',
+			function: 'findPoint',
+			metadata: { campaign: campaign._id, username, numInspec: campaign.numInspec }
+		});
 
 		var findOneFilter = {
 			"$and": [
@@ -91,35 +103,74 @@ module.exports = function(app) {
 		var findOneUpdate = {'$inc': {'underInspection': 1}}
 
 		//points.findOne(findOneFilter, { sort: [['index', 1]] }, function(err, point) {
-		console.log('[FINDPOINT] Executing findAndModify with filter:', JSON.stringify(findOneFilter));
-		points.findAndModify(findOneFilter, findOneSort, findOneUpdate, {}, function(err, object) {
-			console.log('[FINDPOINT] findAndModify completed:', { err: !!err, hasObject: !!object, hasValue: !!(object && object.value) });
+		await logger.info('[FINDPOINT] Executing findAndModify with filter', {
+			module: 'points',
+			function: 'findPoint',
+			metadata: { filter: JSON.stringify(findOneFilter) }
+		});
+		points.findAndModify(findOneFilter, findOneSort, findOneUpdate, {}, async function(err, object) {
+			await logger.info('[FINDPOINT] findAndModify completed', {
+				module: 'points',
+				function: 'findPoint',
+				metadata: { err: !!err, hasObject: !!object, hasValue: !!(object && object.value) }
+			});
 			
 			if (err) {
-				console.error('[FINDPOINT] findAndModify error:', err);
-				return callback({ error: 'Database error in findAndModify' });
+				const logId = await logger.error('[FINDPOINT] findAndModify error', {
+					module: 'points',
+					function: 'findPoint',
+					metadata: { error: err.message, campaign: campaign._id, username }
+				});
+				return callback({ error: 'Database error in findAndModify', logId });
 			}
 			
 			point = object.value
 			if(point) {
-				console.log('[FINDPOINT] Point found, getting counts:', point._id);
-				points.count(totalFilter, function(err, total) {
-					console.log('[FINDPOINT] Total count completed:', { err: !!err, total });
+				await logger.info('[FINDPOINT] Point found, getting counts', {
+					module: 'points',
+					function: 'findPoint',
+					metadata: { pointId: point._id }
+				});
+				points.count(totalFilter, async function(err, total) {
+					await logger.info('[FINDPOINT] Total count completed', {
+						module: 'points',
+						function: 'findPoint',
+						metadata: { err: !!err, total }
+					});
 					if (err) {
-						console.error('[FINDPOINT] Total count error:', err);
-						return callback({ error: 'Database error in total count' });
+						const logId = await logger.error('[FINDPOINT] Total count error', {
+							module: 'points',
+							function: 'findPoint',
+							metadata: { error: err.message }
+						});
+						return callback({ error: 'Database error in total count', logId });
 					}
 					
-					points.count(countFilter, function (err, count) {
-						console.log('[FINDPOINT] User count completed:', { err: !!err, count });
+					points.count(countFilter, async function (err, count) {
+						await logger.info('User count completed', {
+							module: 'points',
+							function: 'findPoint',
+							metadata: { err: !!err, count }
+						});
 						if (err) {
-							console.error('[FINDPOINT] User count error:', err);
+							await logger.error('User count error', {
+								module: 'points',
+								function: 'findPoint',
+								metadata: { error: err.message }
+							});
 							return callback({ error: 'Database error in user count' });
 						}
 						
-						console.log('[FINDPOINT] Getting image dates for:', { path: point.path, row: point.row });
-						getImageDates(point.path, point.row, function(dates) {
-							console.log('[FINDPOINT] Image dates completed, finalizing result');
+						await logger.info('Getting image dates', {
+							module: 'points',
+							function: 'findPoint',
+							metadata: { path: point.path, row: point.row }
+						});
+						getImageDates(point.path, point.row, async function(dates) {
+							await logger.info('Image dates completed, finalizing result', {
+								module: 'points',
+								function: 'findPoint'
+							});
 							point.dates = dates
 
 							point.bounds = getWindow(point)
@@ -143,24 +194,46 @@ module.exports = function(app) {
 							result['user'] = username;
 							result['count'] = count;
 
-							console.log('[FINDPOINT] Sending result back to callback');
+							await logger.info('Sending result back to callback', {
+								module: 'points',
+								function: 'findPoint'
+							});
 							callback(result);
 						})
 					})
 				});
 			} else {
-				console.log('[FINDPOINT] No point found, getting counts for empty result');
-				points.count(totalFilter, function(err, total) {
-					console.log('[FINDPOINT] Total count (no point) completed:', { err: !!err, total });
+				await logger.info('No point found, getting counts for empty result', {
+					module: 'points',
+					function: 'findPoint'
+				});
+				points.count(totalFilter, async function(err, total) {
+					await logger.info('Total count (no point) completed', {
+						module: 'points',
+						function: 'findPoint',
+						metadata: { err: !!err, total }
+					});
 					if (err) {
-						console.error('[FINDPOINT] Total count (no point) error:', err);
+						await logger.error('Total count (no point) error', {
+							module: 'points',
+							function: 'findPoint',
+							metadata: { error: err.message }
+						});
 						return callback({ error: 'Database error in total count (no point)' });
 					}
 					
-					points.count(countFilter, function(err, count) {
-						console.log('[FINDPOINT] User count (no point) completed:', { err: !!err, count });
+					points.count(countFilter, async function(err, count) {
+						await logger.info('User count (no point) completed', {
+							module: 'points',
+							function: 'findPoint',
+							metadata: { err: !!err, count }
+						});
 						if (err) {
-							console.error('[FINDPOINT] User count (no point) error:', err);
+							await logger.error('User count (no point) error', {
+								module: 'points',
+								function: 'findPoint',
+								metadata: { error: err.message }
+							});
 							return callback({ error: 'Database error in user count (no point)' });
 						}
 						
@@ -171,7 +244,10 @@ module.exports = function(app) {
 						result['user'] = username;
 						result['count'] = count;
 						
-						console.log('[FINDPOINT] Sending empty result back to callback');
+						await logger.info('Sending empty result back to callback', {
+							module: 'points',
+							function: 'findPoint'
+						});
 						callback(result);
 					})
 				});
@@ -240,7 +316,11 @@ module.exports = function(app) {
 		try {
 			// Verificar se a sessão existe antes de acessar
 			if (!request.session) {
-				console.error('[POINTS] No session middleware configured');
+				await logger.error('No session middleware configured', {
+					module: 'points',
+					function: 'next',
+					req: request
+				});
 				return response.status(500).json({ 
 					error: 'Session middleware not configured'
 				});
@@ -523,15 +603,25 @@ module.exports = function(app) {
 		}
 	};
 
-	Points.getPointById = function(request, response) {
+	Points.getPointById = async function(request, response) {
 		const pointId = request.params.pointId;
 		
-		console.log('Getting point by ID:', pointId);
+		await logger.info('Getting point by ID', {
+			module: 'points',
+			function: 'getById',
+			metadata: { pointId },
+			req: request
+		});
 
-		points.findOne({ '_id': pointId }, function(err, point) {
+		points.findOne({ '_id': pointId }, async function(err, point) {
 			if (err) {
-				console.error('Database error finding point:', err);
-				return response.status(500).json({ error: 'Database error' });
+				const logId = await logger.error('Database error finding point', {
+					module: 'points',
+					function: 'getById',
+					metadata: { error: err.message, pointId },
+					req: request
+				});
+				return response.status(500).json({ error: 'Database error', logId });
 			}
 
 			if (!point) {
@@ -646,15 +736,25 @@ module.exports = function(app) {
 
 	// ===== MÉTODOS ADMIN (sem dependência de sessão de usuário regular) =====
 	
-	Points.getPointByIdAdmin = function(request, response) {
+	Points.getPointByIdAdmin = async function(request, response) {
 		const pointId = request.params.pointId;
 		
-		console.log('Admin - Getting point by ID:', pointId);
+		await logger.info('Admin - Getting point by ID', {
+			module: 'points',
+			function: 'getPointByIdAdmin',
+			metadata: { pointId },
+			req: request
+		});
 
-		points.findOne({ '_id': pointId }, function(err, point) {
+		points.findOne({ '_id': pointId }, async function(err, point) {
 			if (err) {
-				console.error('Admin - Database error finding point:', err);
-				return response.status(500).json({ error: 'Database error' });
+				const logId = await logger.error('Admin - Database error finding point', {
+					module: 'points',
+					function: 'getPointByIdAdmin',
+					metadata: { error: err.message, pointId },
+					req: request
+				});
+				return response.status(500).json({ error: 'Database error', logId });
 			}
 
 			if (!point) {
@@ -669,7 +769,7 @@ module.exports = function(app) {
 		});
 	};
 
-	Points.getPointByFilterAdmin = function(request, response) {
+	Points.getPointByFilterAdmin = async function(request, response) {
 		// Método baseado em supervisor.js Points.getPoint mas para admin
 		var campaignId = request.body.campaignId;
 		var index = parseInt(request.body.index);
@@ -680,15 +780,19 @@ module.exports = function(app) {
 		var timePoint = request.body.timeInspection;
 		var agreementPoint = request.body.agreementPoint;
 
-		console.log('Admin - getPointByFilterAdmin called with:', {
-			campaignId,
-			index,
-			landUse,
-			userName,
-			biome,
-			uf,
-			timePoint,
-			agreementPoint
+		await logger.info('Admin - getPointByFilterAdmin called', {
+			module: 'points',
+			function: 'getPointByFilterAdmin',
+			metadata: {
+				campaignId,
+				index,
+				landUse,
+				userName,
+				biome,
+				uf,
+				timePoint,
+				agreementPoint
+			}
 		});
 
 		if (!campaignId) {
@@ -697,7 +801,7 @@ module.exports = function(app) {
 
 		// Buscar dados da campanha
 		var campaigns = app.repository.collections.campaign;
-		campaigns.findOne({ '_id': campaignId }, function(err, campaign) {
+		campaigns.findOne({ '_id': campaignId }, async function(err, campaign) {
 			if (err || !campaign) {
 				return response.status(404).json({ error: 'Campaign not found' });
 			}
@@ -807,7 +911,11 @@ module.exports = function(app) {
 			if (pipeline == undefined) {
 				// Se temos filtro por index, usar find otimizado
 				if (filter["index"]) {
-					console.log('Admin - Using optimized index filter:', filter);
+					await logger.info('Admin - Using optimized index filter', {
+						module: 'points',
+						function: 'getPointByFilterAdmin',
+						metadata: { filter }
+					});
 					pipeline = [
 						{"$match": filter},
 						{"$project": {index: 1, mean: {"$avg": "$inspection.counter"}}},
@@ -815,7 +923,11 @@ module.exports = function(app) {
 						{"$limit": 1}
 					]
 				} else {
-					console.log('Admin - Using skip-based pagination with index:', index);
+					await logger.info('Admin - Using skip-based pagination', {
+						module: 'points',
+						function: 'getPointByFilterAdmin',
+						metadata: { index }
+					});
 					pipeline = [
 						{"$match": filter},
 						{"$project": {index: 1, mean: {"$avg": "$inspection.counter"}}},
@@ -927,7 +1039,7 @@ module.exports = function(app) {
 		});
 	};
 
-	Points.getLandUsesAdmin = function(request, response) {
+	Points.getLandUsesAdmin = async function(request, response) {
 		const filter = {};
 		// Copiar parâmetros de filtro
 		for (let key in request.query) {
@@ -937,13 +1049,27 @@ module.exports = function(app) {
 				filter[key] = request.query[key];
 			}
 		}
-		console.log('Admin - Getting land uses with filter:', filter);
-		points.distinct('inspection.form.landUse', filter, function(err, landUses) {
+		await logger.info('Admin - Getting land uses', {
+			module: 'points',
+			function: 'getLandUses',
+			metadata: { filter },
+			req: request
+		});
+		points.distinct('inspection.form.landUse', filter, async function(err, landUses) {
 			if (err) {
-				console.error('Admin - Error getting land uses:', err);
-				return response.status(500).json({ error: 'Internal server error' });
+				const logId = await logger.error('Admin - Error getting land uses', {
+					module: 'points',
+					function: 'getLandUses',
+					metadata: { error: err.message, filter },
+					req: request
+				});
+				return response.status(500).json({ error: 'Internal server error', logId });
 			}
-			console.log('Admin - Land uses found:', landUses);
+			await logger.info('Admin - Land uses found', {
+				module: 'points',
+				function: 'getLandUses',
+				metadata: { landUsesCount: landUses ? landUses.length : 0 }
+			});
 			response.json(landUses ? landUses.filter(lu => lu != null) : []);
 		});
 	};

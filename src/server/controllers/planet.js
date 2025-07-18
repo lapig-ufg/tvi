@@ -2,6 +2,7 @@ const https = require('https');
 
 module.exports = function(app) {
 	const planet = {};
+	const logger = app.services.logger;
 
 	const get = (url) => {
 		return new Promise((resolve, reject) => {
@@ -32,7 +33,11 @@ module.exports = function(app) {
 			const response = await get(url);
 			return response.mosaics;
 		} catch (error) {
-			console.error("Error fetching next page: ", error);
+			await logger.error('Error fetching next page from Planet API', {
+				module: 'planet',
+				function: 'getNext',
+				metadata: { error: error.message, url }
+			});
 			throw error;
 		}
 	};
@@ -56,7 +61,11 @@ module.exports = function(app) {
 
 			images = mosaics.filter(mosaic => !mosaic.name.includes("hancock") && !mosaic.name.includes("global_quarterly"));
 		} catch (error) {
-			console.error("Error fetching basemaps: ", error);
+			await logger.error('Error fetching basemaps from Planet API', {
+				module: 'planet',
+				function: 'getPlanetBasemaps',
+				metadata: { error: error.message }
+			});
 			throw error;
 		}
 
@@ -68,8 +77,16 @@ module.exports = function(app) {
 			const result = await getPlanetBasemaps();
 			response.send(result);
 		} catch (error) {
-			console.error("Mosaics - GET: ", error);
-			response.status(500).send({ error: 'Não é possível encontrar os registros dos mosaicos' });
+			const logId = await logger.error('Error getting Planet mosaics', {
+				module: 'planet',
+				function: 'publicMosaicPlanet',
+				metadata: { error: error.message },
+				req: request
+			});
+			response.status(500).send({ 
+				error: 'Não é possível encontrar os registros dos mosaicos',
+				logId 
+			});
 		}
 	};
 

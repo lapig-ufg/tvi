@@ -14,7 +14,7 @@ module.exports = function(app) {
     // Try to load PropertyAnalyzer with error handling
     let PropertyAnalyzer;
     try {
-        PropertyAnalyzer = require('./propertyAnalyzer')(app);
+        PropertyAnalyzer = require('./property-analyzer')(app);
     } catch (error) {
         console.error('Failed to load PropertyAnalyzer module:', error);
         // Create a fallback PropertyAnalyzer
@@ -594,7 +594,11 @@ module.exports = function(app) {
             
             return null;
         } catch (error) {
-            console.error('Error inferring classification field:', error);
+            logger.error('Error inferring classification field', {
+                module: 'campaignCrud',
+                function: 'inferClassificationField',
+                metadata: { error: error.message }
+            });
             return null;
         }
     };
@@ -863,8 +867,13 @@ module.exports = function(app) {
             
             res.json(details);
         } catch (error) {
-            console.error('Error getting campaign details:', error);
-            res.status(500).json({ error: 'Failed to get campaign details' });
+            const logId = await logger.error('Error getting campaign details', {
+                module: 'campaignCrud',
+                function: 'getDetails',
+                metadata: { error: error.message, campaignId: req.params.id },
+                req
+            });
+            res.status(500).json({ error: 'Failed to get campaign details', logId });
         }
     };
 
@@ -1123,7 +1132,12 @@ module.exports = function(app) {
                 } : null
             };
             
-            console.error(`[${level}] GeoJSON Upload:`, JSON.stringify(logData, null, 2));
+            logger.error(`[${level}] GeoJSON Upload`, {
+                module: 'campaignCrud',
+                function: 'uploadGeoJSON',
+                metadata: logData,
+                req
+            });
         };
         
         try {

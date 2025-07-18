@@ -3,6 +3,7 @@ const { XMLParser } = require('fast-xml-parser');
 
 module.exports = function(app) {
     const mapbiomas = {};
+    const logger = app.services.logger;
 
     mapbiomas.getNested = (obj, pathArray, defaultValue) =>{
         /**
@@ -79,9 +80,15 @@ module.exports = function(app) {
             return res.json(result);
 
         } catch (error) {
-            console.error('Erro ao obter GetCapabilities:', error);
+            const logId = await logger.error('Erro ao obter GetCapabilities do MapBiomas', {
+                module: 'mapbiomas',
+                function: 'capabilities',
+                metadata: { error: error.message },
+                req: req
+            });
             return res.status(500).json({
-                error: 'Não foi possível obter o GetCapabilities do servidor MapBiomas.'
+                error: 'Não foi possível obter o GetCapabilities do servidor MapBiomas.',
+                logId
             });
         }
     }
@@ -129,9 +136,15 @@ module.exports = function(app) {
             return res.send(response.data);
 
         } catch (error) {
-            console.error('Erro no proxy do MapBiomas:', error);
+            const logId = await logger.error('Erro no proxy do MapBiomas', {
+                module: 'mapbiomas',
+                function: 'proxy',
+                metadata: { error: error.message, url },
+                req: req
+            });
             return res.status(500).send({
-                error: 'Não foi possível obter a resposta via proxy do MapBiomas.'
+                error: 'Não foi possível obter a resposta via proxy do MapBiomas.',
+                logId
             });
         }
     }

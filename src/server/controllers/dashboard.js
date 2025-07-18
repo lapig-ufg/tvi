@@ -1,5 +1,6 @@
 module.exports = function(app){
 	var Dashboard = {}
+	const logger = app.services.logger;
 
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
@@ -15,11 +16,29 @@ module.exports = function(app){
 		return names;
 	}
 	
-	Dashboard.donuts = function(request, response) {
+	Dashboard.donuts = async function(request, response) {
 		var campaignId = request.session.user.campaign._id;
 
-		points.count({"landUse": { "$eq": [] }, "campaign": campaignId}, function(err1, notinspect) {
-			points.count({ "landUse": { "$gt": [] }, "campaign": campaignId}, function(err2, inspect) {
+		points.count({"landUse": { "$eq": [] }, "campaign": campaignId}, async function(err1, notinspect) {
+			if(err1) {
+				const logId = await logger.error('Error counting uninspected points', {
+					module: 'dashboard',
+					function: 'donuts',
+					metadata: { error: err1.message, campaignId },
+					req: request
+				});
+				return response.status(500).json({ error: 'Database error', logId });
+			}
+			points.count({ "landUse": { "$gt": [] }, "campaign": campaignId}, async function(err2, inspect) {
+				if(err2) {
+					const logId = await logger.error('Error counting inspected points', {
+						module: 'dashboard',
+						function: 'donuts',
+						metadata: { error: err2.message, campaignId },
+						req: request
+					});
+					return response.status(500).json({ error: 'Database error', logId });
+				}
 				var dashboardData = {};
 				dashboardData['inspect'] = inspect;
 				dashboardData['not_inspect'] = notinspect;
@@ -341,14 +360,19 @@ module.exports = function(app){
 		});
 	}
 
-	Dashboard.memberStatus = function(request, response) {
+	Dashboard.memberStatus = async function(request, response) {
 		var campaign = request.session.user.campaign;
 		var cursor = status.find({'campaign': campaign._id});
 
-		cursor.toArray(function(error, docs) {
+		cursor.toArray(async function(error, docs) {
 			if (error) {
-				console.error('Erro ao buscar status dos membros:', error);
-				response.status(500).send({ error: 'Erro ao buscar status dos membros' });
+				const logId = await logger.error('Erro ao buscar status dos membros', {
+					module: 'dashboard',
+					function: 'memberStatus',
+					metadata: { error: error.message, campaignId: campaign._id },
+					req: request
+				});
+				response.status(500).send({ error: 'Erro ao buscar status dos membros', logId });
 				return;
 			}
 
@@ -366,18 +390,38 @@ module.exports = function(app){
 
 	// ===== MÉTODOS ADMIN (sem dependência de sessão) =====
 	
-	Dashboard.pointsInspectionAdmin = function(request, response) {
+	Dashboard.pointsInspectionAdmin = async function(request, response) {
 		// Para admin, precisamos receber o campaignId como parâmetro
 		var campaignId = request.query.campaignId;
 		
 		if (!campaignId) {
-			return response.status(400).json({ error: 'Campaign ID is required' });
+			const logId = await logger.warn('Campaign ID is required', {
+				module: 'dashboard',
+				function: 'pointsInspectionAdmin',
+				req: request
+			});
+			return response.status(400).json({ error: 'Campaign ID is required', logId });
 		}
 		
 		// Buscar dados da campanha
-		campaigns.findOne({ '_id': campaignId }, function(err, campaign) {
-			if (err || !campaign) {
-				return response.status(404).json({ error: 'Campaign not found' });
+		campaigns.findOne({ '_id': campaignId }, async function(err, campaign) {
+			if (err) {
+				const logId = await logger.error('Database error finding campaign', {
+					module: 'dashboard',
+					function: 'pointsInspectionAdmin',
+					metadata: { error: err.message, campaignId },
+					req: request
+				});
+				return response.status(500).json({ error: 'Database error', logId });
+			}
+			if (!campaign) {
+				const logId = await logger.warn('Campaign not found', {
+					module: 'dashboard',
+					function: 'pointsInspectionAdmin',
+					metadata: { campaignId },
+					req: request
+				});
+				return response.status(404).json({ error: 'Campaign not found', logId });
 			}
 			
 			var result = {
@@ -386,9 +430,36 @@ module.exports = function(app){
 				pointsInspection: 0
 			};
 			
-			points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspec} }, function(err, pointsComplet) {
-				points.count({ 'campaign': campaign._id, 'userName': { '$size': 0} }, function(err, pointsNoComplet) {
-					points.count({ 'campaign': campaign._id }, function(err, pointsInspection) {
+			points.count({ 'campaign': campaign._id, 'userName': { '$size': campaign.numInspec} }, async function(err, pointsComplet) {
+				if(err) {
+					const logId = await logger.error('Error counting completed points', {
+						module: 'dashboard',
+						function: 'pointsInspectionAdmin',
+						metadata: { error: err.message, campaignId },
+						req: request
+					});
+					return response.status(500).json({ error: 'Database error', logId });
+				}
+				points.count({ 'campaign': campaign._id, 'userName': { '$size': 0} }, async function(err, pointsNoComplet) {
+					if(err) {
+						const logId = await logger.error('Error counting non-completed points', {
+							module: 'dashboard',
+							function: 'pointsInspectionAdmin',
+							metadata: { error: err.message, campaignId },
+							req: request
+						});
+						return response.status(500).json({ error: 'Database error', logId });
+					}
+					points.count({ 'campaign': campaign._id }, async function(err, pointsInspection) {
+						if(err) {
+							const logId = await logger.error('Error counting total points', {
+								module: 'dashboard',
+								function: 'pointsInspectionAdmin',
+								metadata: { error: err.message, campaignId },
+								req: request
+							});
+							return response.status(500).json({ error: 'Database error', logId });
+						}
 						result.pointsComplet = pointsComplet;
 						result.pointsNoComplet = pointsNoComplet;
 						result.pointsInspection = pointsInspection - (pointsComplet + pointsNoComplet)

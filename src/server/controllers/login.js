@@ -4,18 +4,26 @@ var fs = require('fs')
 module.exports = function(app) {
 	
 	var Login = {};
+	const logger = app.services.logger;
 	
 	var users = app.repository.collections.users;
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
 	var statusLogin = app.repository.collections.status;
 
-	Login.autenticateUser = function(request, response, next) {
+	Login.autenticateUser = async function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
 			next();
 		} else {
-			response.write("I should not be here !!!")
-			response.end()
+			const logId = await logger.warn('Unauthorized access attempt', {
+				module: 'login',
+				function: 'autenticateUser',
+				req: request
+			});
+			response.status(401).json({
+				error: 'Unauthorized access',
+				logId: logId
+			});
 		}
 	}
 
@@ -25,12 +33,32 @@ module.exports = function(app) {
 		response.end();
 	}
 
-	Login.enterTvi = function(request, response) {
+	Login.enterTvi = async function(request, response) {
 		var campaignId = request.body.campaign;
 		var name = request.body.name;
 		var senha = request.body.senha;
 
-		campaigns.findOne({"_id": campaignId}, function(err, campaign) {
+		await logger.info('Login attempt', {
+			module: 'login',
+			function: 'enterTvi',
+			metadata: { campaignId, name },
+			req: request
+		});
+
+		campaigns.findOne({"_id": campaignId}, async function(err, campaign) {
+
+			if(err) {
+				const logId = await logger.error('Database error during login', {
+					module: 'login',
+					function: 'enterTvi',
+					metadata: { error: err.message, campaignId },
+					req: request
+				});
+				return response.status(500).json({
+					error: 'Database error',
+					logId: logId
+				});
+			}
 
 			var result = {
 				campaign:"",
@@ -40,7 +68,19 @@ module.exports = function(app) {
 
 			if(campaign) {
 
-				users.findOne({ _id: 'admin'}, function(err, adminUser) {
+				users.findOne({ _id: 'admin'}, async function(err, adminUser) {
+					if(err) {
+						const logId = await logger.error('Database error finding admin user', {
+							module: 'login',
+							function: 'enterTvi',
+							metadata: { error: err.message },
+							req: request
+						});
+						return response.status(500).json({
+							error: 'Database error',
+							logId: logId
+						});
+					}
 					
 					if((senha == campaign.password) || (senha == adminUser.password)) {
 
@@ -56,6 +96,20 @@ module.exports = function(app) {
 
 						request.session.user.campaign = campaign
 						result = request.session.user;
+						
+						await logger.info('Successful login', {
+							module: 'login',
+							function: 'enterTvi',
+							metadata: { name, campaignId, userType: result.type },
+							req: request
+						});
+					} else {
+						await logger.warn('Failed login attempt - invalid password', {
+							module: 'login',
+							function: 'enterTvi',
+							metadata: { name, campaignId },
+							req: request
+						});
 					}
 					
 					response.send(result);
@@ -64,6 +118,12 @@ module.exports = function(app) {
 				
 
 			} else {
+				await logger.warn('Login attempt with invalid campaign', {
+					module: 'login',
+					function: 'enterTvi',
+					metadata: { campaignId, name },
+					req: request
+				});
 				response.send(result);
 				response.end();
 			}
@@ -71,7 +131,7 @@ module.exports = function(app) {
 		});
 	}
 
-	Login.logoff = function(request, response) {
+	Login.logoff = async function(request, response) {
 		
 		var name = request.session.user.name;
 		var user = request.session.user;
@@ -82,6 +142,13 @@ module.exports = function(app) {
 			statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
 			points.update({'_id': request.session.currentPointId}, {'$inc':{'underInspection': -1}})
 
+			await logger.info('Inspector logged off', {
+				module: 'login',
+				function: 'logoff',
+				metadata: { name, campaignId: campaign._id, pointId: request.session.currentPointId },
+				req: request
+			});
+
 			delete request.session.user;
 			delete request.session.name;
 			delete request.session.currentPointId;
@@ -91,6 +158,13 @@ module.exports = function(app) {
 
 		} else {
 			
+			await logger.info('User logged off', {
+				module: 'login',
+				function: 'logoff',
+				metadata: { name, userType: user.type },
+				req: request
+			});
+
 			delete request.session.user;
 			delete request.session.name;
 

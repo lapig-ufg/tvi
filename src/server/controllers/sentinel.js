@@ -2,6 +2,7 @@ const https = require('https');
 
 module.exports = function(app) {
 	const lapig = {};
+	const logger = app.services.logger;
 
 	const get = (url) => {
 		return new Promise((resolve, reject) => {
@@ -29,10 +30,15 @@ module.exports = function(app) {
 
 	const getLapigCapabilities = async () => {
 		try {
-			const response = await get('https://tiles.lapig.iesa.ufg.br/api/capabilities');
+			const baseUrl = app.config.tilesApi.baseUrl;
+			const response = await get(`${baseUrl}/api/capabilities`);
 			return response.collections;
 		} catch (error) {
-			console.error("Error fetching capabilities: ", error);
+			await logger.error('Error fetching capabilities from Lapig API', {
+				module: 'sentinel',
+				function: 'getLapigCapabilities',
+				metadata: { error: error.message }
+			});
 			throw error;
 		}
 	};
@@ -42,8 +48,16 @@ module.exports = function(app) {
 			const result = await getLapigCapabilities();
 			response.send(result);
 		} catch (error) {
-			console.error("Capabilities - GET: ", error);
-			response.status(500).send({ error: 'Não é possível encontrar os registros das capabilities' });
+			const logId = await logger.error('Error getting Lapig capabilities', {
+				module: 'sentinel',
+				function: 'publicCapabilities',
+				metadata: { error: error.message },
+				req: request
+			});
+			response.status(500).send({ 
+				error: 'Não é possível encontrar os registros das capabilities',
+				logId 
+			});
 		}
 	};
 

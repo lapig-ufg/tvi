@@ -6,6 +6,7 @@ module.exports = function(app) {
     const config = app.config;
     const campaignCollection = app.repository.collections.campaign;
     const pointsCollection = app.repository.collections.points;
+    const logger = app.services.logger;
     
     const CampaignCrudEnhanced = {};
 
@@ -77,7 +78,11 @@ module.exports = function(app) {
                 customProperties: customProperties
             };
         } catch (error) {
-            console.error('Error discovering point properties:', error);
+            await logger.error('Error discovering point properties', {
+                module: 'campaignCrudEnhanced',
+                function: 'discoverPointProperties',
+                metadata: { error: error.message, campaignId }
+            });
             throw error;
         }
     };
@@ -319,8 +324,16 @@ module.exports = function(app) {
             
             res.json(details);
         } catch (error) {
-            console.error('Error getting enhanced campaign details:', error);
-            res.status(500).json({ error: 'Failed to get campaign details' });
+            const logId = await logger.error('Error getting enhanced campaign details', {
+                module: 'campaignCrudEnhanced',
+                function: 'getDetailsEnhanced',
+                metadata: { error: error.message, campaignId: req.params.id },
+                req: req
+            });
+            res.status(500).json({ 
+                error: 'Failed to get campaign details',
+                logId 
+            });
         }
     };
 
@@ -379,7 +392,15 @@ module.exports = function(app) {
                     distribution: result
                 };
             } catch (err) {
-                console.error(`Error getting distribution for property ${prop.name}:`, err);
+                await logger.error('Error getting distribution for property', {
+                    module: 'campaignCrudEnhanced',
+                    function: 'getPropertyDistributions',
+                    metadata: { 
+                        error: err.message, 
+                        property: prop.name,
+                        campaignId 
+                    }
+                });
                 distributions[prop.name] = {
                     property: prop.name,
                     type: prop.type,
@@ -399,8 +420,16 @@ module.exports = function(app) {
             const properties = await CampaignCrudEnhanced.discoverPointProperties(campaignId);
             res.json(properties);
         } catch (error) {
-            console.error('Error getting available properties:', error);
-            res.status(500).json({ error: 'Failed to get available properties' });
+            const logId = await logger.error('Error getting available properties', {
+                module: 'campaignCrudEnhanced',
+                function: 'getAvailableProperties',
+                metadata: { error: error.message, campaignId: req.params.id },
+                req: req
+            });
+            res.status(500).json({ 
+                error: 'Failed to get available properties',
+                logId 
+            });
         }
     };
 

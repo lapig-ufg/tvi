@@ -1,5 +1,6 @@
 module.exports = function (app) {
     const Verifier = {};
+    const logger = app.services && app.services.logger;
 
     Verifier.checkOriginAndHost = (req, res, next) => {
         // Lê as envs, converte em arrays, tira espaços e converte pra minúsculo
@@ -23,16 +24,22 @@ module.exports = function (app) {
             !allowedHosts.includes(hostnameOnly)
         ) {
             // Log detalhado do bloqueio CORS
-            console.error('[CORS BLOCK]', {
-                timestamp: new Date().toISOString(),
-                requestOrigin: requestOrigin,
-                allowedOrigins: allowedOrigins,
-                hostnameOnly: hostnameOnly,
-                allowedHosts: allowedHosts,
-                headers: req.headers,
-                url: req.url,
-                method: req.method
-            });
+            if (logger) {
+                logger.error('CORS blocked', {
+                    module: 'origin',
+                    function: 'checkOriginAndHost',
+                    metadata: {
+                        requestOrigin: requestOrigin,
+                        allowedOrigins: allowedOrigins,
+                        hostnameOnly: hostnameOnly,
+                        allowedHosts: allowedHosts,
+                        headers: req.headers,
+                        url: req.url,
+                        method: req.method
+                    },
+                    req: req
+                });
+            }
             
             const corsError = new Error('Acesso não permitido - CORS');
             corsError.statusCode = 403;

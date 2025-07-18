@@ -17,6 +17,30 @@ module.exports = function(app) {
 			"parallelRequestsBusyTime": 42,
 			"parallelRequestsDawnTime": 36
 		},
+		"tilesApi": {
+			"baseUrl": process.env.TILES_API_URL || "http://0.0.0.0:8080",
+			"endpoints": {
+				"capabilities": "/api/capabilities",
+				"capabilitiesLegacy": "/api/capabilities/legacy",
+				"landsatTiles": "/api/layers/landsat/{x}/{y}/{z}",
+				"sentinelTiles": "/api/layers/s2_harmonized/{x}/{y}/{z}",
+				"landsatTimeseries": "/api/timeseries/landsat/{lat}/{lon}",
+				"sentinelTimeseries": "/api/timeseries/sentinel2/{lat}/{lon}",
+				"modisTimeseries": "/api/timeseries/modis/{lat}/{lon}",
+				"nddiTimeseries": "/api/timeseries/nddi/{lat}/{lon}",
+				"cacheStats": "/api/cache/stats",
+				"cacheClear": "/api/cache/clear",
+				"cacheWarmup": "/api/cache/warmup",
+				"cachePointStart": "/api/cache/point/start",
+				"cacheCampaignStart": "/api/cache/campaign/start",
+				"cachePointStatus": "/api/cache/point/{point_id}/status",
+				"cacheCampaignStatus": "/api/cache/campaign/{campaign_id}/status",
+				"cacheTaskStatus": "/api/cache/tasks/{task_id}"
+			},
+			"timeout": 30000,
+			"retryAttempts": 3,
+			"retryDelay": 1000
+		},
 		"mongo": {
 			"host": process.env.MONGO_HOST,
 			"port":  process.env.MONGO_PORT,
@@ -69,13 +93,12 @@ module.exports = function(app) {
 		"port": 3000,
 	};
 
-	if(process.env.NODE_ENV == 'prod') {
+	if(process.env.NODE_ENV === 'prod') {
 		config["mongo"]["port"] = "27017";
 		config.jobs.toRun[0].runOnAppStart = false;
 		config.jobs.toRun[1].runOnAppStart = false;
 		config.jobs.toRun[2].runOnAppStart = false;
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
-		// Ensure log directory exists in production
 		if (!require('fs').existsSync(config.logDir)) {
 			try {
 				require('fs').mkdirSync(config.logDir, { recursive: true });

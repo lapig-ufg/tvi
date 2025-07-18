@@ -1,5 +1,6 @@
 module.exports = function(app) {
     const PropertyAnalyzer = {};
+    const logger = app.services.logger;
 
     // Analisar propriedades e determinar sua relevância
     PropertyAnalyzer.analyzeProperties = async (pointsCollection, campaignId, numInspec) => {
@@ -107,7 +108,11 @@ module.exports = function(app) {
             return categorized;
 
         } catch (error) {
-            console.error('Error analyzing properties:', error);
+            await logger.error('Error analyzing properties', {
+                module: 'propertyAnalyzer',
+                function: 'analyzeProperties',
+                metadata: { error: error.message, campaignId }
+            });
             throw error;
         }
     };
