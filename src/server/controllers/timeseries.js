@@ -4,8 +4,11 @@ const https = require("https");
 module.exports = function (app) {
 
     const collections = app.repository.tSCollections;
-    const logger = app.services.logger;
     let Timeseries = {};
+    
+    // Get tiles API service from app
+    const tilesApi = app.services.tilesApiService;
+    const logger = app.services.logger;
 
     const agent = new https.Agent({
         rejectUnauthorized: false, // ⚠️ Desabilita a verificação SSL (uso temporário)
@@ -28,27 +31,23 @@ module.exports = function (app) {
                 }
             }
         } else {
-            logger.error('Lon lat not found', {
+            logger.error("lon lat not found", {
                 module: 'timeseries',
                 function: 'getLandsatNdviByLonLat',
-                metadata: { lon, lat, campaign },
                 req: request
-            }).then(logId => {
-                response.status(400).json({ error: 'Lon lat not found', logId });
             });
-            return;
+            response.end()
         }
         if(collections[campaign]){
             collections[campaign].find(filter, {"_id": 0, "geom": 0}).toArray((err, ts) => {
                 if (err) {
-                    logger.error('Database error fetching Landsat NDVI', {
+                    logger.error("Error fetching Landsat NDVI timeseries", {
                         module: 'timeseries',
                         function: 'getLandsatNdviByLonLat',
                         metadata: { error: err.message, lon, lat, campaign },
                         req: request
-                    }).then(logId => {
-                        response.status(500).json({ error: 'Database error', logId });
                     });
+                    response.end()
                 } else {
                     response.send(ts);
                     response.end();
@@ -58,6 +57,7 @@ module.exports = function (app) {
             response.end()
         }
     }
+    
     Timeseries.allTimeseries = (point, campaign) => {
        return new Promise((resolve, reject) => {
            const filter = {
@@ -79,6 +79,7 @@ module.exports = function (app) {
            });
        })
     };
+    
     Timeseries.landsatNdviByGeometry = function (request, response) {
         const {campaign, geom} =  request.body;
         let filter = {};
@@ -89,28 +90,15 @@ module.exports = function (app) {
                 {$group: { _id : {"geom": "$geom"} }}
             ]
         } else {
-            logger.error('Geom not found', {
-                module: 'timeseries',
-                function: 'getSentinelNdviByLonLat',
-                metadata: { lon, lat, campaign },
-                req: request
-            }).then(logId => {
-                response.status(400).json({ error: 'Geom not found', logId });
-            });
-            return;
+            console.error("geom not found")
+            response.end()
         }
 
         if(collections[campaign]){
             collections[campaign].aggregate(filter).toArray((err, points) => {
                 if (err) {
-                    logger.error('Database error fetching Sentinel NDVI', {
-                        module: 'timeseries',
-                        function: 'getSentinelNdviByLonLat',
-                        metadata: { error: err.message, lon, lat, campaign },
-                        req: request
-                    }).then(logId => {
-                        response.status(500).json({ error: 'Database error', logId });
-                    });
+                    console.error(err)
+                    response.end()
                 } else {
 
                    const tsPromises = points.map(point => {
@@ -121,14 +109,8 @@ module.exports = function (app) {
                        response.send(timeseries);
                        response.end();
                    }).catch(err => {
-                       logger.error('Error mapping timeseries results', {
-                           module: 'timeseries',
-                           function: 'getSentinelNdviByLonLat',
-                           metadata: { error: err.message },
-                           req: request
-                       }).then(logId => {
-                           response.status(500).json({ error: 'Processing error', logId });
-                       });
+                       console.error(err)
+                       response.end();
                    })
                 }
             });
@@ -138,148 +120,303 @@ module.exports = function (app) {
     }
 
     Timeseries.getTimeSeriesLandsatNdviByLonLat = async function (request, response) {
-        const { lon, lat } = request.query;
+        const { lon, lat, data_inicio, data_fim } = request.query;
 
         if (!lon || !lat) {
-            const logId = await logger.error('Lon lat not found', {
+            await logger.error("lon lat not found", {
                 module: 'timeseries',
                 function: 'getTimeSeriesLandsatNdviByLonLat',
-                metadata: { lon, lat },
                 req: request
             });
-            return response.status(400).send({ error: "Longitude and latitude are required", logId });
+            return response.status(400).send({ error: "Longitude and latitude are required" });
         }
 
-        const baseUrl = app.config.tilesApi.baseUrl;
-        const url = `${baseUrl}/api/timeseries/landsat/${lat}/${lon}`;
-
         try {
-            const res = await axios.get(url, {
-                headers: {
-                    "User-Agent": "Node.js",
-                },
-                httpsAgent: agent,
-            });
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getLandsatTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // Fallback to legacy URL
+                const baseUrl = app.config.tilesApi.baseUrl;
+                const url = `${baseUrl}/api/timeseries/landsat/${lat}/${lon}`;
+                
+                const res = await axios.get(url, {
+                    headers: {
+                        "User-Agent": "Node.js",
+                    },
+                    httpsAgent: agent,
+                    params: { data_inicio, data_fim }
+                });
 
-            response.status(200).send(res.data);
+                response.status(200).send(res.data);
+            }
         } catch (error) {
-            const logId = await logger.error('Error fetching timeseries', {
+            await logger.error("Error fetching timeseries", {
                 module: 'timeseries',
-                function: request.route.path.includes('landsat') ? 'getTimeSeriesLandsatNdviByLonLat' : 'getTimeSeriesSentinelNdviByLonLat',
-                metadata: { error: error.message, lon, lat },
+                function: 'getTimeSeriesLandsatNdviByLonLat',
+                metadata: { error: error.message, lon, lat, data_inicio, data_fim },
                 req: request
             });
-            response.status(500).send({ error: "Failed to fetch timeseries data", logId });
+            response.status(500).send({ 
+                error: "Failed to fetch timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
+            });
         }
     };
 
     Timeseries.getTimeSeriesLandsatNDDIByLonLat = async function (request, response) {
-        const { lon, lat } = request.query;
+        const { lon, lat, data_inicio, data_fim } = request.query;
 
         if (!lon || !lat) {
-            const logId = await logger.error('Lon lat not found', {
-                module: 'timeseries',
-                function: 'getTimeSeriesLandsatNDDIByLonLat',
-                metadata: { lon, lat },
-                req: request
-            });
-            return response.status(400).send({ error: "Longitude and latitude are required", logId });
+            console.error("lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
         }
 
-        const baseUrl = app.config.tilesApi.baseUrl;
-        const url = `${baseUrl}/api/timeseries/nddi/${lat}/${lon}`;
+        try {
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getNddiTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // Fallback to legacy URL
+                const baseUrl = app.config.tilesApi.baseUrl;
+                const url = `${baseUrl}/api/timeseries/nddi/${lat}/${lon}`;
+                
+                const res = await axios.get(url, {
+                    headers: {
+                        "User-Agent": "Node.js",
+                    },
+                    httpsAgent: agent,
+                    params: { data_inicio, data_fim }
+                });
+
+                response.status(200).send(res.data);
+            }
+        } catch (error) {
+            console.error("Error fetching timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
+            });
+        }
+    };
+
+    // New methods for Sentinel-2 and MODIS timeseries
+    Timeseries.getTimeSeriesSentinel2ByLonLat = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
 
         try {
-            const res = await axios.get(url, {
-                headers: {
-                    "User-Agent": "Node.js",
-                },
-                httpsAgent: agent,
-            });
-
-            response.status(200).send(res.data);
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getSentinelTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // For legacy, we might not have Sentinel-2 endpoint
+                response.status(501).send({ 
+                    error: "Sentinel-2 timeseries not available in legacy API" 
+                });
+            }
         } catch (error) {
-            const logId = await logger.error('Error fetching timeseries', {
-                module: 'timeseries',
-                function: request.route.path.includes('landsat') ? 'getTimeSeriesLandsatNdviByLonLat' : 'getTimeSeriesSentinelNdviByLonLat',
-                metadata: { error: error.message, lon, lat },
-                req: request
+            console.error("Error fetching Sentinel-2 timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch Sentinel-2 timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
             });
-            response.status(500).send({ error: "Failed to fetch timeseries data", logId });
+        }
+    };
+
+    Timeseries.getTimeSeriesModisByLonLat = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getModisTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // For legacy, we might not have MODIS endpoint
+                response.status(501).send({ 
+                    error: "MODIS timeseries not available in legacy API" 
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching MODIS timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch MODIS timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
+            });
         }
     };
 
     // ===== MÉTODOS ADMIN (sem dependência de sessão) =====
     
     Timeseries.getTimeSeriesLandsatNdviByLonLatAdmin = async function (request, response) {
-        const { lon, lat } = request.query;
+        const { lon, lat, data_inicio, data_fim } = request.query;
 
         if (!lon || !lat) {
-            const logId = await logger.error('Admin - lon lat not found', {
-                module: 'timeseries',
-                function: 'getTimeSeriesLandsatNdviByLonLatAdmin',
-                metadata: { lon, lat },
-                req: request
-            });
-            return response.status(400).send({ error: "Longitude and latitude are required", logId });
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
         }
 
-        const baseUrl = app.config.tilesApi.baseUrl;
-        const url = `${baseUrl}/api/timeseries/landsat/${lat}/${lon}`;
-
         try {
-            const res = await axios.get(url, {
-                headers: {
-                    "User-Agent": "Node.js",
-                },
-                httpsAgent: agent,
-            });
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getLandsatTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // Fallback to legacy URL
+                const baseUrl = app.config.tilesApi.baseUrl;
+                const url = `${baseUrl}/api/timeseries/landsat/${lat}/${lon}`;
+                
+                const res = await axios.get(url, {
+                    headers: {
+                        "User-Agent": "Node.js",
+                    },
+                    httpsAgent: agent,
+                    params: { data_inicio, data_fim }
+                });
 
-            response.status(200).send(res.data);
+                response.status(200).send(res.data);
+            }
         } catch (error) {
-            const logId = await logger.error('Admin - Error fetching timeseries', {
-                module: 'timeseries',
-                function: request.route.path.includes('landsat') ? 'getTimeSeriesLandsatNdviByLonLatAdmin' : 'getTimeSeriesSentinelNdviByLonLatAdmin',
-                metadata: { error: error.message, lon, lat },
-                req: request
+            console.error("Admin - Error fetching timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
             });
-            response.status(500).send({ error: "Failed to fetch timeseries data", logId });
         }
     };
 
     Timeseries.getTimeSeriesLandsatNDDIByLonLatAdmin = async function (request, response) {
-        const { lon, lat } = request.query;
+        const { lon, lat, data_inicio, data_fim } = request.query;
 
         if (!lon || !lat) {
-            const logId = await logger.error('Admin - lon lat not found', {
-                module: 'timeseries',
-                function: 'getTimeSeriesLandsatNdviByLonLatAdmin',
-                metadata: { lon, lat },
-                req: request
-            });
-            return response.status(400).send({ error: "Longitude and latitude are required", logId });
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
         }
 
-        const baseUrl = app.config.tilesApi.baseUrl;
-        const url = `${baseUrl}/api/timeseries/nddi/${lat}/${lon}`;
+        try {
+            // Check if we should use new API
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getNddiTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                // Fallback to legacy URL
+                const baseUrl = app.config.tilesApi.baseUrl;
+                const url = `${baseUrl}/api/timeseries/nddi/${lat}/${lon}`;
+                
+                const res = await axios.get(url, {
+                    headers: {
+                        "User-Agent": "Node.js",
+                    },
+                    httpsAgent: agent,
+                    params: { data_inicio, data_fim }
+                });
+
+                response.status(200).send(res.data);
+            }
+        } catch (error) {
+            console.error("Admin - Error fetching timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
+            });
+        }
+    };
+
+    // Admin methods for new timeseries types
+    Timeseries.getTimeSeriesSentinel2ByLonLatAdmin = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
 
         try {
-            const res = await axios.get(url, {
-                headers: {
-                    "User-Agent": "Node.js",
-                },
-                httpsAgent: agent,
-            });
-
-            response.status(200).send(res.data);
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getSentinelTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                response.status(501).send({ 
+                    error: "Sentinel-2 timeseries not available in legacy API" 
+                });
+            }
         } catch (error) {
-            const logId = await logger.error('Admin - Error fetching timeseries', {
-                module: 'timeseries',
-                function: request.route.path.includes('landsat') ? 'getTimeSeriesLandsatNdviByLonLatAdmin' : 'getTimeSeriesSentinelNdviByLonLatAdmin',
-                metadata: { error: error.message, lon, lat },
-                req: request
+            console.error("Admin - Error fetching Sentinel-2 timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch Sentinel-2 timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
             });
-            response.status(500).send({ error: "Failed to fetch timeseries data", logId });
+        }
+    };
+
+    Timeseries.getTimeSeriesModisByLonLatAdmin = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            if (app.config.tilesApi && app.config.tilesApi.baseUrl) {
+                const params = {};
+                if (data_inicio) params.data_inicio = data_inicio;
+                if (data_fim) params.data_fim = data_fim;
+                
+                const result = await tilesApi.getModisTimeseries(lat, lon, params, request);
+                response.status(200).send(result);
+            } else {
+                response.status(501).send({ 
+                    error: "MODIS timeseries not available in legacy API" 
+                });
+            }
+        } catch (error) {
+            console.error("Admin - Error fetching MODIS timeseries:", error.message);
+            response.status(500).send({ 
+                error: "Failed to fetch MODIS timeseries data",
+                source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
+            });
         }
     };
 

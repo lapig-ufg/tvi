@@ -1,0 +1,1947 @@
+<!-- Cache Manager Tiles - Interface Admin -->
+<div class="admin-cache-container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="back-btn" ng-click="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="header-title">Gerenciador de Cache - Tiles API</h1>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn" ng-click="loadStats()" ng-disabled="loading.stats">
+                    <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.stats}"></i>
+                    <span>Atualizar Status</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Main Content -->
+    <div class="admin-content">
+        <!-- Navigation Tabs -->
+        <div class="admin-tabs">
+            <div class="tabs-container">
+                <button class="tab-btn" ng-class="{active: activeTab === 'overview'}"
+                        ng-click="setActiveTab('overview')">
+                    <i class="fas fa-chart-line"></i>
+                    Visão Geral
+                </button>
+                <button class="tab-btn" ng-class="{active: activeTab === 'monitoring'}"
+                        ng-click="setActiveTab('monitoring')">
+                    <i class="fas fa-tasks"></i>
+                    Monitoramento
+                </button>
+                <button class="tab-btn" ng-class="{active: activeTab === 'management'}"
+                        ng-click="setActiveTab('management')">
+                    <i class="fas fa-cogs"></i>
+                    Gerenciamento
+                </button>
+                <button class="tab-btn" ng-class="{active: activeTab === 'analysis'}"
+                        ng-click="setActiveTab('analysis')">
+                    <i class="fas fa-analytics"></i>
+                    Análise
+                </button>
+            </div>
+        </div>
+
+        <!-- Overview Tab -->
+        <div ng-show="activeTab === 'overview'" class="tab-content">
+            <!-- Redis Stats -->
+            <div class="status-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-database"></i>
+                        Status do Redis Cache
+                    </h2>
+                </div>
+
+                <div ng-if="loading.stats" class="loading-state">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p class="loading-text">Carregando estatísticas...</p>
+                </div>
+
+                <div ng-if="!loading.stats" class="stats-grid">
+                    <div class="stat-card primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{tilesStats.redis.hits | number}}</div>
+                            <div class="stat-label">Cache Hits</div>
+                            <div class="stat-percentage" ng-if="tilesStats.redis.hitRate">
+                                <i class="fas fa-chart-line"></i>
+                                {{tilesStats.redis.hitRate}}% taxa de acerto
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{tilesStats.redis.misses | number}}</div>
+                            <div class="stat-label">Cache Misses</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card info">
+                        <div class="stat-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{tilesStats.redis.size | number}}</div>
+                            <div class="stat-label">Tiles em Cache</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card success">
+                        <div class="stat-icon">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{formatBytes(tilesStats.redis.memory)}}</div>
+                            <div class="stat-label">Memória Usada</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Stats -->
+            <div class="status-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-hdd"></i>
+                        Status do Armazenamento
+                    </h2>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-th"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{tilesStats.storage.tiles | number}}</div>
+                            <div class="stat-label">Total de Tiles</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-weight"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{formatBytes(tilesStats.storage.size)}}</div>
+                            <div class="stat-label">Tamanho Total</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{tilesStats.storage.campaigns.length}}</div>
+                            <div class="stat-label">Campanhas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaigns List -->
+                <div class="campaigns-list" ng-if="tilesStats.storage.campaigns.length > 0">
+                    <h3 class="subsection-title">
+                        <i class="fas fa-list"></i>
+                        Campanhas Armazenadas
+                    </h3>
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Campanha</th>
+                                    <th>Layer</th>
+                                    <th>Tiles</th>
+                                    <th>Tamanho</th>
+                                    <th>Última Atualização</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="campaign in tilesStats.storage.campaigns | orderBy:'-tiles'">
+                                    <td>{{campaign.name}}</td>
+                                    <td>
+                                        <span class="layer-badge" ng-class="campaign.layer">
+                                            {{campaign.layer}}
+                                        </span>
+                                    </td>
+                                    <td>{{campaign.tiles | number}}</td>
+                                    <td>{{formatBytes(campaign.size)}}</td>
+                                    <td>{{campaign.lastUpdate | date:'dd/MM/yyyy HH:mm'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Stats -->
+            <div class="status-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Performance
+                    </h2>
+                </div>
+
+                <div class="performance-grid">
+                    <div class="perf-card">
+                        <div class="perf-metric">
+                            <span class="metric-value">{{tilesStats.performance.avgResponseTime}}ms</span>
+                            <span class="metric-label">Tempo de Resposta Médio</span>
+                        </div>
+                        <div class="perf-chart">
+                            <!-- Chart placeholder -->
+                        </div>
+                    </div>
+
+                    <div class="perf-card">
+                        <div class="perf-metric">
+                            <span class="metric-value">{{tilesStats.performance.requestsPerMinute}}</span>
+                            <span class="metric-label">Requisições/min</span>
+                        </div>
+                        <div class="perf-chart">
+                            <!-- Chart placeholder -->
+                        </div>
+                    </div>
+
+                    <div class="perf-card">
+                        <div class="perf-metric">
+                            <span class="metric-value">{{tilesStats.performance.errorRate}}%</span>
+                            <span class="metric-label">Taxa de Erro</span>
+                        </div>
+                        <div class="perf-chart">
+                            <!-- Chart placeholder -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Tab -->
+        <div ng-show="activeTab === 'monitoring'" class="tab-content">
+            <div class="monitoring-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Tarefas Ativas
+                    </h2>
+                    <button class="action-btn small" ng-click="loadActiveTasks()" ng-disabled="loading.tasks">
+                        <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.tasks}"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+
+                <div ng-if="loading.tasks" class="loading-state">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p class="loading-text">Carregando tarefas...</p>
+                </div>
+
+                <div ng-if="!loading.tasks && activeTasks.length === 0" class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>Nenhuma tarefa ativa no momento</p>
+                </div>
+
+                <div ng-if="!loading.tasks && activeTasks.length > 0" class="tasks-list">
+                    <div class="task-card" ng-repeat="task in activeTasks" 
+                         ng-class="'status-' + task.status">
+                        <div class="task-header">
+                            <div class="task-info">
+                                <h3 class="task-title">
+                                    <i class="fas" ng-class="getStatusIcon(task.status)"></i>
+                                    {{task.type}} - {{task.id}}
+                                </h3>
+                                <p class="task-meta">
+                                    Iniciado: {{task.createdAt | date:'dd/MM/yyyy HH:mm:ss'}}
+                                    <span ng-if="task.status === 'processing'">
+                                        | Tempo decorrido: {{formatElapsedTime(task.createdAt)}}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="task-actions">
+                                <button class="action-btn small" ng-click="getTaskStatus(task.id)" 
+                                        title="Atualizar Status">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button class="action-btn small danger" ng-click="cancelTask(task.id)"
+                                        ng-if="task.status === 'pending' || task.status === 'processing'"
+                                        title="Cancelar Tarefa">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="task-body">
+                            <div class="task-config">
+                                <p><strong>Configuração:</strong></p>
+                                <ul class="config-list">
+                                    <li ng-if="task.config.layer">Layer: {{task.config.layer}}</li>
+                                    <li ng-if="task.config.bounds">
+                                        Bounds: [{{task.config.bounds.minLat}}, {{task.config.bounds.minLon}}] → 
+                                        [{{task.config.bounds.maxLat}}, {{task.config.bounds.maxLon}}]
+                                    </li>
+                                    <li ng-if="task.config.zoom_range">
+                                        Zoom: {{task.config.zoom_range[0]}} - {{task.config.zoom_range[1]}}
+                                    </li>
+                                    <li ng-if="task.config.years">
+                                        Anos: {{task.config.years[0]}} - {{task.config.years[1]}}
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="task-progress" ng-if="task.status === 'processing'">
+                                <div class="progress-info">
+                                    <span class="progress-label">Progresso</span>
+                                    <span class="progress-percentage">{{task.progress || 0}}%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" 
+                                         ng-style="{'width': (task.progress || 0) + '%'}"
+                                         ng-class="'progress-' + getProgressColor(task.progress)"></div>
+                                </div>
+                                <div class="progress-details">
+                                    <span>{{task.processed || 0}} / {{task.total || 0}} tiles processados</span>
+                                    <span ng-if="task.errors > 0" class="error-count">
+                                        | {{task.errors}} erros
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="task-result" ng-if="task.status === 'completed'">
+                                <div class="result-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Tarefa concluída com sucesso!</span>
+                                </div>
+                                <div class="result-stats">
+                                    <span>Total processado: {{task.total || 0}} tiles</span>
+                                    <span ng-if="task.duration">| Duração: {{task.duration}}</span>
+                                </div>
+                            </div>
+
+                            <div class="task-error" ng-if="task.status === 'failed'">
+                                <div class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span>{{task.error || 'Erro desconhecido'}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Tab -->
+        <div ng-show="activeTab === 'management'" class="tab-content">
+            <!-- Cache Warmup Section -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-fire"></i>
+                        Cache Warmup
+                    </h2>
+                    <p class="section-subtitle">Pré-carregar tiles para melhorar performance</p>
+                </div>
+
+                <div class="warmup-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="form-label">Layer</label>
+                            <select class="form-control" ng-model="warmupConfig.layer">
+                                <option value="landsat">Landsat</option>
+                                <option value="sentinel">Sentinel-2</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="form-label">Prioridade</label>
+                            <select class="form-control" ng-model="warmupConfig.priority">
+                                <option value="low">Baixa</option>
+                                <option value="normal">Normal</option>
+                                <option value="high">Alta</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">
+                            <i class="fas fa-map-marked-alt"></i>
+                            Área Geográfica
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-3">
+                                <label class="form-label">Latitude Mínima</label>
+                                <input type="number" class="form-control" ng-model="warmupConfig.bounds.minLat"
+                                       placeholder="-33.75" step="0.01">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="form-label">Latitude Máxima</label>
+                                <input type="number" class="form-control" ng-model="warmupConfig.bounds.maxLat"
+                                       placeholder="5.27" step="0.01">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="form-label">Longitude Mínima</label>
+                                <input type="number" class="form-control" ng-model="warmupConfig.bounds.minLon"
+                                       placeholder="-73.99" step="0.01">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="form-label">Longitude Máxima</label>
+                                <input type="number" class="form-control" ng-model="warmupConfig.bounds.maxLon"
+                                       placeholder="-34.79" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="form-label">Níveis de Zoom</label>
+                            <div class="range-inputs">
+                                <input type="number" class="form-control" ng-model="warmupConfig.zoomLevels.min"
+                                       min="1" max="20" placeholder="Min">
+                                <span class="range-separator">até</span>
+                                <input type="number" class="form-control" ng-model="warmupConfig.zoomLevels.max"
+                                       min="1" max="20" placeholder="Max">
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="form-label">Período (Anos)</label>
+                            <div class="range-inputs">
+                                <input type="number" class="form-control" ng-model="warmupConfig.years.start"
+                                       min="1985" max="2024" placeholder="Início">
+                                <span class="range-separator">até</span>
+                                <input type="number" class="form-control" ng-model="warmupConfig.years.end"
+                                       min="1985" max="2024" placeholder="Fim">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="action-btn primary" ng-click="startWarmup()">
+                            <i class="fas fa-play"></i>
+                            <span>Iniciar Warmup</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cache Clear Section -->
+            <div class="management-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-trash-alt"></i>
+                        Limpeza de Cache
+                    </h2>
+                    <p class="section-subtitle">Remover tiles do cache</p>
+                </div>
+
+                <div class="clear-form">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Limpeza</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" ng-model="clearConfig.type" value="selective">
+                                <div class="radio-content">
+                                    <span class="radio-label">Seletiva</span>
+                                    <span class="radio-desc">Por layer e ano específicos</span>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" ng-model="clearConfig.type" value="campaign">
+                                <div class="radio-content">
+                                    <span class="radio-label">Por Campanha</span>
+                                    <span class="radio-desc">Remover todos os tiles de uma campanha</span>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" ng-model="clearConfig.type" value="layer">
+                                <div class="radio-content">
+                                    <span class="radio-label">Por Layer</span>
+                                    <span class="radio-desc">Remover todos os tiles de um layer</span>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" ng-model="clearConfig.type" value="all">
+                                <div class="radio-content">
+                                    <span class="radio-label">Completa</span>
+                                    <span class="radio-desc">Limpar todo o cache</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div ng-if="clearConfig.type === 'selective'" class="conditional-fields">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Layer</label>
+                                <select class="form-control" ng-model="clearConfig.layer">
+                                    <option value="">Selecione...</option>
+                                    <option value="landsat">Landsat</option>
+                                    <option value="sentinel">Sentinel-2</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Ano</label>
+                                <input type="number" class="form-control" ng-model="clearConfig.year"
+                                       min="1985" max="2024" placeholder="Ex: 2023">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div ng-if="clearConfig.type === 'campaign'" class="conditional-fields">
+                        <div class="form-group">
+                            <label class="form-label">Campanha</label>
+                            <select class="form-control" ng-model="clearConfig.campaign">
+                                <option value="">Selecione uma campanha...</option>
+                                <option ng-repeat="campaign in tilesStats.storage.campaigns" 
+                                        value="{{campaign.id}}">
+                                    {{campaign.name}}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div ng-if="clearConfig.type === 'layer'" class="conditional-fields">
+                        <div class="form-group">
+                            <label class="form-label">Layer</label>
+                            <select class="form-control" ng-model="clearConfig.layer">
+                                <option value="">Selecione...</option>
+                                <option value="landsat">Landsat</option>
+                                <option value="sentinel">Sentinel-2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert-box warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Atenção:</strong> Esta operação é irreversível e removerá permanentemente os tiles do cache!
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="confirmClear" 
+                               ng-model="clearConfig.confirm">
+                        <label class="form-check-label" for="confirmClear">
+                            Confirmo que desejo remover os tiles do cache
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="action-btn danger" ng-click="clearCache()" 
+                                ng-disabled="!clearConfig.confirm">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Limpar Cache</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tab -->
+        <div ng-show="activeTab === 'analysis'" class="tab-content">
+            <!-- Status Detalhado por Campanha -->
+            <div class="analysis-section" ng-if="cacheStatus.campaigns && cacheStatus.campaigns.length > 0">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Status Detalhado por Campanha
+                    </h2>
+                    <div class="analysis-controls">
+                        <span class="badge-count">{{cacheStatus.campaigns.length}} campanhas</span>
+                    </div>
+                </div>
+
+                <div class="campaigns-section">
+                    <!-- Busca por ID -->
+                    <div class="search-container">
+                        <div class="search-input-group">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" ng-model="campaignSearch.searchId" 
+                                   placeholder="Buscar campanha por ID...">
+                            <button class="search-clear" ng-if="campaignSearch.searchId" ng-click="clearCampaignSearch()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="search-results" ng-if="campaignSearch.searchId">
+                            <span class="search-result-text">
+                                {{getFilteredCampaigns().length}} campanha(s) encontrada(s)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Controles de paginação -->
+                    <div class="pagination-controls" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
+                        <div class="items-per-page">
+                            <label>Mostrar
+                                <select class="form-control input-sm" ng-model="campaignsPagination.itemsPerPage" 
+                                        ng-change="updateCampaignsPagination()">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                campanhas por página
+                            </label>
+                        </div>
+                        <div class="pagination-info">
+                            <span>
+                                Mostrando {{((campaignsPagination.currentPage - 1) * campaignsPagination.itemsPerPage) + 1}}
+                                a {{Math.min(campaignsPagination.currentPage * campaignsPagination.itemsPerPage, getFilteredCampaigns().length)}}
+                                de {{getFilteredCampaigns().length}} campanhas
+                                <span ng-if="campaignSearch.searchId">(filtrado)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="campaigns-table-container">
+                        <table class="campaigns-table">
+                            <thead>
+                                <tr>
+                                    <th>Campanha</th>
+                                    <th>Total</th>
+                                    <th>Cacheados</th>
+                                    <th>Não Cacheados</th>
+                                    <th>Percentual</th>
+                                    <th>Progresso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="campaign in getCampaignsPaginated()" class="campaign-row">
+                                    <td class="campaign-info">
+                                        <div class="campaign-name">{{campaign._id}}</div>
+                                        <div class="campaign-years">
+                                            {{campaign.yearStart}} - {{campaign.yearEnd}}
+                                        </div>
+                                    </td>
+                                    <td class="campaign-stat">{{campaign.totalPoints}}</td>
+                                    <td class="campaign-stat success">{{campaign.cachedPoints}}</td>
+                                    <td class="campaign-stat danger">{{campaign.uncachedPoints}}</td>
+                                    <td class="campaign-percentage">
+                                        <span class="percentage-value" ng-class="getCachePercentageClass(campaign.cachePercentage)">
+                                            {{(campaign.cachePercentage || 0) | number:1}}%
+                                        </span>
+                                    </td>
+                                    <td class="campaign-progress">
+                                        <div class="progress-container">
+                                            <div class="progress-bar" 
+                                                 ng-class="'progress-' + getCachePercentageClass(campaign.cachePercentage)"
+                                                 ng-style="{'width': (campaign.cachePercentage || 0) + '%'}">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    <div class="pagination-container" ng-if="getFilteredCampaigns().length > campaignsPagination.itemsPerPage">
+                        <div class="pagination">
+                            <button class="pagination-btn" ng-class="{disabled: campaignsPagination.currentPage === 1}"
+                                    ng-click="changeCampaignsPage(1)">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" ng-class="{disabled: campaignsPagination.currentPage === 1}"
+                                    ng-click="changeCampaignsPage(campaignsPagination.currentPage - 1)">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+
+                            <button class="pagination-btn" ng-repeat="page in getCampaignsPaginationRange()" 
+                                    ng-class="{active: page === campaignsPagination.currentPage}"
+                                    ng-click="changeCampaignsPage(page)">
+                                {{page}}
+                            </button>
+
+                            <button class="pagination-btn" ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}"
+                                    ng-click="changeCampaignsPage(campaignsPagination.currentPage + 1)">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" ng-class="{disabled: campaignsPagination.currentPage === campaignsPagination.totalPages}"
+                                    ng-click="changeCampaignsPage(campaignsPagination.totalPages)">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Patterns -->
+            <div class="analysis-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-area"></i>
+                        Padrões de Uso
+                    </h2>
+                    <div class="analysis-controls">
+                        <select class="form-control input-sm" ng-model="analysisTimeframe" 
+                                ng-change="analyzeCachePatterns(analysisTimeframe)">
+                            <option value="1">Último dia</option>
+                            <option value="7" selected>Última semana</option>
+                            <option value="30">Último mês</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div ng-if="loading.recommendations" class="loading-state">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p class="loading-text">Analisando padrões...</p>
+                </div>
+
+                <div ng-if="!loading.recommendations && cacheAnalysis.patterns.length > 0" class="patterns-grid">
+                    <div class="pattern-card" ng-repeat="pattern in cacheAnalysis.patterns">
+                        <div class="pattern-header">
+                            <h3 class="pattern-title">{{pattern.name}}</h3>
+                            <span class="pattern-badge" ng-class="pattern.type">{{pattern.type}}</span>
+                        </div>
+                        <div class="pattern-body">
+                            <p class="pattern-description">{{pattern.description}}</p>
+                            <div class="pattern-stats">
+                                <div class="pattern-stat">
+                                    <span class="stat-label">Frequência</span>
+                                    <span class="stat-value">{{pattern.frequency}}</span>
+                                </div>
+                                <div class="pattern-stat">
+                                    <span class="stat-label">Impacto</span>
+                                    <span class="stat-value">{{pattern.impact}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heatmap Placeholder -->
+                <div class="heatmap-section" ng-if="cacheAnalysis.heatmap">
+                    <h3 class="subsection-title">
+                        <i class="fas fa-fire-alt"></i>
+                        Mapa de Calor - Áreas Mais Acessadas
+                    </h3>
+                    <div class="heatmap-container" id="cache-heatmap">
+                        <!-- D3.js heatmap visualization will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="analysis-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Recomendações
+                    </h2>
+                    <button class="action-btn small" ng-click="getCacheRecommendations()" 
+                            ng-disabled="loading.recommendations">
+                        <i class="fas fa-sync-alt" ng-class="{'fa-spin': loading.recommendations}"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+
+                <div ng-if="cacheAnalysis.recommendations.length === 0" class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Nenhuma recomendação no momento. O cache está otimizado!</p>
+                </div>
+
+                <div ng-if="cacheAnalysis.recommendations.length > 0" class="recommendations-list">
+                    <div class="recommendation-card" ng-repeat="rec in cacheAnalysis.recommendations"
+                         ng-class="'priority-' + rec.priority">
+                        <div class="rec-icon">
+                            <i class="fas" ng-class="rec.icon"></i>
+                        </div>
+                        <div class="rec-content">
+                            <h4 class="rec-title">{{rec.title}}</h4>
+                            <p class="rec-description">{{rec.description}}</p>
+                            <div class="rec-actions" ng-if="rec.actions">
+                                <button class="action-btn small" ng-repeat="action in rec.actions"
+                                        ng-click="executeRecommendation(rec.id, action.id)">
+                                    <i class="fas" ng-class="action.icon"></i>
+                                    <span>{{action.label}}</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="rec-priority">
+                            <span class="priority-label">{{rec.priority}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos específicos para o Cache Manager Tiles -->
+<style>
+/* Container Principal */
+.admin-cache-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.admin-header {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.header-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #0052a3;
+    transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Main Content */
+.admin-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Status Section */
+.status-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.stat-card.primary {
+    border-left: 4px solid #667eea;
+}
+
+.stat-card.warning {
+    border-left: 4px solid #f5576c;
+}
+
+.stat-card.info {
+    border-left: 4px solid #4facfe;
+}
+
+.stat-card.success {
+    border-left: 4px solid #43e97b;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-card.primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.warning .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card.info .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card.success .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+.stat-label {
+    color: #718096;
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-percentage {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #48bb78;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.loading-spinner {
+    font-size: 3rem;
+    color: #4a5568;
+    margin-bottom: 1rem;
+}
+
+.loading-text {
+    color: #718096;
+    font-size: 1.125rem;
+}
+
+/* Forms and Inputs */
+.form-control {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #2d3748;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+/* Tables */
+.admin-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.admin-table th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-table td {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    color: #2d3748;
+}
+
+.admin-table tr:hover {
+    background: #f7fafc;
+}
+
+/* Tabs Navigation */
+.admin-tabs {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 76px;
+    z-index: 50;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-around;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 1rem 1.5rem;
+    color: #6c757d;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-btn:hover {
+    color: #495057;
+}
+
+.tab-btn.active {
+    color: #0066cc;
+    border-bottom-color: #0066cc;
+}
+
+/* Tab Content */
+.tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Performance Grid */
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.perf-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.perf-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.metric-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Task Cards */
+.task-card {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.task-card.status-processing {
+    border-left: 4px solid #0066cc;
+}
+
+.task-card.status-completed {
+    border-left: 4px solid #28a745;
+}
+
+.task-card.status-failed {
+    border-left: 4px solid #dc3545;
+}
+
+.task-header {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.task-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+}
+
+.task-meta {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.task-body {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.config-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+    color: #495057;
+}
+
+.config-list li {
+    padding: 0.25rem 0;
+}
+
+/* Warmup Form */
+.warmup-form {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.form-section {
+    margin: 2rem 0;
+}
+
+.form-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-separator {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Pattern Cards */
+.patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.pattern-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pattern-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.pattern-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.pattern-badge.geographic {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.pattern-badge.temporal {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.pattern-badge.usage {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+/* Recommendation Cards */
+.recommendation-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.recommendation-card.priority-high {
+    border-left: 4px solid #dc3545;
+}
+
+.recommendation-card.priority-medium {
+    border-left: 4px solid #ffc107;
+}
+
+.recommendation-card.priority-low {
+    border-left: 4px solid #28a745;
+}
+
+.rec-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.rec-content {
+    flex: 1;
+}
+
+.rec-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+}
+
+.rec-description {
+    color: #6c757d;
+    margin: 0 0 1rem 0;
+}
+
+.rec-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.rec-priority {
+    flex-shrink: 0;
+}
+
+.priority-label {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+/* Heatmap Container */
+.heatmap-container {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    min-height: 400px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Layer Badge */
+.layer-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.layer-badge.landsat {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.layer-badge.sentinel {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Campaigns Section Styles */
+.campaigns-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 1.5rem;
+}
+
+.search-container {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.search-input-group {
+    position: relative;
+    max-width: 400px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    z-index: 1;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 40px 10px 35px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0066cc;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.search-clear:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.search-results {
+    margin-top: 8px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.items-per-page label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
+    color: #495057;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.campaigns-table-container {
+    overflow-x: auto;
+}
+
+.campaigns-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.campaigns-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.campaigns-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.campaign-row:hover {
+    background: #f8f9fa;
+}
+
+.campaign-info {
+    min-width: 200px;
+}
+
+.campaign-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.campaign-years {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.campaign-stat {
+    text-align: center;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.campaign-stat.success {
+    color: #28a745;
+}
+
+.campaign-stat.danger {
+    color: #dc3545;
+}
+
+.campaign-percentage {
+    text-align: center;
+    min-width: 100px;
+}
+
+.percentage-value {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.percentage-value.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.percentage-value.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.percentage-value.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.campaign-progress {
+    min-width: 150px;
+    padding: 0 8px;
+}
+
+.progress-container {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar.progress-success {
+    background: linear-gradient(90deg, #28a745, #34ce57);
+}
+
+.progress-bar.progress-warning {
+    background: linear-gradient(90deg, #ffc107, #ffcd39);
+}
+
+.progress-bar.progress-danger {
+    background: linear-gradient(90deg, #dc3545, #e55353);
+}
+
+.pagination-container {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.pagination-btn {
+    background: white;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    min-width: 38px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(.disabled) {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.pagination-btn.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.pagination-btn.disabled {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.badge-count {
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Missing styles */
+.management-section,
+.monitoring-section,
+.analysis-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: flex;
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.col-md-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+}
+
+.col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+.form-label {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn.primary {
+    background: #0066cc;
+}
+
+.action-btn.danger {
+    background: #dc3545;
+}
+
+.action-btn.danger:hover {
+    background: #c82333;
+}
+
+.action-btn.small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.subsection-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 1.5rem 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-subtitle {
+    color: #718096;
+    font-size: 1rem;
+    margin: 0.5rem 0 0 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #718096;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.alert-box {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert-box.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.form-check {
+    display: block;
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.form-check-input {
+    position: absolute;
+    margin-top: 0.3rem;
+    margin-left: -1.25rem;
+}
+
+.form-check-label {
+    display: inline-block;
+    color: #495057;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.radio-option:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.radio-option input[type="radio"] {
+    margin-top: 0.25rem;
+    margin-right: 0.75rem;
+}
+
+.radio-content {
+    flex: 1;
+}
+
+.radio-label {
+    font-weight: 600;
+    color: #2d3748;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.radio-desc {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.conditional-fields {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.clear-form {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.task-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.task-progress {
+    margin-top: 1.5rem;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.progress-label {
+    color: #495057;
+    font-weight: 500;
+}
+
+.progress-percentage {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    background: #e9ecef;
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #0066cc;
+    transition: width 0.3s ease;
+}
+
+.progress-details {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.error-count {
+    color: #dc3545;
+}
+
+.task-result,
+.task-error {
+    margin-top: 1.5rem;
+}
+
+.result-success {
+    color: #28a745;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.error-message {
+    color: #dc3545;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.result-stats {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .tabs-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        margin-right: 0;
+        margin-left: 0;
+    }
+    
+    .form-group {
+        padding-right: 0;
+        padding-left: 0;
+    }
+    
+    .col-md-3,
+    .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Fix for Bootstrap 3 compatibility */
+.input-sm {
+    height: 30px;
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+</style>

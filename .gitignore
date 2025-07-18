@@ -45,4 +45,5 @@ src/server/bin/GeoJSON/
 *.pkl
 *.pkl
 src/server/undefined
+src/server/package-lock.json
 

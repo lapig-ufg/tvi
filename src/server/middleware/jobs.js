@@ -80,7 +80,7 @@ module.exports = function(app) {
 	}
 
 	/**
-	 * Job para processar cache de imagens de forma inteligente
+	 * Job para processar cache de imagens de forma inteligente - REFATORADO PARA NOVA API
 	 */
 	Jobs.smartCacheProcessor = function(params, logStream, callback) {
 		writeLog(logStream, 'Iniciando processamento inteligente de cache...');
@@ -89,6 +89,9 @@ module.exports = function(app) {
 		var campaignCollection = app.repository.collections.campaign;
 		var cacheConfigCollection = app.repository.collections.cacheConfig;
 		var request = require('request');
+		
+		// Get tiles API service
+		const tilesApi = app.services.tilesApiService;
 		
 		// Função para emitir eventos via socket
 		var emitCacheUpdate = function(event, data) {
@@ -121,14 +124,16 @@ module.exports = function(app) {
 			var maxPointsPerRun = config.maxPointsPerRun || 50; // Limite por execução
 			var simulate = config.simulate !== false; // Por padrão simula
 			var continueWhileHasWork = config.continueWhileHasWork !== false; // Continuar executando enquanto houver trabalho
+			var useNewApi = config.useNewApi === true; // Usar nova API de tiles
 			
-			writeLog(logStream, `Configurações: batchSize=${batchSize}, maxPointsPerRun=${maxPointsPerRun}, simulate=${simulate}, continueWhileHasWork=${continueWhileHasWork}`);
+			writeLog(logStream, `Configurações: batchSize=${batchSize}, maxPointsPerRun=${maxPointsPerRun}, simulate=${simulate}, continueWhileHasWork=${continueWhileHasWork}, useNewApi=${useNewApi}`);
 		
 		// Emitir evento de início do job
 		emitCacheUpdate('cache-job-started', {
 			simulate: simulate,
 			batchSize: batchSize,
-			maxPointsPerRun: maxPointsPerRun
+			maxPointsPerRun: maxPointsPerRun,
+			useNewApi: useNewApi
 		});
 		
 		// Buscar pontos não cacheados por prioridade
@@ -188,12 +193,14 @@ module.exports = function(app) {
 			emitCacheUpdate('cache-points-found', {
 				totalPoints: points.length,
 				totalBatches: Math.ceil(points.length / batchSize),
-				simulate: simulate
+				simulate: simulate,
+				useNewApi: useNewApi
 			});
 			
 			// Processar em batches
 			var processedCount = 0;
 			var errorCount = 0;
+			var tasksQueued = [];
 			
 			var processBatch = function(batchPoints, next) {
 				writeLog(logStream, `Processando batch de ${batchPoints.length} pontos...`);
@@ -202,48 +209,76 @@ module.exports = function(app) {
 					return new Promise(async function(resolve) {
 						try {
 							var campaign = point.campaignInfo;
-							var imagesProcessed = 0;
 							
-							// Processar todas as imagens do ponto
-							for (var year = campaign.initialYear; year <= campaign.finalYear; year++) {
-								for (var period of ['DRY', 'WET']) {
-									if (simulate) {
-										writeLog(logStream, `[SIMULAÇÃO] ${point._id} - Landsat ${year} ${period}`);
-										await sleep(50); // Simular processamento
-									} else {
-										try {
-											await simulateLeafletRequest(point, period, year, campaign, logStream);
-											writeLog(logStream, `[REAL] Cacheado ${point._id} - Landsat ${year} ${period}`);
-										} catch (error) {
-											writeLog(logStream, `[ERRO] ${point._id} - Landsat ${year} ${period}: ${error.message}`);
-										}
-									}
-									imagesProcessed++;
+							// Se usar nova API e não for simulação, enviar para fila
+							if (useNewApi && !simulate) {
+								try {
+									const result = await tilesApi.startPointCache(point._id);
+									writeLog(logStream, `[NOVA API] Ponto ${point._id} enviado para fila - Task ID: ${result.data && result.data.task_id}`);
+									
+									tasksQueued.push({
+										pointId: point._id,
+										taskId: result.data && result.data.task_id
+									});
+									
+									emitCacheUpdate('cache-point-queued', {
+										pointId: point._id,
+										taskId: result.data && result.data.task_id,
+										source: 'new-api'
+									});
+									
+									processedCount++;
+									resolve();
+								} catch (apiError) {
+									writeLog(logStream, `[ERRO API] Falha ao enviar ponto ${point._id} para fila: ${apiError.message}`);
+									errorCount++;
+									resolve();
 								}
-							}
-							
-							// Marcar ponto como cacheado se não for simulação
-							if (!simulate) {
-								pointsCollection.updateOne(
-									{ _id: point._id },
-									{ 
-										$set: { 
-											cached: true, 
-											cachedAt: new Date(),
-											cachedBy: 'job'
-										} 
-									},
-									function(err) {
-										if (err) {
-											writeLog(logStream, `Erro ao marcar ponto ${point._id} como cacheado: ${err.message}`);
+							} else {
+								// Usar método legado ou simulação
+								var imagesProcessed = 0;
+								
+								// Processar todas as imagens do ponto
+								for (var year = campaign.initialYear; year <= campaign.finalYear; year++) {
+									for (var period of ['DRY', 'WET']) {
+										if (simulate) {
+											writeLog(logStream, `[SIMULAÇÃO] ${point._id} - Landsat ${year} ${period}`);
+											await sleep(50); // Simular processamento
+										} else {
+											try {
+												await simulateLeafletRequest(point, period, year, campaign, logStream);
+												writeLog(logStream, `[REAL] Cacheado ${point._id} - Landsat ${year} ${period}`);
+											} catch (error) {
+												writeLog(logStream, `[ERRO] ${point._id} - Landsat ${year} ${period}: ${error.message}`);
+											}
 										}
+										imagesProcessed++;
 									}
-								);
+								}
+								
+								// Marcar ponto como cacheado se não for simulação
+								if (!simulate) {
+									pointsCollection.updateOne(
+										{ _id: point._id },
+										{ 
+											$set: { 
+												cached: true, 
+												cachedAt: new Date(),
+												cachedBy: 'job-legacy'
+											} 
+										},
+										function(err) {
+											if (err) {
+												writeLog(logStream, `Erro ao marcar ponto ${point._id} como cacheado: ${err.message}`);
+											}
+										}
+									);
+								}
+								
+								processedCount++;
+								writeLog(logStream, `Ponto ${point._id} processado (${imagesProcessed} imagens)`);
+								resolve();
 							}
-							
-							processedCount++;
-							writeLog(logStream, `Ponto ${point._id} processado (${imagesProcessed} imagens)`);
-							resolve();
 							
 						} catch (error) {
 							errorCount++;
@@ -261,6 +296,7 @@ module.exports = function(app) {
 						processedCount: processedCount,
 						errorCount: errorCount,
 						totalPoints: points.length,
+						tasksQueued: tasksQueued.length,
 						progress: Math.round((processedCount / points.length) * 100)
 					});
 					
@@ -280,12 +316,18 @@ module.exports = function(app) {
 				if (currentBatch >= batches.length) {
 					writeLog(logStream, `Processamento concluído: ${processedCount} sucessos, ${errorCount} erros`);
 					
+					if (useNewApi && !simulate && tasksQueued.length > 0) {
+						writeLog(logStream, `${tasksQueued.length} pontos enviados para fila de processamento da nova API`);
+					}
+					
 					// Emitir evento de conclusão do ciclo
 					emitCacheUpdate('cache-job-completed', {
 						totalProcessed: processedCount,
 						totalErrors: errorCount,
 						totalPoints: points.length,
+						tasksQueued: tasksQueued.length,
 						simulate: simulate,
+						useNewApi: useNewApi,
 						finalProgress: 100
 					});
 					
@@ -339,6 +381,9 @@ module.exports = function(app) {
 			// Visparam padrão ou da campaign
 			var visparam = campaign.visparam || 'landsat-tvi-false';
 			
+			// Se tiver visParamsEnable, processar todos
+			var visParams = campaign.visParamsEnable || [visparam];
+			
 			var requests = [];
 			var subdomainIndex = Math.floor(Math.random() * subdomains.length); // Iniciar com subdomain aleatório
 			
@@ -351,65 +396,113 @@ module.exports = function(app) {
 				campaign: campaign._id,
 				period: period,
 				year: year,
-				totalTiles: tiles.length
+				totalTiles: tiles.length * visParams.length
 			});
 			
 			var processedTiles = 0;
 			var errorTiles = 0;
 			
-			for (let tile of tiles) {
-				// Distribuir entre subdomains de forma circular
-				var subdomain = subdomains[subdomainIndex % subdomains.length];
-				subdomainIndex++;
-				
-				// URL seguindo padrão do Landsat
-				var tileUrl = `https://tm${subdomain}.lapig.iesa.ufg.br/api/layers/landsat/${tile.x}/${tile.y}/${targetZoom}` +
-							 `?period=${period}` +
-							 `&year=${year}` +
-							 `&visparam=${visparam}`;
-				
-				requests.push(
-					new Promise((resolve) => {
-						request({
-							url: tileUrl,
-							method: 'GET',
-							timeout: 30000,
-							headers: {
-								'User-Agent': 'TVI-CacheManager/1.0'
-							}
-						}, (error, response) => {
-							if (error) {
-								errorTiles++;
-								writeLog(logStream, `[ERRO] ${tileUrl}: ${error.message}`);
-								emitCacheUpdate('cache-tile-error', {
-									pointId: point._id,
-									url: tileUrl,
-									error: error.message
-								});
+			// Verificar se deve usar nova API para tiles
+			var useNewUrls = config.tilesApi && config.tilesApi.baseUrl && useNewApi;
+			
+			for (let visParam of visParams) {
+				for (let tile of tiles) {
+					if (useNewUrls) {
+						// Usar nova API
+						try {
+							const params = {
+								period: period,
+								year: year,
+								visparam: visParam
+							};
+							
+							// Determinar se é Landsat ou Sentinel baseado no visparam
+							let tileData;
+							if (visParam.includes('landsat')) {
+								tileData = await tilesApi.getLandsatTile(tile.x, tile.y, targetZoom, params);
 							} else {
-								processedTiles++;
-								writeLog(logStream, `[OK] ${tileUrl} - Status: ${response.statusCode}`);
-								emitCacheUpdate('cache-tile-success', {
-									pointId: point._id,
-									url: tileUrl,
-									status: response.statusCode
-								});
+								tileData = await tilesApi.getSentinelTile(tile.x, tile.y, targetZoom, params);
 							}
-							resolve();
-						});
-					})
-				);
+							
+							processedTiles++;
+							writeLog(logStream, `[OK] Nova API - ${tile.x}/${tile.y}/${targetZoom} - ${visParam}`);
+							
+							emitCacheUpdate('cache-tile-success', {
+								pointId: point._id,
+								tile: `${tile.x}/${tile.y}/${targetZoom}`,
+								visparam: visParam,
+								source: 'new-api'
+							});
+						} catch (error) {
+							errorTiles++;
+							writeLog(logStream, `[ERRO] Nova API - ${tile.x}/${tile.y}/${targetZoom} - ${visParam}: ${error.message}`);
+							
+							emitCacheUpdate('cache-tile-error', {
+								pointId: point._id,
+								tile: `${tile.x}/${tile.y}/${targetZoom}`,
+								visparam: visParam,
+								error: error.message,
+								source: 'new-api'
+							});
+						}
+					} else {
+						// Usar URLs legadas
+						// Distribuir entre subdomains de forma circular
+						var subdomain = subdomains[subdomainIndex % subdomains.length];
+						subdomainIndex++;
+						
+						// URL seguindo padrão do Landsat
+						var tileUrl = `https://tm${subdomain}.lapig.iesa.ufg.br/api/layers/landsat/${tile.x}/${tile.y}/${targetZoom}` +
+									 `?period=${period}` +
+									 `&year=${year}` +
+									 `&visparam=${visParam}`;
+						
+						requests.push(
+							new Promise((resolve) => {
+								request({
+									url: tileUrl,
+									method: 'GET',
+									timeout: 30000,
+									headers: {
+										'User-Agent': 'TVI-CacheManager/1.0'
+									}
+								}, (error, response) => {
+									if (error) {
+										errorTiles++;
+										writeLog(logStream, `[ERRO] ${tileUrl}: ${error.message}`);
+										emitCacheUpdate('cache-tile-error', {
+											pointId: point._id,
+											url: tileUrl,
+											error: error.message
+										});
+									} else {
+										processedTiles++;
+										writeLog(logStream, `[OK] ${tileUrl} - Status: ${response.statusCode}`);
+										emitCacheUpdate('cache-tile-success', {
+											pointId: point._id,
+											url: tileUrl,
+											status: response.statusCode
+										});
+									}
+									resolve();
+								});
+							})
+						);
+					}
+				}
 			}
 			
-			// Executar todas as requisições em paralelo com limite
-			var batchSize = 20; // Aumentar batch size já que estamos usando apenas zoom 13
-			for (let i = 0; i < requests.length; i += batchSize) {
-				var batch = requests.slice(i, i + batchSize);
-				await Promise.all(batch);
-				
-				// Pequena pausa entre batches para não sobrecarregar
-				if (i + batchSize < requests.length) {
-					await sleep(200); // Reduzir tempo de espera
+			// Se estiver usando URLs legadas, executar requisições em paralelo com limite
+			if (!useNewUrls && requests.length > 0) {
+				var batchSize = 20; // Aumentar batch size já que estamos usando apenas zoom 13
+				for (let i = 0; i < requests.length; i += batchSize) {
+					var batch = requests.slice(i, i + batchSize);
+					await Promise.all(batch);
+					
+					// Pequena pausa entre batches para não sobrecarregar
+					if (i + batchSize < requests.length) {
+						await sleep(200); // Reduzir tempo de espera
+					}
 				}
 			}
 			
@@ -421,10 +514,11 @@ module.exports = function(app) {
 				year: year,
 				processedTiles: processedTiles,
 				errorTiles: errorTiles,
-				totalTiles: tiles.length
+				totalTiles: tiles.length * visParams.length,
+				source: useNewUrls ? 'new-api' : 'legacy'
 			});
 			
-			writeLog(logStream, `Concluído: ${point._id} - ${period}/${year} - ${processedTiles}/${tiles.length} tiles (Zoom 13)`);
+			writeLog(logStream, `Concluído: ${point._id} - ${period}/${year} - ${processedTiles}/${tiles.length * visParams.length} tiles (Zoom 13)`);
 		}
 		
 		function getTilesAroundPoint(lat, lon, zoom, radius = 1) {
@@ -723,4 +817,4 @@ module.exports = function(app) {
 
 	return Jobs;
 	
-}; 
+};

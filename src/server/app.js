@@ -147,6 +147,10 @@ app.middleware.repository.init(() => {
 			.then('routes')
 			.into(app);
 		
+		// Setup Swagger documentation
+		const swaggerMiddleware = app.middleware.swagger;
+		swaggerMiddleware.setup();
+		
 		// IMPORTANTE: Os handlers de erro devem vir DEPOIS das rotas
 		// Handler específico para erros de upload
 		app.use(errorHandler.uploadErrorHandler);

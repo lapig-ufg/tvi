@@ -33,9 +33,9 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/campaign-management.tpl.html',
 			reloadOnSearch: false
 		})
-		.when('/admin/cache', {
-			controller: 'CacheManagerController',
-			templateUrl: 'views/cache-manager.tpl.html',
+		.when('/admin/cache-tiles', {
+			controller: 'CacheManagerTilesController',
+			templateUrl: 'views/cache-manager-tiles.tpl.html',
 			reloadOnSearch: false
 		})
 		.when('/admin/home', {

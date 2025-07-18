@@ -50,16 +50,34 @@ class TilesApiService {
     }
 
     // Helper method to get auth from request session
-    getAuthFromRequest(req) {
+    async getAuthFromRequest(req) {
         // Check if user is super-admin from session
         if (req && req.session && req.session.admin && req.session.admin.superAdmin) {
             const superAdmin = req.session.admin.superAdmin;
-            // Get password from users collection if needed
-            return {
-                username: superAdmin.username || superAdmin.email,
-                password: superAdmin.password
-            };
+            
+            // Fetch password from database for security
+            try {
+                const usersCollection = this.app.repository.collections.users;
+                const user = await usersCollection.findOne({ 
+                    username: superAdmin.username,
+                    role: 'super-admin'
+                });
+                
+                if (user && user.password) {
+                    return {
+                        username: superAdmin.username || superAdmin.email,
+                        password: user.password // Get password from DB, not session
+                    };
+                }
+            } catch (error) {
+                await this.logger.error('Error fetching user password from DB', {
+                    module: 'tilesApiService',
+                    function: 'getAuthFromRequest',
+                    metadata: { error: error.message, username: superAdmin.username }
+                });
+            }
         }
+        
         // If no super-admin in session, check for authenticated user from cacheApiAuth middleware
         if (req && req.authenticatedUser) {
             return {
@@ -80,9 +98,9 @@ class TilesApiService {
     }
 
     // Create request config with auth
-    createRequestConfig(options = {}, req = null) {
+    async createRequestConfig(options = {}, req = null) {
         const config = { ...options };
-        const auth = this.getAuthFromRequest(req);
+        const auth = await this.getAuthFromRequest(req);
         if (auth) {
             config.auth = auth;
         }
@@ -92,7 +110,7 @@ class TilesApiService {
     // Capabilities endpoints
     async getCapabilities(req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(this.config.endpoints.capabilities, config);
             return response.data;
         } catch (error) {
@@ -107,7 +125,7 @@ class TilesApiService {
 
     async getCapabilitiesLegacy(req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(this.config.endpoints.capabilitiesLegacy, config);
             return response.data;
         } catch (error) {
@@ -124,7 +142,7 @@ class TilesApiService {
     async getLandsatTile(x, y, z, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.landsatTiles, { x, y, z });
-            const config = this.createRequestConfig({ 
+            const config = await this.createRequestConfig({ 
                 params,
                 responseType: 'arraybuffer'
             }, req);
@@ -143,7 +161,7 @@ class TilesApiService {
     async getSentinelTile(x, y, z, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.sentinelTiles, { x, y, z });
-            const config = this.createRequestConfig({ 
+            const config = await this.createRequestConfig({ 
                 params,
                 responseType: 'arraybuffer'
             }, req);
@@ -163,7 +181,7 @@ class TilesApiService {
     async getLandsatTimeseries(lat, lon, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.landsatTimeseries, { lat, lon });
-            const config = this.createRequestConfig({ params }, req);
+            const config = await this.createRequestConfig({ params }, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -179,7 +197,7 @@ class TilesApiService {
     async getSentinelTimeseries(lat, lon, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.sentinelTimeseries, { lat, lon });
-            const config = this.createRequestConfig({ params }, req);
+            const config = await this.createRequestConfig({ params }, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -195,7 +213,7 @@ class TilesApiService {
     async getModisTimeseries(lat, lon, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.modisTimeseries, { lat, lon });
-            const config = this.createRequestConfig({ params }, req);
+            const config = await this.createRequestConfig({ params }, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -211,7 +229,7 @@ class TilesApiService {
     async getNddiTimeseries(lat, lon, params = {}, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.nddiTimeseries, { lat, lon });
-            const config = this.createRequestConfig({ params }, req);
+            const config = await this.createRequestConfig({ params }, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -227,7 +245,7 @@ class TilesApiService {
     // Cache management endpoints
     async getCacheStats(req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(this.config.endpoints.cacheStats, config);
             return response.data;
         } catch (error) {
@@ -242,7 +260,7 @@ class TilesApiService {
 
     async clearCache(params = {}, req = null) {
         try {
-            const config = this.createRequestConfig({ params }, req);
+            const config = await this.createRequestConfig({ params }, req);
             const response = await this.client.delete(this.config.endpoints.cacheClear, config);
             return response.data;
         } catch (error) {
@@ -257,7 +275,7 @@ class TilesApiService {
 
     async warmupCache(data, req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.post(this.config.endpoints.cacheWarmup, data, config);
             return response.data;
         } catch (error) {
@@ -272,7 +290,7 @@ class TilesApiService {
 
     async startPointCache(pointId, req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.post(this.config.endpoints.cachePointStart, { point_id: pointId }, config);
             return response.data;
         } catch (error) {
@@ -287,7 +305,7 @@ class TilesApiService {
 
     async startCampaignCache(campaignId, batchSize = 5, req = null) {
         try {
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.post(this.config.endpoints.cacheCampaignStart, {
                 campaign_id: campaignId,
                 batch_size: batchSize
@@ -306,7 +324,7 @@ class TilesApiService {
     async getPointCacheStatus(pointId, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.cachePointStatus, { point_id: pointId });
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -322,7 +340,7 @@ class TilesApiService {
     async getCampaignCacheStatus(campaignId, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.cacheCampaignStatus, { campaign_id: campaignId });
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -338,7 +356,7 @@ class TilesApiService {
     async getTaskStatus(taskId, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.cacheTaskStatus, { task_id: taskId });
-            const config = this.createRequestConfig({}, req);
+            const config = await this.createRequestConfig({}, req);
             const response = await this.client.get(url, config);
             return response.data;
         } catch (error) {
@@ -346,6 +364,193 @@ class TilesApiService {
                 module: 'tilesApiService',
                 function: 'getTaskStatus',
                 metadata: { error: error.message, taskId }
+            });
+            throw error;
+        }
+    }
+
+    // Analyze cache patterns
+    async analyzeCachePatterns(days = 7, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheAnalyzePatterns || '/api/cache/analyze-patterns');
+            const config = await this.createRequestConfig({ params: { days } }, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error analyzing cache patterns', {
+                module: 'tilesApiService',
+                function: 'analyzeCachePatterns',
+                metadata: { error: error.message, days }
+            });
+            throw error;
+        }
+    }
+
+    // Get cache recommendations
+    async getCacheRecommendations(req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheRecommendations || '/api/cache/recommendations');
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching cache recommendations', {
+                module: 'tilesApiService',
+                function: 'getCacheRecommendations',
+                metadata: { error: error.message }
+            });
+            throw error;
+        }
+    }
+
+    // Get active tasks
+    async getActiveTasks(req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheActiveTasks || '/api/cache/tasks/active');
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching active tasks', {
+                module: 'tilesApiService',
+                function: 'getActiveTasks',
+                metadata: { error: error.message }
+            });
+            throw error;
+        }
+    }
+
+    // Cancel task
+    async cancelTask(taskId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheCancelTask || '/api/cache/tasks/{task_id}', { task_id: taskId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.delete(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error canceling task', {
+                module: 'tilesApiService',
+                function: 'cancelTask',
+                metadata: { error: error.message, taskId }
+            });
+            throw error;
+        }
+    }
+
+    // Get point cache status
+    async getPointCacheStatus(pointId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cachePointStatus || '/api/cache/point/{point_id}/status', { point_id: pointId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching point cache status', {
+                module: 'tilesApiService',
+                function: 'getPointCacheStatus',
+                metadata: { error: error.message, pointId }
+            });
+            throw error;
+        }
+    }
+
+    // Get campaign cache status
+    async getCampaignCacheStatus(campaignId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheCampaignStatus || '/api/cache/campaign/{campaign_id}/status', { campaign_id: campaignId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching campaign cache status', {
+                module: 'tilesApiService',
+                function: 'getCampaignCacheStatus',
+                metadata: { error: error.message, campaignId }
+            });
+            throw error;
+        }
+    }
+
+    // Clear point cache
+    async clearPointCache(pointId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheClearPoint || '/api/cache/point/{point_id}', { point_id: pointId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.delete(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error clearing point cache', {
+                module: 'tilesApiService',
+                function: 'clearPointCache',
+                metadata: { error: error.message, pointId }
+            });
+            throw error;
+        }
+    }
+
+    // Clear campaign cache
+    async clearCampaignCache(campaignId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheClearCampaign || '/api/cache/campaign/{campaign_id}', { campaign_id: campaignId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.delete(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error clearing campaign cache', {
+                module: 'tilesApiService',
+                function: 'clearCampaignCache',
+                metadata: { error: error.message, campaignId }
+            });
+            throw error;
+        }
+    }
+
+    // Generate megatile
+    async getMegatile(layer, x, y, z, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheMegatile || '/api/aggregation/megatile/{layer}/{x}/{y}/{z}', { layer, x, y, z });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error generating megatile', {
+                module: 'tilesApiService',
+                function: 'getMegatile',
+                metadata: { error: error.message, layer, x, y, z }
+            });
+            throw error;
+        }
+    }
+
+    // Generate sprite sheet
+    async generateSpriteSheet(data, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheSpriteGenerate || '/api/aggregation/sprites/generate');
+            const config = await this.createRequestConfig(data, req);
+            const response = await this.client.post(url, data, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error generating sprite sheet', {
+                module: 'tilesApiService',
+                function: 'generateSpriteSheet',
+                metadata: { error: error.message }
+            });
+            throw error;
+        }
+    }
+
+    // Get sprite sheet status
+    async getSpriteSheetStatus(spriteId, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.cacheSpriteStatus || '/api/aggregation/sprites/{sprite_id}/status', { sprite_id: spriteId });
+            const config = await this.createRequestConfig({}, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching sprite sheet status', {
+                module: 'tilesApiService',
+                function: 'getSpriteSheetStatus',
+                metadata: { error: error.message, spriteId }
             });
             throw error;
         }

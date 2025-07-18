@@ -98,7 +98,9 @@ module.exports = function(app) {
             }
             req.session.admin.superAdmin = {
                 id: user._id,
-                username: user.username
+                username: user.username,
+                email: user.email
+                // Password NOT stored in session for security
             };
             
             await logger.info('Admin login successful', {
@@ -112,7 +114,9 @@ module.exports = function(app) {
                 success: true, 
                 user: { 
                     id: user._id, 
-                    username: user.username 
+                    username: user.username,
+                    email: user.email
+                    // Never return password in response
                 } 
             });
         } catch (error) {
@@ -194,7 +198,12 @@ module.exports = function(app) {
                 
                 res.json({ 
                     authenticated: true, 
-                    user: req.session.admin.superAdmin 
+                    user: {
+                        id: req.session.admin.superAdmin.id,
+                        username: req.session.admin.superAdmin.username,
+                        email: req.session.admin.superAdmin.email
+                        // Never expose password to frontend
+                    }
                 });
             } else {
                 await logger.warn('Admin auth check - not authenticated', {
