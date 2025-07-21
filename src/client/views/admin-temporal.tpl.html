@@ -943,30 +943,45 @@
                    ng-class="{rotated: accordions.maps}"></i>
             </div>
             <div class="accordion-content" ng-class="{active: accordions.maps}">
-                <!-- Landsat Visparam Controls (igual ao supervisor) -->
-                <div ng-show="!isSentinel && hasVisParam && point" class="visparam-controls">
-                    <div class="visparam-option">
-                        <input type="radio" 
-                               id="visNatural"
-                               ng-model="landsatVisparam" 
-                               value="landsat-tvi-true"
-                               ng-change="updateLandsatVisparam()">
-                        <label for="visNatural">{{ 'SUPERVISOR.MAP.NATURAL_COLOR' | i18n }}</label>
+                <!-- Landsat Visparam Controls -->
+                <div ng-show="!isSentinel && point" class="visparam-controls">
+                    <!-- Seletor dropdown se houver múltiplas opções configuradas na campanha -->
+                    <div ng-show="getAvailableVisParams().length > 1" style="margin-bottom: 20px;">
+                        <label style="font-size: 1.375rem; font-weight: 600; color: #374151; margin-bottom: 10px; display: block;">
+                            Parâmetro de Visualização:
+                        </label>
+                        <select class="form-control" 
+                                ng-model="landsatVisparam" 
+                                ng-change="updateLandsatVisparam()"
+                                ng-options="vp.name as vp.display_name for vp in getAvailableVisParams()"
+                                style="width: 100%; max-width: 400px; font-size: 1.375rem; padding: 8px 12px;">
+                        </select>
                     </div>
-                    <div class="visparam-option">
-                        <input type="radio" 
-                               id="visAgri"
-                               ng-model="landsatVisparam" 
-                               value="landsat-tvi-agri"
-                               ng-change="updateLandsatVisparam()">
-                        <label for="visAgri">{{ 'SUPERVISOR.MAP.AGRICULTURE' | i18n }}</label>
-                    </div>
-                    <div class="visparam-option">
-                        <input type="radio" 
-                               id="visFalse"
-                               ng-model="landsatVisparam" 
-                               value="landsat-tvi-false"
-                               ng-change="updateLandsatVisparam()">
+                    
+                    <!-- Radio buttons para compatibilidade (se houver poucas opções ou config antiga) -->
+                    <div ng-show="hasVisParam && getAvailableVisParams().length <= 1">
+                        <div class="visparam-option">
+                            <input type="radio" 
+                                   id="visNatural"
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-true"
+                                   ng-change="updateLandsatVisparam()">
+                            <label for="visNatural">{{ 'SUPERVISOR.MAP.NATURAL_COLOR' | i18n }}</label>
+                        </div>
+                        <div class="visparam-option">
+                            <input type="radio" 
+                                   id="visAgri"
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-agri"
+                                   ng-change="updateLandsatVisparam()">
+                            <label for="visAgri">{{ 'SUPERVISOR.MAP.AGRICULTURE' | i18n }}</label>
+                        </div>
+                        <div class="visparam-option">
+                            <input type="radio" 
+                                   id="visFalse"
+                                   ng-model="landsatVisparam" 
+                                   value="landsat-tvi-false"
+                                   ng-change="updateLandsatVisparam()">
                         <label for="visFalse">{{ 'SUPERVISOR.MAP.FALSE_COLOR' | i18n }}</label>
                     </div>
                 </div>
@@ -1043,7 +1058,7 @@
                             </div>
                             
                             <!-- Planet Button -->
-                            <span style="position: absolute; top: 1rem; right: 1rem; z-index: 20;" ng-if="hasMosaicForYear(map.date | date: 'yyyy')">
+                            <span style="position: absolute; top: 1rem; right: 1rem; z-index: 20;" ng-if="hasMosaicForYear(map.year)">
                                 <button class="action-btn info" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
                                     <i class="fa fa-camera"></i>
                                 </button>

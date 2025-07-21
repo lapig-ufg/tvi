@@ -931,6 +931,8 @@ module.exports = function(app) {
                 showTimeseries: campaignData.showTimeseries !== false,
                 showPointInfo: campaignData.showPointInfo !== false,
                 visParam: campaignData.visParam || null,
+                visParams: campaignData.visParams || [], // Array de visparams disponíveis
+                defaultVisParam: campaignData.defaultVisParam || null, // Visparam padrão
                 useDynamicMaps: campaignData.useDynamicMaps || false,
                 imageType: campaignData.imageType || 'landsat',
                 geojsonFile: campaignData.geojsonFile || null,

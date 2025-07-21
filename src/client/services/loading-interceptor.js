@@ -8,10 +8,31 @@ angular.module('application').factory('loadingInterceptor', function($q, $rootSc
     var activeRequests = 0;
     var loadingTimer;
     
+    // Lista de padrões de URL que devem ser ignorados pelo loading
+    var ignoredPatterns = [
+        /time-?series/i,      // Matches 'timeseries', 'time-series'
+        /\/timeseries\//i,    // Matches '/timeseries/'
+        /MOD13Q1_NDVI/i,      // Matches MODIS timeseries
+        /\/ndvi/i,            // Matches NDVI endpoints
+        /\/nddi/i,            // Matches NDDI endpoints
+        /analytics.*csv/i,    // Matches analytics CSV endpoints
+        /\/csv/i,             // Matches CSV endpoints
+        /csv-borda/i          // Matches csv-borda endpoints
+    ];
+    
+    // Função para verificar se a URL deve ser ignorada
+    function shouldIgnoreUrl(url) {
+        if (!url) return false;
+        
+        return ignoredPatterns.some(function(pattern) {
+            return pattern.test(url);
+        });
+    }
+    
     var service = {
         request: function(config) {
             // Ignorar requisições que não devem mostrar loading
-            if (config.hideLoading) {
+            if (config.hideLoading || shouldIgnoreUrl(config.url)) {
                 return config;
             }
             
@@ -30,6 +51,11 @@ angular.module('application').factory('loadingInterceptor', function($q, $rootSc
         },
         
         response: function(response) {
+            // Ignorar se a requisição foi ignorada no request
+            if (response.config && (response.config.hideLoading || shouldIgnoreUrl(response.config.url))) {
+                return response;
+            }
+            
             activeRequests--;
             
             if (activeRequests === 0) {
@@ -43,6 +69,11 @@ angular.module('application').factory('loadingInterceptor', function($q, $rootSc
         },
         
         responseError: function(rejection) {
+            // Ignorar se a requisição foi ignorada no request
+            if (rejection.config && (rejection.config.hideLoading || shouldIgnoreUrl(rejection.config.url))) {
+                return $q.reject(rejection);
+            }
+            
             activeRequests--;
             
             if (activeRequests === 0) {

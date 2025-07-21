@@ -5,8 +5,7 @@ module.exports = function (app) {
     var dashboard = app.controllers.dashboard;
     var supervisor = app.controllers.supervisor;
     var image = app.controllers.image;
-    var sentinelCapabilities = app.controllers.sentinelCapabilities;
-    var landsatCapabilities = app.controllers.landsatCapabilities;
+    var capabilities = app.controllers.capabilities;
     
     // Middleware de autenticação para admin
     var checkAdminAuth = function(req, res, next) {
@@ -519,75 +518,8 @@ module.exports = function (app) {
      */
     app.get('/service/admin/campaign/removeInspections', checkAdminAuth, supervisor.removeInspectionAdmin);
     
-    /**
-     * @swagger
-     * /service/admin/sentinel/capabilities:
-     *   get:
-     *     summary: Get Sentinel capabilities
-     *     tags: [Admin Temporal]
-     *     parameters:
-     *       - in: query
-     *         name: lon
-     *         required: true
-     *         schema:
-     *           type: number
-     *       - in: query
-     *         name: lat
-     *         required: true
-     *         schema:
-     *           type: number
-     *     responses:
-     *       200:
-     *         description: Sentinel capabilities data
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 dates:
-     *                   type: array
-     *                   items:
-     *                     type: string
-     *                 cloudCoverage:
-     *                   type: object
-     */
-    app.get('/service/admin/sentinel/capabilities', checkAdminAuth, sentinelCapabilities.getCapabilities);
-    
-    /**
-     * @swagger
-     * /service/admin/landsat/capabilities:
-     *   get:
-     *     summary: Get Landsat capabilities
-     *     tags: [Admin Temporal]
-     *     parameters:
-     *       - in: query
-     *         name: lon
-     *         required: true
-     *         schema:
-     *           type: number
-     *       - in: query
-     *         name: lat
-     *         required: true
-     *         schema:
-     *           type: number
-     *     responses:
-     *       200:
-     *         description: Landsat capabilities data
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 dates:
-     *                   type: array
-     *                   items:
-     *                     type: string
-     *                 sensors:
-     *                   type: array
-     *                   items:
-     *                     type: string
-     */
-    app.get('/service/admin/landsat/capabilities', checkAdminAuth, landsatCapabilities.getCapabilities);
+    // Novo endpoint unificado para admin
+    app.get('/service/admin/capabilities', checkAdminAuth, capabilities.publicCapabilities);
     
     /**
      * @swagger

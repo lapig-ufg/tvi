@@ -1,8 +1,8 @@
-<div class="overlay" ng-show="showloading">
-    <div class="overlay-inner">
-        <span class="loader overlay-content"></span>
-    </div>
-</div>
+<!--<div class="overlay" ng-show="showloading">-->
+<!--    <div class="overlay-inner">-->
+<!--        <span class="loader overlay-content"></span>-->
+<!--    </div>-->
+<!--</div>-->
 
 <div class="container-fluid">
     <div class="row" style="margin-top: 50px">
@@ -42,6 +42,17 @@
                                value="{{ 'TEMPORAL.TOOLS.CHANGE_PERIOD' | i18n }}">
                         <input ng-show="showPointInfo && !isObjectEmpty(point)" style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
                                value="{{ 'TEMPORAL.TOOLS.GOOGLE_EARTH' | i18n }}">
+                        
+                        <!-- Seletor de VisParam se houver múltiplas opções -->
+                        <div ng-show="availableVisParams.length > 1" style="margin-top: 10px;">
+                            <label style="color: #333; font-weight: normal;">Visualização:</label>
+                            <select class="form-control" 
+                                    ng-model="landsatVisparam" 
+                                    ng-change="updateLandsatVisparam()"
+                                    ng-options="vp.name as vp.display_name for vp in availableVisParams"
+                                    style="width: 100%; margin-top: 5px;">
+                            </select>
+                        </div>
                 </div>
             </div>
             <div class="row">
@@ -233,38 +244,29 @@
         </div>
         <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-10 col-lg-10 main-content">
             <div class="row">
-                <legend  ng-show="pointLoaded" ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                <span  ng-show="pointLoaded" ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:9px 5px 5px 5px;">
                     {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
-                </legend>
+                </span>
 
-                <!-- Seletor de visparam Landsat para página temporal - só mostra se visParam vier da campanha e o ponto estiver carregado -->
-                <div ng-show="!isSentinel && hasVisParam && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
-                    <label class="radio-visparam" style="margin-right: 10px;">
-                        <input type="radio"
-                               ng-model="landsatVisparam"
-                               value="landsat-tvi-true"
-                               ng-change="updateLandsatVisparam()">
-                        {{ 'TEMPORAL.MAP.NATURAL_COLOR' | i18n }}
-                    </label>
-                    <label class="radio-visparam" style="margin-right: 10px;">
-                        <input type="radio"
-                               ng-model="landsatVisparam"
-                               value="landsat-tvi-agri"
-                               ng-change="updateLandsatVisparam()">
-                        {{ 'TEMPORAL.MAP.AGRICULTURE' | i18n }}
-                    </label>
-                    <label class="radio-visparam">
-                        <input type="radio"
-                               ng-model="landsatVisparam"
-                               value="landsat-tvi-false"
-                               ng-change="updateLandsatVisparam()">
-                        {{ 'TEMPORAL.MAP.FALSE_COLOR' | i18n }}
-                    </label>
+                <!-- Seletor de visparam Landsat baseado nos visparams da campanha -->
+                <div ng-show="!isSentinel && availableVisParams.length > 0 && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
+                    <visparam-selector visparams="availableVisParams"
+                                      ng-model="landsatVisparam"
+                                      on-change="updateLandsatVisparam()">
+                    </visparam-selector>
                 </div>
 
-                <legend ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
-                    {{ 'TEMPORAL.MAP.SENTINEL_IMAGES' | i18n }}  <span ng-hide="isRaisg" class="titleMaps">RBG(SWIR16,NIR,RED)</span>
-                </legend>
+                <span ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    {{ 'TEMPORAL.MAP.SENTINEL_IMAGES' | i18n }}
+                </span>
+
+                <!-- Seletor de visparam Sentinel baseado nos visparams da campanha -->
+                <div ng-show="isSentinel && availableSentinelVisParams.length > 0 && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
+                    <visparam-selector visparams="availableSentinelVisParams"
+                                      ng-model="sentinelVisparam"
+                                      on-change="updateSentinelVisparam()">
+                    </visparam-selector>
+                </div>
 
             </div>
 
@@ -298,29 +300,40 @@
                             </div>
 
                             <!-- Botão do Planet Mosaics -->
-                            <span class="planet-button" ng-if="hasMosaicForYear(map.date | date: 'yyyy')" >
+                            <span class="planet-button" ng-if="hasMosaicForYear(map.year)" >
                                 <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
                                     <i class="fa fa-camera"></i>
                                 </button>
                             </span>
 
-                            <!-- Usar landsat-map para mapas dinâmicos, senão inspection-map -->
+                            <!-- Usar landsat-map para mapas dinâmicos Landsat -->
                             <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
                                          period="period"
                                          year="map.year"
-                                         visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                                         visparams="availableVisParams">
                             </landsat-map>
 
-                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                            lon="point.lon"
-                                            lat="point.lat"
-                                            bounds="map.bounds"
-                                            zoom="config.zoomLevel"
-                                            tms-url="map.url">
-                            </inspection-map>
+                            <!-- Usar sentinel-map para mapas dinâmicos Sentinel -->
+                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel"
+                                          lon="point.lon"
+                                          lat="point.lat"
+                                          zoom="config.zoomLevel"
+                                          period="period"
+                                          year="map.year"
+                                          visparams="availableSentinelVisParams">
+                            </sentinel-map>
+
+<!--                            &lt;!&ndash; Usar inspection-map apenas quando não for mapa dinâmico &ndash;&gt;-->
+<!--                            <inspection-map ng-if="useDynamicMaps !== true"-->
+<!--                                            lon="point.lon"-->
+<!--                                            lat="point.lat"-->
+<!--                                            bounds="map.bounds"-->
+<!--                                            zoom="config.zoomLevel"-->
+<!--                                            tms-url="map.url">-->
+<!--                            </inspection-map>-->
                         </div>
                     </div>
                 </div>

@@ -57,8 +57,8 @@ module.exports = function(app) {
 				"visParamsClone": "/api/vis-params/clone/{name}",
 				"visParamsExport": "/api/vis-params/export/all",
 				"visParamsImport": "/api/vis-params/import",
-				"visParamsLandsatCollections": "/api/vis-params/landsat-collections",
-				"visParamsSentinelCollections": "/api/vis-params/sentinel-collections",
+				"visParamsLandsatCollections": "/api/vis-params/landsat-collections/",
+				"visParamsSentinelCollections": "/api/vis-params/sentinel-collections/",
 				"visParamsSentinelInitialize": "/api/vis-params/sentinel-collections/initialize",
 				"visParamsSentinelBands": "/api/vis-params/sentinel-collections/bands/{collection_name}"
 			},

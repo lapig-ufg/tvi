@@ -1,0 +1,1577 @@
+<div class="vis-param-modal-v2">
+    <!-- Header -->
+    <div class="modal-header">
+        <div class="modal-header-content">
+            <h3 class="modal-title">
+                <i class="fas fa-palette"></i>
+                {{ title }}
+            </h3>
+            <span class="modal-subtitle" ng-if="param.category">
+                <span class="category-indicator" ng-class="param.category">
+                    {{ param.category | uppercase }}
+                </span>
+            </span>
+        </div>
+        <button type="button" class="close-btn" ng-click="cancel()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="progress-steps">
+        <div class="step" ng-class="{active: currentStep === 1, completed: currentStep > 1}">
+            <div class="step-number">1</div>
+            <div class="step-label">Informações Básicas</div>
+        </div>
+        <div class="step-line" ng-class="{active: currentStep > 1}"></div>
+        <div class="step" ng-class="{active: currentStep === 2, completed: currentStep > 2}">
+            <div class="step-number">2</div>
+            <div class="step-label">Configuração de Bandas</div>
+        </div>
+        <div class="step-line" ng-class="{active: currentStep > 2}"></div>
+        <div class="step" ng-class="{active: currentStep === 3}">
+            <div class="step-number">3</div>
+            <div class="step-label">Parâmetros de Visualização</div>
+        </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+        <form name="paramForm" novalidate>
+            
+            <!-- Step 1: Informações Básicas -->
+            <div class="form-step" ng-show="currentStep === 1">
+                <div class="step-header">
+                    <h4>Informações Básicas</h4>
+                    <p class="step-description">Configure as informações gerais do parâmetro de visualização</p>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label class="form-label">
+                            Nome (ID) <span class="required">*</span>
+                            <i class="fas fa-info-circle tooltip-icon" 
+                               tooltip="Identificador único do parâmetro. Use apenas letras minúsculas, números, hífen e underscore."></i>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-fingerprint input-icon"></i>
+                            <input type="text" 
+                                   class="form-control" 
+                                   ng-model="param.name" 
+                                   ng-disabled="isEdit"
+                                   ng-pattern="/^[a-z0-9-_]+$/"
+                                   placeholder="ex: tvi-green"
+                                   required>
+                        </div>
+                        <span class="form-error" ng-show="paramForm.name.$error.pattern">
+                            Use apenas letras minúsculas, números, hífen e underscore
+                        </span>
+                    </div>
+
+                    <div class="form-group flex-1">
+                        <label class="form-label">
+                            Nome de Exibição <span class="required">*</span>
+                        </label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-tag input-icon"></i>
+                            <input type="text" 
+                                   class="form-control" 
+                                   ng-model="param.display_name"
+                                   placeholder="ex: TVI Green"
+                                   required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label class="form-label">
+                            Categoria <span class="required">*</span>
+                        </label>
+                        <div class="category-selector">
+                            <label class="category-option" ng-class="{selected: param.category === 'landsat'}">
+                                <input type="radio" ng-model="param.category" value="landsat" ng-change="onCategoryChange()">
+                                <div class="category-card">
+                                    <i class="fas fa-satellite"></i>
+                                    <span>Landsat</span>
+                                </div>
+                            </label>
+                            <label class="category-option" ng-class="{selected: param.category === 'sentinel'}">
+                                <input type="radio" ng-model="param.category" value="sentinel" ng-change="onCategoryChange()">
+                                <div class="category-card">
+                                    <i class="fas fa-satellite-dish"></i>
+                                    <span>Sentinel-2</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="activeSwitch" ng-model="param.active">
+                            <label for="activeSwitch" class="toggle-label">
+                                <span class="toggle-inner"></span>
+                                <span class="toggle-switch-handle"></span>
+                            </label>
+                            <span class="toggle-text">{{ param.active ? 'Ativo' : 'Inativo' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descrição</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-align-left input-icon"></i>
+                        <textarea class="form-control" 
+                                  ng-model="param.description" 
+                                  rows="3" 
+                                  placeholder="Descreva o propósito deste parâmetro de visualização..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Tags
+                        <i class="fas fa-info-circle tooltip-icon" 
+                           tooltip="Tags ajudam a categorizar e encontrar parâmetros"></i>
+                    </label>
+                    <div class="tags-manager">
+                        <div class="tags-list">
+                            <span class="tag" ng-repeat="tag in param.tags">
+                                <i class="fas fa-hashtag"></i>
+                                {{ tag }}
+                                <button type="button" class="tag-remove" ng-click="removeTag($index)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                            <input type="text" 
+                                   class="tag-input" 
+                                   ng-model="newTag"
+                                   placeholder="Adicionar tag..."
+                                   ng-keypress="$event.keyCode === 13 && addTag($event)">
+                        </div>
+                        <div class="suggested-tags" ng-if="suggestedTags.length > 0">
+                            <span class="suggested-label">Sugestões:</span>
+                            <button type="button" 
+                                    class="suggested-tag" 
+                                    ng-repeat="tag in suggestedTags"
+                                    ng-click="addSuggestedTag(tag)">
+                                {{ tag }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Configuração de Bandas -->
+            <div class="form-step" ng-show="currentStep === 2">
+                <div class="step-header">
+                    <h4>Configuração de Bandas</h4>
+                    <p class="step-description">
+                        Configure as bandas para o parâmetro de visualização
+                        <span ng-if="param.category === 'landsat'">Landsat</span>
+                        <span ng-if="param.category === 'sentinel'">Sentinel-2</span>
+                    </p>
+                </div>
+
+                <!-- Tipo de Configuração -->
+                <div class="config-type-selector" ng-if="param.category === 'landsat'">
+                    <label class="config-type-option" ng-class="{selected: configType === 'unified'}">
+                        <input type="radio" ng-model="configType" value="unified">
+                        <div class="config-type-card">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Configuração Unificada</span>
+                            <small>Uma configuração para todas as coleções</small>
+                        </div>
+                    </label>
+                    <label class="config-type-option" ng-class="{selected: configType === 'per-satellite'}">
+                        <input type="radio" ng-model="configType" value="per-satellite">
+                        <div class="config-type-card">
+                            <i class="fas fa-satellite"></i>
+                            <span>Por Satélite</span>
+                            <small>Configuração específica para cada satélite</small>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Configuração Unificada -->
+                <div ng-if="configType === 'unified' || param.category === 'sentinel'">
+                    <div class="bands-configurator">
+                        <div class="bands-selector">
+                            <label class="form-label">Selecione as Bandas</label>
+                            <div class="available-bands">
+                                <button type="button" 
+                                        class="band-btn" 
+                                        ng-repeat="band in availableBands"
+                                        ng-class="{selected: isBandSelected(band)}"
+                                        ng-click="toggleBand(band)">
+                                    <span class="band-name">{{ band.name }}</span>
+                                    <span class="band-desc">{{ band.description }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="selected-bands" ng-if="param.vis_params.bands.length > 0">
+                            <label class="form-label">
+                                Ordem das Bandas Selecionadas
+                                <small>Arraste para reordenar</small>
+                            </label>
+                            <div class="bands-order-list">
+                                <div class="band-order-item" 
+                                     ng-repeat="band in param.vis_params.bands"
+                                     draggable="true"
+                                     ng-dragstart="onDragStart($event, $index)"
+                                     ng-dragover="onDragOver($event)"
+                                     ng-drop="onDrop($event, $index)">
+                                    <i class="fas fa-grip-vertical drag-handle"></i>
+                                    <span class="band-position">{{ $index + 1 }}</span>
+                                    <span class="band-name">{{ band }}</span>
+                                    <span class="band-label" ng-class="'band-' + ($index + 1)">
+                                        {{ $index === 0 ? 'Red' : $index === 1 ? 'Green' : 'Blue' }}
+                                    </span>
+                                    <button type="button" 
+                                            class="remove-band-btn" 
+                                            ng-click="removeBand($index)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuração Por Satélite -->
+                <div ng-if="configType === 'per-satellite' && param.category === 'landsat'">
+                    <div class="satellite-tabs">
+                        <button type="button" 
+                                class="satellite-tab" 
+                                ng-repeat="sat in landsatSatellites"
+                                ng-class="{active: selectedSatellite === sat.id}"
+                                ng-click="selectSatellite(sat.id)">
+                            <i class="fas fa-satellite"></i>
+                            {{ sat.name }}
+                        </button>
+                    </div>
+
+                    <div class="satellite-config" ng-if="selectedSatellite">
+                        <div class="collection-info">
+                            <code>{{ getSatelliteCollection(selectedSatellite) }}</code>
+                        </div>
+                        <!-- Similar bands configurator for each satellite -->
+                        <div class="bands-configurator">
+                            <!-- ... -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Band Mapping Preview -->
+                <div class="band-mapping-preview" ng-if="param.vis_params.bands.length === 3">
+                    <h5>Pré-visualização do Mapeamento RGB</h5>
+                    <div class="rgb-preview">
+                        <div class="rgb-channel red">
+                            <div class="channel-label">R</div>
+                            <div class="channel-band">{{ param.vis_params.bands[0] }}</div>
+                        </div>
+                        <div class="rgb-channel green">
+                            <div class="channel-label">G</div>
+                            <div class="channel-band">{{ param.vis_params.bands[1] }}</div>
+                        </div>
+                        <div class="rgb-channel blue">
+                            <div class="channel-label">B</div>
+                            <div class="channel-band">{{ param.vis_params.bands[2] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Parâmetros de Visualização -->
+            <div class="form-step" ng-show="currentStep === 3">
+                <div class="step-header">
+                    <h4>Parâmetros de Visualização</h4>
+                    <p class="step-description">Configure os valores de min, max e gamma para cada banda</p>
+                </div>
+
+                <div class="vis-params-configurator">
+                    <!-- Value Mode Toggle -->
+                    <div class="value-mode-toggle">
+                        <label class="form-label">Modo de Configuração</label>
+                        <div class="mode-buttons">
+                            <button type="button" 
+                                    class="mode-btn" 
+                                    ng-class="{active: valueMode === 'unified'}"
+                                    ng-click="setValueMode('unified')">
+                                <i class="fas fa-link"></i>
+                                Valores Unificados
+                            </button>
+                            <button type="button" 
+                                    class="mode-btn" 
+                                    ng-class="{active: valueMode === 'per-band'}"
+                                    ng-click="setValueMode('per-band')">
+                                <i class="fas fa-unlink"></i>
+                                Por Banda
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Unified Values -->
+                    <div ng-if="valueMode === 'unified'" class="unified-values">
+                        <div class="value-row">
+                            <div class="value-group">
+                                <label class="form-label">
+                                    Valor Mínimo
+                                    <i class="fas fa-info-circle tooltip-icon" 
+                                       tooltip="Valor mínimo para normalização"></i>
+                                </label>
+                                <div class="value-input-group">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           ng-model="unifiedValues.min"
+                                           step="0.01"
+                                           placeholder="0">
+                                    <button type="button" 
+                                            class="value-preset-btn"
+                                            ng-click="applyPreset('min', 0)">
+                                        0
+                                    </button>
+                                    <button type="button" 
+                                            class="value-preset-btn"
+                                            ng-click="applyPreset('min', 0.05)">
+                                        0.05
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="value-group">
+                                <label class="form-label">
+                                    Valor Máximo
+                                    <i class="fas fa-info-circle tooltip-icon" 
+                                       tooltip="Valor máximo para normalização"></i>
+                                </label>
+                                <div class="value-input-group">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           ng-model="unifiedValues.max"
+                                           step="0.01"
+                                           placeholder="1">
+                                    <button type="button" 
+                                            class="value-preset-btn"
+                                            ng-click="applyPreset('max', 0.3)">
+                                        0.3
+                                    </button>
+                                    <button type="button" 
+                                            class="value-preset-btn"
+                                            ng-click="applyPreset('max', 0.5)">
+                                        0.5
+                                    </button>
+                                    <button type="button" 
+                                            class="value-preset-btn"
+                                            ng-click="applyPreset('max', 3000)">
+                                        3000
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="value-group">
+                                <label class="form-label">
+                                    Gamma
+                                    <i class="fas fa-info-circle tooltip-icon" 
+                                       tooltip="Correção gamma para ajuste de brilho"></i>
+                                </label>
+                                <div class="gamma-slider">
+                                    <input type="range" 
+                                           ng-model="unifiedValues.gamma"
+                                           min="0.1" 
+                                           max="3" 
+                                           step="0.1">
+                                    <input type="number" 
+                                           class="form-control gamma-input" 
+                                           ng-model="unifiedValues.gamma"
+                                           min="0.1" 
+                                           max="3" 
+                                           step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Per-Band Values -->
+                    <div ng-if="valueMode === 'per-band'" class="per-band-values">
+                        <div class="band-value-card" ng-repeat="band in param.vis_params.bands">
+                            <div class="band-header">
+                                <span class="band-name">{{ band }}</span>
+                                <span class="band-channel" ng-class="'channel-' + ($index + 1)">
+                                    {{ $index === 0 ? 'Red Channel' : $index === 1 ? 'Green Channel' : 'Blue Channel' }}
+                                </span>
+                            </div>
+                            <div class="band-values">
+                                <div class="value-input">
+                                    <label>Min</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           ng-model="param.vis_params.min[$index]"
+                                           step="0.01">
+                                </div>
+                                <div class="value-input">
+                                    <label>Max</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           ng-model="param.vis_params.max[$index]"
+                                           step="0.01">
+                                </div>
+                                <div class="value-input">
+                                    <label>Gamma</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           ng-model="param.vis_params.gamma[$index]"
+                                           min="0.1" 
+                                           max="3" 
+                                           step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Common Presets -->
+                    <div class="common-presets">
+                        <h5>Presets Comuns</h5>
+                        <div class="preset-grid">
+                            <button type="button" 
+                                    class="preset-btn" 
+                                    ng-click="applyCommonPreset('natural-color')">
+                                <i class="fas fa-mountain"></i>
+                                Cor Natural
+                            </button>
+                            <button type="button" 
+                                    class="preset-btn" 
+                                    ng-click="applyCommonPreset('false-color')">
+                                <i class="fas fa-palette"></i>
+                                Falsa Cor
+                            </button>
+                            <button type="button" 
+                                    class="preset-btn" 
+                                    ng-click="applyCommonPreset('agriculture')">
+                                <i class="fas fa-seedling"></i>
+                                Agricultura
+                            </button>
+                            <button type="button" 
+                                    class="preset-btn" 
+                                    ng-click="applyCommonPreset('vegetation')">
+                                <i class="fas fa-leaf"></i>
+                                Vegetação
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+        <div class="footer-left">
+            <button type="button" 
+                    class="btn btn-secondary" 
+                    ng-click="previousStep()"
+                    ng-show="currentStep > 1">
+                <i class="fas fa-chevron-left"></i>
+                Anterior
+            </button>
+        </div>
+        <div class="footer-right">
+            <button type="button" 
+                    class="btn btn-secondary" 
+                    ng-click="cancel()">
+                Cancelar
+            </button>
+            <button type="button" 
+                    class="btn btn-primary" 
+                    ng-click="nextStep()"
+                    ng-show="currentStep < 3"
+                    ng-disabled="!canProceed()">
+                Próximo
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <button type="button" 
+                    class="btn btn-success" 
+                    ng-click="save()" 
+                    ng-show="currentStep === 3"
+                    ng-disabled="paramForm.$invalid || loading">
+                <i class="fas fa-save" ng-if="!loading"></i>
+                <i class="fas fa-spinner fa-spin" ng-if="loading"></i>
+                {{ isEdit ? 'Salvar Alterações' : 'Criar Parâmetro' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal Container */
+.vis-param-modal-v2 {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.vis-param-modal-v2 .modal-dialog {
+    max-width: 1000px;
+    margin: 2rem auto;
+}
+
+.vis-param-modal-v2 .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+/* Modal Header */
+.vis-param-modal-v2 .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px 12px 0 0;
+    border: none;
+}
+
+.modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-subtitle {
+    margin-left: auto;
+}
+
+.category-indicator {
+    padding: 0.75rem 1.25rem;
+    border-radius: 20px;
+    font-size: 1.125rem;
+    font-weight: 500;
+    background: rgba(255,255,255,0.2);
+    margin-right: 43px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+    transition: all 0.3s;
+}
+
+.step.active .step-number {
+    background: #667eea;
+    color: white;
+    transform: scale(1.1);
+}
+
+.step.completed .step-number {
+    background: #48bb78;
+    color: white;
+}
+
+.step-label {
+    margin-top: 0.75rem;
+    font-size: 1.125rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.step.active .step-label {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.step-line {
+    width: 100px;
+    height: 2px;
+    background: #e0e0e0;
+    margin: 0 1rem;
+    transition: all 0.3s;
+}
+
+.step-line.active {
+    background: #48bb78;
+}
+
+/* Modal Body */
+.vis-param-modal-v2 .modal-body {
+    padding: 2rem;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+/* Form Steps */
+.form-step {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-header {
+    margin-bottom: 2rem;
+}
+
+.step-header h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.step-description {
+    color: #718096;
+    font-size: 1.25rem;
+}
+
+/* Form Elements */
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group.flex-1 {
+    flex: 1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 1.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.required {
+    color: #e53e3e;
+}
+
+.tooltip-icon {
+    color: #a0aec0;
+    margin-left: 0.25rem;
+    cursor: help;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+}
+
+.input-with-icon .form-control {
+    padding-left: 2.75rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-control:disabled {
+    background: #f7fafc;
+    cursor: not-allowed;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+.form-error {
+    display: block;
+    margin-top: 0.5rem;
+    color: #e53e3e;
+    font-size: 1.125rem;
+}
+
+/* Category Selector */
+.category-selector {
+    display: flex;
+    gap: 1rem;
+}
+
+.category-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.category-option input[type="radio"] {
+    display: none;
+}
+
+.category-card {
+    padding: 2rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.category-card i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    color: #718096;
+}
+
+.category-card span {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.category-option.selected .category-card {
+    border-color: #667eea;
+    background: #f7fafc;
+}
+
+.category-option.selected .category-card i {
+    color: #667eea;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.toggle-switch input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-label {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 32px;
+    background: #cbd5e0;
+    border-radius: 32px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.toggle-switch-handle {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input[type="checkbox"]:checked + .toggle-label {
+    background: #48bb78;
+}
+
+input[type="checkbox"]:checked + .toggle-label .toggle-switch-handle {
+    left: 32px;
+}
+
+.toggle-text {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 1.25rem;
+}
+
+/* Tags Manager */
+.tags-manager {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: #f7fafc;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tag {
+    background: #667eea;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 20px;
+    font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.8;
+    transition: all 0.2s;
+}
+
+.tag-remove:hover {
+    opacity: 1;
+}
+
+.tag-input {
+    flex: 1;
+    min-width: 150px;
+    border: none;
+    background: none;
+    outline: none;
+    padding: 0.75rem;
+    font-size: 1.125rem;
+}
+
+.suggested-tags {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.suggested-label {
+    font-size: 1rem;
+    color: #718096;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.suggested-tag {
+    background: #e2e8f0;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggested-tag:hover {
+    background: #cbd5e0;
+}
+
+/* Config Type Selector */
+.config-type-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.config-type-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.config-type-option input[type="radio"] {
+    display: none;
+}
+
+.config-type-card {
+    padding: 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.config-type-card i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #718096;
+}
+
+.config-type-card span {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.config-type-card small {
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+.config-type-option.selected .config-type-card {
+    border-color: #667eea;
+    background: #f7fafc;
+}
+
+.config-type-option.selected .config-type-card i {
+    color: #667eea;
+}
+
+/* Bands Configurator */
+.bands-configurator {
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.bands-selector {
+    margin-bottom: 2rem;
+}
+
+.available-bands {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.band-btn {
+    padding: 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.band-btn:hover {
+    border-color: #cbd5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.band-btn.selected {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+}
+
+.band-name {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.band-desc {
+    display: block;
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Selected Bands */
+.selected-bands {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.bands-order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.band-order-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: move;
+    transition: all 0.2s;
+}
+
+.band-order-item:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.drag-handle {
+    color: #a0aec0;
+}
+
+.band-position {
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.band-label {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.band-label.band-1 {
+    background: #fee;
+    color: #c53030;
+}
+
+.band-label.band-2 {
+    background: #efe;
+    color: #22543d;
+}
+
+.band-label.band-3 {
+    background: #eef;
+    color: #2c5282;
+}
+
+.remove-band-btn {
+    background: none;
+    border: none;
+    color: #e53e3e;
+    cursor: pointer;
+    padding: 0.5rem;
+    opacity: 0.6;
+    transition: all 0.2s;
+}
+
+.remove-band-btn:hover {
+    opacity: 1;
+}
+
+/* Satellite Tabs */
+.satellite-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.satellite-tab {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: #718096;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.satellite-tab:hover {
+    color: #4a5568;
+}
+
+.satellite-tab.active {
+    color: #667eea;
+}
+
+.satellite-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #667eea;
+}
+
+.collection-info {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.collection-info code {
+    font-size: 0.875rem;
+}
+
+/* RGB Preview */
+.band-mapping-preview {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.band-mapping-preview h5 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.rgb-preview {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.rgb-channel {
+    width: 120px;
+    padding: 1rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+}
+
+.rgb-channel.red {
+    background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+}
+
+.rgb-channel.green {
+    background: linear-gradient(135deg, #51cf66, #2f9e44);
+}
+
+.rgb-channel.blue {
+    background: linear-gradient(135deg, #4dabf7, #1864ab);
+}
+
+.channel-label {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.channel-band {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* Vis Params Configurator */
+.vis-params-configurator {
+    background: #f7fafc;
+    padding: 2rem;
+    border-radius: 8px;
+}
+
+.value-mode-toggle {
+    margin-bottom: 2rem;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #718096;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.mode-btn:hover {
+    border-color: #cbd5e0;
+}
+
+.mode-btn.active {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+}
+
+/* Unified Values */
+.unified-values {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.value-row {
+    display: flex;
+    gap: 2rem;
+}
+
+.value-group {
+    flex: 1;
+}
+
+.value-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.value-input-group .form-control {
+    flex: 1;
+}
+
+.value-preset-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.value-preset-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+/* Gamma Slider */
+.gamma-slider {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.gamma-slider input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.gamma-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.gamma-input {
+    width: 80px;
+}
+
+/* Per-Band Values */
+.per-band-values {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.band-value-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+}
+
+.band-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.band-header .band-name {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.band-channel {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.channel-1 {
+    background: #fee;
+    color: #c53030;
+}
+
+.channel-2 {
+    background: #efe;
+    color: #22543d;
+}
+
+.channel-3 {
+    background: #eef;
+    color: #2c5282;
+}
+
+.band-values {
+    display: flex;
+    gap: 1rem;
+}
+
+.value-input {
+    flex: 1;
+}
+
+.value-input label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+}
+
+/* Common Presets */
+.common-presets {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+}
+
+.common-presets h5 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.preset-btn {
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preset-btn:hover {
+    border-color: #cbd5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.preset-btn i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+/* Modal Footer */
+.vis-param-modal-v2 .modal-footer {
+    background: #f7fafc;
+    padding: 1.5rem 2rem;
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.footer-left,
+.footer-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #cbd5e0;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #38a169;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(72, 187, 120, 0.3);
+}
+
+/* Animations */
+.fa-spinner.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Scrollbar */
+.vis-param-modal-v2 .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.vis-param-modal-v2 .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.vis-param-modal-v2 .modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.vis-param-modal-v2 .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .vis-param-modal-v2 .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .value-row {
+        flex-direction: column;
+    }
+    
+    .band-values {
+        flex-direction: column;
+    }
+    
+    .progress-steps {
+        padding: 1rem;
+    }
+    
+    .step-label {
+        font-size: 0.75rem;
+    }
+    
+    .step-line {
+        width: 50px;
+    }
+}
+</style>

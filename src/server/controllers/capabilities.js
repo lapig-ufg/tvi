@@ -10,7 +10,7 @@ module.exports = function(app) {
 			return response.collections;
 		} catch (error) {
 			await logger.error('Error fetching capabilities from Tiles API', {
-				module: 'sentinel',
+				module: 'capabilities',
 				function: 'getLapigCapabilities',
 				metadata: { error: error.message }
 			});
@@ -25,7 +25,7 @@ module.exports = function(app) {
 			response.send(result);
 		} catch (error) {
 			const logId = await logger.error('Error getting Lapig capabilities', {
-				module: 'sentinel',
+				module: 'capabilities',
 				function: 'publicCapabilities',
 				metadata: { error: error.message },
 				req: request

@@ -1,34 +1,526 @@
 <div class="modal-header">
-    <h3 class="modal-title text-center">Imagens auxiliares para o ano {{map.date | date: 'yyyy'}}</h3>
+    <h3 class="modal-title text-center">Comparação de Imagens - Ano {{year}}</h3>
 </div>
 <div class="modal-body">
-<!--    <div style="display: flex; justify-content: end">-->
-<!--        <span>Mosaico Planet de {{mosaics[selectedMosaicIndex].firstAcquired | month}}</span>-->
-<!--    </div>-->
-    <combined-maps
-            lon="point.lon"
-            lat="point.lat"
-            zoom="config.zoomLevel"
-            tms-url="map.url"
-            bounds="map.bounds"
-            date="mosaics[selectedMosaicIndex].firstAcquired"
-            mosaic-url="currentMosaicUrl"
-            mosaic-size="mosaics.length"
-            update-mosaic="updateMosaic({index: index})">
-    </combined-maps>
-    <div style="border: #0f0f0f 1px solid; margin-top: 10px"></div>
-<!--    <div class="slider-container">-->
-<!--        <label for="mosaicSlider-{{::$id}}">Mosaico</label>-->
-<!--        <input type="range" min="0" max="{{mosaics.length - 1}}" value="0" class="slider" id="mosaicSlider-{{::$id}}" ng-model="selectedMosaicIndex" ng-change="onSliderChange(selectedMosaicIndex)">-->
-<!--    </div>-->
-
-    <sentinel-map ng-if="hasSentinelImageForYear(year)" lon="point.lon" lat="point.lat" zoom="config.zoomLevel" period="period" year="year" visparams="visparams"></sentinel-map>
-
-    <div ng-if="hasLandsatImageForYear(year)" style="border: #0f0f0f 1px solid; margin-top: 10px; margin-bottom: 10px"></div>
+    <!-- Mapa com swipe do Leaflet -->
+    <leaflet-swipe-map
+        lon="point.lon"
+        lat="point.lat"
+        zoom="config.zoomLevel"
+        left-layer="leftMapConfig"
+        right-layer="rightMapConfig"
+        height="500px">
+    </leaflet-swipe-map>
     
-    <landsat-map ng-if="hasLandsatImageForYear(year)" lon="point.lon" lat="point.lat" zoom="config.zoomLevel" period="period" year="year" visparams="landsatVisparams"></landsat-map>
-
+    <!-- Labels das camadas -->
+    <div class="layer-labels">
+        <div class="left-layer-info">
+            <i class="fa fa-arrow-left"></i> 
+            <strong>Esquerda:</strong> {{leftLayerLabel}}
+        </div>
+        <div class="right-layer-info">
+            <strong>Direita:</strong> {{rightLayerLabel}}
+            <i class="fa fa-arrow-right"></i>
+        </div>
+    </div>
+    
+    <!-- Controles -->
+    <div class="comparison-controls">
+        <!-- Toggle para visualização mensal -->
+        <div class="control-group">
+            <label class="switch">
+                <input type="checkbox" ng-model="showMonthlyView" ng-change="updateMapLayers()">
+                <span class="slider round"></span>
+            </label>
+            <span class="control-label">
+                <i class="fa fa-calendar"></i>
+                Visualização Mensal Sentinel
+            </span>
+        </div>
+        
+        <!-- Slider de meses (apenas quando showMonthlyView = true) -->
+        <div class="month-controls" ng-show="showMonthlyView">
+            <label>Mês:</label>
+            <input type="range" 
+                   class="month-slider" 
+                   min="1" 
+                   max="12" 
+                   ng-model="selectedMonth" 
+                   ng-change="updateMapLayers(true)">
+            <span class="month-display">{{getMonthName(selectedMonth)}}</span>
+        </div>
+        
+        <!-- Seletores de visualização -->
+        <div class="visparam-controls">
+            <!-- Visparam Landsat -->
+            <div class="visparam-section" ng-if="landsatVisparams.length > 0">
+                <div class="visparam-header">
+                    <i class="fa fa-satellite"></i>
+                    <span>Visualização Landsat</span>
+                </div>
+                <div class="visparam-buttons">
+                    <button ng-repeat="vp in landsatVisparams"
+                            class="visparam-btn"
+                            ng-class="{'active': isLandsatVisparamSelected(vp)}"
+                            ng-click="selectLandsatVisparam(vp)">
+                        {{getVisparamDisplayName(vp, 'landsat')}}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Visparam Sentinel -->
+            <div class="visparam-section" ng-if="sentinelVisparams.length > 0">
+                <div class="visparam-header">
+                    <i class="fa fa-satellite-dish"></i>
+                    <span>Visualização Sentinel</span>
+                </div>
+                <div class="visparam-buttons">
+                    <button ng-repeat="vp in sentinelVisparams"
+                            class="visparam-btn"
+                            ng-class="{'active': isSentinelVisparamSelected(vp)}"
+                            ng-click="selectSentinelVisparam(vp)">
+                        {{getVisparamDisplayName(vp, 'sentinel')}}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 <div class="modal-footer">
     <button class="btn btn-secondary" ng-click="close()">Fechar</button>
 </div>
+
+<style>
+/* Modal Header Customizado */
+.modal-header {
+    background: black;
+    color: white;
+    border-bottom: none;
+    padding: 20px 25px;
+    border-radius: 6px 6px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: 0.5px;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 0;
+    background-color: #f8f9fa;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    max-height: 800px;
+}
+
+/* Alerta de Plugin */
+.alert-warning {
+    margin: 15px;
+    border-radius: 8px;
+    border: 1px solid #ffeeba;
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 12px 20px;
+    font-size: 14px;
+}
+
+.alert-warning i {
+    margin-right: 8px;
+}
+
+/* Layer Labels */
+.layer-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px !important;
+    background-color: white;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    margin: 0 15px;
+    flex-shrink: 0;
+}
+
+.left-layer-info, .right-layer-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.left-layer-info i, .right-layer-info i {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.left-layer-info strong, .right-layer-info strong {
+    color: #212529;
+}
+
+/* Comparison Controls */
+.comparison-controls {
+    margin: 15px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* Scrollbar personalizada */
+.comparison-controls::-webkit-scrollbar {
+    width: 8px;
+}
+
+.comparison-controls::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.comparison-controls::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.comparison-controls::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Control Group */
+.control-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 12px 0;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px 20px;
+    border: 1px solid #e9ecef;
+}
+
+/* Switch Moderno */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    vertical-align: middle;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e9ecef;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    height: 22px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 20px;
+    left: 3px;
+    bottom: 2px;
+    background-color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 26px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.control-label {
+    margin-left: 12px;
+    font-size: 14px;
+    color: #495057;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-label i {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Month Controls */
+.month-controls {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.month-controls label {
+    font-weight: 600;
+    color: #495057;
+    margin-right: 10px;
+}
+
+.month-slider {
+    width: 250px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e9ecef;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin: 0 15px;
+}
+
+.month-slider:hover {
+    opacity: 1;
+}
+
+.month-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #2196F3;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.month-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #2196F3;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.month-display {
+    font-weight: 600;
+    margin-left: 10px;
+    color: #2196F3;
+    font-size: 15px;
+}
+
+/* Visparam Controls Modernos */
+.visparam-controls {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+}
+
+.visparam-section {
+    margin-bottom: 20px;
+}
+
+.visparam-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #495057;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.visparam-header i {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.visparam-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.visparam-btn {
+    padding: 8px 16px;
+    border: 2px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.visparam-btn:hover {
+    border-color: #2196F3;
+    background-color: rgba(33, 150, 243, 0.05);
+    transform: translateY(-1px);
+}
+
+.visparam-btn.active {
+    background-color: #2196F3;
+    border-color: #2196F3;
+    color: white;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.visparam-btn.active:hover {
+    background-color: #1976D2;
+    border-color: #1976D2;
+}
+
+/* Efeito de onda ao clicar */
+.visparam-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.visparam-btn:active::after {
+    width: 200px;
+    height: 200px;
+}
+
+/* Estilo para o mapa */
+.leaflet-swipe-map {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 15px;
+    flex-shrink: 0;
+}
+
+/* Modal Footer */
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 15px 25px;
+}
+
+.modal-footer .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .layer-labels {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .control-group {
+        display: block;
+        margin-bottom: 15px;
+    }
+    
+    .month-slider {
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .visparam-section {
+        margin-bottom: 15px;
+    }
+    
+    .visparam-buttons {
+        justify-content: center;
+    }
+    
+    .visparam-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    .comparison-controls {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    .modal-body {
+        height: 70vh;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comparison-controls {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Garantir que o marcador fique sempre visível */
+.leaflet-marker-icon {
+    z-index: 2000 !important;
+}
+</style>

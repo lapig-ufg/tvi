@@ -212,6 +212,24 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
     };
 
     /**
+     * Método genérico show - mapeia tipos para os métodos específicos
+     */
+    service.show = function(message, type = TYPES.INFO, title) {
+        type = type.toLowerCase();
+        switch(type) {
+            case TYPES.SUCCESS:
+                return service.success(message, title);
+            case TYPES.ERROR:
+                return service.error(message, title);
+            case TYPES.WARNING:
+                return service.warning(message, title);
+            case TYPES.INFO:
+            default:
+                return service.info(message, title);
+        }
+    };
+
+    /**
      * Método para processar erros do servidor e extrair código de erro
      */
     service.handleServerError = function(error, defaultMessage = 'Erro interno do servidor') {

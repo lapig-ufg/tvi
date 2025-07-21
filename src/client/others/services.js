@@ -275,13 +275,15 @@ Application
     })
     .service('capabilitiesService', function ($http, $q) {
         var self = this;
-        self.cache = null;
+        self.cacheAll = null;
+        self.cacheSentinel = null;
         self.promise = null;
 
-        this.getCapabilities = function () {
+        // Método genérico para obter todas as capabilities
+        this.getAllCapabilities = function () {
             // Se já temos cache, retornar imediatamente
-            if (self.cache) {
-                return $q.resolve(self.cache);
+            if (self.cacheAll) {
+                return $q.resolve(self.cacheAll);
             }
 
             // Se já existe uma requisição em andamento, retornar a mesma promise
@@ -290,11 +292,11 @@ Application
             }
 
             // Fazer nova requisição e cachear
-            self.promise = $http.get('/service/sentinel/capabilities')
+            self.promise = $http.get('/service/capabilities')
                 .then(function (response) {
-                    self.cache = response.data;
+                    self.cacheAll = response.data || [];
                     self.promise = null; // Limpar promise após conclusão
-                    return self.cache;
+                    return self.cacheAll;
                 })
                 .catch(function (error) {
                     self.promise = null; // Limpar promise em caso de erro
@@ -304,10 +306,73 @@ Application
             return self.promise;
         };
 
+        // Método específico para Sentinel (mantido para compatibilidade)
+        this.getCapabilities = function () {
+            // Se já temos cache do Sentinel, retornar imediatamente
+            if (self.cacheSentinel) {
+                return $q.resolve(self.cacheSentinel);
+            }
+
+            // Buscar todas as capabilities e filtrar
+            return self.getAllCapabilities().then(function(allCapabilities) {
+                // Filtrar apenas capabilities do Sentinel
+                if (Array.isArray(allCapabilities)) {
+                    self.cacheSentinel = allCapabilities.filter(function(cap) {
+                        return cap.satellite === 'sentinel';
+                    });
+                } else {
+                    self.cacheSentinel = [];
+                }
+                return self.cacheSentinel;
+            });
+        };
+
+        // Método para obter capabilities por satélite
+        this.getCapabilitiesBySatellite = function(satellite) {
+            return self.getAllCapabilities().then(function(allCapabilities) {
+                if (Array.isArray(allCapabilities)) {
+                    return allCapabilities.filter(function(cap) {
+                        return cap.satellite === satellite;
+                    });
+                }
+                return [];
+            });
+        };
+
         // Método para limpar cache se necessário
         this.clearCache = function () {
-            self.cache = null;
+            self.cacheAll = null;
+            self.cacheSentinel = null;
             self.promise = null;
+        };
+    })
+    .service('imageTypeHelper', function() {
+        // Função helper para detectar se é Sentinel
+        this.isSentinelImageType = function(imageType) {
+            if (!imageType) return false;
+            
+            const normalizedType = imageType.toLowerCase();
+            return normalizedType === 'sentinel-2' || 
+                   normalizedType === 'sentinel-2-l2a' || 
+                   normalizedType.includes('sentinel');
+        };
+        
+        // Função helper para detectar se é Landsat
+        this.isLandsatImageType = function(imageType) {
+            if (!imageType) return true; // Default é Landsat
+            
+            const normalizedType = imageType.toLowerCase();
+            return normalizedType === 'landsat' || 
+                   normalizedType.includes('landsat');
+        };
+        
+        // Função helper para detectar se é Planet
+        this.isPlanetImageType = function(imageType) {
+            if (!imageType) return false;
+            
+            const normalizedType = imageType.toLowerCase();
+            return normalizedType === 'planet' || 
+                   normalizedType.includes('planet');
         };
     })
     .service('fakeRequester', function () {

@@ -1511,21 +1511,74 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
 });
 
 // Controller do modal de formulário
-Application.controller('CampaignFormModalController', function ($scope, $uibModalInstance, campaign, isNew, NotificationDialog) {
+Application.controller('CampaignFormModalController', function ($scope, $uibModalInstance, $http, campaign, isNew, NotificationDialog) {
     $scope.campaign = campaign;
     $scope.isNew = isNew;
-    $scope.visParamOptions = [
-        { value: 'landsat-tvi-true', label: 'Cor Natural' },
-        { value: 'landsat-tvi-agri', label: 'Agricultura' },
-        { value: 'landsat-tvi-false', label: 'Falsa Cor' },
-        { value: 'tvi-red', label: 'TVI Red' }
-    ];
+    $scope.visParamOptions = [];
+    $scope.landsatVisParams = [];
+    $scope.sentinelVisParams = [];
+    $scope.loading = true;
+    
+    // Inicializar arrays se não existirem
+    if (!$scope.campaign.visParams) {
+        $scope.campaign.visParams = [];
+    }
+    if (!$scope.campaign.defaultVisParam) {
+        $scope.campaign.defaultVisParam = null;
+    }
+    
+    // Buscar capabilities da API
+    $http.get('/service/capabilities')
+        .then(function(response) {
+            const capabilities = response.data;
+            
+            // Processar visparams do Landsat
+            const landsatCol = capabilities.find(col => col.satellite === 'landsat');
+            if (landsatCol && landsatCol.visparam_details) {
+                $scope.landsatVisParams = landsatCol.visparam_details.map(vp => ({
+                    value: vp.name,
+                    label: vp.display_name,
+                    description: vp.description,
+                    satellite: 'landsat'
+                }));
+            }
+            
+            // Processar visparams do Sentinel
+            const sentinelCol = capabilities.find(col => col.satellite === 'sentinel');
+            if (sentinelCol && sentinelCol.visparam_details) {
+                $scope.sentinelVisParams = sentinelCol.visparam_details.map(vp => ({
+                    value: vp.name,
+                    label: vp.display_name,
+                    description: vp.description,
+                    satellite: 'sentinel'
+                }));
+            }
+            
+            // Combinar todas as opções
+            $scope.visParamOptions = [
+                ...$scope.landsatVisParams,
+                ...$scope.sentinelVisParams
+            ];
+            
+            $scope.loading = false;
+        })
+        .catch(function(error) {
+            console.error('Erro ao buscar capabilities:', error);
+            NotificationDialog.error('Erro ao carregar opções de visualização');
+            $scope.loading = false;
+        });
     
     $scope.save = function() {
         if (!$scope.campaign._id && $scope.isNew) {
             NotificationDialog.error('ID da campanha é obrigatório');
             return;
         }
+        
+        // Se há visparams selecionados mas nenhum padrão, definir o primeiro como padrão
+        if ($scope.campaign.visParams && $scope.campaign.visParams.length > 0 && !$scope.campaign.defaultVisParam) {
+            $scope.campaign.defaultVisParam = $scope.campaign.visParams[0];
+        }
+        
         $uibModalInstance.close($scope.campaign);
     };
     
@@ -1542,5 +1595,108 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     
     $scope.removeLandUse = function(index) {
         $scope.campaign.landUse.splice(index, 1);
+    };
+    
+    // Funções para gerenciar visparams
+    $scope.isVisParamSelected = function(visparam) {
+        return $scope.campaign.visParams && $scope.campaign.visParams.includes(visparam.value);
+    };
+    
+    $scope.toggleVisParam = function(visparam) {
+        if (!$scope.campaign.visParams) {
+            $scope.campaign.visParams = [];
+        }
+        
+        const index = $scope.campaign.visParams.indexOf(visparam.value);
+        if (index > -1) {
+            // Remover se já está selecionado
+            $scope.campaign.visParams.splice(index, 1);
+            
+            // Se era o padrão, limpar
+            if ($scope.campaign.defaultVisParam === visparam.value) {
+                $scope.campaign.defaultVisParam = null;
+            }
+        } else {
+            // Adicionar se não está selecionado
+            $scope.campaign.visParams.push(visparam.value);
+            
+            // Se não há padrão, definir este como padrão
+            if (!$scope.campaign.defaultVisParam) {
+                $scope.campaign.defaultVisParam = visparam.value;
+            }
+        }
+    };
+    
+    $scope.setDefaultVisParam = function(visparam) {
+        // Toggle do default - se já é default, remove; senão define como default
+        if ($scope.campaign.defaultVisParam === visparam.value) {
+            $scope.campaign.defaultVisParam = null;
+        } else if ($scope.isVisParamSelected(visparam)) {
+            $scope.campaign.defaultVisParam = visparam.value;
+        }
+    };
+    
+    $scope.isDefaultVisParam = function(visparam) {
+        return $scope.campaign.defaultVisParam === visparam.value;
+    };
+    
+    // Função para obter o nome amigável do visparam padrão
+    $scope.getDefaultVisParamDisplayName = function() {
+        if (!$scope.campaign.defaultVisParam) return '';
+        
+        // Procurar nos visparams do Landsat
+        var found = $scope.landsatVisParams.find(function(vp) {
+            return vp.value === $scope.campaign.defaultVisParam;
+        });
+        
+        // Se não encontrou, procurar nos do Sentinel
+        if (!found) {
+            found = $scope.sentinelVisParams.find(function(vp) {
+                return vp.value === $scope.campaign.defaultVisParam;
+            });
+        }
+        
+        return found ? found.label : $scope.campaign.defaultVisParam;
+    };
+    
+    // Função chamada quando o imageType muda
+    $scope.onImageTypeChange = function() {
+        // Limpar seleções anteriores quando trocar de tipo
+        if ($scope.campaign.visParams && $scope.campaign.visParams.length > 0) {
+            // Verificar se os visparams selecionados são do tipo atual
+            var validVisParams = [];
+            
+            if ($scope.campaign.imageType === 'landsat') {
+                // Manter apenas visparams do Landsat
+                validVisParams = $scope.campaign.visParams.filter(function(vp) {
+                    return $scope.landsatVisParams.some(function(lvp) {
+                        return lvp.value === vp;
+                    });
+                });
+            } else if ($scope.campaign.imageType === 'sentinel-2' || 
+                      $scope.campaign.imageType === 'sentinel-2-l2a' ||
+                      ($scope.campaign.imageType && $scope.campaign.imageType.toLowerCase().includes('sentinel'))) {
+                // Manter apenas visparams do Sentinel
+                validVisParams = $scope.campaign.visParams.filter(function(vp) {
+                    return $scope.sentinelVisParams.some(function(svp) {
+                        return svp.value === vp;
+                    });
+                });
+            }
+            
+            // Atualizar visparams
+            $scope.campaign.visParams = validVisParams;
+            
+            // Verificar se o default ainda é válido
+            if ($scope.campaign.defaultVisParam && !validVisParams.includes($scope.campaign.defaultVisParam)) {
+                $scope.campaign.defaultVisParam = validVisParams.length > 0 ? validVisParams[0] : null;
+            }
+        }
+        
+        // Se mudou para planet, limpar tudo
+        if ($scope.campaign.imageType === 'planet') {
+            $scope.campaign.visParams = [];
+            $scope.campaign.defaultVisParam = null;
+        }
     };
 });

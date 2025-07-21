@@ -423,26 +423,18 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
     $scope.loadCapabilities = function() {
         $scope.loading.capabilities = true;
         
-        var loaded = 0;
-        var checkLoaded = function() {
-            loaded++;
-            if (loaded === 2) {
-                $scope.loading.capabilities = false;
-            }
-        };
         
-        requester._get('admin/landsat/capabilities', function(response) {
-            if (response) {
-                $scope.capabilities.landsat = response || [];
+        // Carregar capabilities unificado
+        requester._get('admin/capabilities', function(response) {
+            if (response && Array.isArray(response)) {
+                // Separar Landsat e Sentinel dos capabilities unificados
+                $scope.capabilities.landsat = response.filter(c => c.satellite === 'landsat');
+                $scope.capabilities.sentinel = response.filter(c => c.satellite === 'sentinel');
+            } else {
+                $scope.capabilities.landsat = [];
+                $scope.capabilities.sentinel = [];
             }
-            checkLoaded();
-        });
-        
-        requester._get('admin/sentinel/capabilities', function(response) {
-            if (response) {
-                $scope.capabilities.sentinel = response || [];
-            }
-            checkLoaded();
+            $scope.loading.capabilities = false;
         });
     };
     

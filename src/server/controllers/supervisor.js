@@ -789,6 +789,8 @@ module.exports = function (app) {
                     showPointInfo: campaign.showPointInfo !== false,
                     useDynamicMaps: campaign.useDynamicMaps || false,
                     visParam: campaign.visParam || null,
+                    visParams: campaign.visParams || [],
+                    defaultVisParam: campaign.defaultVisParam || null,
                     imageType: campaign.imageType || null
                 };
                 

@@ -48,6 +48,28 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
     };
     
+    // Função para obter visparams disponíveis da campanha
+    $scope.getAvailableVisParams = function() {
+        if (!$scope.campaignVisParams || $scope.campaignVisParams.length === 0) {
+            return [];
+        }
+        
+        // Se temos detalhes dos visparams, retornar com display names
+        if ($scope.landsatVisparamDetails && $scope.landsatVisparamDetails.length > 0) {
+            return $scope.landsatVisparamDetails.filter(function(vp) {
+                return $scope.campaignVisParams.includes(vp.name);
+            });
+        }
+        
+        // Fallback: criar objetos básicos se não temos os detalhes ainda
+        return $scope.campaignVisParams.map(function(vp) {
+            return {
+                name: vp,
+                display_name: vp // Usar o próprio nome como display temporariamente
+            };
+        });
+    };
+    
     // Funções para atualizar parâmetros do Sentinel
     $scope.updateSentinelVisparam = function() {
         localStorage.setItem('sentinelVisparam', $scope.sentinelVisparam);
@@ -136,7 +158,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             
             // Detectar tipo de imagem baseado na campanha
             if (campaign.imageType) {
-                $scope.isSentinel = campaign.imageType === 'sentinel-2-l2a';
+                $scope.isSentinel = campaign.imageType === 'sentinel-2-l2a' || 
+                                   campaign.imageType === 'sentinel-2' || 
+                                   (campaign.imageType && campaign.imageType.toLowerCase().includes('sentinel'));
             } else {
                 // Fallback para detecção legacy
                 $scope.isSentinel = campaign.hasOwnProperty('image') && campaign['image'] === 'sentinel-2-l2a';
@@ -148,9 +172,24 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.useDynamicMaps = campaign.useDynamicMaps !== undefined ? campaign.useDynamicMaps : false;
             $scope.hasVisParam = campaign.visParam !== null && campaign.visParam !== undefined;
             
-            // Definir visparam padrão da campanha
-            if (campaign.visParam) {
+            // Processar visparams configurados para a campanha
+            if (campaign.visParams && campaign.visParams.length > 0) {
+                $scope.campaignVisParams = campaign.visParams;
+                $scope.availableVisParams = campaign.visParams;
+                
+                // Usar defaultVisParam se configurado, senão usar o primeiro da lista
+                if (campaign.defaultVisParam && campaign.visParams.includes(campaign.defaultVisParam)) {
+                    $scope.landsatVisparam = campaign.defaultVisParam;
+                } else if (campaign.visParams.length > 0) {
+                    $scope.landsatVisparam = campaign.visParams[0];
+                }
+                
+                localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
+            } else if (campaign.visParam) {
+                // Compatibilidade com campo antigo visParam
                 $scope.landsatVisparam = campaign.visParam;
+                $scope.campaignVisParams = [campaign.visParam];
+                $scope.availableVisParams = [campaign.visParam];
                 localStorage.setItem('landsatVisparam', campaign.visParam);
             }
             
@@ -821,20 +860,60 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             console.log(`Generated ${$scope.maps.length} Landsat maps from capabilities for period ${currentPeriod}`);
         };
         
+        // Função helper para determinar o sensor Landsat baseado no ano usando collections
+        var getLandsatSensor = function(year) {
+            // Se não temos capabilities do Landsat ou collections, usar lógica padrão
+            if (!$scope.landsatMosaics || !$scope.landsatMosaics[0] || !$scope.landsatMosaics[0].collections) {
+                // Lógica padrão (legado)
+                if (year > 2012) {
+                    return 'L8';
+                } else if (year > 2011) {
+                    return 'L7';
+                } else if (year > 2003 || year < 2000) {
+                    return 'L5';
+                }
+                return 'L7';
+            }
+            
+            // Usar collections para determinar o sensor
+            var collections = $scope.landsatMosaics[0].collections;
+            for (var collectionId in collections) {
+                var collection = collections[collectionId];
+                if (collection.year_range && year >= collection.year_range[0] && year <= collection.year_range[1]) {
+                    // Mapear sensor para formato usado no código
+                    switch (collection.sensor) {
+                        case 'TM':
+                            return 'L5';
+                        case 'ETM+':
+                            return 'L7';
+                        case 'OLI':
+                            return 'L8';
+                        case 'OLI-2':
+                            return 'L9';
+                        default:
+                            return 'L8'; // Padrão
+                    }
+                }
+            }
+            
+            // Se não encontrar, usar lógica padrão
+            if (year > 2012) {
+                return 'L8';
+            } else if (year > 2011) {
+                return 'L7';
+            } else if (year > 2003 || year < 2000) {
+                return 'L5';
+            }
+            return 'L7';
+        };
+
         var generateLandsatMapsLegacy = function() {
             var tmsIdList = [];
             $scope.tmsIdListWet = [];
             $scope.tmsIdListDry = [];
 
             for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
-                var sattelite = 'L7';
-                if (year > 2012) {
-                    sattelite = 'L8';
-                } else if (year > 2011) {
-                    sattelite = 'L7';
-                } else if (year > 2003 || year < 2000) {
-                    sattelite = 'L5';
-                }
+                var sattelite = getLandsatSensor(year);
 
                 var tmsId = sattelite + '_' + year + '_' + $scope.period;
                 var tmsIdDry = sattelite + '_' + year + '_DRY';
@@ -1130,7 +1209,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     }
                     
                     if (config.imageType) {
-                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a';
+                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a' || 
+                                           config.imageType === 'sentinel-2' || 
+                                           (config.imageType && config.imageType.toLowerCase().includes('sentinel'));
                     }
                 }
                 
@@ -1264,22 +1345,14 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             );
         };
 
-        requester._get('admin/sentinel/capabilities', function(capabilities) {
-            $scope.tilesCapabilities = capabilities;
-            $scope.sentinelMosaics = capabilities
-                .filter(c => c.name === 's2_harmonized')
-                .map(c => ({
-                    name: c.name,
-                    years: c.year,
-                    periods: c.period,
-                    visparams: c.visparam
-                }));
-        });
-        
-        // Carregar Landsat capabilities apenas se não for Sentinel
-        if (!$scope.isSentinel) {
-            requester._get('admin/landsat/capabilities', function(capabilities) {
-                $scope.landsatMosaics = capabilities
+        // Carregar capabilities unificado
+        requester._get('admin/capabilities', function(capabilities) {
+            $scope.tilesCapabilities = capabilities || [];
+            
+            if (Array.isArray(capabilities)) {
+                // Processar Sentinel
+                $scope.sentinelMosaics = capabilities
+                    .filter(c => c.satellite === 'sentinel')
                     .map(c => ({
                         name: c.name,
                         years: c.year,
@@ -1287,9 +1360,34 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                         visparams: c.visparam
                     }));
                 
-                console.log(`Loaded ${$scope.landsatMosaics.length} Landsat collections`);
-            });
-        }
+                // Processar Landsat
+                const landsatCap = capabilities.find(c => c.satellite === 'landsat');
+                if (landsatCap && !$scope.isSentinel) {
+                    $scope.landsatMosaics = [{
+                        name: landsatCap.name,
+                        years: landsatCap.year,
+                        periods: landsatCap.period,
+                        visparams: landsatCap.visparam
+                    }];
+                    
+                    // Armazenar detalhes dos visparams
+                    $scope.landsatVisparamDetails = landsatCap.visparam_details || [];
+                    
+                    // Trigger update dos visparams disponíveis após carregar os detalhes
+                    if ($scope.campaignVisParams && $scope.campaignVisParams.length > 0) {
+                        $scope.$evalAsync(function() {
+                            // Forçar atualização da view
+                        });
+                    }
+                } else {
+                    $scope.landsatMosaics = [];
+                    $scope.landsatVisparamDetails = [];
+                }
+            } else {
+                $scope.sentinelMosaics = [];
+                $scope.landsatMosaics = [];
+            }
+        });
 
         $scope.shouldShowProperty = function(key) {
             return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
@@ -1321,7 +1419,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $uibModal.open({
                 controller: 'MosaicDialogController',
                 templateUrl: 'views/mosaic-dialog.tpl.html',
-                size: 'lg',
+                windowClass: 'modal-80-percent',
                 resolve: {
                     mosaics: function() {
                         return mosaicsForYear;

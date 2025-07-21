@@ -20,15 +20,195 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
+    $scope.landsatCapabilities = [];
+    $scope.landsatVisparams = [];
+    $scope.landsatVisparamDetails = [];
+    
+    // Inicializar visparam do Sentinel
+    $scope.sentinelVisparam = localStorage.getItem('sentinelVisparam') || 'tvi-green';
+    $scope.sentinelCapabilities = [];
+    $scope.sentinelVisparams = [];
+    $scope.sentinelVisparamDetails = [];
     
     // Lista de propriedades padrão que não devem ser mostradas nas propriedades customizadas
     $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
     
+    // Variáveis para visparams da campanha
+    $scope.campaignVisParams = [];
+    $scope.defaultCampaignVisParam = null;
+    $scope.campaignSentinelVisParams = [];
+    $scope.defaultCampaignSentinelVisParam = null;
+    
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
         localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
+        // Atualizar o default da campanha na memória
+        if ($scope.config) {
+            $scope.config.defaultVisParam = $scope.landsatVisparam;
+        }
+        // Atualizar também a variável defaultCampaignVisParam
+        $scope.defaultCampaignVisParam = $scope.landsatVisparam;
         // Broadcast para todas as diretivas landsat-map atualizarem
         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+    };
+    
+    // Função para atualizar o visparam do Sentinel e propagar para todos os mapas
+    $scope.updateSentinelVisparam = function(value) {
+        // O valor pode vir do parâmetro ou do scope
+        var newVisparam = value || $scope.sentinelVisparam;
+        
+        console.log('updateSentinelVisparam chamado com:', newVisparam);
+        
+        // Garantir que temos um valor válido
+        if (!newVisparam) {
+            console.warn('updateSentinelVisparam: valor inválido');
+            return;
+        }
+        
+        // Atualizar o modelo
+        $scope.sentinelVisparam = newVisparam;
+        
+        // Salvar no localStorage
+        localStorage.setItem('sentinelVisparam', newVisparam);
+        
+        // Atualizar o default da campanha na memória
+        if ($scope.config) {
+            $scope.config.defaultVisParam = newVisparam;
+        }
+        
+        // Atualizar também a variável defaultCampaignSentinelVisParam
+        $scope.defaultCampaignSentinelVisParam = newVisparam;
+        
+        // Broadcast para todas as diretivas sentinel-map atualizarem
+        $scope.$broadcast('sentinelVisparamChanged', newVisparam);
+        
+        console.log('Sentinel visparam atualizado para:', newVisparam);
+    };
+    
+    // Cache para visparams disponíveis
+    $scope.availableVisParams = [];
+    $scope.availableSentinelVisParams = [];
+    
+    // Função para obter visparams disponíveis da campanha
+    $scope.getAvailableVisParams = function() {
+        // Se não há campaignVisParams, retornar vazio
+        if (!$scope.campaignVisParams || $scope.campaignVisParams.length === 0) {
+            return [];
+        }
+        
+        // Se temos detalhes dos visparams, retornar com display names
+        if ($scope.landsatVisparamDetails && $scope.landsatVisparamDetails.length > 0) {
+            return $scope.landsatVisparamDetails.filter(function(vp) {
+                return $scope.campaignVisParams.includes(vp.name);
+            });
+        }
+        
+        // Fallback: criar objetos básicos com nomes amigáveis
+        return $scope.campaignVisParams.map(function(vp) {
+            // Mapeamento manual dos nomes conhecidos
+            var displayNames = {
+                'landsat-tvi-true': 'Cor Natural',
+                'landsat-tvi-false': 'Falsa Cor',
+                'landsat-tvi-agri': 'Agricultura',
+                'landsat-tvi-red': 'TVI Red'
+            };
+            
+            return {
+                name: vp,
+                display_name: displayNames[vp] || vp
+            };
+        });
+    };
+    
+    // Função para atualizar cache de visparams
+    $scope.updateVisParamsCache = function() {
+        $scope.availableVisParams = $scope.getAvailableVisParams();
+    };
+    
+    // Função para obter visparams disponíveis do Sentinel da campanha
+    $scope.getAvailableSentinelVisParams = function() {
+        // Se não há campaignSentinelVisParams, retornar vazio
+        if (!$scope.campaignSentinelVisParams || $scope.campaignSentinelVisParams.length === 0) {
+            console.log('campaignSentinelVisParams vazio ou indefinido');
+            return [];
+        }
+        
+        console.log('campaignSentinelVisParams:', $scope.campaignSentinelVisParams);
+        console.log('sentinelVisparamDetails:', $scope.sentinelVisparamDetails);
+        
+        var result = [];
+        
+        // Se temos detalhes dos visparams, usar a ordem da campanha
+        if ($scope.sentinelVisparamDetails && $scope.sentinelVisparamDetails.length > 0) {
+            // Preservar a ordem original da campanha
+            $scope.campaignSentinelVisParams.forEach(function(vpName) {
+                var detail = $scope.sentinelVisparamDetails.find(function(d) {
+                    return d.name === vpName;
+                });
+                if (detail) {
+                    result.push(detail);
+                    console.log('Adicionado visparam:', detail.name, '- Display:', detail.display_name);
+                }
+            });
+        } else {
+            // Fallback: criar objetos básicos com nomes amigáveis
+            var displayNames = {
+                'tvi-green': 'TVI Green',
+                'tvi-red': 'TVI Red',
+                'rgb': 'Cor Natural',
+                'false-color': 'Falsa Cor'
+            };
+            
+            result = $scope.campaignSentinelVisParams.map(function(vp) {
+                var obj = {
+                    name: vp,
+                    display_name: displayNames[vp] || vp
+                };
+                console.log('Criado visparam fallback:', obj.name, '- Display:', obj.display_name);
+                return obj;
+            });
+        }
+        
+        console.log('availableSentinelVisParams final:', result);
+        return result;
+    };
+    
+    // Função para atualizar cache de visparams do Sentinel
+    $scope.updateSentinelVisParamsCache = function() {
+        $scope.availableSentinelVisParams = $scope.getAvailableSentinelVisParams();
+    };
+    
+    // Função para atualizar visparams disponíveis quando ambos os dados estiverem prontos
+    $scope.updateAvailableVisParams = function() {
+        // Forçar atualização da view quando ambos dados estão disponíveis
+        if (($scope.campaignVisParams && $scope.landsatVisparamDetails) || 
+            ($scope.campaignSentinelVisParams && $scope.sentinelVisparamDetails)) {
+            $scope.$evalAsync();
+        }
+    };
+    
+    // Função para formatar data do mapa - mostra apenas ano se for 00/00/YYYY
+    $scope.formatMapDate = function(dateString) {
+        if (!dateString) return '';
+        
+        // Verificar se é no formato 00/00/YYYY
+        if (dateString.startsWith('00/00/')) {
+            return dateString.split('/')[2]; // Retorna apenas o ano
+        }
+        
+        // Caso contrário, formatar como data normal
+        try {
+            var date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                var day = ('0' + date.getDate()).slice(-2);
+                var month = ('0' + (date.getMonth() + 1)).slice(-2);
+                var year = date.getFullYear();
+                return day + '/' + month + '/' + year;
+            }
+        } catch (e) {
+            // Se falhar, retornar a string original
+        }
+        return dateString;
     };
 
     // Função para determinar a classe CSS do mapa individual baseado no número de mapas
@@ -534,6 +714,53 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         };
 
+        // Função helper para determinar o sensor Landsat baseado no ano usando collections
+        var getLandsatSensor = function(year) {
+            // Se não temos capabilities do Landsat ou collections, usar lógica padrão
+            if (!$scope.landsatCapabilities || !$scope.landsatCapabilities[0] || !$scope.landsatCapabilities[0].collections) {
+                // Lógica padrão (legado)
+                if (year > 2012) {
+                    return 'L8';
+                } else if (year > 2011) {
+                    return 'L7';
+                } else if (year > 2003 || year < 2000) {
+                    return 'L5';
+                }
+                return 'L7';
+            }
+            
+            // Usar collections para determinar o sensor
+            var collections = $scope.landsatCapabilities[0].collections;
+            for (var collectionId in collections) {
+                var collection = collections[collectionId];
+                if (collection.year_range && year >= collection.year_range[0] && year <= collection.year_range[1]) {
+                    // Mapear sensor para formato usado no código
+                    switch (collection.sensor) {
+                        case 'TM':
+                            return 'L5';
+                        case 'ETM+':
+                            return 'L7';
+                        case 'OLI':
+                            return 'L8';
+                        case 'OLI-2':
+                            return 'L9';
+                        default:
+                            return 'L8'; // Padrão
+                    }
+                }
+            }
+            
+            // Se não encontrar, usar lógica padrão
+            if (year > 2012) {
+                return 'L8';
+            } else if (year > 2011) {
+                return 'L7';
+            } else if (year > 2003 || year < 2000) {
+                return 'L5';
+            }
+            return 'L7';
+        };
+
         var generateMaps = function () {
             $scope.maps = [];
             $scope.mapStates = {}; // Resetar estados
@@ -545,14 +772,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.tmsIdListDry = [];
 
             for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
-                sattelite = 'L7';
-                if (year > 2012) {
-                    sattelite = 'L8'
-                } else if (year > 2011) {
-                    sattelite = 'L7'
-                } else if (year > 2003 || year < 2000) {
-                    sattelite = 'L5'
-                }
+                sattelite = getLandsatSensor(year);
 
                 tmsId = sattelite + '_' + year + '_' + $scope.period;
                 tmsIdDry = sattelite + '_' + year + '_DRY';
@@ -606,6 +826,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
+                
+                // Garantir que o visparam atual seja propagado para mapas recém-visíveis
+                $timeout(function() {
+                    if (!$scope.isSentinel && $scope.landsatVisparam) {
+                        $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+                    } else if ($scope.isSentinel && $scope.sentinelVisparam) {
+                        $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+                    }
+                }, 100);
                 
                 // Simular carregamento completo após o mapa carregar
                 // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
@@ -814,18 +1043,65 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     $scope.useDynamicMaps = config.useDynamicMaps;
                     $scope.hasVisParam = config.visParam !== null;
                     
-                    // Se houver visParam, atualizar o landsatVisparam
-                    if (config.visParam) {
+                    // Verificar se é Sentinel baseado no imageType PRIMEIRO
+                    if (config.imageType) {
+                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a' || 
+                                           config.imageType === 'sentinel-2' || 
+                                           (config.imageType && config.imageType.toLowerCase().includes('sentinel'));
+                    }
+                    
+                    // Processar visparams baseado no tipo de imagem
+                    if (config.visParams && config.visParams.length > 0) {
+                        if ($scope.isSentinel) {
+                            // Se for Sentinel, carregar visparams do Sentinel
+                            $scope.campaignSentinelVisParams = config.visParams;
+                            $scope.defaultCampaignSentinelVisParam = config.defaultVisParam || null;
+                            $scope.updateSentinelVisParamsCache(); // Atualizar cache
+                            
+                            // Usar defaultVisParam se configurado
+                            if (config.defaultVisParam && config.visParams.includes(config.defaultVisParam)) {
+                                $scope.sentinelVisparam = config.defaultVisParam;
+                            } else if (config.visParams.length > 0) {
+                                $scope.sentinelVisparam = config.visParams[0];
+                            }
+                            
+                            // Salvar e broadcast
+                            if ($scope.sentinelVisparam) {
+                                localStorage.setItem('sentinelVisparam', $scope.sentinelVisparam);
+                                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+                            }
+                        } else {
+                            // Se for Landsat, carregar visparams do Landsat
+                            $scope.campaignVisParams = config.visParams;
+                            $scope.defaultCampaignVisParam = config.defaultVisParam || null;
+                            $scope.updateVisParamsCache(); // Atualizar cache
+                            
+                            // Se houver defaultVisParam, usar ele
+                            if (config.defaultVisParam && config.visParams.includes(config.defaultVisParam)) {
+                                $scope.landsatVisparam = config.defaultVisParam;
+                            } else if (config.visParams.length > 0) {
+                                $scope.landsatVisparam = config.visParams[0];
+                            }
+                            
+                            // Salvar e broadcast
+                            if ($scope.landsatVisparam) {
+                                localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
+                                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+                            }
+                        }
+                    } else if (config.visParam && !$scope.isSentinel) {
+                        // Compatibilidade com campo antigo visParam (apenas para Landsat)
                         $scope.landsatVisparam = config.visParam;
+                        $scope.campaignVisParams = [config.visParam];
+                        $scope.defaultCampaignVisParam = config.visParam;
+                        $scope.updateVisParamsCache(); // Atualizar cache
+                        
                         localStorage.setItem('landsatVisparam', config.visParam);
-                        // Broadcast para atualizar as diretivas
                         $scope.$broadcast('landsatVisparamChanged', config.visParam);
                     }
                     
-                    // Verificar se é Sentinel baseado no imageType
-                    if (config.imageType) {
-                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a';
-                    }
+                    // Atualizar visparams disponíveis
+                    $scope.updateAvailableVisParams();
                 }
                 
                 // Chamar callback se fornecido
@@ -963,16 +1239,47 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         };
 
 
-        requester._get('sentinel/capabilities', function(capabilities) {
-            $scope.tilesCapabilities = capabilities;
-            $scope.sentinelMosaics = capabilities
-                .filter(c => c.name === 's2_harmonized')
-                .map(c => ({
-                    name: c.name,
-                    years: c.year,          // [2017 … 2025]
-                    periods: c.period,      // ["WET","DRY","MONTH"]
-                    visparams: c.visparam   // ["tvi-green", …]
-                }));
+        // Carregar capabilities unificado (Sentinel + Landsat)
+        requester._get('capabilities', function(capabilities) {
+            $scope.tilesCapabilities = capabilities || [];
+            
+            if (Array.isArray(capabilities)) {
+                // Processar capabilities do Sentinel
+                $scope.sentinelMosaics = capabilities
+                    .filter(c => c.satellite === 'sentinel')
+                    .map(c => ({
+                        name: c.name,
+                        display_name: c.display_name,
+                        years: c.year,          // [2017 … 2025]
+                        periods: c.period,      // ["WET","DRY","MONTH"]
+                        visparams: c.visparam,  // ["tvi-green", …]
+                        visparam_details: c.visparam_details // detalhes completos dos visparams
+                    }));
+                
+                // Processar capabilities do Landsat
+                const landsatCap = capabilities.find(c => c.satellite === 'landsat');
+                if (landsatCap) {
+                    $scope.landsatCapabilities = [landsatCap];
+                    $scope.landsatVisparams = landsatCap.visparam || [];
+                    $scope.landsatVisparamDetails = landsatCap.visparam_details || [];
+                }
+                
+                // Processar capabilities do Sentinel
+                const sentinelCap = capabilities.find(c => c.satellite === 'sentinel');
+                if (sentinelCap) {
+                    $scope.sentinelCapabilities = [sentinelCap];
+                    $scope.sentinelVisparams = sentinelCap.visparam || [];
+                    $scope.sentinelVisparamDetails = sentinelCap.visparam_details || [];
+                }
+                
+                // Atualizar visparams disponíveis quando capabilities carregarem
+                $scope.updateAvailableVisParams();
+            } else {
+                $scope.sentinelMosaics = [];
+                $scope.landsatCapabilities = [];
+                $scope.landsatVisparams = [];
+                $scope.landsatVisparamDetails = [];
+            }
         });
 
         // Função para verificar se deve mostrar uma propriedade
@@ -1013,6 +1320,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $uibModal.open({
                 controller: 'MosaicDialogController',
                 templateUrl: 'views/mosaic-dialog.tpl.html',
+                windowClass: 'modal-80-percent',
                 size: 'lg',
                 resolve: {
                     mosaics: function() {

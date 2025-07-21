@@ -106,10 +106,10 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
     // Criar novo parâmetro
     $scope.createParam = function() {
         var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-modal.tpl.html',
-            controller: 'AdminVisParamModalController',
+            templateUrl: 'views/admin-vis-param-modal-v2.tpl.html',
+            controller: 'AdminVisParamModalV2Controller',
             size: 'lg',
-            windowClass: 'vis-param-modal',
+            windowClass: 'vis-param-modal-v2',
             resolve: {
                 param: function() { return null; },
                 categories: function() { return $scope.categories; }
@@ -125,10 +125,10 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
     // Editar parâmetro
     $scope.editParam = function(param) {
         var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-modal.tpl.html',
-            controller: 'AdminVisParamModalController',
+            templateUrl: 'views/admin-vis-param-modal-v2.tpl.html',
+            controller: 'AdminVisParamModalV2Controller',
             size: 'lg',
-            windowClass: 'vis-param-modal',
+            windowClass: 'vis-param-modal-v2',
             resolve: {
                 param: function() { return angular.copy(param); },
                 categories: function() { return $scope.categories; }
