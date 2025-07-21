@@ -53,6 +53,7 @@
     "swagger-jsdoc": "^6.1.0",
     "swagger-ui-express": "^4.1.6",
     "temp": "~0.8.1",
+    "tough-cookie": "^2.5.0",
     "underscore": "~1.6.0",
     "unidecode": "^0.1.7",
     "walker": "~1.0.5",
