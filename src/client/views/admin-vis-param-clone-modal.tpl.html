@@ -1,0 +1,46 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-copy"></i>
+        Clonar Parâmetro
+    </h3>
+    <button type="button" class="close" ng-click="cancel()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <p>Você está clonando o parâmetro <strong>{{ originalParam.display_name }}</strong>.</p>
+    
+    <div class="form-group">
+        <label>Nome do novo parâmetro <span class="required">*</span></label>
+        <input type="text" class="form-control" ng-model="newName" 
+               ng-pattern="/^[a-z0-9-_]+$/"
+               placeholder="Digite o nome do novo parâmetro"
+               required>
+        <small class="form-text text-muted">
+            Use apenas letras minúsculas, números, hífen e underscore
+        </small>
+    </div>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        O novo parâmetro será criado com todas as configurações do original, mas com o novo nome.
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="cancel()">
+        Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" ng-click="clone()"
+            ng-disabled="!newName || newName === originalParam.name">
+        <i class="fas fa-copy"></i>
+        Clonar
+    </button>
+</div>
+
+<style>
+.required {
+    color: #dc3545;
+}
+</style>

@@ -293,7 +293,7 @@ Application
     //     }
     //   }
     // })
-    .directive('sentinelMap', function ($timeout) {
+    .directive('sentinelMap', function ($timeout, $injector) {
       return {
         template: `
       <div>
@@ -335,7 +335,7 @@ Application
           year:      '=',
           visparams: '='
         },
-        controller: function ($scope, $element) {
+        controller: function ($scope, $element, $injector) {
 
           /* ---------- estado ---------- */
           $scope.selectedVisparam    = $scope.visparams[0];
@@ -364,6 +364,19 @@ Application
             const monthParam    = periodOrMonth === 'MONTH'
                 ? `&month=${$scope.selectedMonth}`
                 : '';
+            
+            // Usar configuração de ambiente se disponível
+            if ($injector.has('AppConfig')) {
+              const AppConfig = $injector.get('AppConfig');
+              return AppConfig.buildTileUrl('s2_harmonized', {
+                period: periodOrMonth,
+                year: $scope.year,
+                visparam: $scope.selectedVisparam,
+                month: periodOrMonth === 'MONTH' ? $scope.selectedMonth : undefined
+              });
+            }
+            
+            // Fallback para URL hardcoded se config não estiver disponível
             return `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}` +
                 `?period=${periodOrMonth}` +
                 `&year=${$scope.year}` +
@@ -438,7 +451,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, capabilitiesService) {
+    .directive('landsatMap', function ($timeout, capabilitiesService, $injector) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -453,7 +466,7 @@ Application
           year: '=',
           visparams: '='
         },
-        controller: function ($scope, $element) {
+        controller: function ($scope, $element, $injector) {
           /* ---------- estado ---------- */
           // Obter visparam do scope pai (supervisor controller)
           $scope.selectedVisparam = $scope.$parent.landsatVisparam || localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
@@ -530,6 +543,17 @@ Application
             // Salvar preferência no localStorage
             localStorage.setItem('landsat_visparam', $scope.selectedVisparam);
             
+            // Usar configuração de ambiente se disponível
+            if ($injector.has('AppConfig')) {
+              const AppConfig = $injector.get('AppConfig');
+              return AppConfig.buildTileUrl('landsat', {
+                period: $scope.period,
+                year: $scope.year,
+                visparam: $scope.selectedVisparam
+              });
+            }
+            
+            // Fallback para URL hardcoded se config não estiver disponível
             return `https://tm{s}.lapig.iesa.ufg.br/api/layers/landsat/{x}/{y}/{z}` +
               `?period=${$scope.period}` +
               `&year=${$scope.year}` +

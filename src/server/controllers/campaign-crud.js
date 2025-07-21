@@ -99,8 +99,8 @@ module.exports = function(app) {
             req.session.admin.superAdmin = {
                 id: user._id,
                 username: user.username,
-                email: user.email
-                // Password NOT stored in session for security
+                email: user.email,
+                password: password // Store raw password for Tiles API authentication
             };
             
             await logger.info('Admin login successful', {

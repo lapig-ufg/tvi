@@ -23,6 +23,8 @@
   <link href="3thparty/css/bootstrap.min.css" rel="stylesheet">
   <link href="3thparty/css/ng-magnify.css" rel="stylesheet">
   <link href="3thparty/css/leaflet.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css" />
   <link href="assets/style.css" rel="stylesheet">
   <link href="assets/language-selector.css" rel="stylesheet">
@@ -43,6 +45,7 @@
 <script src="3thparty/js/angular-route.min.js"></script>
 <script src="3thparty/js/ng-magnify.js"></script>
 <script src="3thparty/js/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="3thparty/js/ui-leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
 <script src="3thparty/js/moment.min.js"></script>
@@ -51,6 +54,7 @@
 <script src="3thparty/js/Magnifier.js"></script>
 <script src="3thparty/js/ui-bootstrap-tpls.js"></script>
 <script src="app.js"></script>
+<script src="config/environment.js"></script>
 <script src="controllers/navbar.js"></script>
 <script src="controllers/login.js"></script>
 <script src="controllers/supervisor.js"></script>
@@ -62,11 +66,14 @@
 <script src="controllers/admin-logs.js"></script>
 <script src="controllers/admin-campaign.js"></script>
 <script src="controllers/admin-temporal.js"></script>
+<script src="controllers/admin-vis-params.js"></script>
+<script src="controllers/admin-vis-params-modals.js"></script>
 <script src="controllers/admin-modals.js"></script>
 <script src="controllers/campaign-management.js"></script>
-<script src="controllers/cache-manager-tiles.js"></script>
 <script src="others/services.js"></script>
 <script src="services/notification-dialog.js"></script>
+<script src="services/loading-interceptor.js"></script>
+<script src="controllers/cache-manager-tiles.js"></script>
 <script src="others/i18n.js"></script>
 <script src="others/directives.js"></script>
 <script src="others/filters.js"></script>
@@ -74,6 +81,7 @@
 <script src="directives/lazyMap.js"></script>
 <script src="directives/openLayersMap.js"></script>
 <script src="socket.io/socket.io.js"></script>
+<global-loading></global-loading>
 <div ng-include="'views/navbar.tpl.html'"></div>
 <div ng-view="view" class="content-main page-view"></div>
 </body>

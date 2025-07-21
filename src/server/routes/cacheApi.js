@@ -1,48 +1,7 @@
 module.exports = function (app) {
     const cacheManager = app.controllers.cacheManager;
     const auth = app.middleware.auth.cacheApiAuth;
-    
-    // Debug log
-    // console.log('cacheApi.js - cacheManager loaded:', !!cacheManager);
-    // console.log('cacheApi.js - cacheManager methods:', cacheManager ? Object.keys(cacheManager) : 'undefined');
 
-    // ===== Public endpoints (existing functionality) =====
-    
-    /**
-     * @swagger
-     * /service/cache/uncached-points:
-     *   get:
-     *     summary: Get uncached points grouped by campaign
-     *     tags: [Cache]
-     *     description: Returns a list of points that haven't been cached yet, grouped by campaign with priority
-     *     responses:
-     *       200:
-     *         description: Success
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 success:
-     *                   type: boolean
-     *                 totalUncachedPoints:
-     *                   type: number
-     *                 campaigns:
-     *                   type: array
-     *                   items:
-     *                     type: object
-     *                     properties:
-     *                       _id:
-     *                         type: string
-     *                       campaignInfo:
-     *                         type: object
-     *                       uncachedCount:
-     *                         type: number
-     *                       points:
-     *                         type: array
-     *       500:
-     *         description: Server error
-     */
     app.get('/service/cache/uncached-points', cacheManager.getUncachedPoints);
     
     // Start cache simulation
@@ -60,64 +19,6 @@ module.exports = function (app) {
     // Clear layer cache (legacy)
     app.post('/service/cache/clear-layer', cacheManager.clearLayerCache);
 
-    // ===== Protected endpoints (new API features) =====
-    
-    /**
-     * @swagger
-     * /api/cache/stats:
-     *   get:
-     *     summary: Get cache statistics from the Tiles API
-     *     tags: [Cache]
-     *     security:
-     *       - cacheApiAuth: []
-     *     description: Returns comprehensive cache statistics including Redis hits/misses, storage info and performance metrics
-     *     responses:
-     *       200:
-     *         description: Success
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 success:
-     *                   type: boolean
-     *                 data:
-     *                   type: object
-     *                   properties:
-     *                     redis:
-     *                       type: object
-     *                       properties:
-     *                         hits:
-     *                           type: number
-     *                         misses:
-     *                           type: number
-     *                         size:
-     *                           type: number
-     *                         memory:
-     *                           type: number
-     *                     storage:
-     *                       type: object
-     *                       properties:
-     *                         tiles:
-     *                           type: number
-     *                         size:
-     *                           type: number
-     *                         campaigns:
-     *                           type: array
-     *                     performance:
-     *                       type: object
-     *                       properties:
-     *                         avgResponseTime:
-     *                           type: number
-     *                         requestsPerMinute:
-     *                           type: number
-     *                         errorRate:
-     *                           type: number
-     *       401:
-     *         description: Unauthorized
-     *       500:
-     *         description: Server error
-     */
     app.get('/api/cache/stats', 
         auth.requireCacheApiAuth, 
         cacheManager.getApiCacheStats
@@ -189,12 +90,6 @@ module.exports = function (app) {
     
     // ===== Task management =====
     
-    // Get active tasks
-    app.get('/api/cache/tasks/active', 
-        auth.requireCacheApiAuth, 
-        cacheManager.getActiveTasks
-    );
-    
     // Get task status
     app.get('/api/cache/tasks/:taskId', 
         auth.requireCacheApiAuth, 
@@ -225,5 +120,43 @@ module.exports = function (app) {
     app.get('/api/aggregation/sprites/:spriteId/status', 
         auth.optionalCacheApiAuth, 
         cacheManager.getSpriteSheetStatus
+    );
+    
+    // ===== Task Management endpoints =====
+    
+    // List all tasks
+    app.get('/api/tasks/list', 
+        auth.requireCacheApiAuth, 
+        cacheManager.getTasksList
+    );
+    
+    // Get task status by ID
+    app.get('/api/tasks/status/:taskId', 
+        auth.requireCacheApiAuth, 
+        cacheManager.getTaskStatusById
+    );
+    
+    // Get workers statistics
+    app.get('/api/tasks/workers', 
+        auth.requireCacheApiAuth, 
+        cacheManager.getWorkersStats
+    );
+    
+    // Purge tasks from queue
+    app.post('/api/tasks/purge', 
+        auth.requireCacheApiAuth, 
+        cacheManager.purgeTasks
+    );
+    
+    // Get registered tasks
+    app.get('/api/tasks/registered', 
+        auth.requireCacheApiAuth, 
+        cacheManager.getRegisteredTasks
+    );
+    
+    // Get queue length
+    app.get('/api/tasks/queue-length', 
+        auth.requireCacheApiAuth, 
+        cacheManager.getQueueLength
     );
 };

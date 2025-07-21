@@ -411,9 +411,26 @@ module.exports = function (app) {
         var module = request.query.module;
         var startDate = request.query.startDate;
         var endDate = request.query.endDate;
+        var search = request.query.search;
         
         // Construir query
         var query = {};
+        
+        // Se há um termo de busca, procurar por logId ou mensagem
+        if (search) {
+            // Se parece com um logId (formato: XXXXXXXX-XXXXXX), buscar exatamente por ele
+            if (/^[A-Z0-9]{8}-[A-Z0-9]{5,6}$/.test(search)) {
+                query.logId = search;
+            } else {
+                // Caso contrário, buscar no logId, mensagem e módulo
+                query.$or = [
+                    { logId: { $regex: search, $options: 'i' } },
+                    { message: { $regex: search, $options: 'i' } },
+                    { 'application.module': { $regex: search, $options: 'i' } },
+                    { 'application.function': { $regex: search, $options: 'i' } }
+                ];
+            }
+        }
         
         if (level) {
             query.level = level;
@@ -456,122 +473,41 @@ module.exports = function (app) {
     });
 
     /**
-     * Get log details by ID
-     */
-    app.get('/service/logs/:logId', function (request, response) {
-        var logId = request.params.logId;
-        
-        logsCollection.findOne({ logId: logId }, function (err, log) {
-            if (err) {
-                console.error('Erro ao buscar log:', err);
-                return response.status(500).json({
-                    success: false,
-                    error: 'Erro ao buscar log',
-                    details: err.message
-                });
-            }
-            
-            if (!log) {
-                return response.status(404).json({
-                    success: false,
-                    error: 'Log não encontrado'
-                });
-            }
-            
-            response.json({
-                success: true,
-                log: log
-            });
-        });
-    });
-
-    /**
-     * Delete logs manually (além do job automático)
-     */
-    app.delete('/service/logs/cleanup', function (request, response) {
-        var daysToKeep = parseInt(request.query.daysToKeep) || 30;
-        var keepErrors = request.query.keepErrors !== 'false';
-        var dryRun = request.query.dryRun === 'true';
-        
-        // Calcular data de corte
-        var cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-        
-        // Construir query
-        var deleteQuery = {
-            timestamp: { $lt: cutoffDate }
-        };
-        
-        if (keepErrors) {
-            deleteQuery.level = { $ne: 'error' };
-        }
-        
-        // Primeiro contar quantos serão deletados
-        logsCollection.count(deleteQuery, function(err, count) {
-            if (err) {
-                console.error('Erro ao contar logs:', err);
-                return response.status(500).json({
-                    success: false,
-                    error: 'Erro ao contar logs',
-                    details: err.message
-                });
-            }
-            
-            if (dryRun) {
-                // Apenas retornar contagem
-                response.json({
-                    success: true,
-                    dryRun: true,
-                    wouldDelete: count,
-                    cutoffDate: cutoffDate,
-                    keepErrors: keepErrors
-                });
-            } else {
-                // Executar deleção
-                logsCollection.deleteMany(deleteQuery, function(err, result) {
-                    if (err) {
-                        console.error('Erro ao deletar logs:', err);
-                        return response.status(500).json({
-                            success: false,
-                            error: 'Erro ao deletar logs',
-                            details: err.message
-                        });
-                    }
-                    
-                    var deletedCount = result.deletedCount || 0;
-                    
-                    // Emitir evento
-                    Internal.emitLogsUpdate('manual-cleanup-completed', {
-                        deletedCount: deletedCount,
-                        cutoffDate: cutoffDate,
-                        keepErrors: keepErrors
-                    });
-                    
-                    response.json({
-                        success: true,
-                        deleted: deletedCount,
-                        cutoffDate: cutoffDate,
-                        keepErrors: keepErrors
-                    });
-                });
-            }
-        });
-    });
-
-    /**
      * Export logs to CSV
      */
     app.get('/service/logs/export', function (request, response) {
         var limit = parseInt(request.query.limit) || 1000;
         var level = request.query.level;
+        var module = request.query.module;
         var startDate = request.query.startDate;
         var endDate = request.query.endDate;
+        var search = request.query.search;
         
         // Construir query
         var query = {};
         
+        // Se há um termo de busca, procurar por logId ou mensagem
+        if (search) {
+            // Se parece com um logId (formato: XXXXXXXX-XXXXXX), buscar exatamente por ele
+            if (/^[A-Z0-9]{8}-[A-Z0-9]{5,6}$/.test(search)) {
+                query.logId = search;
+            } else {
+                // Caso contrário, buscar no logId, mensagem e módulo
+                query.$or = [
+                    { logId: { $regex: search, $options: 'i' } },
+                    { message: { $regex: search, $options: 'i' } },
+                    { 'application.module': { $regex: search, $options: 'i' } },
+                    { 'application.function': { $regex: search, $options: 'i' } }
+                ];
+            }
+        }
+        
         if (level) {
             query.level = level;
+        }
+        
+        if (module) {
+            query['application.module'] = module;
         }
         
         if (startDate || endDate) {
@@ -618,6 +554,171 @@ module.exports = function (app) {
                 response.setHeader('Content-Disposition', 'attachment; filename="logs-export.csv"');
                 response.send(csv);
             });
+    });
+
+    /**
+     * Get log details by ID
+     */
+    app.get('/service/logs/:logId', function (request, response) {
+        var logId = request.params.logId;
+        
+        logsCollection.findOne({ logId: logId }, function (err, log) {
+            if (err) {
+                console.error('Erro ao buscar log:', err);
+                return response.status(500).json({
+                    success: false,
+                    error: 'Erro ao buscar log',
+                    details: err.message
+                });
+            }
+            
+            if (!log) {
+                return response.status(404).json({
+                    success: false,
+                    error: 'Log não encontrado'
+                });
+            }
+            
+            response.json({
+                success: true,
+                log: log
+            });
+        });
+    });
+
+    /**
+     * Delete logs manually (além do job automático)
+     */
+    app.delete('/service/logs/cleanup', function (request, response) {
+        var daysToKeep = parseInt(request.query.daysToKeep) || 30;
+        var keepErrors = request.query.keepErrors !== 'false';
+        var dryRun = request.query.dryRun === 'true';
+        
+        // Calcular data de corte
+        var cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+        
+        // Se daysToKeep for 0, deletar todos os logs de hoje
+        if (daysToKeep === 0) {
+            cutoffDate = new Date();
+            cutoffDate.setHours(23, 59, 59, 999);
+        }
+        
+        // Construir query
+        var deleteQuery = {
+            timestamp: { $lt: cutoffDate }
+        };
+        
+        if (keepErrors) {
+            deleteQuery.level = { $ne: 'error' };
+        }
+        
+        // Primeiro contar quantos serão deletados
+        logsCollection.count(deleteQuery, function(err, count) {
+            if (err) {
+                console.error('Erro ao contar logs:', err);
+                return response.status(500).json({
+                    success: false,
+                    error: 'Erro ao contar logs',
+                    details: err.message
+                });
+            }
+            
+            console.log('Contagem de logs que serão deletados:', count);
+            console.log('Query de delete:', JSON.stringify(deleteQuery));
+            console.log('Data de corte (logs antes desta data serão deletados):', cutoffDate.toISOString());
+            
+            // Debug: verificar logs mais antigos e mais recentes
+            logsCollection.findOne({}, { sort: { timestamp: 1 } }, function(oldestErr, oldestLog) {
+                logsCollection.findOne({}, { sort: { timestamp: -1 } }, function(newestErr, newestLog) {
+                    // Contar total de logs na coleção
+                    logsCollection.count({}, function(totalErr, totalCount) {
+                        if (!oldestErr && oldestLog) {
+                            console.log('Log mais antigo:', oldestLog.timestamp ? oldestLog.timestamp.toISOString() : 'sem timestamp');
+                        }
+                        if (!newestErr && newestLog) {
+                            console.log('Log mais recente:', newestLog.timestamp ? newestLog.timestamp.toISOString() : 'sem timestamp');
+                        }
+                        console.log('Total de logs na coleção (sem filtro):', totalErr ? 'erro' : totalCount);
+                        console.log('Logs que atendem ao critério de delete:', count);
+                        
+                        // Se estamos tentando deletar com keepErrors=true, contar quantos são errors
+                        if (keepErrors) {
+                            logsCollection.count({ level: 'error' }, function(errorErr, errorCount) {
+                                console.log('Total de logs de erro na coleção:', errorErr ? 'erro' : errorCount);
+                            });
+                        }
+                    
+                    if (dryRun) {
+                        // Apenas retornar contagem
+                        response.json({
+                            success: true,
+                            dryRun: true,
+                            wouldDelete: count,
+                            cutoffDate: cutoffDate,
+                            keepErrors: keepErrors,
+                            debug: {
+                                oldestLog: oldestLog ? oldestLog.timestamp : null,
+                                newestLog: newestLog ? newestLog.timestamp : null,
+                                totalLogs: count
+                            }
+                        });
+                    } else {
+                // Executar deleção
+                // Para MongoDB driver 2.x, não podemos passar writeConcern como segundo parâmetro
+                logsCollection.deleteMany(deleteQuery, function(err, result) {
+                    if (err) {
+                        console.error('Erro ao deletar logs:', err);
+                        return response.status(500).json({
+                            success: false,
+                            error: 'Erro ao deletar logs',
+                            details: err.message
+                        });
+                    }
+                    
+                    // No driver MongoDB 2.x, o resultado está em result.result
+                    var deletedCount = 0;
+                    if (result && result.result) {
+                        deletedCount = result.result.n || 0;
+                        console.log('Delete operation writeResult:', result.result);
+                    } else if (result && result.deletedCount !== undefined) {
+                        deletedCount = result.deletedCount;
+                    }
+                    
+                    console.log('Delete operation full result:', JSON.stringify(result));
+                    console.log('Deleted count:', deletedCount);
+                    console.log('Delete query used:', JSON.stringify(deleteQuery));
+                    console.log('Cutoff date:', cutoffDate.toISOString());
+                    
+                    // Verificar se realmente deletou fazendo uma contagem após a operação
+                    logsCollection.count(deleteQuery, function(countErr, remainingCount) {
+                        if (countErr) {
+                            console.error('Erro ao verificar contagem após delete:', countErr);
+                        } else {
+                            console.log('Logs restantes que atendem à query de delete:', remainingCount);
+                        }
+                        
+                        // Emitir evento
+                        Internal.emitLogsUpdate('manual-cleanup-completed', {
+                            deletedCount: deletedCount,
+                            cutoffDate: cutoffDate,
+                            keepErrors: keepErrors
+                        });
+                        
+                        response.json({
+                            success: true,
+                            deleted: deletedCount,
+                            cutoffDate: cutoffDate,
+                            keepErrors: keepErrors,
+                            remainingToDelete: countErr ? 'unknown' : remainingCount
+                        });
+                    });
+                });
+                    }
+                    });
+                });
+            });
+        });
     });
 
 };

@@ -1,0 +1,151 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-vial"></i>
+        Testar Parâmetro
+    </h3>
+    <button type="button" class="close" ng-click="close()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <div class="test-info">
+        <p>Testando o parâmetro <strong>{{ param.display_name }}</strong></p>
+    </div>
+
+    <div class="form-section">
+        <h4>Coordenadas do Tile</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>X</label>
+                    <input type="number" class="form-control" ng-model="test.x" min="0">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Y</label>
+                    <input type="number" class="form-control" ng-model="test.y" min="0">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Z (Zoom)</label>
+                    <input type="number" class="form-control" ng-model="test.z" min="0" max="20">
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Tipo de Layer</label>
+            <select class="form-control" ng-model="test.layer_type">
+                <option value="landsat">Landsat</option>
+                <option value="sentinel2">Sentinel-2</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="test-actions">
+        <button class="btn btn-primary" ng-click="runTest()" ng-disabled="loading">
+            <i class="fas fa-play" ng-if="!loading"></i>
+            <i class="fas fa-spinner fa-spin" ng-if="loading"></i>
+            Executar Teste
+        </button>
+    </div>
+
+    <div class="test-result" ng-if="result">
+        <h4>Resultado do Teste</h4>
+        
+        <div class="alert" ng-class="result.success ? 'alert-success' : 'alert-danger'">
+            <i class="fas" ng-class="result.success ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+            {{ result.message || (result.success ? 'Teste executado com sucesso!' : 'Erro ao executar teste') }}
+        </div>
+
+        <div ng-if="result.tile_url" class="result-details">
+            <h5>URL do Tile Gerada:</h5>
+            <div class="url-display">
+                <code>{{ result.tile_url }}</code>
+            </div>
+        </div>
+
+        <div ng-if="result.preview_url" class="result-details">
+            <h5>Preview:</h5>
+            <img ng-src="{{ result.preview_url }}" class="tile-preview" alt="Tile preview">
+        </div>
+
+        <div ng-if="result.details" class="result-details">
+            <h5>Detalhes:</h5>
+            <pre>{{ result.details | json }}</pre>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="close()">
+        Fechar
+    </button>
+</div>
+
+<style>
+.test-info {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.test-actions {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.test-result {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.test-result h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.result-details {
+    margin-top: 15px;
+}
+
+.result-details h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.url-display {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    word-break: break-all;
+}
+
+.tile-preview {
+    max-width: 100%;
+    max-height: 300px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.result-details pre {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+</style>

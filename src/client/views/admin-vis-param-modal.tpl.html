@@ -1,0 +1,342 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-palette"></i>
+        {{ title }}
+    </h3>
+    <button type="button" class="close" ng-click="cancel()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <form name="paramForm" novalidate>
+        <!-- Informações Básicas -->
+        <div class="form-section">
+            <h4>Informações Básicas</h4>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nome (ID) <span class="required">*</span></label>
+                        <input type="text" class="form-control" 
+                               ng-model="param.name" 
+                               ng-disabled="isEdit"
+                               ng-pattern="/^[a-z0-9-_]+$/"
+                               placeholder="ex: tvi-green"
+                               required>
+                        <small class="form-text text-muted">
+                            Use apenas letras minúsculas, números, hífen e underscore
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nome de Exibição <span class="required">*</span></label>
+                        <input type="text" class="form-control" 
+                               ng-model="param.display_name"
+                               placeholder="ex: TVI Green"
+                               required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Categoria <span class="required">*</span></label>
+                        <select class="form-control" ng-model="param.category" required>
+                            <option value="landsat">Landsat</option>
+                            <option value="sentinel2">Sentinel-2</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" 
+                                   id="activeSwitch" ng-model="param.active">
+                            <label class="custom-control-label" for="activeSwitch">
+                                {{ param.active ? 'Ativo' : 'Inativo' }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea class="form-control" ng-model="param.description" 
+                          rows="2" placeholder="Descrição opcional do parâmetro"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Tags</label>
+                <div class="tags-input">
+                    <span class="tag" ng-repeat="tag in param.tags">
+                        {{ tag }}
+                        <button type="button" class="tag-remove" ng-click="removeTag($index)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
+                    <input type="text" class="tag-input" ng-model="newTag"
+                           placeholder="Adicionar tag..."
+                           ng-keypress="$event.keyCode === 13 && addTag()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuração de Bandas -->
+        <div class="form-section">
+            <h4>Configuração de Visualização</h4>
+            
+            <div class="form-group">
+                <label>Bandas <span class="required">*</span></label>
+                <div class="bands-input">
+                    <div class="input-group">
+                        <input type="text" class="form-control" ng-model="bandInput"
+                               placeholder="Ex: B4, B3, B2 ou RED, GREEN, BLUE">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" ng-click="addBand()">
+                                <i class="fas fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">
+                        Separe múltiplas bandas por vírgula
+                    </small>
+                </div>
+                
+                <div class="bands-list" ng-if="param.vis_params.bands.length > 0">
+                    <span class="band-chip" ng-repeat="band in param.vis_params.bands">
+                        {{ band }}
+                        <button type="button" class="band-remove" ng-click="removeBand($index)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Min Values -->
+            <div class="form-group">
+                <label>
+                    Valores Mínimos
+                    <button type="button" class="btn btn-sm btn-link" 
+                            ng-click="toggleArrayMode('min')"
+                            ng-if="param.vis_params.bands.length > 0">
+                        <i class="fas fa-exchange-alt"></i>
+                        {{ Array.isArray(param.vis_params.min) ? 'Usar valor único' : 'Usar valores por banda' }}
+                    </button>
+                </label>
+                
+                <div ng-if="!Array.isArray(param.vis_params.min)">
+                    <input type="number" class="form-control" ng-model="param.vis_params.min">
+                </div>
+                
+                <div ng-if="Array.isArray(param.vis_params.min)" class="row">
+                    <div class="col-md-4" ng-repeat="(index, band) in param.vis_params.bands">
+                        <label class="small">{{ band }}</label>
+                        <input type="number" class="form-control" ng-model="param.vis_params.min[index]">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Max Values -->
+            <div class="form-group">
+                <label>
+                    Valores Máximos
+                    <button type="button" class="btn btn-sm btn-link" 
+                            ng-click="toggleArrayMode('max')"
+                            ng-if="param.vis_params.bands.length > 0">
+                        <i class="fas fa-exchange-alt"></i>
+                        {{ Array.isArray(param.vis_params.max) ? 'Usar valor único' : 'Usar valores por banda' }}
+                    </button>
+                </label>
+                
+                <div ng-if="!Array.isArray(param.vis_params.max)">
+                    <input type="number" class="form-control" ng-model="param.vis_params.max">
+                </div>
+                
+                <div ng-if="Array.isArray(param.vis_params.max)" class="row">
+                    <div class="col-md-4" ng-repeat="(index, band) in param.vis_params.bands">
+                        <label class="small">{{ band }}</label>
+                        <input type="number" class="form-control" ng-model="param.vis_params.max[index]">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gamma -->
+            <div class="form-group">
+                <label>
+                    Gamma
+                    <button type="button" class="btn btn-sm btn-link" 
+                            ng-click="toggleArrayMode('gamma')"
+                            ng-if="param.vis_params.bands.length > 0">
+                        <i class="fas fa-exchange-alt"></i>
+                        {{ Array.isArray(param.vis_params.gamma) ? 'Usar valor único' : 'Usar valores por banda' }}
+                    </button>
+                </label>
+                
+                <div ng-if="!Array.isArray(param.vis_params.gamma)">
+                    <input type="number" class="form-control" ng-model="param.vis_params.gamma" 
+                           step="0.1" min="0.1" max="5">
+                </div>
+                
+                <div ng-if="Array.isArray(param.vis_params.gamma)" class="row">
+                    <div class="col-md-4" ng-repeat="(index, band) in param.vis_params.bands">
+                        <label class="small">{{ band }}</label>
+                        <input type="number" class="form-control" ng-model="param.vis_params.gamma[index]"
+                               step="0.1" min="0.1" max="5">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="cancel()">
+        Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" ng-click="save()" 
+            ng-disabled="paramForm.$invalid || loading">
+        <i class="fas fa-save" ng-if="!loading"></i>
+        <i class="fas fa-spinner fa-spin" ng-if="loading"></i>
+        {{ isEdit ? 'Salvar Alterações' : 'Criar Parâmetro' }}
+    </button>
+</div>
+
+<style>
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    font-size: 1.125rem;
+}
+
+/* Form Elements */
+.form-group label {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.75rem;
+}
+
+.form-control {
+    font-size: 1.125rem;
+    padding: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+
+.form-text {
+    font-size: 1rem;
+}
+
+.btn {
+    font-size: 1.125rem;
+    padding: 1rem 1.5rem;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h4 {
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.375rem;
+    font-weight: 600;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.tags-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    min-height: 38px;
+    align-items: center;
+}
+
+.tag {
+    background-color: #e9ecef;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.875rem;
+}
+
+.tag-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    min-width: 120px;
+    font-size: 1.125rem;
+    padding: 6px;
+}
+
+.bands-list {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.band-chip {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.band-remove {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.band-remove:hover {
+    opacity: 1;
+}
+
+.custom-switch {
+    padding-left: 2.25rem;
+}
+
+.custom-control-label {
+    padding-top: 0.2rem;
+}
+</style>

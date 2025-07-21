@@ -90,6 +90,30 @@
                 <i class="fas fa-arrow-right"></i>
             </div>
         </div>
+
+        <!-- Parâmetros de Visualização -->
+        <div class="module-card" ng-click="navigateTo('/admin/visualization-params')">
+            <div class="module-icon visualization">
+                <i class="fas fa-palette"></i>
+            </div>
+            <div class="module-content">
+                <h2 class="module-title">Parâmetros de Visualização</h2>
+                <p class="module-description">Gerencie parâmetros de visualização para camadas</p>
+                <div class="module-stats" ng-if="stats.visParams">
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.visParams.total || 0 }}</span>
+                        <span class="stat-label">Total</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-value">{{ stats.visParams.active || 0 }}</span>
+                        <span class="stat-label">Ativos</span>
+                    </span>
+                </div>
+            </div>
+            <div class="module-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Stats -->
@@ -259,6 +283,10 @@
 
 .module-icon.logs {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.module-icon.visualization {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
 .module-content {

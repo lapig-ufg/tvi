@@ -1,6 +1,8 @@
 var Application = angular.module('application', ['ngRoute', 'ngMagnify', 'ui.bootstrap']);
 
-Application.config(function($routeProvider, $locationProvider) {
+Application.config(function($routeProvider, $locationProvider, $httpProvider) {
+    // Configure $http to send cookies with all requests
+    $httpProvider.defaults.withCredentials = true;
 
 	$routeProvider
 		.when('/temporal', {
@@ -53,6 +55,11 @@ Application.config(function($routeProvider, $locationProvider) {
 			templateUrl: 'views/admin-temporal.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin/visualization-params', {
+			controller: 'AdminVisParamsController',
+			templateUrl: 'views/admin-vis-params.tpl.html',
+			reloadOnSearch: false
+		})
 		.when('/admin', {
 			controller: 'AdminRedirectController',
 			template: '<div>Redirecionando...</div>'
@@ -79,6 +86,9 @@ Application.config(function($routeProvider, $locationProvider) {
 		});
 
 }).config(function($httpProvider) {
+	// Adicionar loading interceptor
+	$httpProvider.interceptors.push('loadingInterceptor');
+	
 	// Configurar interceptor HTTP
 	$httpProvider.interceptors.push(function($location, $rootScope) {
 		return {
@@ -182,7 +192,6 @@ Application.config(function($routeProvider, $locationProvider) {
 						$location.path('/temporal');
 					}
 				}
-				// If already on a valid route like /dashboard, don't redirect
 			}
 		});
 	}

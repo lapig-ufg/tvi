@@ -1,0 +1,132 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-satellite-dish"></i>
+        Editar Collections Sentinel-2
+    </h3>
+    <button type="button" class="close" ng-click="cancel()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <form name="sentinelForm">
+        <!-- Default Collection -->
+        <div class="form-section">
+            <h4>Collection Padrão</h4>
+            <div class="form-group">
+                <label>Collection Padrão</label>
+                <select class="form-control" ng-model="data.default_collection">
+                    <option ng-repeat="collection in data.collections" value="{{ collection.name }}">
+                        {{ collection.display_name }}
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Cloud Filter Parameters -->
+        <div class="form-section">
+            <h4>Parâmetros de Filtro de Nuvem</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Cobertura Máxima de Nuvem (%)</label>
+                        <input type="number" class="form-control" 
+                               ng-model="data.cloud_filter_params.max_cloud_coverage"
+                               min="0" max="100" step="1">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Cloud Score Threshold</label>
+                        <input type="number" class="form-control" 
+                               ng-model="data.cloud_filter_params.cloud_score_threshold"
+                               min="0" max="1" step="0.1"
+                               ng-disabled="!data.cloud_filter_params.use_cloud_score">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="useCloudScore"
+                           ng-model="data.cloud_filter_params.use_cloud_score">
+                    <label class="custom-control-label" for="useCloudScore">
+                        Usar Cloud Score
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collections -->
+        <div class="form-section">
+            <h4>Collections Disponíveis</h4>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                As collections Sentinel-2 são gerenciadas automaticamente pelo sistema.
+                Use o botão "Inicializar" na tela principal se precisar recriar a configuração padrão.
+            </div>
+            
+            <div class="collections-list">
+                <div class="collection-info" ng-repeat="collection in data.collections">
+                    <h5>{{ collection.display_name }}</h5>
+                    <p class="text-muted">{{ collection.description }}</p>
+                    <p><strong>ID:</strong> <code>{{ collection.name }}</code></p>
+                    <p><strong>Data de Início:</strong> {{ collection.start_date }}</p>
+                    <p><strong>Bandas:</strong> {{ Object.keys(collection.bands || {}).length }} disponíveis</p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="cancel()">
+        Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" ng-click="save()" ng-disabled="loading">
+        <i class="fas fa-save" ng-if="!loading"></i>
+        <i class="fas fa-spinner fa-spin" ng-if="loading"></i>
+        Salvar Configurações
+    </button>
+</div>
+
+<style>
+.form-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.collections-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.collection-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.collection-info h5 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.collection-info p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+</style>

@@ -1,0 +1,190 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-info-circle"></i>
+        Detalhes do Parâmetro
+    </h3>
+    <button type="button" class="close" ng-click="close()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <div class="detail-section">
+        <h4>Informações Gerais</h4>
+        <table class="table table-sm">
+            <tr>
+                <td width="30%"><strong>Nome (ID):</strong></td>
+                <td><code>{{ param.name }}</code></td>
+            </tr>
+            <tr>
+                <td><strong>Nome de Exibição:</strong></td>
+                <td>{{ param.display_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Categoria:</strong></td>
+                <td>
+                    <span class="category-badge" ng-class="param.category">
+                        {{ param.category | uppercase }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Status:</strong></td>
+                <td>
+                    <span class="badge" ng-class="param.active ? 'badge-success' : 'badge-secondary'">
+                        {{ param.active ? 'Ativo' : 'Inativo' }}
+                    </span>
+                </td>
+            </tr>
+            <tr ng-if="param.description">
+                <td><strong>Descrição:</strong></td>
+                <td>{{ param.description }}</td>
+            </tr>
+            <tr ng-if="param.tags && param.tags.length > 0">
+                <td><strong>Tags:</strong></td>
+                <td>
+                    <span class="tag" ng-repeat="tag in param.tags">{{ tag }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="detail-section" ng-if="param.vis_params">
+        <h4>Parâmetros de Visualização</h4>
+        <table class="table table-sm">
+            <tr>
+                <td width="30%"><strong>Bandas:</strong></td>
+                <td>
+                    <span class="band-chip" ng-repeat="band in param.vis_params.bands">
+                        {{ band }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Valores Mínimos:</strong></td>
+                <td>
+                    <span ng-if="!Array.isArray(param.vis_params.min)">
+                        {{ param.vis_params.min }}
+                    </span>
+                    <div ng-if="Array.isArray(param.vis_params.min)">
+                        <span ng-repeat="(index, value) in param.vis_params.min">
+                            {{ param.vis_params.bands[index] }}: {{ value }}<br>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Valores Máximos:</strong></td>
+                <td>
+                    <span ng-if="!Array.isArray(param.vis_params.max)">
+                        {{ param.vis_params.max }}
+                    </span>
+                    <div ng-if="Array.isArray(param.vis_params.max)">
+                        <span ng-repeat="(index, value) in param.vis_params.max">
+                            {{ param.vis_params.bands[index] }}: {{ value }}<br>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Gamma:</strong></td>
+                <td>
+                    <span ng-if="!Array.isArray(param.vis_params.gamma)">
+                        {{ param.vis_params.gamma }}
+                    </span>
+                    <div ng-if="Array.isArray(param.vis_params.gamma)">
+                        <span ng-repeat="(index, value) in param.vis_params.gamma">
+                            {{ param.vis_params.bands[index] }}: {{ value }}<br>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="detail-section" ng-if="param.band_config">
+        <h4>Configuração de Bandas</h4>
+        <table class="table table-sm">
+            <tr ng-if="param.band_config.original_bands && param.band_config.original_bands.length > 0">
+                <td width="30%"><strong>Bandas Originais:</strong></td>
+                <td>{{ param.band_config.original_bands.join(', ') }}</td>
+            </tr>
+            <tr ng-if="param.band_config.mapped_bands && param.band_config.mapped_bands.length > 0">
+                <td><strong>Bandas Mapeadas:</strong></td>
+                <td>{{ param.band_config.mapped_bands.join(', ') }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="detail-section" ng-if="param.satellite_configs && param.satellite_configs.length > 0">
+        <h4>Configurações por Satélite</h4>
+        <div ng-repeat="config in param.satellite_configs" class="satellite-config">
+            <h5>{{ config.collection_id }}</h5>
+            <pre>{{ config.vis_params | json }}</pre>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h4>JSON Completo</h4>
+        <pre class="json-view">{{ param | json }}</pre>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="close()">
+        Fechar
+    </button>
+</div>
+
+<style>
+.detail-section {
+    margin-bottom: 25px;
+}
+
+.detail-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.detail-section h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.tag {
+    background-color: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.band-chip {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.json-view {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.satellite-config {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+</style>

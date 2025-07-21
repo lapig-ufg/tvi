@@ -1,0 +1,96 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fas fa-satellite"></i>
+        Editar Collections Landsat
+    </h3>
+    <button type="button" class="close" ng-click="cancel()">
+        <span>&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <div class="collections-editor">
+        <div class="collection-item" ng-repeat="collection in collections track by $index">
+            <div class="collection-header">
+                <h5>Collection {{ $index + 1 }}</h5>
+                <button type="button" class="btn btn-sm btn-danger" ng-click="removeCollection($index)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Satélite</label>
+                        <input type="text" class="form-control" ng-model="collection.satellite"
+                               placeholder="Ex: Landsat 5" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Ano Inicial</label>
+                        <input type="number" class="form-control" ng-model="collection.start_year"
+                               min="1972" max="2050" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Ano Final</label>
+                        <input type="number" class="form-control" ng-model="collection.end_year"
+                               min="1972" max="2050" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Collection ID</label>
+                <input type="text" class="form-control" ng-model="collection.collection"
+                       placeholder="Ex: LANDSAT/LT05/C02/T1_L2" required>
+            </div>
+        </div>
+        
+        <button type="button" class="btn btn-secondary" ng-click="addCollection()">
+            <i class="fas fa-plus"></i>
+            Adicionar Collection
+        </button>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" ng-click="cancel()">
+        Cancelar
+    </button>
+    <button type="button" class="btn btn-primary" ng-click="save()" ng-disabled="loading">
+        <i class="fas fa-save" ng-if="!loading"></i>
+        <i class="fas fa-spinner fa-spin" ng-if="loading"></i>
+        Salvar Alterações
+    </button>
+</div>
+
+<style>
+.collections-editor {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.collection-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.collection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.collection-header h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+</style>

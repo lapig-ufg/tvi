@@ -55,7 +55,7 @@ app.middleware.repository.init(() => {
 				maxAge: 1000 * 60 * 60 * 8, // 8 horas (exemplo)
 				httpOnly: true, // previne acesso via JavaScript
 				secure: process.env.NODE_ENV === 'production', // HTTPS em produção
-				sameSite: 'strict', // proteção CSRF
+				sameSite: 'lax', // permite cookies em navegação mas protege CSRF
 				rolling: true // renovar tempo a cada requisição
 			}
 		})
@@ -65,6 +65,23 @@ app.middleware.repository.init(() => {
 		io.use(sharedsession(middlewareSession, {
 			autoSave:true
 		}));
+		
+		// Configure CORS to allow credentials
+		app.use(function(req, res, next) {
+			// Allow requests from the same origin or localhost
+			const origin = req.headers.origin;
+			if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+				res.header('Access-Control-Allow-Origin', origin);
+				res.header('Access-Control-Allow-Credentials', 'true');
+				res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+				res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+			}
+			
+			if (req.method === 'OPTIONS') {
+				return res.sendStatus(200);
+			}
+			next();
+		});
 
 		app.use(compression());
 		app.use(express.static(app.config.clientDir));

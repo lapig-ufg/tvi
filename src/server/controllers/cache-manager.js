@@ -2,7 +2,7 @@ module.exports = function (app) {
 
     var Internal = {};
     var cacheManager = {};
-    var request = require('request');
+    // Removed deprecated 'request' module - using axios instead
     var fs = require('fs');
     var axios = require('axios');
     var repository = app.repository;
@@ -92,7 +92,7 @@ module.exports = function (app) {
             .aggregate(query)
             .toArray(function (err, result) {
                 if (err) {
-                    logger.error('Erro ao buscar pontos não cacheados', {
+                    const logId = logger.error('Erro ao buscar pontos não cacheados', {
                         module: 'cacheManager',
                         function: 'uncached-points',
                         metadata: { error: err.message },
@@ -100,7 +100,8 @@ module.exports = function (app) {
                     });
                     response.status(500).json({ 
                         error: 'Erro interno do servidor',
-                        details: err.message 
+                        details: err.message,
+                        logId
                     });
                     return;
                 }
@@ -135,7 +136,7 @@ module.exports = function (app) {
             .limit(limitPoints)
             .toArray(function (err, points) {
                 if (err) {
-                    logger.error('Erro ao buscar pontos', {
+                    const logId =logger.error('Erro ao buscar pontos', {
                         module: 'cacheManager',
                         function: 'simulate',
                         metadata: { error: err.message, campaignId, limitPoints },
@@ -143,7 +144,8 @@ module.exports = function (app) {
                     });
                     response.status(500).json({ 
                         error: 'Erro ao buscar pontos',
-                        details: err.message 
+                        details: err.message,
+                        logId
                     });
                     return;
                 }
@@ -167,7 +169,7 @@ module.exports = function (app) {
                         });
                     })
                     .catch(function(error) {
-                        logger.error('Erro no processamento', {
+                        const logId = logger.error('Erro no processamento', {
                             module: 'cacheManager',
                             function: 'simulate',
                             metadata: { error: error.message, simulate },
@@ -175,7 +177,8 @@ module.exports = function (app) {
                         });
                         response.status(500).json({
                             error: 'Erro no processamento',
-                            details: error.message
+                            details: error.message,
+                            logId
                         });
                     });
             });
@@ -229,9 +232,16 @@ module.exports = function (app) {
             .aggregate(pipeline)
             .toArray(function (err, result) {
                 if (err) {
+                    const logId = logger.error('Erro ao obter status do cache', {
+                        module: 'cacheManager',
+                        function: 'getCacheStatus',
+                        metadata: { error: err.message },
+                        req: request
+                    });
                     response.status(500).json({
                         error: 'Erro ao obter status do cache',
-                        details: err.message
+                        details: err.message,
+                        logId
                     });
                     return;
                 }
@@ -300,7 +310,7 @@ module.exports = function (app) {
         
         Internal.getCacheConfig(function(err, mongoConfig) {
             if (err) {
-                logger.error('Erro ao buscar configuração no MongoDB', {
+                const logId = logger.error('Erro ao buscar configuração no MongoDB', {
                     module: 'cacheManager',
                     function: 'job-status',
                     metadata: { error: err.message },
@@ -308,7 +318,8 @@ module.exports = function (app) {
                 });
                 return response.status(500).json({
                     error: 'Erro ao buscar configuração',
-                    details: err.message
+                    details: err.message,
+                    logId
                 });
             }
             
@@ -379,7 +390,7 @@ module.exports = function (app) {
                 });
                 
             } catch (error) {
-                logger.error('Erro ao obter status do job', {
+                const logId = logger.error('Erro ao obter status do job', {
                     module: 'cacheManager',
                     function: 'job-status',
                     metadata: { error: error.message },
@@ -387,7 +398,8 @@ module.exports = function (app) {
                 });
                 response.status(500).json({
                     error: 'Erro ao obter status do job',
-                    details: error.message
+                    details: error.message,
+                    logId
                 });
             }
         });
@@ -435,7 +447,7 @@ module.exports = function (app) {
             { upsert: true },
             function(err, result) {
                 if (err) {
-                    logger.error('Erro ao atualizar configuração no MongoDB', {
+                    const logId = logger.error('Erro ao atualizar configuração no MongoDB', {
                         module: 'cacheManager',
                         function: 'updateJobConfig',
                         metadata: { error: err.message, updateData },
@@ -443,7 +455,8 @@ module.exports = function (app) {
                     });
                     return response.status(500).json({
                         error: 'Erro ao salvar configuração',
-                        details: err.message
+                        details: err.message,
+                        logId
                     });
                 }
                 
@@ -659,39 +672,36 @@ module.exports = function (app) {
                                    `&year=${year}` +
                                    `&visparam=${visparam}`;
                     
-                    await new Promise((resolve, reject) => {
-                        request({
-                            url: tileUrl,
-                            method: 'GET',
+                    try {
+                        const response = await axios.get(tileUrl, {
                             timeout: 30000,
                             headers: {
                                 'User-Agent': 'TVI-CacheManager/1.0'
-                            }
-                        }, (error, response, body) => {
-                            if (error) {
-                                errorTiles++;
-                                logger.warn(`[ERRO] ${tileUrl}`, {
-                                    module: 'cacheManager',
-                                    function: 'simulateLeafletRequest',
-                                    metadata: { error: error.message, tileUrl, pointId: point._id }
-                                });
-                                Internal.emitCacheUpdate('cache-tile-error', {
-                                    pointId: point._id,
-                                    url: tileUrl,
-                                    error: error.message
-                                });
-                                resolve(null);
-                            } else {
-                                processedTiles++;
-                                Internal.emitCacheUpdate('cache-tile-success', {
-                                    pointId: point._id,
-                                    url: tileUrl,
-                                    status: response.statusCode
-                                });
-                                resolve(response);
+                            },
+                            validateStatus: function (status) {
+                                return true; // Accept any status code
                             }
                         });
-                    });
+                        
+                        processedTiles++;
+                        Internal.emitCacheUpdate('cache-tile-success', {
+                            pointId: point._id,
+                            url: tileUrl,
+                            status: response.status
+                        });
+                    } catch (error) {
+                        errorTiles++;
+                        logger.warn(`[ERRO] ${tileUrl}`, {
+                            module: 'cacheManager',
+                            function: 'simulateLeafletRequest',
+                            metadata: { error: error.message, tileUrl, pointId: point._id }
+                        });
+                        Internal.emitCacheUpdate('cache-tile-error', {
+                            pointId: point._id,
+                            url: tileUrl,
+                            error: error.message
+                        });
+                    }
                 }
             } catch (error) {
                 errorTiles++;
@@ -798,8 +808,8 @@ module.exports = function (app) {
                         data: result
                     });
                 })
-                .catch(error => {
-                    logger.error('Error clearing cache', {
+                .catch(async error => {
+                    const logId = await logger.error('Error clearing cache', {
                         module: 'cacheManager',
                         function: 'clear-layer',
                         metadata: { error: error.message, layer, year },
@@ -807,41 +817,45 @@ module.exports = function (app) {
                     });
                     response.status(500).json({
                         error: 'Erro ao limpar cache',
-                        details: error.message
+                        details: error.message,
+                        logId
                     });
                 });
         } else {
             // Legacy implementation
-            request({
-                url: `${app.config.tilesApi.baseUrl}/api/layers/cache/clear`,
-                method: 'POST',
-                json: true,
-                body: {
-                    layer: layer,
-                    campaign: campaign,
-                    year: year,
-                    points: points
-                },
+            axios.post(`${app.config.tilesApi.baseUrl}/api/layers/cache/clear`, {
+                layer: layer,
+                campaign: campaign,
+                year: year,
+                points: points
+            }, {
                 timeout: 60000
-            }, function (error, httpResponse, body) {
-                if (error) {
-                    logger.error('Erro ao limpar cache', {
-                        module: 'cacheManager',
-                        function: 'clear-layer',
-                        metadata: { error: error.message, layer, campaign, year },
-                        req: request
-                    });
-                    response.status(500).json({
-                        error: 'Erro ao limpar cache',
-                        details: error.message
-                    });
-                    return;
-                }
-
+            })
+            .then(function (axiosResponse) {
                 response.json({
                     success: true,
                     message: 'Cache limpo com sucesso',
-                    response: body
+                    response: axiosResponse.data
+                });
+            })
+            .catch(function (error) {
+                const errorMessage = error.response ? error.response.data : error.message;
+                const logId = logger.error('Erro ao limpar cache', {
+                    module: 'cacheManager',
+                    function: 'clear-layer',
+                    metadata: { 
+                        error: errorMessage, 
+                        layer, 
+                        campaign, 
+                        year,
+                        statusCode: error.response ? error.response.status : null
+                    },
+                    req: request
+                });
+                response.status(error.response ? error.response.status : 500).json({
+                    error: 'Erro ao limpar cache',
+                    details: errorMessage,
+                    logId
                 });
             });
         }
@@ -863,12 +877,15 @@ module.exports = function (app) {
         try {
             const stats = await tilesApi.getCacheStats(request);
             
+            // Emit stats update via socket.io
+            Internal.emitCacheUpdate('cache-stats-update', stats);
+            
             response.json({
                 success: true,
                 data: stats
             });
         } catch (error) {
-            await logger.error('Error getting API cache stats', {
+            const logId = await logger.error('Error getting API cache stats', {
                 module: 'cacheManager',
                 function: 'getApiCacheStats',
                 metadata: { error: error.message },
@@ -876,7 +893,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting API cache stats',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -899,7 +917,7 @@ module.exports = function (app) {
                 data: result
             });
         } catch (error) {
-            await logger.error('Error clearing API cache', {
+            const logId = await logger.error('Error clearing API cache', {
                 module: 'cacheManager',
                 function: 'clearApiCache',
                 metadata: { error: error.message },
@@ -907,32 +925,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error clearing API cache',
-                details: error.message
-            });
-        }
-    };
-    
-    /**
-     * Get active tasks
-     */
-    cacheManager.getActiveTasks = async function (request, response) {
-        try {
-            const tasks = await tilesApi.getActiveTasks(request);
-            
-            response.json({
-                success: true,
-                data: tasks
-            });
-        } catch (error) {
-            await logger.error('Error getting active tasks', {
-                module: 'cacheManager',
-                function: 'getActiveTasks',
-                metadata: { error: error.message },
-                req: request
-            });
-            response.status(500).json({
-                error: 'Error getting active tasks',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -951,7 +945,7 @@ module.exports = function (app) {
                 data: status
             });
         } catch (error) {
-            await logger.error('Error getting task status', {
+            const logId = await logger.error('Error getting task status', {
                 module: 'cacheManager',
                 function: 'getTaskStatus',
                 metadata: { error: error.message, taskId },
@@ -959,7 +953,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting task status',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -983,7 +978,7 @@ module.exports = function (app) {
                 data: result
             });
         } catch (error) {
-            await logger.error('Error cancelling task', {
+            const logId = await logger.error('Error cancelling task', {
                 module: 'cacheManager',
                 function: 'cancelTask',
                 metadata: { error: error.message, taskId },
@@ -991,7 +986,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error cancelling task',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1003,16 +999,16 @@ module.exports = function (app) {
         try {
             const data = request.body;
             
-            if (!data.pointId) {
+            if (!data.point_id) {
                 return response.status(400).json({
                     error: 'Point ID is required'
                 });
             }
             
-            const result = await tilesApi.startPointCache(data, request);
+            const result = await tilesApi.startPointCache(data.point_id, request);
             
             Internal.emitCacheUpdate('point-cache-started', {
-                pointId: data.pointId,
+                pointId: data.point_id,
                 taskId: result.data && result.data.task_id,
                 source: 'tiles-api'
             });
@@ -1022,7 +1018,7 @@ module.exports = function (app) {
                 data: result
             });
         } catch (error) {
-            await logger.error('Error starting point cache', {
+            const logId = await logger.error('Error starting point cache', {
                 module: 'cacheManager',
                 function: 'startPointCache',
                 metadata: { error: error.message },
@@ -1030,7 +1026,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error starting point cache',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1049,7 +1046,7 @@ module.exports = function (app) {
                 data: status
             });
         } catch (error) {
-            await logger.error('Error getting point cache status', {
+            const logId =  await logger.error('Error getting point cache status', {
                 module: 'cacheManager',
                 function: 'getPointCacheStatus',
                 metadata: { error: error.message, pointId },
@@ -1057,7 +1054,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting point cache status',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1069,16 +1067,33 @@ module.exports = function (app) {
         try {
             const data = request.body;
             
-            if (!data.campaignId) {
+            // Support both camelCase and snake_case for backwards compatibility
+            const campaignId = data.campaignId || data.campaign_id;
+            const batchSize = data.batchSize || data.batch_size || 50;
+            const useGrid = data.useGrid !== undefined ? data.useGrid : (data.use_grid !== undefined ? data.use_grid : true);
+            const priorityRecentYears = data.priorityRecentYears !== undefined ? data.priorityRecentYears : (data.priority_recent_years !== undefined ? data.priority_recent_years : true);
+            
+            if (!campaignId) {
                 return response.status(400).json({
                     error: 'Campaign ID is required'
                 });
             }
             
-            const result = await tilesApi.startCampaignCache(data, request);
+            // Prepare parameters object with all options
+            const params = {
+                campaign_id: campaignId,
+                batch_size: batchSize,
+                use_grid: useGrid,
+                priority_recent_years: priorityRecentYears
+            };
+            
+            const result = await tilesApi.startCampaignCache(params, request);
             
             Internal.emitCacheUpdate('campaign-cache-started', {
-                campaignId: data.campaignId,
+                campaignId: campaignId,
+                batchSize: batchSize,
+                useGrid: useGrid,
+                priorityRecentYears: priorityRecentYears,
                 taskId: result.data && result.data.task_id,
                 source: 'tiles-api'
             });
@@ -1088,15 +1103,16 @@ module.exports = function (app) {
                 data: result
             });
         } catch (error) {
-            await logger.error('Error starting campaign cache', {
+            const logId = await logger.error('Error starting campaign cache', {
                 module: 'cacheManager',
                 function: 'startCampaignCache',
-                metadata: { error: error.message },
+                metadata: { error: error.message, params: request.body },
                 req: request
             });
             response.status(500).json({
                 error: 'Error starting campaign cache',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1115,7 +1131,7 @@ module.exports = function (app) {
                 data: status
             });
         } catch (error) {
-            await logger.error('Error getting campaign cache status', {
+            const logId = await logger.error('Error getting campaign cache status', {
                 module: 'cacheManager',
                 function: 'getCampaignCacheStatus',
                 metadata: { error: error.message, campaignId },
@@ -1123,7 +1139,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting campaign cache status',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1152,7 +1169,7 @@ module.exports = function (app) {
                 data: result
             });
         } catch (error) {
-            await logger.error('Error starting cache warmup', {
+            const logId = await logger.error('Error starting cache warmup', {
                 module: 'cacheManager',
                 function: 'startCacheWarmup',
                 metadata: { error: error.message },
@@ -1160,7 +1177,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error starting cache warmup',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1238,7 +1256,7 @@ module.exports = function (app) {
                 }
             });
         } catch (error) {
-            await logger.error('Error analyzing cache patterns', {
+            const logId = await logger.error('Error analyzing cache patterns', {
                 module: 'cacheManager',
                 function: 'analyzeCachePatterns',
                 metadata: { error: error.message, days },
@@ -1246,7 +1264,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error analyzing cache patterns',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1386,7 +1405,7 @@ module.exports = function (app) {
                 }
             });
         } catch (error) {
-            await logger.error('Error getting cache recommendations', {
+            const logId = await logger.error('Error getting cache recommendations', {
                 module: 'cacheManager',
                 function: 'getCacheRecommendations',
                 metadata: { error: error.message },
@@ -1394,7 +1413,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting cache recommendations',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1403,11 +1423,27 @@ module.exports = function (app) {
         const { pointId } = request.params;
         
         try {
-            // Clear cache for specific point
-            // This would interact with the tiles API to clear cached tiles for this point
+            // Clear cache in tiles API first
+            let tilesApiResult = null;
+            try {
+                tilesApiResult = await tilesApi.clearPointCache(pointId, request);
+                await logger.info('Point cache cleared in tiles API', {
+                    module: 'cacheManager',
+                    function: 'clearPointCache',
+                    metadata: { pointId, tilesApiResult },
+                    req: request
+                });
+            } catch (tilesError) {
+                await logger.error('Error clearing point cache in tiles API', {
+                    module: 'cacheManager',
+                    function: 'clearPointCache',
+                    metadata: { error: tilesError.message, pointId },
+                    req: request
+                });
+            }
             
             // Update MongoDB to mark point as not cached
-            await new Promise((resolve, reject) => {
+            const result = await new Promise((resolve, reject) => {
                 pointsCollection.updateOne(
                     { _id: pointId },
                     { $set: { cached: false, cachedAt: null } },
@@ -1420,15 +1456,19 @@ module.exports = function (app) {
             
             Internal.emitCacheUpdate('cache-point-cleared', {
                 pointId: pointId,
+                tilesApiCleared: !!tilesApiResult,
+                mongoUpdated: result.modifiedCount > 0,
                 source: 'api'
             });
             
             response.json({
                 success: true,
-                message: `Cache cleared for point ${pointId}`
+                message: `Cache cleared for point ${pointId}`,
+                tilesApiCleared: !!tilesApiResult,
+                mongoUpdated: result.modifiedCount > 0
             });
         } catch (error) {
-            await logger.error('Error clearing point cache', {
+            const logId = await logger.error('Error clearing point cache', {
                 module: 'cacheManager',
                 function: 'clearPointCache',
                 metadata: { error: error.message, pointId },
@@ -1436,7 +1476,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error clearing point cache',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1445,7 +1486,27 @@ module.exports = function (app) {
         const { campaignId } = request.params;
         
         try {
-            // Clear cache for all points in campaign
+            // Clear cache in tiles API first
+            let tilesApiResult = null;
+            try {
+                tilesApiResult = await tilesApi.clearCampaignCache(campaignId, request);
+                await logger.info('Campaign cache cleared in tiles API', {
+                    module: 'cacheManager',
+                    function: 'clearCampaignCache',
+                    metadata: { campaignId, tilesApiResult },
+                    req: request
+                });
+            } catch (tilesError) {
+                await logger.error('Error clearing campaign cache in tiles API', {
+                    module: 'cacheManager',
+                    function: 'clearCampaignCache',
+                    metadata: { error: tilesError.message, campaignId },
+                    req: request
+                });
+                // Continue with MongoDB update even if tiles API fails
+            }
+            
+            // Clear cache for all points in campaign in MongoDB
             const result = await new Promise((resolve, reject) => {
                 pointsCollection.updateMany(
                     { campaign: campaignId, cached: true },
@@ -1460,16 +1521,18 @@ module.exports = function (app) {
             Internal.emitCacheUpdate('cache-campaign-cleared', {
                 campaignId: campaignId,
                 pointsCleared: result.modifiedCount,
+                tilesApiCleared: !!tilesApiResult,
                 source: 'api'
             });
             
             response.json({
                 success: true,
                 message: `Cache cleared for campaign ${campaignId}`,
-                pointsCleared: result.modifiedCount
+                pointsCleared: result.modifiedCount,
+                tilesApiCleared: !!tilesApiResult
             });
         } catch (error) {
-            await logger.error('Error clearing campaign cache', {
+            const logId = await logger.error('Error clearing campaign cache', {
                 module: 'cacheManager',
                 function: 'clearCampaignCache',
                 metadata: { error: error.message, campaignId },
@@ -1477,7 +1540,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error clearing campaign cache',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1539,7 +1603,7 @@ module.exports = function (app) {
             response.send(buffer);
             
         } catch (error) {
-            await logger.error('Error getting megatile', {
+            const logId = await logger.error('Error getting megatile', {
                 module: 'cacheManager',
                 function: 'getMegatile',
                 metadata: { error: error.message, layer, x, y, z, years, size },
@@ -1547,7 +1611,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting megatile',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1684,7 +1749,7 @@ module.exports = function (app) {
             });
             
         } catch (error) {
-            await logger.error('Error generating sprite sheet', {
+            const logId = await logger.error('Error generating sprite sheet', {
                 module: 'cacheManager',
                 function: 'generateSpriteSheet',
                 metadata: { error: error.message },
@@ -1692,7 +1757,8 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error generating sprite sheet',
-                details: error.message
+                details: error.message,
+                logId
             });
         }
     };
@@ -1754,7 +1820,7 @@ module.exports = function (app) {
             });
             
         } catch (error) {
-            await logger.error('Error getting sprite sheet status', {
+            const logId = await logger.error('Error getting sprite sheet status', {
                 module: 'cacheManager',
                 function: 'getSpriteSheetStatus',
                 metadata: { error: error.message, spriteId },
@@ -1762,7 +1828,181 @@ module.exports = function (app) {
             });
             response.status(500).json({
                 error: 'Error getting sprite sheet status',
-                details: error.message
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    // ===== TASK MANAGEMENT METHODS =====
+    
+    /**
+     * List all tasks
+     */
+    cacheManager.getTasksList = async function (request, response) {
+        try {
+            const result = await tilesApi.getTasksList(request);
+            
+            response.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error listing tasks', {
+                module: 'cacheManager',
+                function: 'getTasksList',
+                metadata: { error: error.message },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error listing tasks',
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    /**
+     * Get task status by ID
+     */
+    cacheManager.getTaskStatusById = async function (request, response) {
+        try {
+            const { taskId } = request.params;
+            
+            if (!taskId) {
+                return response.status(400).json({
+                    error: 'Task ID é obrigatório'
+                });
+            }
+            
+            const result = await tilesApi.getTaskStatusById(taskId, request);
+            
+            response.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error getting task status by ID', {
+                module: 'cacheManager',
+                function: 'getTaskStatusById',
+                metadata: { error: error.message, taskId: request.params.taskId },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error getting task status',
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    /**
+     * Get workers statistics
+     */
+    cacheManager.getWorkersStats = async function (request, response) {
+        try {
+            const result = await tilesApi.getWorkersStats(request);
+            
+            response.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error getting workers stats', {
+                module: 'cacheManager',
+                function: 'getWorkersStats',
+                metadata: { error: error.message },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error getting workers stats',
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    /**
+     * Purge tasks from queue
+     */
+    cacheManager.purgeTasks = async function (request, response) {
+        try {
+            const { queue_name, state } = request.query;
+            
+            const params = {};
+            if (queue_name) params.queue_name = queue_name;
+            if (state) params.state = state;
+            
+            const result = await tilesApi.purgeTasks(params, request);
+            
+            response.json({
+                success: true,
+                message: 'Tasks purgadas com sucesso',
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error purging tasks', {
+                module: 'cacheManager',
+                function: 'purgeTasks',
+                metadata: { error: error.message, params: request.query },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error purging tasks',
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    /**
+     * Get registered tasks
+     */
+    cacheManager.getRegisteredTasks = async function (request, response) {
+        try {
+            const result = await tilesApi.getRegisteredTasks(request);
+            
+            response.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error getting registered tasks', {
+                module: 'cacheManager',
+                function: 'getRegisteredTasks',
+                metadata: { error: error.message },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error getting registered tasks',
+                details: error.message,
+                logId
+            });
+        }
+    };
+    
+    /**
+     * Get queue length
+     */
+    cacheManager.getQueueLength = async function (request, response) {
+        try {
+            const result = await tilesApi.getQueueLength(request);
+            
+            response.json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            const logId = await logger.error('Error getting queue length', {
+                module: 'cacheManager',
+                function: 'getQueueLength',
+                metadata: { error: error.message },
+                req: request
+            });
+            response.status(500).json({
+                error: 'Error getting queue length',
+                details: error.message,
+                logId
             });
         }
     };

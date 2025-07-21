@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http) {
+Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector) {
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
     $scope.showChartsNDDI = false;
@@ -728,7 +728,17 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             
             sentinelData.years.forEach(function(year, index) {
                 // Construir URL para tiles Sentinel
-                const tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                let tileUrl;
+                if ($injector.has('AppConfig')) {
+                    const AppConfig = $injector.get('AppConfig');
+                    tileUrl = AppConfig.buildTileUrl('s2_harmonized', {
+                        visparam: currentVisparam,
+                        period: currentPeriod,
+                        year: year
+                    });
+                } else {
+                    tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/s2_harmonized/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                }
                 
                 // Data fictícia para compatibilidade com a interface
                 const date = `01/07/${year}`;
@@ -774,7 +784,17 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 
                 collection.years.forEach(function(year) {
                     // Construir URL para tiles Landsat usando API de capabilities
-                    const tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/${collection.name}/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                    let tileUrl;
+                    if ($injector.has('AppConfig')) {
+                        const AppConfig = $injector.get('AppConfig');
+                        tileUrl = AppConfig.buildTileUrl(collection.name, {
+                            visparam: currentVisparam,
+                            period: currentPeriod,
+                            year: year
+                        });
+                    } else {
+                        tileUrl = `https://tm{s}.lapig.iesa.ufg.br/api/layers/${collection.name}/{x}/{y}/{z}?visparam=${currentVisparam}&period=${currentPeriod}&year=${year}`;
+                    }
                     
                     // Data fictícia para compatibilidade com a interface
                     const date = `01/07/${year}`;

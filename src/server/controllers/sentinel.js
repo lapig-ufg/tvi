@@ -1,40 +1,15 @@
-const https = require('https');
-
 module.exports = function(app) {
 	const lapig = {};
 	const logger = app.services.logger;
+	const tilesApiService = app.services.tilesApiService;
 
-	const get = (url) => {
-		return new Promise((resolve, reject) => {
-			const req = https.get(url, (res) => {
-				let data = '';
-				res.on('data', (chunk) => {
-					data += chunk;
-				});
-				res.on('end', () => {
-					try {
-						resolve(JSON.parse(data));
-					} catch (error) {
-						reject(error);
-					}
-				});
-			});
-
-			req.on('error', (error) => {
-				reject(error);
-			});
-
-			req.end();
-		});
-	};
-
-	const getLapigCapabilities = async () => {
+	const getLapigCapabilities = async (req = null) => {
 		try {
-			const baseUrl = app.config.tilesApi.baseUrl;
-			const response = await get(`${baseUrl}/api/capabilities`);
+			// Use tilesApiService which handles auth, retries, and proper URL formatting
+			const response = await tilesApiService.getCapabilities(req);
 			return response.collections;
 		} catch (error) {
-			await logger.error('Error fetching capabilities from Lapig API', {
+			await logger.error('Error fetching capabilities from Tiles API', {
 				module: 'sentinel',
 				function: 'getLapigCapabilities',
 				metadata: { error: error.message }
@@ -45,7 +20,8 @@ module.exports = function(app) {
 
 	lapig.publicCapabilities = async (request, response) => {
 		try {
-			const result = await getLapigCapabilities();
+			// Pass request to enable authentication if needed
+			const result = await getLapigCapabilities(request);
 			response.send(result);
 		} catch (error) {
 			const logId = await logger.error('Error getting Lapig capabilities', {

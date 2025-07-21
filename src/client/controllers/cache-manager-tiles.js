@@ -22,28 +22,83 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         recommendations: false
     };
     
-    // Estatísticas da API de Tiles
+    // Estatísticas da API de Tiles - novo modelo
     $scope.tilesStats = {
-        redis: {
-            hits: 0,
-            misses: 0,
-            size: 0,
-            memory: 0
+        summary: {
+            total_tiles_cached: 0,
+            s3_objects: 0,
+            s3_storage_gb: 0,
+            local_cache_size: 0,
+            active_tasks: 0,
+            cache_layers: [],
+            status: 'unknown',
+            last_updated: null
         },
-        storage: {
-            tiles: 0,
-            size: 0,
-            campaigns: []
+        redis: {
+            status: 'unknown',
+            total_keys: 0,
+            connected_clients: 0,
+            used_memory_human: '0B',
+            estimated_metadata_mb: 0,
+            ttl_policies: {}
+        },
+        s3: {
+            status: 'unknown',
+            endpoint: '',
+            bucket: '',
+            total_objects: 0,
+            storage: {
+                bytes: 0,
+                mb: 0,
+                gb: 0
+            },
+            average_tile_size_kb: 0,
+            error: null
+        },
+        local_cache: {
+            current_size: 0,
+            max_size: 0,
+            usage_percent: 0,
+            hot_tiles: [],
+            cache_policy: '',
+            ttl_hours: 0
         },
         performance: {
-            avgResponseTime: 0,
-            requestsPerMinute: 0,
-            errorRate: 0
+            cache_hit_estimation: {},
+            avg_response_time_ms: {},
+            throughput: {}
+        },
+        system: {
+            celery: {
+                active_tasks: 0,
+                scheduled_tasks: 0,
+                reserved_tasks: 0,
+                workers: []
+            },
+            cache_efficiency: {},
+            monitoring: {}
         }
     };
     
     // Lista de tarefas ativas
     $scope.activeTasks = [];
+    
+    // Gerenciamento de tasks
+    $scope.tasksManagement = {
+        list: [],
+        workers: [],
+        registeredTasks: [],
+        queueInfo: {},
+        selectedQueue: 'celery',
+        selectedState: null,
+        loading: {
+            list: false,
+            workers: false,
+            registered: false,
+            queue: false,
+            purge: false
+        }
+    };
     
     // Capabilities dos satélites
     $scope.capabilities = {
@@ -75,7 +130,12 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
     $scope.cacheAnalysis = {
         patterns: [],
         recommendations: [],
-        heatmap: null
+        heatmap: null,
+        stats: {
+            totalPoints: 0,
+            cachedPoints: 0,
+            cachePercentage: '0'
+        }
     };
 
     // Variáveis para campanhas (vindas do sistema antigo)
@@ -118,6 +178,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         $scope.loadStats();
         $scope.loadCapabilities();
         $scope.loadCacheStatus();
+        $scope.loadActiveTasks(); // Load initial active tasks
         $scope.setupSocketListeners();
         
         // Atualizar estatísticas a cada 30 segundos
@@ -127,6 +188,13 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
                 $scope.loadCacheStatus();
             }
         }, 30000);
+        
+        // Atualizar tarefas ativas a cada 5 segundos
+        $scope.tasksInterval = $interval(function() {
+            if (!$scope.loading.tasks && $scope.activeTab === 'monitoring') {
+                $scope.loadActiveTasks();
+            }
+        }, 5000);
     };
     
     // Configurar listeners do Socket.IO
@@ -136,20 +204,136 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
             socket.emit('join', 'cache-updates');
         });
         
+        socket.on('disconnect', function() {
+            console.log('Disconnected from cache updates');
+        });
+        
+        // Cache statistics update
         socket.on('cache-stats-update', function(data) {
             $scope.$apply(function() {
                 $scope.tilesStats = data;
             });
         });
         
+        // Point cache events
+        socket.on('point-cache-started', function(data) {
+            $scope.$apply(function() {
+                var task = {
+                    id: data.taskId,
+                    type: 'point_cache',
+                    pointId: data.pointId,
+                    status: 'processing',
+                    startedAt: data.timestamp,
+                    progress: 0
+                };
+                $scope.activeTasks.unshift(task);
+                console.log('Point cache started:', data);
+            });
+        });
+        
+        socket.on('cache-point-processing', function(data) {
+            $scope.$apply(function() {
+                console.log('Processing point:', data.pointId, 'Period:', data.period, 'Year:', data.year);
+            });
+        });
+        
+        socket.on('cache-point-completed', function(data) {
+            $scope.$apply(function() {
+                console.log('Point completed:', data.pointId, 'Tiles:', data.processedTiles);
+                // Update any related task
+                var task = $scope.activeTasks.find(t => t.pointId === data.pointId);
+                if (task) {
+                    task.progress = 100;
+                    task.status = 'completed';
+                }
+            });
+        });
+        
+        // Campaign cache events
+        socket.on('campaign-cache-started', function(data) {
+            $scope.$apply(function() {
+                var task = {
+                    id: data.taskId,
+                    type: 'campaign_cache',
+                    campaignId: data.campaignId,
+                    batchSize: data.batchSize,
+                    useGrid: data.useGrid,
+                    priorityRecentYears: data.priorityRecentYears,
+                    status: 'processing',
+                    startedAt: data.timestamp,
+                    progress: 0
+                };
+                $scope.activeTasks.unshift(task);
+                console.log('Campaign cache started:', data);
+            });
+        });
+        
+        // Task events
+        socket.on('task-cancelled', function(data) {
+            $scope.$apply(function() {
+                var task = $scope.activeTasks.find(t => t.id === data.taskId);
+                if (task) {
+                    task.status = 'cancelled';
+                    task.cancelledAt = data.timestamp;
+                }
+                console.log('Task cancelled:', data.taskId);
+            });
+        });
+        
+        // Cache clear events
+        socket.on('cache-cleared', function(data) {
+            $scope.$apply(function() {
+                console.log('Cache cleared:', data);
+                // Refresh stats after cache clear
+                $scope.loadStats();
+            });
+        });
+        
+        socket.on('cache-point-cleared', function(data) {
+            $scope.$apply(function() {
+                console.log('Point cache cleared:', data.pointId);
+                if (data.mongoUpdated) {
+                    NotificationDialog.info(`Cache do ponto ${data.pointId} foi limpo`, 'Cache Limpo');
+                }
+            });
+        });
+        
+        socket.on('cache-campaign-cleared', function(data) {
+            $scope.$apply(function() {
+                console.log('Campaign cache cleared:', data.campaignId, 'Points:', data.pointsCleared);
+                if (data.pointsCleared > 0) {
+                    NotificationDialog.info(`${data.pointsCleared} pontos da campanha ${data.campaignId} foram limpos`, 'Cache Limpo');
+                }
+            });
+        });
+        
+        // Tile processing events
+        socket.on('cache-tile-success', function(data) {
+            $scope.$apply(function() {
+                // Update progress for the related task
+                var task = $scope.activeTasks.find(t => t.pointId === data.pointId);
+                if (task && task.tiles) {
+                    task.tiles.processed = (task.tiles.processed || 0) + 1;
+                    task.progress = Math.round((task.tiles.processed / task.tiles.total) * 100);
+                }
+            });
+        });
+        
+        socket.on('cache-tile-error', function(data) {
+            $scope.$apply(function() {
+                console.error('Tile error:', data);
+                var task = $scope.activeTasks.find(t => t.pointId === data.pointId);
+                if (task) {
+                    task.errors = (task.errors || 0) + 1;
+                }
+            });
+        });
+        
+        // Generic task events (backwards compatibility)
         socket.on('task-created', function(task) {
             $scope.$apply(function() {
                 $scope.activeTasks.unshift(task);
-                NotificationDialog.show({
-                    title: 'Nova Tarefa Criada',
-                    message: `Tarefa ${task.id} iniciada: ${task.type}`,
-                    type: 'info'
-                });
+                NotificationDialog.info(`Tarefa ${task.id} iniciada: ${task.type}`, 'Nova Tarefa Criada');
             });
         });
         
@@ -161,6 +345,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
                     task.processed = data.processed;
                     task.total = data.total;
                     task.status = data.status;
+                    task.updatedAt = new Date();
                 }
             });
         });
@@ -171,11 +356,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
                 if (task) {
                     task.status = 'completed';
                     task.completedAt = new Date();
-                    NotificationDialog.show({
-                        title: 'Tarefa Concluída',
-                        message: `Tarefa ${data.taskId} concluída com sucesso`,
-                        type: 'success'
-                    });
+                    NotificationDialog.success(`Tarefa ${data.taskId} concluída com sucesso`, 'Tarefa Concluída');
                 }
             });
         });
@@ -186,11 +367,8 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
                 if (task) {
                     task.status = 'failed';
                     task.error = data.error;
-                    NotificationDialog.show({
-                        title: 'Erro na Tarefa',
-                        message: `Tarefa ${data.taskId} falhou: ${data.error}`,
-                        type: 'error'
-                    });
+                    task.failedAt = new Date();
+                    NotificationDialog.error(`Tarefa ${data.taskId} falhou: ${data.error}`, 'Erro na Tarefa');
                 }
             });
         });
@@ -207,22 +385,38 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
                 $scope.calculateDerivedStats();
             } else {
                 console.error('Error loading stats:', response);
-                NotificationDialog.show({
-                    title: 'Erro',
-                    message: 'Erro ao carregar estatísticas',
-                    type: 'error'
-                });
+                NotificationDialog.error('Erro ao carregar estatísticas', 'Erro');
             }
         });
     };
     
     // Calcular estatísticas derivadas
     $scope.calculateDerivedStats = function() {
-        if ($scope.tilesStats.redis) {
-            var total = $scope.tilesStats.redis.hits + $scope.tilesStats.redis.misses;
-            $scope.tilesStats.redis.hitRate = total > 0 ? 
-                (($scope.tilesStats.redis.hits / total) * 100).toFixed(2) : 0;
+        if ($scope.tilesStats.redis && $scope.tilesStats.redis.total_keys) {
+            // Adicionar informações calculadas
+            $scope.tilesStats.derived = {
+                redis_cache_percentage: $scope.tilesStats.redis.total_keys > 0 ? 
+                    (($scope.tilesStats.redis.total_keys / $scope.tilesStats.summary.total_tiles_cached) * 100).toFixed(2) : 0,
+                s3_utilization_percentage: $scope.tilesStats.s3.storage.gb > 0 ? 
+                    (($scope.tilesStats.s3.storage.gb / 100) * 100).toFixed(2) : 0, // Assume 100GB max
+                system_health_score: $scope.calculateHealthScore()
+            };
         }
+    };
+
+    // Calcular score de saúde do sistema
+    $scope.calculateHealthScore = function() {
+        var score = 100;
+        
+        // Reduzir score baseado no status dos componentes
+        if ($scope.tilesStats.redis.status !== 'connected') score -= 30;
+        if ($scope.tilesStats.s3.status !== 'connected') score -= 30;
+        if ($scope.tilesStats.summary.status !== 'healthy') score -= 20;
+        if ($scope.tilesStats.system.monitoring.alerts && $scope.tilesStats.system.monitoring.alerts.length > 0) {
+            score -= $scope.tilesStats.system.monitoring.alerts.length * 5;
+        }
+        
+        return Math.max(0, score);
     };
     
     // Carregar capabilities
@@ -268,18 +462,10 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         
         requester._post('../api/cache/warmup', data, function(response) {
             if (response && response.success) {
-                NotificationDialog.show({
-                    title: 'Warmup Iniciado',
-                    message: `Tarefa de warmup criada: ${response.data.task_id}`,
-                    type: 'success'
-                });
+                NotificationDialog.success(`Tarefa de warmup criada: ${response.data.task_id}`, 'Warmup Iniciado');
                 $scope.loadActiveTasks();
             } else {
-                NotificationDialog.show({
-                    title: 'Erro',
-                    message: 'Erro ao iniciar warmup: ' + (response?.details || 'Erro desconhecido'),
-                    type: 'error'
-                });
+                NotificationDialog.error('Erro ao iniciar warmup: ' + (response?.details || 'Erro desconhecido'), 'Erro');
             }
         });
     };
@@ -290,29 +476,17 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         
         if (!config.bounds.minLat || !config.bounds.maxLat || 
             !config.bounds.minLon || !config.bounds.maxLon) {
-            NotificationDialog.show({
-                title: 'Erro de Validação',
-                message: 'Por favor, defina os limites geográficos',
-                type: 'warning'
-            });
+            NotificationDialog.warning('Por favor, defina os limites geográficos', 'Erro de Validação');
             return false;
         }
         
         if (config.zoomLevels.min > config.zoomLevels.max) {
-            NotificationDialog.show({
-                title: 'Erro de Validação',
-                message: 'Zoom mínimo não pode ser maior que zoom máximo',
-                type: 'warning'
-            });
+            NotificationDialog.warning('Zoom mínimo não pode ser maior que zoom máximo', 'Erro de Validação');
             return false;
         }
         
         if (config.years.start > config.years.end) {
-            NotificationDialog.show({
-                title: 'Erro de Validação',
-                message: 'Ano inicial não pode ser maior que ano final',
-                type: 'warning'
-            });
+            NotificationDialog.warning('Ano inicial não pode ser maior que ano final', 'Erro de Validação');
             return false;
         }
         
@@ -355,18 +529,10 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         
         requester._delete('../api/cache/tasks/' + taskId, function(response) {
             if (response && response.success) {
-                NotificationDialog.show({
-                    title: 'Tarefa Cancelada',
-                    message: 'Tarefa cancelada com sucesso',
-                    type: 'success'
-                });
+                NotificationDialog.success('Tarefa cancelada com sucesso', 'Tarefa Cancelada');
                 $scope.loadActiveTasks();
             } else {
-                NotificationDialog.show({
-                    title: 'Erro',
-                    message: 'Erro ao cancelar tarefa',
-                    type: 'error'
-                });
+                NotificationDialog.error('Erro ao cancelar tarefa', 'Erro');
             }
         });
     };
@@ -379,6 +545,13 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
             $scope.loading.recommendations = false;
             if (response && response.success) {
                 $scope.cacheAnalysis.patterns = response.data.patterns;
+                $scope.cacheAnalysis.heatmap = response.data.heatmap;
+                $scope.cacheAnalysis.temporal_distribution = response.data.temporal_distribution;
+                $scope.cacheAnalysis.geographic_distribution = response.data.geographic_distribution;
+                
+                // Gerar visualizações
+                $scope.generateTemporalChart();
+                $scope.generateGeographicMap();
                 $scope.generateHeatmap(response.data.heatmap);
             } else {
                 console.error('Error analyzing patterns:', response);
@@ -393,9 +566,42 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         requester._get('../api/cache/recommendations', function(response) {
             $scope.loading.recommendations = false;
             if (response && response.success) {
-                $scope.cacheAnalysis.recommendations = response.recommendations;
+                $scope.cacheAnalysis.recommendations = response.recommendations || [];
+                $scope.cacheAnalysis.stats = response.stats || {
+                    totalPoints: 0,
+                    cachedPoints: 0,
+                    cachePercentage: '0'
+                };
+                
+                // Process recommendations to add display properties
+                $scope.cacheAnalysis.recommendations.forEach(function(rec) {
+                    // Map type to title and icon
+                    switch(rec.type) {
+                        case 'zoom_optimization':
+                            rec.title = 'Otimização de Níveis de Zoom';
+                            rec.icon = 'fa-search-plus';
+                            break;
+                        case 'geographic_optimization':
+                            rec.title = 'Otimização Geográfica';
+                            rec.icon = 'fa-map-marked-alt';
+                            break;
+                        case 'temporal_optimization':
+                            rec.title = 'Otimização Temporal';
+                            rec.icon = 'fa-clock';
+                            break;
+                        default:
+                            rec.title = 'Recomendação';
+                            rec.icon = 'fa-lightbulb';
+                    }
+                });
             } else {
                 console.error('Error getting recommendations:', response);
+                $scope.cacheAnalysis.recommendations = [];
+                $scope.cacheAnalysis.stats = {
+                    totalPoints: 0,
+                    cachedPoints: 0,
+                    cachePercentage: '0'
+                };
             }
         });
     };
@@ -403,11 +609,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
     // Limpar cache
     $scope.clearCache = function() {
         if (!$scope.clearConfig.confirm) {
-            NotificationDialog.show({
-                title: 'Confirmação Necessária',
-                message: 'Por favor, marque a caixa de confirmação',
-                type: 'warning'
-            });
+            NotificationDialog.warning('Por favor, marque a caixa de confirmação', 'Confirmação Necessária');
             return;
         }
         
@@ -428,27 +630,451 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         
         requester._delete('../api/cache/clear', params, function(response) {
             if (response && response.success) {
-                NotificationDialog.show({
-                    title: 'Cache Limpo',
-                    message: `${response.data.removed} itens removidos`,
-                    type: 'success'
-                });
+                NotificationDialog.success(`${response.data.removed} itens removidos`, 'Cache Limpo');
                 $scope.loadStats();
                 $scope.clearConfig.confirm = false;
             } else {
-                NotificationDialog.show({
-                    title: 'Erro',
-                    message: 'Erro ao limpar cache: ' + (response?.details || 'Erro desconhecido'),
-                    type: 'error'
-                });
+                NotificationDialog.error('Erro ao limpar cache: ' + (response?.details || 'Erro desconhecido'), 'Erro');
             }
         });
     };
     
+    // Gerar gráfico temporal
+    $scope.generateTemporalChart = function() {
+        if (!$scope.cacheAnalysis.patterns || $scope.cacheAnalysis.patterns.length === 0) {
+            return;
+        }
+        
+        $timeout(function() {
+            var ctx = document.getElementById('temporal-chart');
+            if (!ctx) return;
+            
+            // Processar dados temporais dos padrões
+            var temporalData = {};
+            $scope.cacheAnalysis.patterns.forEach(function(pattern) {
+                var hour = pattern._id.hour;
+                var date = pattern._id.date;
+                var key = hour + ':00';
+                
+                if (!temporalData[key]) {
+                    temporalData[key] = 0;
+                }
+                temporalData[key] += pattern.count;
+            });
+            
+            var labels = Object.keys(temporalData).sort();
+            var data = labels.map(function(label) {
+                return temporalData[label];
+            });
+            
+            if ($scope.temporalChart) {
+                $scope.temporalChart.destroy();
+            }
+            
+            $scope.temporalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Acessos por Hora',
+                        data: data,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Padrão Temporal de Acessos'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Acessos'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hora do Dia'
+                            }
+                        }
+                    }
+                }
+            });
+        }, 100);
+    };
+    
+    // Gerar gráfico geográfico (distribuição por campanha)
+    // Gerar mapa Leaflet interativo
+    $scope.generateGeographicMap = function() {
+        if (!$scope.cacheAnalysis.patterns || $scope.cacheAnalysis.patterns.length === 0) {
+            return;
+        }
+        
+        $timeout(function() {
+            var mapContainer = document.getElementById('geographic-map');
+            if (!mapContainer) return;
+            
+            // Destruir mapa anterior se existir
+            if ($scope.geographicMap) {
+                $scope.geographicMap.remove();
+            }
+            
+            // Inicializar mapa Leaflet
+            $scope.geographicMap = L.map('geographic-map', {
+                center: [-15.0, -50.0], // Centro do Brasil
+                zoom: 4,
+                zoomControl: true
+            });
+            
+            // Adicionar camada base
+            L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                attribution: '© Google Maps',
+                maxZoom: 18
+            }).addTo($scope.geographicMap);
+            
+            // Processar dados para pontos do mapa
+            var pointsData = [];
+            var campaignColors = {
+                'default': '#FF6384'
+            };
+            var colorIndex = 0;
+            var colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+            
+            $scope.cacheAnalysis.patterns.forEach(function(pattern) {
+                if (pattern.points && pattern.points.length > 0) {
+                    var campaign = pattern._id.campaign;
+                    
+                    // Atribuir cor à campanha se não tiver
+                    if (!campaignColors[campaign]) {
+                        campaignColors[campaign] = colors[colorIndex % colors.length];
+                        colorIndex++;
+                    }
+                    
+                    pattern.points.forEach(function(point) {
+                        pointsData.push({
+                            lat: point.lat,
+                            lon: point.lon,
+                            campaign: campaign,
+                            count: pattern.count,
+                            date: pattern._id.date,
+                            hour: pattern._id.hour,
+                            color: campaignColors[campaign]
+                        });
+                    });
+                }
+            });
+            
+            // Criar clusters para os pontos
+            var markers = L.markerClusterGroup({
+                chunkedLoading: true,
+                maxClusterRadius: 50
+            });
+            
+            // Adicionar marcadores ao cluster
+            pointsData.forEach(function(point) {
+                var marker = L.circleMarker([point.lat, point.lon], {
+                    radius: Math.max(5, Math.min(15, point.count / 5)),
+                    fillColor: point.color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                });
+                
+                // Popup com informações
+                marker.bindPopup(
+                    '<div class="map-popup">' +
+                    '<h4>Ponto de Uso</h4>' +
+                    '<p><strong>Campanha:</strong> ' + point.campaign + '</p>' +
+                    '<p><strong>Data:</strong> ' + point.date + '</p>' +
+                    '<p><strong>Hora:</strong> ' + point.hour + 'h</p>' +
+                    '<p><strong>Acessos:</strong> ' + point.count + '</p>' +
+                    '<p><strong>Coordenadas:</strong> ' + point.lat.toFixed(4) + ', ' + point.lon.toFixed(4) + '</p>' +
+                    '</div>'
+                );
+                
+                markers.addLayer(marker);
+            });
+            
+            $scope.geographicMap.addLayer(markers);
+            
+            // Ajustar visualização para mostrar todos os pontos
+            if (pointsData.length > 0) {
+                var group = new L.featureGroup(markers.getLayers());
+                $scope.geographicMap.fitBounds(group.getBounds().pad(0.1));
+            }
+            
+            // Adicionar legenda das campanhas
+            $scope.createMapLegend(campaignColors);
+            
+            // Adicionar camada de heatmap se dados disponíveis
+            if ($scope.cacheAnalysis.heatmap && $scope.cacheAnalysis.heatmap.length > 0) {
+                $scope.addHeatmapLayer($scope.cacheAnalysis.heatmap);
+            } else {
+                // Criar heatmap dos dados de patterns como fallback
+                var heatmapData = [];
+                pointsData.forEach(function(point) {
+                    heatmapData.push([point.lat, point.lon, Math.min(point.count / 5, 1)]);
+                });
+                $scope.addSimpleHeatmapLayer(heatmapData);
+            }
+            
+            // Adicionar controles de camadas
+            $scope.addLayerControls();
+            
+        }, 100);
+    };
+    
+    // Criar legenda do mapa
+    $scope.createMapLegend = function(campaignColors) {
+        if ($scope.mapLegend) {
+            $scope.geographicMap.removeControl($scope.mapLegend);
+        }
+        
+        $scope.mapLegend = L.control({position: 'bottomright'});
+        
+        $scope.mapLegend.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'map-legend');
+            div.innerHTML = '<h4>Campanhas</h4>';
+            
+            Object.keys(campaignColors).forEach(function(campaign) {
+                if (campaign !== 'default') {
+                    div.innerHTML += 
+                        '<div class="legend-item">' +
+                        '<span class="legend-color" style="background-color:' + campaignColors[campaign] + '"></span>' +
+                        '<span class="legend-label">' + campaign + '</span>' +
+                        '</div>';
+                }
+            });
+            
+            return div;
+        };
+        
+        $scope.mapLegend.addTo($scope.geographicMap);
+    };
+
+    // Adicionar camada de heatmap usando dados da API
+    $scope.addHeatmapLayer = function(heatmapData) {
+        if (!heatmapData || heatmapData.length === 0 || !$scope.geographicMap) {
+            return;
+        }
+
+        // Criar círculos coloridos para representar a intensidade
+        var heatmapLayer = L.layerGroup();
+        var maxIntensity = Math.max.apply(Math, heatmapData.map(function(point) {
+            return point.intensity;
+        }));
+
+        heatmapData.forEach(function(point) {
+            var normalizedIntensity = point.intensity / maxIntensity;
+            var radius = Math.max(5, normalizedIntensity * 50);
+            var opacity = Math.max(0.3, normalizedIntensity);
+            
+            // Gradiente de cor baseado na intensidade (azul -> amarelo -> vermelho)
+            var color = $scope.getHeatmapColor(normalizedIntensity);
+
+            var circle = L.circle([point.lat, point.lon], {
+                radius: radius * 1000, // Convertendo para metros
+                fillColor: color,
+                color: color,
+                weight: 1,
+                opacity: opacity,
+                fillOpacity: opacity * 0.6
+            });
+
+            circle.bindPopup(
+                '<div class="heatmap-popup">' +
+                '<h4>Área de Intensidade</h4>' +
+                '<p><strong>Intensidade:</strong> ' + point.intensity + '</p>' +
+                '<p><strong>Coordenadas:</strong> ' + point.lat.toFixed(4) + ', ' + point.lon.toFixed(4) + '</p>' +
+                '</div>'
+            );
+
+            heatmapLayer.addLayer(circle);
+        });
+
+        // Armazenar referência da camada
+        $scope.heatmapLayer = heatmapLayer;
+        $scope.geographicMap.addLayer(heatmapLayer);
+    };
+
+    // Adicionar camada de heatmap simples usando dados dos patterns
+    $scope.addSimpleHeatmapLayer = function(heatmapData) {
+        if (!heatmapData || heatmapData.length === 0 || !$scope.geographicMap) {
+            return;
+        }
+
+        var heatmapLayer = L.layerGroup();
+        
+        heatmapData.forEach(function(point) {
+            var lat = point[0];
+            var lon = point[1];
+            var intensity = point[2];
+            
+            var radius = Math.max(3, intensity * 30);
+            var opacity = Math.max(0.2, intensity);
+            var color = $scope.getHeatmapColor(intensity);
+
+            var circle = L.circle([lat, lon], {
+                radius: radius * 1000,
+                fillColor: color,
+                color: color,
+                weight: 1,
+                opacity: opacity,
+                fillOpacity: opacity * 0.5
+            });
+
+            circle.bindPopup(
+                '<div class="heatmap-popup">' +
+                '<h4>Ponto de Calor</h4>' +
+                '<p><strong>Intensidade:</strong> ' + (intensity * 100).toFixed(1) + '%</p>' +
+                '<p><strong>Coordenadas:</strong> ' + lat.toFixed(4) + ', ' + lon.toFixed(4) + '</p>' +
+                '</div>'
+            );
+
+            heatmapLayer.addLayer(circle);
+        });
+
+        $scope.heatmapLayer = heatmapLayer;
+        $scope.geographicMap.addLayer(heatmapLayer);
+    };
+
+    // Obter cor baseada na intensidade do heatmap
+    $scope.getHeatmapColor = function(intensity) {
+        // Gradiente de azul (baixa) para vermelho (alta) passando por amarelo
+        if (intensity < 0.33) {
+            // Azul para Amarelo
+            var ratio = intensity / 0.33;
+            var r = Math.round(ratio * 255);
+            var g = Math.round(ratio * 255);
+            var b = Math.round(255 - (ratio * 255));
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        } else if (intensity < 0.66) {
+            // Amarelo para Laranja
+            var ratio = (intensity - 0.33) / 0.33;
+            var r = 255;
+            var g = Math.round(255 - (ratio * 100));
+            var b = 0;
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        } else {
+            // Laranja para Vermelho
+            var ratio = (intensity - 0.66) / 0.34;
+            var r = 255;
+            var g = Math.round(155 - (ratio * 155));
+            var b = 0;
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+    };
+
+    // Adicionar controles de camadas para alternar entre marcadores e heatmap
+    $scope.addLayerControls = function() {
+        if (!$scope.geographicMap) return;
+
+        var overlayMaps = {};
+        
+        if ($scope.heatmapLayer) {
+            overlayMaps["Mapa de Calor"] = $scope.heatmapLayer;
+        }
+
+        // Adicionar controle de camadas somente se houver camadas para controlar
+        if (Object.keys(overlayMaps).length > 0) {
+            var layerControl = L.control.layers(null, overlayMaps, {
+                position: 'topright',
+                collapsed: false
+            });
+            layerControl.addTo($scope.geographicMap);
+        }
+    };
+
+    // Métodos auxiliares para cálculos no template
+    $scope.getTotalPatternAccesses = function() {
+        if (!$scope.cacheAnalysis.patterns || $scope.cacheAnalysis.patterns.length === 0) {
+            return 0;
+        }
+        var total = 0;
+        for (var i = 0; i < $scope.cacheAnalysis.patterns.length; i++) {
+            total += $scope.cacheAnalysis.patterns[i].count || 0;
+        }
+        return total;
+    };
+
+    $scope.getTotalUniquePoints = function() {
+        if (!$scope.cacheAnalysis.patterns || $scope.cacheAnalysis.patterns.length === 0) {
+            return 0;
+        }
+        var total = 0;
+        for (var i = 0; i < $scope.cacheAnalysis.patterns.length; i++) {
+            var pattern = $scope.cacheAnalysis.patterns[i];
+            if (pattern.points && pattern.points.length) {
+                total += pattern.points.length;
+            }
+        }
+        return total;
+    };
+
+    $scope.getActiveCampaignsCount = function() {
+        if (!$scope.cacheAnalysis.patterns || $scope.cacheAnalysis.patterns.length === 0) {
+            return 0;
+        }
+        var campaigns = {};
+        for (var i = 0; i < $scope.cacheAnalysis.patterns.length; i++) {
+            var campaign = $scope.cacheAnalysis.patterns[i]._id.campaign;
+            if (campaign) {
+                campaigns[campaign] = true;
+            }
+        }
+        return Object.keys(campaigns).length;
+    };
+
+    // Função mantida para compatibilidade (agora obsoleta - use generateGeographicMap)
+    $scope.generateGeographicChart = function() {
+        // Esta função foi substituída por generateGeographicMap()
+        console.log('generateGeographicChart is deprecated, use generateGeographicMap instead');
+    };
+    
     // Gerar heatmap de uso
     $scope.generateHeatmap = function(data) {
-        // Implementar visualização de heatmap usando D3.js ou similar
-        console.log('Heatmap data:', data);
+        if (!data || data.length === 0) {
+            return;
+        }
+        
+        $timeout(function() {
+            var container = document.getElementById('cache-heatmap');
+            if (!container) return;
+            
+            // Limpar container anterior
+            container.innerHTML = '';
+            
+            // Criar mapa simples com coordenadas
+            var mapHtml = '<div class="heatmap-simple">';
+            mapHtml += '<h4>Áreas Mais Acessadas</h4>';
+            mapHtml += '<div class="heatmap-grid">';
+            
+            data.forEach(function(point, index) {
+                var intensity = point.intensity || 1;
+                var opacity = Math.min(intensity / 20, 1); // Normalizar intensidade
+                
+                mapHtml += '<div class="heatmap-point" style="opacity: ' + opacity + '">';
+                mapHtml += '<span class="coordinates">Lat: ' + point.lat.toFixed(2) + ', Lon: ' + point.lon.toFixed(2) + '</span>';
+                mapHtml += '<span class="intensity">Intensidade: ' + intensity + '</span>';
+                mapHtml += '</div>';
+            });
+            
+            mapHtml += '</div></div>';
+            container.innerHTML = mapHtml;
+        }, 100);
     };
     
     // Formatar bytes
@@ -513,6 +1139,191 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         }
     };
     
+    // === NOVOS MÉTODOS DE GERENCIAMENTO DE TASKS ===
+    
+    // Carregar lista completa de tasks
+    $scope.loadTasksList = function() {
+        $scope.tasksManagement.loading.list = true;
+        
+        requester._get('../api/tasks/list', function(response) {
+            $scope.tasksManagement.loading.list = false;
+            if (response && response.success) {
+                var data = response.data;
+                
+                // Process active tasks with better structure
+                $scope.activeTasks = (data.active || []).map(function(task) {
+                    return {
+                        id: task.task_id,
+                        type: task.name ? task.name.split('.').pop() : 'Unknown',
+                        status: task.state ? task.state.toLowerCase() : 'active',
+                        createdAt: task.date_done || new Date(),
+                        worker: task.worker,
+                        args: task.args,
+                        config: {
+                            point_id: task.args && task.args[0] ? task.args[0] : null,
+                            layer: task.name && task.name.includes('cache_point') ? 'cache_point' : 'cache'
+                        }
+                    };
+                });
+                
+                $scope.tasksManagement.scheduled = data.scheduled || [];
+                $scope.tasksManagement.reserved = data.reserved || [];
+                $scope.tasksManagement.stats = data.stats || {};
+            } else {
+                console.error('Error loading tasks list:', response);
+                NotificationDialog.error('Erro ao carregar lista de tasks', 'Erro');
+            }
+        });
+    };
+    
+    // Carregar estatísticas dos workers
+    $scope.loadWorkersStats = function() {
+        $scope.tasksManagement.loading.workers = true;
+        
+        requester._get('../api/tasks/workers', function(response) {
+            $scope.tasksManagement.loading.workers = false;
+            if (response && response.success && response.data) {
+                var workersData = response.data.workers || {};
+                
+                // Convert workers object to array for easier iteration
+                $scope.tasksManagement.workers = Object.keys(workersData).map(function(workerName) {
+                    var worker = workersData[workerName];
+                    return {
+                        hostname: workerName,
+                        status: worker.active_tasks > 0 ? 'active' : 'idle',
+                        active_tasks: worker.active_tasks || 0,
+                        processed: worker.stats && worker.stats.total ? 
+                            Object.values(worker.stats.total).reduce(function(sum, val) { return sum + val; }, 0) : 0,
+                        pool: worker.pool || {},
+                        last_heartbeat: new Date() // Since API doesn't provide this
+                    };
+                });
+                
+                // Update general stats
+                if (response.data.total_workers) {
+                    $scope.tasksManagement.stats.workers_count = response.data.total_workers;
+                }
+            } else {
+                console.error('Error loading workers stats:', response);
+                NotificationDialog.error('Erro ao carregar estatísticas dos workers', 'Erro');
+            }
+        });
+    };
+    
+    // Carregar tasks registradas
+    $scope.loadRegisteredTasks = function() {
+        $scope.tasksManagement.loading.registered = true;
+        
+        requester._get('../api/tasks/registered', function(response) {
+            $scope.tasksManagement.loading.registered = false;
+            if (response && response.success && response.data) {
+                // A API retorna um array de strings com os nomes das tarefas
+                // Vamos transformar em objetos com estrutura esperada pelo template
+                if (Array.isArray(response.data)) {
+                    $scope.tasksManagement.registeredTasks = response.data.map(function(taskName) {
+                        // Extrair informações do nome da tarefa
+                        var parts = taskName.split('.');
+                        var category = parts.length > 1 ? parts[parts.length - 2] : 'general';
+                        var name = parts[parts.length - 1];
+                        
+                        return {
+                            name: taskName,
+                            displayName: name,
+                            category: category,
+                            type: taskName.includes('cache') ? 'cache' : 'regular',
+                            rate_limit: null,
+                            time_limit: null,
+                            max_retries: 3,
+                            status: 'registered'
+                        };
+                    });
+                } else {
+                    // Se não for array, usar como está
+                    $scope.tasksManagement.registeredTasks = response.data;
+                }
+            } else {
+                console.error('Error loading registered tasks:', response);
+                NotificationDialog.error('Erro ao carregar tasks registradas', 'Erro');
+            }
+        });
+    };
+    
+    // Carregar informações das filas
+    $scope.loadQueueInfo = function() {
+        $scope.tasksManagement.loading.queue = true;
+        
+        requester._get('../api/tasks/queue-length', function(response) {
+            $scope.tasksManagement.loading.queue = false;
+            if (response && response.success) {
+                $scope.tasksManagement.queueInfo = response.data;
+            } else {
+                console.error('Error loading queue info:', response);
+                NotificationDialog.error('Erro ao carregar informações das filas', 'Erro');
+            }
+        });
+    };
+    
+    // Limpar tasks da fila
+    $scope.purgeTasks = function() {
+        var confirmMsg = 'Tem certeza que deseja limpar as tasks';
+        if ($scope.tasksManagement.selectedQueue) {
+            confirmMsg += ' da fila ' + $scope.tasksManagement.selectedQueue;
+        }
+        if ($scope.tasksManagement.selectedState) {
+            confirmMsg += ' com estado ' + $scope.tasksManagement.selectedState;
+        }
+        confirmMsg += '? Esta ação não pode ser desfeita!';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        $scope.tasksManagement.loading.purge = true;
+        
+        var params = '?';
+        if ($scope.tasksManagement.selectedQueue) {
+            params += 'queue_name=' + $scope.tasksManagement.selectedQueue + '&';
+        }
+        if ($scope.tasksManagement.selectedState) {
+            params += 'state=' + $scope.tasksManagement.selectedState;
+        }
+        
+        requester._post('../api/tasks/purge' + params, {}, function(response) {
+            $scope.tasksManagement.loading.purge = false;
+            if (response && response.success) {
+                NotificationDialog.success('Tasks removidas com sucesso', 'Limpeza Concluída');
+                $scope.loadTasksList();
+                $scope.loadQueueInfo();
+            } else {
+                NotificationDialog.error('Erro ao limpar tasks: ' + (response?.details || 'Erro desconhecido'), 'Erro');
+            }
+        });
+    };
+    
+    // Obter status detalhado de uma task por ID
+    $scope.getTaskStatusById = function(taskId) {
+        requester._get('../api/tasks/status/' + taskId, function(response) {
+            if (response && response.success) {
+                // Mostrar modal ou atualizar UI com detalhes
+                $scope.showTaskDetails(response.data);
+            } else {
+                NotificationDialog.error('Erro ao obter status da task', 'Erro');
+            }
+        });
+    };
+    
+    // Mostrar detalhes da task em modal
+    $scope.showTaskDetails = function(taskData) {
+        // TODO: Implementar modal de detalhes
+        console.log('Task details:', taskData);
+        NotificationDialog.info('Task ID: ' + taskData.id + '\nStatus: ' + taskData.status, 'Detalhes da Task');
+    };
+    
+    // Atualizar loadActiveTasks para usar o novo método
+    $scope.loadActiveTasks = function() {
+        $scope.loadTasksList();
+    };
+    
     // Trocar aba
     $scope.setActiveTab = function(tab) {
         $scope.activeTab = tab;
@@ -520,7 +1331,10 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         // Carregar dados específicos da aba
         switch (tab) {
             case 'monitoring':
-                $scope.loadActiveTasks();
+                $scope.loadTasksList();
+                $scope.loadWorkersStats();
+                $scope.loadQueueInfo();
+                $scope.loadRegisteredTasks();
                 break;
             case 'analysis':
                 $scope.analyzeCachePatterns(7);
@@ -554,8 +1368,6 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         return 'danger';
     };
 
-    // === FUNÇÕES DE PAGINAÇÃO DE CAMPANHAS ===
-    
     // Atualizar paginação quando mudar itens por página
     $scope.updateCampaignsPagination = function() {
         $scope.campaignsPagination.currentPage = 1;
@@ -680,6 +1492,251 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         }
     });
 
+    // Point/Campaign cache configuration
+    $scope.cacheManagement = {
+        type: 'point', // 'point' or 'campaign'
+        pointId: '',
+        selectedCampaign: '',
+        campaignSearch: '', // Para filtrar campanhas no select
+        status: null,
+        activeTasks: [],
+        loading: {
+            start: false,
+            status: false,
+            clear: false
+        }
+    };
+    
+    // Start point cache
+    $scope.startPointCache = function() {
+        if (!$scope.cacheManagement.pointId) {
+            NotificationDialog.warning('Por favor, insira o ID do ponto', 'Erro');
+            return;
+        }
+        
+        $scope.cacheManagement.loading.start = true;
+        
+        // Use point_id (underscore) to match API expectation
+        requester._post('../api/cache/point/start', {
+            point_id: $scope.cacheManagement.pointId
+        }, function(response) {
+            $scope.cacheManagement.loading.start = false;
+            
+            if (response && response.success) {
+                NotificationDialog.success(`Cache do ponto ${$scope.cacheManagement.pointId} iniciado com sucesso`, 'Cache Iniciado');
+                // Automatically check status
+                $scope.getPointCacheStatus();
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao iniciar cache do ponto', 'Erro');
+            }
+        });
+    };
+    
+    // Get point cache status
+    $scope.getPointCacheStatus = function() {
+        if (!$scope.cacheManagement.pointId) {
+            NotificationDialog.warning('Por favor, insira o ID do ponto', 'Erro');
+            return;
+        }
+        
+        $scope.cacheManagement.loading.status = true;
+        
+        requester._get('../api/cache/point/' + $scope.cacheManagement.pointId + '/status', function(response) {
+            $scope.cacheManagement.loading.status = false;
+            
+            if (response && response.success) {
+                $scope.cacheManagement.status = response.data;
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao verificar status do cache', 'Erro');
+            }
+        });
+    };
+    
+    // Clear point cache
+    $scope.clearPointCache = function() {
+        if (!$scope.cacheManagement.pointId) {
+            NotificationDialog.warning('Por favor, insira o ID do ponto', 'Erro');
+            return;
+        }
+        
+        if (!confirm(`Tem certeza que deseja limpar o cache do ponto ${$scope.cacheManagement.pointId}?`)) {
+            return;
+        }
+        
+        $scope.cacheManagement.loading.clear = true;
+        
+        requester._delete('../api/cache/point/' + $scope.cacheManagement.pointId, function(response) {
+            $scope.cacheManagement.loading.clear = false;
+            
+            if (response && response.success) {
+                NotificationDialog.success(`Cache do ponto ${$scope.cacheManagement.pointId} limpo com sucesso`, 'Cache Limpo');
+                $scope.cacheManagement.status = null;
+                $scope.loadStats(); // Refresh stats
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao limpar cache do ponto', 'Erro');
+            }
+        });
+    };
+    
+    // Start campaign cache
+    $scope.startCampaignCache = function() {
+        if (!$scope.cacheManagement.selectedCampaign) {
+            NotificationDialog.warning('Por favor, selecione uma campanha', 'Erro');
+            return;
+        }
+        
+        $scope.cacheManagement.loading.start = true;
+        
+        // Use campaign_id (underscore) to match API expectation
+        // Include all new parameters
+        var params = { 
+            campaign_id: $scope.cacheManagement.selectedCampaign
+        };
+        
+        // Add batch_size if configured
+        if ($scope.cacheManagement.batchSize && $scope.cacheManagement.batchSize > 0) {
+            params.batch_size = parseInt($scope.cacheManagement.batchSize);
+        }
+        
+        // Add use_grid parameter (boolean)
+        params.use_grid = !!$scope.cacheManagement.useGrid;
+        
+        // Add priority_recent_years parameter (boolean)
+        params.priority_recent_years = !!$scope.cacheManagement.priorityRecentYears;
+        
+        requester._post('../api/cache/campaign/start', params, function(response) {
+            $scope.cacheManagement.loading.start = false;
+            
+            if (response && response.success) {
+                NotificationDialog.success(`Cache da campanha ${$scope.cacheManagement.selectedCampaign} iniciado com sucesso`, 'Cache Iniciado');
+                // Add task to active tasks
+                if (response.data && response.data.task_id) {
+                    $scope.cacheManagement.activeTasks.push({
+                        id: response.data.task_id,
+                        campaign: $scope.cacheManagement.selectedCampaign,
+                        status: 'processing',
+                        createdAt: new Date()
+                    });
+                }
+                // Automatically check status
+                $scope.getCampaignCacheStatus();
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao iniciar cache da campanha', 'Erro');
+            }
+        });
+    };
+    
+    // Get campaign cache status
+    $scope.getCampaignCacheStatus = function() {
+        if (!$scope.cacheManagement.selectedCampaign) {
+            NotificationDialog.warning('Por favor, selecione uma campanha', 'Erro');
+            return;
+        }
+        
+        $scope.cacheManagement.loading.status = true;
+        
+        requester._get('../api/cache/campaign/' + $scope.cacheManagement.selectedCampaign + '/status', function(response) {
+            $scope.cacheManagement.loading.status = false;
+            
+            if (response && response.success) {
+                $scope.cacheManagement.status = response.data;
+                
+                // Update active tasks if status contains task info
+                if (response.data.active_tasks) {
+                    $scope.cacheManagement.activeTasks = response.data.active_tasks;
+                }
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao verificar status do cache', 'Erro');
+            }
+        });
+    };
+    
+    // Clear campaign cache
+    $scope.clearCampaignCache = function() {
+        if (!$scope.cacheManagement.selectedCampaign) {
+            NotificationDialog.warning('Por favor, selecione uma campanha', 'Erro');
+            return;
+        }
+        
+        if (!confirm(`Tem certeza que deseja limpar o cache da campanha ${$scope.cacheManagement.selectedCampaign}?`)) {
+            return;
+        }
+        
+        $scope.cacheManagement.loading.clear = true;
+        
+        requester._delete('../api/cache/campaign/' + $scope.cacheManagement.selectedCampaign, function(response) {
+            $scope.cacheManagement.loading.clear = false;
+            
+            if (response && response.success) {
+                NotificationDialog.success(`Cache da campanha ${$scope.cacheManagement.selectedCampaign} limpo com sucesso`, 'Cache Limpo');
+                $scope.cacheManagement.status = null;
+                $scope.cacheManagement.activeTasks = [];
+                $scope.loadStats(); // Refresh stats
+                $scope.loadCacheStatus(); // Refresh campaign list
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao limpar cache da campanha', 'Erro');
+            }
+        });
+    };
+    
+    // Cancel specific task
+    $scope.cancelCacheTask = function(taskId) {
+        if (!confirm('Tem certeza que deseja cancelar esta tarefa?')) {
+            return;
+        }
+        
+        requester._delete('../api/cache/tasks/' + taskId, function(response) {
+            if (response && response.success) {
+                NotificationDialog.success('Tarefa cancelada com sucesso', 'Tarefa Cancelada');
+                
+                // Remove from active tasks
+                $scope.cacheManagement.activeTasks = $scope.cacheManagement.activeTasks.filter(function(task) {
+                    return task.id !== taskId;
+                });
+                
+                // Refresh status
+                if ($scope.cacheManagement.type === 'campaign') {
+                    $scope.getCampaignCacheStatus();
+                }
+            } else {
+                NotificationDialog.error(response?.error || 'Erro ao cancelar tarefa', 'Erro');
+            }
+        });
+    };
+    
+    // Filter campaigns for select dropdown
+    $scope.getFilteredCampaignsForSelect = function() {
+        if (!$scope.cacheStatus.campaigns || $scope.cacheStatus.campaigns.length === 0) {
+            return [];
+        }
+        
+        // If no search term, return all campaigns
+        if (!$scope.cacheManagement.campaignSearch || $scope.cacheManagement.campaignSearch.trim() === '') {
+            return $scope.cacheStatus.campaigns;
+        }
+        
+        // Filter campaigns by search term (case insensitive)
+        var searchTerm = $scope.cacheManagement.campaignSearch.toLowerCase();
+        return $scope.cacheStatus.campaigns.filter(function(campaign) {
+            return campaign._id.toLowerCase().indexOf(searchTerm) !== -1;
+        });
+    };
+    
+    // Reset cache management form
+    $scope.resetCacheManagement = function() {
+        $scope.cacheManagement.status = null;
+        $scope.cacheManagement.activeTasks = [];
+        $scope.cacheManagement.pointId = '';
+        $scope.cacheManagement.selectedCampaign = '';
+    };
+    
+    // Watch for type change
+    $scope.$watch('cacheManagement.type', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+            $scope.resetCacheManagement();
+        }
+    });
+    
     // Voltar para admin
     $scope.goBack = function() {
         $location.path('/admin/home');
@@ -689,6 +1746,9 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
     $scope.$on('$destroy', function() {
         if ($scope.statsInterval) {
             $interval.cancel($scope.statsInterval);
+        }
+        if ($scope.tasksInterval) {
+            $interval.cancel($scope.tasksInterval);
         }
         socket.disconnect();
     });
