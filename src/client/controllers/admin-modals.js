@@ -1527,6 +1527,18 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         $scope.campaign.defaultVisParam = null;
     }
     
+    // Inicializar configuração WMS se não existir
+    if (!$scope.campaign.wmsConfig) {
+        $scope.campaign.wmsConfig = {
+            enabled: false,
+            baseUrl: '',
+            layers: []
+        };
+    }
+    if (!$scope.campaign.wmsPeriod) {
+        $scope.campaign.wmsPeriod = 'BOTH';
+    }
+    
     // Buscar capabilities da API
     $http.get('/service/capabilities')
         .then(function(response) {
@@ -1693,10 +1705,58 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
             }
         }
         
-        // Se mudou para planet, limpar tudo
-        if ($scope.campaign.imageType === 'planet') {
+        // Se mudou para planet ou WMS, limpar tudo
+        if ($scope.campaign.imageType === 'planet' || $scope.campaign.imageType === 'wms') {
             $scope.campaign.visParams = [];
             $scope.campaign.defaultVisParam = null;
         }
+        
+        // Se mudou para WMS, garantir que wmsConfig existe
+        if ($scope.campaign.imageType === 'wms' && !$scope.campaign.wmsConfig) {
+            $scope.campaign.wmsConfig = {
+                enabled: false,
+                baseUrl: '',
+                layers: []
+            };
+        }
+    };
+    
+    // Funções para gerenciar camadas WMS
+    $scope.addWmsLayer = function() {
+        // Encontrar o próximo ano disponível
+        var usedYears = ($scope.campaign.wmsConfig.layers || []).map(function(layer) {
+            return layer.year;
+        });
+        
+        var initialYear = $scope.campaign.initialYear || 1985;
+        var finalYear = $scope.campaign.finalYear || 2024;
+        var nextYear = initialYear;
+        
+        // Encontrar o primeiro ano não usado
+        for (var year = initialYear; year <= finalYear; year++) {
+            if (!usedYears.includes(year)) {
+                nextYear = year;
+                break;
+            }
+        }
+        
+        // Se todos os anos estão sendo usados, usar o último ano + 1 (será validado no backend)
+        if (nextYear === initialYear && usedYears.length > 0) {
+            nextYear = Math.max.apply(Math, usedYears) + 1;
+        }
+        
+        if (!$scope.campaign.wmsConfig.layers) {
+            $scope.campaign.wmsConfig.layers = [];
+        }
+        
+        $scope.campaign.wmsConfig.layers.push({
+            year: nextYear,
+            dryUrl: '',
+            wetUrl: ''
+        });
+    };
+    
+    $scope.removeWmsLayer = function(index) {
+        $scope.campaign.wmsConfig.layers.splice(index, 1);
     };
 });

@@ -133,7 +133,90 @@
                         <option value="landsat">Landsat</option>
                         <option value="sentinel-2">Sentinel-2</option>
                         <option value="planet">Planet</option>
+                        <option value="wms">WMS (Web Map Service)</option>
                     </select>
+                </div>
+                
+                <!-- Configuração WMS -->
+                <div class="form-section" ng-show="campaign.imageType === 'wms'">
+                    <h4 class="section-title">
+                        <i class="fas fa-layer-group"></i>
+                        Configuração WMS
+                    </h4>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" ng-model="campaign.wmsConfig.enabled">
+                            <span class="checkbox-text">
+                                <i class="fas fa-power-off"></i>
+                                Habilitar WMS
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div ng-show="campaign.wmsConfig.enabled">
+                        <div class="form-group">
+                            <label class="form-label required">URL Base do Servidor WMS</label>
+                            <input type="text" 
+                                   class="form-input" 
+                                   ng-model="campaign.wmsConfig.baseUrl" 
+                                   placeholder="Ex: https://servidor.com/geoserver/wms"
+                                   required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Período de Visualização</label>
+                            <select class="form-select" ng-model="campaign.wmsPeriod">
+                                <option value="BOTH">Ambos (Seco e Úmido)</option>
+                                <option value="DRY">Apenas Seco</option>
+                                <option value="WET">Apenas Úmido</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Configuração de Camadas por Ano</label>
+                            <div class="wms-layers-container">
+                                <div ng-repeat="layer in campaign.wmsConfig.layers track by $index" class="wms-layer-item">
+                                    <div class="wms-layer-header">
+                                        <strong>Ano {{layer.year}}</strong>
+                                        <button class="btn-remove" 
+                                                ng-click="removeWmsLayer($index)"
+                                                title="Remover">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="wms-layer-content">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label class="form-label">Camada Período Seco</label>
+                                                <input type="text" 
+                                                       class="form-input" 
+                                                       ng-model="layer.dryUrl" 
+                                                       placeholder="Nome da camada WMS">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Camada Período Úmido</label>
+                                                <input type="text" 
+                                                       class="form-input" 
+                                                       ng-model="layer.wetUrl" 
+                                                       placeholder="Nome da camada WMS">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="wms-layer-empty" ng-show="!campaign.wmsConfig.layers.length">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Nenhuma camada configurada</span>
+                                </div>
+                                <button type="button" 
+                                        class="btn-add" 
+                                        ng-click="addWmsLayer()">
+                                    <i class="fas fa-plus"></i>
+                                    Adicionar Configuração de Ano
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Parâmetros de Visualização -->
@@ -667,6 +750,49 @@
 .visparam-summary strong {
     font-weight: 600;
     color: #1a202c;
+}
+
+/* WMS Configuration Styles */
+.wms-layers-container {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.wms-layer-item {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.wms-layer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.wms-layer-header strong {
+    color: #2d3748;
+    font-size: 1.125rem;
+}
+
+.wms-layer-content .form-row {
+    gap: 1rem;
+}
+
+.wms-layer-empty {
+    text-align: center;
+    padding: 1.5rem;
+    color: #a0aec0;
+    font-size: 1.125rem;
+}
+
+.wms-layer-empty i {
+    margin-right: 0.5rem;
 }
 
 /* Responsive */

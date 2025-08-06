@@ -919,6 +919,63 @@ module.exports = function(app) {
                 });
             }
             
+            // Validar configuração WMS se fornecida
+            if (campaignData.wmsConfig) {
+                // Validar estrutura básica
+                if (typeof campaignData.wmsConfig !== 'object') {
+                    return res.status(400).json({ 
+                        error: 'Invalid WMS configuration format' 
+                    });
+                }
+                
+                // Se WMS está habilitado, validar campos obrigatórios
+                if (campaignData.wmsConfig.enabled === true) {
+                    if (!campaignData.wmsConfig.baseUrl || typeof campaignData.wmsConfig.baseUrl !== 'string') {
+                        return res.status(400).json({ 
+                            error: 'WMS baseUrl is required when enabled' 
+                        });
+                    }
+                    
+                    // Validar layers se fornecidas
+                    if (campaignData.wmsConfig.layers && Array.isArray(campaignData.wmsConfig.layers)) {
+                        const initialYear = parseInt(campaignData.initialYear) || 1985;
+                        const finalYear = parseInt(campaignData.finalYear) || 2024;
+                        
+                        for (const layer of campaignData.wmsConfig.layers) {
+                            if (!layer.year || typeof layer.year !== 'number') {
+                                return res.status(400).json({ 
+                                    error: 'Each WMS layer must have a valid year' 
+                                });
+                            }
+                            
+                            // Verificar se o ano está dentro do range da campanha
+                            if (layer.year < initialYear || layer.year > finalYear) {
+                                return res.status(400).json({ 
+                                    error: `WMS layer year ${layer.year} is outside campaign range (${initialYear}-${finalYear})` 
+                                });
+                            }
+                            
+                            // Pelo menos uma URL deve ser fornecida
+                            if (!layer.dryUrl && !layer.wetUrl) {
+                                return res.status(400).json({ 
+                                    error: `WMS layer for year ${layer.year} must have at least one URL (dry or wet)` 
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Validar wmsPeriod
+            if (campaignData.wmsPeriod) {
+                const validPeriods = ['DRY', 'WET', 'BOTH'];
+                if (!validPeriods.includes(campaignData.wmsPeriod)) {
+                    return res.status(400).json({ 
+                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}` 
+                    });
+                }
+            }
+            
             // Adicionar configurações padrão se não fornecidas
             const campaign = {
                 _id: campaignData._id,
@@ -935,6 +992,13 @@ module.exports = function(app) {
                 defaultVisParam: campaignData.defaultVisParam || null, // Visparam padrão
                 useDynamicMaps: campaignData.useDynamicMaps || false,
                 imageType: campaignData.imageType || 'landsat',
+                // Configurações WMS
+                wmsPeriod: campaignData.wmsPeriod || 'BOTH', // DRY, WET ou BOTH
+                wmsConfig: campaignData.wmsConfig || {
+                    enabled: false,
+                    baseUrl: '',
+                    layers: []
+                },
                 geojsonFile: campaignData.geojsonFile || null,
                 properties: campaignData.properties || [],
                 createdAt: new Date()
@@ -1003,6 +1067,68 @@ module.exports = function(app) {
             }
             if (updateData.hasOwnProperty('showPointInfo')) {
                 updateData.showPointInfo = updateData.showPointInfo === true;
+            }
+            if (updateData.hasOwnProperty('useDynamicMaps')) {
+                updateData.useDynamicMaps = updateData.useDynamicMaps === true;
+            }
+            
+            // Validar configuração WMS
+            if (updateData.wmsConfig) {
+                // Validar estrutura básica
+                if (typeof updateData.wmsConfig !== 'object') {
+                    return res.status(400).json({ 
+                        error: 'Invalid WMS configuration format' 
+                    });
+                }
+                
+                // Se WMS está habilitado, validar campos obrigatórios
+                if (updateData.wmsConfig.enabled === true) {
+                    if (!updateData.wmsConfig.baseUrl || typeof updateData.wmsConfig.baseUrl !== 'string') {
+                        return res.status(400).json({ 
+                            error: 'WMS baseUrl is required when enabled' 
+                        });
+                    }
+                    
+                    // Validar layers se fornecidas
+                    if (updateData.wmsConfig.layers && Array.isArray(updateData.wmsConfig.layers)) {
+                        for (const layer of updateData.wmsConfig.layers) {
+                            if (!layer.year || typeof layer.year !== 'number') {
+                                return res.status(400).json({ 
+                                    error: 'Each WMS layer must have a valid year' 
+                                });
+                            }
+                            
+                            // Verificar se o ano está dentro do range da campanha
+                            const campaign = await campaignCollection.findOne({ _id: campaignId });
+                            if (campaign) {
+                                const initialYear = updateData.initialYear || campaign.initialYear;
+                                const finalYear = updateData.finalYear || campaign.finalYear;
+                                if (layer.year < initialYear || layer.year > finalYear) {
+                                    return res.status(400).json({ 
+                                        error: `WMS layer year ${layer.year} is outside campaign range (${initialYear}-${finalYear})` 
+                                    });
+                                }
+                            }
+                            
+                            // Pelo menos uma URL deve ser fornecida
+                            if (!layer.dryUrl && !layer.wetUrl) {
+                                return res.status(400).json({ 
+                                    error: `WMS layer for year ${layer.year} must have at least one URL (dry or wet)` 
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Validar wmsPeriod
+            if (updateData.wmsPeriod) {
+                const validPeriods = ['DRY', 'WET', 'BOTH'];
+                if (!validPeriods.includes(updateData.wmsPeriod)) {
+                    return res.status(400).json({ 
+                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}` 
+                    });
+                }
             }
             
             updateData.updatedAt = new Date();

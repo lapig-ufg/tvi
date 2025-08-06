@@ -15,6 +15,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     $scope.showTimeseries = true;
     $scope.showPointInfo = true;
     $scope.useDynamicMaps = false; // Default to inspection-map
+    $scope.wmsEnabled = false;
+    $scope.wmsConfig = null;
+    $scope.wmsPeriod = 'BOTH';
     
     // Inicializar visparam do Landsat
     $scope.landsatVisparam = localStorage.getItem('landsatVisparam') || 'landsat-tvi-false';
@@ -248,9 +251,29 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         $scope.changePeriod = function () {
-            $scope.period = ($scope.period == 'DRY') ? 'WET' : 'DRY';
+            var oldPeriod = $scope.period;
+            var newPeriod = oldPeriod === 'DRY' ? 'WET' : 'DRY';
+            
+            console.log('=== MUDANÇA DE PERÍODO ===');
+            console.log('De:', oldPeriod, 'Para:', newPeriod);
+            console.log('wmsPeriod:', $scope.wmsPeriod);
+            console.log('wmsEnabled:', $scope.wmsEnabled);
+            
+            $scope.period = newPeriod;
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
-            generateMaps();
+            
+            // Forçar destruição dos componentes atuais antes de recriar
+            $scope.maps = [];
+            $scope.mapStates = {};
+            
+            // Forçar atualização completa dos mapas
+            $timeout(function() {
+                generateMaps();
+                // Forçar digest cycle
+                if (!$scope.$$phase) {
+                    $scope.$apply();
+                }
+            }, 100);
         }
 
         const generateOptionYears = function (initialYear, finalYear) {
@@ -703,10 +726,38 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.mapStates = {}; // Resetar estados
             mapLoadingService.reset(); // Limpar serviço de loading
             
+            // Forçar Angular a recriar os componentes de mapa
+            $scope.mapKey = Date.now();
+            
             var tmsIdList = [];
 
             $scope.tmsIdListWet = [];
             $scope.tmsIdListDry = [];
+            
+            // Determinar se deve usar WMS para este período
+            $scope.useWmsForCurrentPeriod = false;
+            
+            console.log('=== GENERATE MAPS ===');
+            console.log('Período atual:', $scope.period);
+            console.log('WMS habilitado:', $scope.wmsEnabled);
+            console.log('WMS período config:', $scope.wmsPeriod);
+            
+            if ($scope.wmsEnabled) {
+                if ($scope.wmsPeriod === 'BOTH') {
+                    $scope.useWmsForCurrentPeriod = true;
+                    console.log('DECISÃO: Usando WMS para período', $scope.period, '(wmsPeriod=BOTH)');
+                } else if ($scope.wmsPeriod === $scope.period) {
+                    $scope.useWmsForCurrentPeriod = true;
+                    console.log('DECISÃO: Usando WMS para período', $scope.period, '(wmsPeriod=' + $scope.wmsPeriod + ')');
+                } else {
+                    $scope.useWmsForCurrentPeriod = false;
+                    console.log('DECISÃO: Usando', $scope.isSentinel ? 'Sentinel' : 'Landsat', 'para período', $scope.period, '(wmsPeriod=' + $scope.wmsPeriod + ')');
+                }
+            } else {
+                console.log('DECISÃO: WMS desabilitado, usando', $scope.isSentinel ? 'Sentinel' : 'Landsat');
+            }
+            
+            console.log('useWmsForCurrentPeriod:', $scope.useWmsForCurrentPeriod);
 
             for (var year = $scope.config.initialYear; year <= $scope.config.finalYear; year++) {
                 sattelite = getLandsatSensor(year);
@@ -834,6 +885,21 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         $scope.isSentinel = config.imageType === 'sentinel-2-l2a' || 
                                            config.imageType === 'sentinel-2' || 
                                            (config.imageType && config.imageType.toLowerCase().includes('sentinel'));
+                        
+                        // Verificar se é WMS
+                        $scope.isWms = config.imageType === 'wms';
+                    }
+                    
+                    // Processar configuração WMS
+                    if (config.wmsConfig && config.wmsConfig.enabled) {
+                        $scope.wmsEnabled = true;
+                        $scope.wmsConfig = config.wmsConfig;
+                        $scope.wmsPeriod = config.wmsPeriod || 'BOTH';
+                        
+                        // Se for WMS, forçar useDynamicMaps para true
+                        if ($scope.isWms) {
+                            $scope.useDynamicMaps = true;
+                        }
                     }
                     
                     // Processar visparams configurados para a campanha

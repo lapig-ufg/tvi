@@ -791,7 +791,10 @@ module.exports = function (app) {
                     visParam: campaign.visParam || null,
                     visParams: campaign.visParams || [],
                     defaultVisParam: campaign.defaultVisParam || null,
-                    imageType: campaign.imageType || null
+                    imageType: campaign.imageType || null,
+                    // Incluir configurações WMS
+                    wmsConfig: campaign.wmsConfig || null,
+                    wmsPeriod: campaign.wmsPeriod || 'BOTH'
                 };
                 
                 response.json(config);

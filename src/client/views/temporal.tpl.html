@@ -272,7 +272,7 @@
 
             <div class="row">
                 <div class="maps-grid" style="margin: 5px; width: 100%">
-                    <div ng-repeat="map in maps" 
+                    <div ng-repeat="map in maps track by (map.year + '-' + period + '-' + mapKey)" 
                          ng-class="getMapBoxClass(maps.length)"
                          lazy-map
                          map-index="{{map.index}}"
@@ -307,7 +307,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
@@ -317,7 +317,7 @@
                             </landsat-map>
 
                             <!-- Usar sentinel-map para mapas dinâmicos Sentinel -->
-                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel"
+                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod"
                                           lon="point.lon"
                                           lat="point.lat"
                                           zoom="config.zoomLevel"
@@ -325,6 +325,16 @@
                                           year="map.year"
                                           visparams="availableSentinelVisParams">
                             </sentinel-map>
+
+                            <!-- Usar wms-map quando WMS está habilitado para o período atual -->
+                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod"
+                                     lon="point.lon"
+                                     lat="point.lat"
+                                     zoom="config.zoomLevel"
+                                     period="period"
+                                     year="map.year"
+                                     wms-config="wmsConfig">
+                            </wms-map>
 
 <!--                            &lt;!&ndash; Usar inspection-map apenas quando não for mapa dinâmico &ndash;&gt;-->
 <!--                            <inspection-map ng-if="useDynamicMaps !== true"-->

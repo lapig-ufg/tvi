@@ -835,6 +835,558 @@ Application
         }
       };
     })
+    .directive('wmsMap', function($timeout, $injector) {
+      return {
+        template: `
+          <div style="width: 100%; height: 100%; min-height: 300px; position: relative;">
+            <div id="wms-map-{{::$id}}" style="width: 100%; height: 100%; min-height: 300px;"></div>
+            <div ng-show="loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+              <div style="text-align: center;">
+                <i class="fa fa-spinner fa-spin" style="font-size: 2em; color: #337ab7;"></i>
+                <p style="margin-top: 10px; color: #666;">Carregando mapa ...</p>
+              </div>
+            </div>
+          </div>
+        `,
+        scope: {
+          lon: '=',
+          lat: '=',
+          zoom: '=',
+          period: '=',
+          year: '=',
+          wmsConfig: '='
+        },
+        controller: function($scope, $element) {
+          $scope.markerInMap = true;
+          $scope.loading = false; // Começar sem loading, será mostrado quando tiles iniciarem
+          $scope.tileRetryCount = {}; // Contador de tentativas por tile
+          $scope.maxRetries = 3; // Reduzido de 10 para 3 para evitar loops longos
+          $scope.loadingTimeout = null; // Para controlar timeout do loading
+          
+          // Função para construir URL WMS
+          function buildWmsUrl() {
+            if (!$scope.wmsConfig || !$scope.wmsConfig.baseUrl) {
+              return null;
+            }
+            
+            // Encontrar a configuração para o ano atual
+            var layerConfig = $scope.wmsConfig.layers.find(function(layer) {
+              return layer.year === $scope.year;
+            });
+            
+            if (!layerConfig) {
+              console.warn('WMS: Nenhuma configuração encontrada para o ano', $scope.year);
+              return null;
+            }
+            
+            // Determinar qual layer usar baseado no período
+            var layerName = null;
+            console.log('WMS: Selecionando layer para período', $scope.period, '- Config:', layerConfig);
+            
+            if ($scope.period === 'DRY' && layerConfig.dryUrl) {
+              layerName = layerConfig.dryUrl;
+              console.log('WMS: Usando layer DRY:', layerName);
+            } else if ($scope.period === 'WET' && layerConfig.wetUrl) {
+              layerName = layerConfig.wetUrl;
+              console.log('WMS: Usando layer WET:', layerName);
+            } else {
+              // Fallback: usar qualquer layer disponível
+              layerName = layerConfig.dryUrl || layerConfig.wetUrl;
+              console.log('WMS: Usando layer fallback:', layerName);
+            }
+            
+            if (!layerName) {
+              console.warn('WMS: Nenhuma camada configurada para', $scope.year, $scope.period);
+              return null;
+            }
+            
+            return {
+              baseUrl: $scope.wmsConfig.baseUrl,
+              layerName: layerName
+            };
+          }
+          
+          // Variáveis de controle de tiles - declaradas no escopo do controller
+          var tilesLoading = 0;
+          var firstTileLoaded = false;
+          var retryInProgress = {}; // Controlar retries em andamento
+          var totalRetries = 0; // Contador global de retries
+          var maxTotalRetries = 20; // Limite total de retries para evitar loops
+          
+          // Função para atualizar layer WMS
+          $scope.updateWmsLayer = function() {
+            console.log('WMS: Atualizando layer - Período:', $scope.period, 'Ano:', $scope.year);
+            if (!$scope.map) return;
+            
+            // Remover layer anterior se existir
+            if ($scope.wmsLayer) {
+              console.log('WMS: Removendo layer anterior');
+              
+              // Cancelar todos os timeouts de retry pendentes
+              if ($scope.wmsLayer._tiles) {
+                for (var key in $scope.wmsLayer._tiles) {
+                  var tile = $scope.wmsLayer._tiles[key];
+                  if (tile && tile._retryTimeout) {
+                    clearTimeout(tile._retryTimeout);
+                    tile._retryTimeout = null;
+                  }
+                }
+              }
+              
+              $scope.map.removeLayer($scope.wmsLayer);
+              $scope.wmsLayer = null;
+              
+              // Limpar contadores de retry e flags
+              $scope.tileRetryCount = {};
+              retryInProgress = {};
+              totalRetries = 0; // Resetar contador global
+              
+              // Cancelar timeout de loading se existir
+              if ($scope.loadingTimeout) {
+                $timeout.cancel($scope.loadingTimeout);
+                $scope.loadingTimeout = null;
+              }
+              
+              // Resetar loading
+              $scope.loading = true;
+            }
+            
+            // Resetar contadores ao atualizar layer
+            tilesLoading = 0;
+            firstTileLoaded = false;
+            
+            // Mostrar loading ao iniciar atualização
+            $scope.loading = true;
+            
+            // Pequeno delay para garantir limpeza completa
+            $timeout(function() {
+              var wmsInfo = buildWmsUrl();
+              if (!wmsInfo) {
+                console.warn('WMS: Não foi possível construir URL WMS');
+                $scope.loading = false;
+                return;
+              }
+              
+              // Adicionar parâmetro TIME no formato ISO8601 baseado no ano
+              var timeParam = $scope.year + '-01-01T00:00:00.000Z';
+              
+              console.log('WMS: Carregando camada', wmsInfo.layerName, 'do servidor', wmsInfo.baseUrl);
+              console.log('WMS: Parâmetro TIME:', timeParam);
+            
+            // Corrigir URL se necessário - remover parte duplicada do path
+            var baseUrl = wmsInfo.baseUrl;
+            if (baseUrl.includes('/ows')) {
+              baseUrl = baseUrl.replace(/\/[^\/]+\/ows$/, '/ows');
+            }
+            
+            console.log('WMS: URL base corrigida:', baseUrl);
+            
+            $scope.wmsLayer = L.tileLayer.wms(baseUrl, {
+              layers: wmsInfo.layerName,
+              format: 'image/png',
+              transparent: true,
+              version: '1.3.0',
+              uppercase: true,
+              maxZoom: 18,
+              attribution: `WMS ${$scope.period} - ${$scope.year}`,
+              time: timeParam,
+              tiled: true,
+              opacity: 1.0,
+              // Adicionar mais parâmetros que podem ser necessários
+              crs: L.CRS.EPSG3857,
+              width: 256,
+              height: 256
+            }).addTo($scope.map);
+            
+            // Configurar eventos de tile
+            $scope.wmsLayer.on('tileloadstart', function(e) {
+              tilesLoading++;
+              console.log('WMS: Tile iniciando carregamento. Total carregando:', tilesLoading);
+              
+              // Sempre mostrar loading quando tiles estão carregando
+              if (!$scope.loading) {
+                $scope.loading = true;
+                $scope.$apply();
+              }
+              
+              // Cancelar timeout anterior se existir
+              if ($scope.loadingTimeout) {
+                $timeout.cancel($scope.loadingTimeout);
+              }
+              
+              // Timeout de segurança apenas para casos extremos (30 segundos)
+              $scope.loadingTimeout = $timeout(function() {
+                if ($scope.loading && tilesLoading > 0) {
+                  console.warn('WMS: Timeout de segurança - alguns tiles não responderam após 30s');
+                  console.warn('WMS: Tiles ainda carregando:', tilesLoading);
+                  $scope.loading = false;
+                  tilesLoading = 0;
+                }
+              }, 30000);
+            });
+            
+            // Evento quando todos os tiles são carregados (pode disparar prematuramente)
+            $scope.wmsLayer.on('load', function() {
+              console.log('WMS: Evento load disparado - tilesLoading:', tilesLoading);
+              
+              // Não confiar apenas neste evento, verificar contador de tiles
+              if (tilesLoading === 0) {
+                // Verificar se realmente todos os tiles foram carregados sem erro
+                var hasErrors = false;
+                for (var key in $scope.tileRetryCount) {
+                  if ($scope.tileRetryCount[key] > 0 && $scope.tileRetryCount[key] <= $scope.maxRetries) {
+                    hasErrors = true;
+                    break;
+                  }
+                }
+                
+                if (!hasErrors && firstTileLoaded) {
+                  $timeout(function() {
+                    if (tilesLoading === 0 && $scope.loading) {
+                      console.log('WMS: Confirmado - todos os tiles carregados');
+                      $scope.loading = false;
+                    }
+                  }, 500);
+                }
+              }
+            });
+            
+            // Gerenciar erros de tiles com retry
+            $scope.wmsLayer.on('tileerror', function(error) {
+              var tile = error.tile;
+              var coords = error.coords;
+              var tileKey = coords.x + ':' + coords.y + ':' + coords.z;
+              
+              // Ignorar se o tile está sendo retentado
+              if (tile && tile._isRetrying) {
+                console.log('WMS: Ignorando erro de tile em retry:', tileKey);
+                return;
+              }
+              
+              // Inicializar contador de retry para este tile
+              if (!$scope.tileRetryCount[tileKey]) {
+                $scope.tileRetryCount[tileKey] = 0;
+              }
+              
+              // Verificar se já não excedeu o limite ANTES de incrementar
+              if ($scope.tileRetryCount[tileKey] >= $scope.maxRetries) {
+                console.log('WMS: Tile', tileKey, 'já excedeu limite de tentativas - ignorando');
+                // Decrementar contador de tiles loading se necessário
+                if (tilesLoading > 0) {
+                  tilesLoading--;
+                }
+                // Limpar retry em andamento se existir
+                delete retryInProgress[tileKey];
+                
+                // Verificar se deve esconder loading
+                if (tilesLoading === 0) {
+                  $timeout(function() {
+                    if ($scope.loading) {
+                      console.log('WMS: Escondendo loading após máximo de tentativas');
+                      $scope.loading = false;
+                    }
+                  }, 500);
+                }
+                return;
+              }
+              
+              // Verificar se já há retry em andamento para este tile
+              if (retryInProgress[tileKey]) {
+                console.log('WMS: Retry já em andamento para tile', tileKey, '- ignorando');
+                return;
+              }
+              
+              // Verificar limite global de retries
+              if (totalRetries >= maxTotalRetries) {
+                console.warn('WMS: Limite global de retries atingido (' + maxTotalRetries + ') - ignorando novos retries');
+                // Decrementar contador de tiles loading
+                if (tilesLoading > 0) {
+                  tilesLoading--;
+                }
+                return;
+              }
+              
+              // Incrementar contador APENAS se não está em retry
+              $scope.tileRetryCount[tileKey]++;
+              totalRetries++; // Incrementar contador global
+              
+              if ($scope.tileRetryCount[tileKey] <= $scope.maxRetries) {
+                console.log('WMS: Erro no tile', tileKey, '- Tentativa', $scope.tileRetryCount[tileKey], 'de', $scope.maxRetries);
+                
+                // Log mais detalhado do erro na primeira tentativa
+                if ($scope.tileRetryCount[tileKey] === 1) {
+                  console.error('WMS: Detalhes do erro:', {
+                    url: tile.src,
+                    coords: coords,
+                    error: error.error || 'Timeout ou erro de rede'
+                  });
+                }
+                
+                // Calcular delay com backoff exponencial (começando em 1s, máximo 8s)
+                var delay = Math.min(1000 * Math.pow(2, $scope.tileRetryCount[tileKey] - 1), 8000);
+                
+                // Marcar retry em andamento
+                retryInProgress[tileKey] = true;
+                
+                // Cancelar timeout anterior se existir
+                if (tile._retryTimeout) {
+                  clearTimeout(tile._retryTimeout);
+                  tile._retryTimeout = null;
+                }
+                
+                // Usar timeout com referência para poder cancelar se necessário
+                tile._retryTimeout = setTimeout(function() {
+                  // Limpar flag de retry em andamento
+                  delete retryInProgress[tileKey];
+                  
+                  // Verificar se ainda deve tentar
+                  if (tile && tile.src && $scope.wmsLayer && $scope.map && $scope.map.hasLayer($scope.wmsLayer) && 
+                      $scope.tileRetryCount[tileKey] <= $scope.maxRetries) {
+                    // Salvar URL original
+                    var originalSrc = tile.src.split('&_retry=')[0].split('?_retry=')[0];
+                    
+                    // Adicionar flag para evitar loop infinito
+                    tile._isRetrying = true;
+                    
+                    // Forçar novo carregamento alterando src
+                    tile.src = '';
+                    setTimeout(function() {
+                      if ($scope.wmsLayer && $scope.map && $scope.map.hasLayer($scope.wmsLayer)) {
+                        tile.src = originalSrc + (originalSrc.indexOf('?') === -1 ? '?' : '&') + '_retry=' + Date.now();
+                        // Remover flag após definir novo src
+                        setTimeout(function() {
+                          if (tile) {
+                            tile._isRetrying = false;
+                          }
+                        }, 100);
+                      }
+                    }, 50);
+                  } else {
+                    // Se não vai mais tentar, garantir que o tile seja contabilizado
+                    if (tilesLoading > 0) {
+                      tilesLoading--;
+                    }
+                  }
+                }, delay);
+              } else {
+                console.error('WMS: Tile', tileKey, 'falhou após', $scope.maxRetries, 'tentativas');
+                
+                // Decrementar contador de tiles loading
+                if (tilesLoading > 0) {
+                  tilesLoading--;
+                }
+                
+                // Marcar o tile como falho permanentemente
+                if (tile && tile.style) {
+                  tile.style.opacity = '0.3';
+                  tile.style.backgroundColor = '#ffcccc';
+                }
+                
+                // Limpar flag de retry
+                delete retryInProgress[tileKey];
+                
+                // Verificar se deve esconder loading após falhas
+                if (tilesLoading === 0) {
+                  $timeout(function() {
+                    if ($scope.loading) {
+                      console.log('WMS: Escondendo loading após falhas de tiles');
+                      $scope.loading = false;
+                    }
+                  }, 500);
+                }
+              }
+            });
+            
+            // Resetar contadores quando tile carrega com sucesso
+            $scope.wmsLayer.on('tileload', function(e) {
+              var coords = e.coords;
+              var tileKey = coords.x + ':' + coords.y + ':' + coords.z;
+              
+              // Marcar que pelo menos um tile foi carregado
+              firstTileLoaded = true;
+              
+              // Decrementar contador
+              if (tilesLoading > 0) {
+                tilesLoading--;
+              }
+              
+              console.log('WMS: Tile carregado com sucesso. Restam:', tilesLoading);
+              
+              // Limpar contador de retry para este tile
+              if ($scope.tileRetryCount[tileKey]) {
+                delete $scope.tileRetryCount[tileKey];
+              }
+              
+              // Verificar se deve esconder loading
+              if (tilesLoading === 0) {
+                // Pequeno delay para garantir que não há mais tiles iniciando
+                $timeout(function() {
+                  if (tilesLoading === 0 && $scope.loading) {
+                    console.log('WMS: Todos os tiles carregados - escondendo loading');
+                    $scope.loading = false;
+                  }
+                }, 500);
+              } else {
+                console.log('WMS: Ainda carregando', tilesLoading, 'tiles');
+              }
+            });
+            
+            // Log para debug
+            console.log('WMS Layer adicionado ao mapa:', $scope.wmsLayer);
+            
+            // Forçar atualização do layer
+            setTimeout(function() {
+              if ($scope.wmsLayer && $scope.map) {
+                $scope.wmsLayer.redraw();
+                $scope.map.invalidateSize();
+              }
+            }, 500);
+            
+            // Garantir que o marcador esteja sempre no topo
+            if ($scope.marker && $scope.markerInMap) {
+              $scope.marker.setZIndexOffset(1000);
+            }
+            
+            // Fallback: se nenhum tile começar a carregar em 3 segundos, esconder loading
+            $timeout(function() {
+              if ($scope.loading && tilesLoading === 0) {
+                console.log('WMS: Nenhum tile iniciou carregamento após 3s - escondendo loading');
+                $scope.loading = false;
+              }
+            }, 3000);
+            
+            }, 100); // Fechando o timeout do delay
+          };
+          
+          // Inicializar mapa
+          $timeout(function() {
+            var mapElement = $element[0].querySelector('#wms-map-' + $scope.$id);
+            if (!mapElement) {
+              console.error('Elemento do mapa WMS não encontrado!');
+              return;
+            }
+            
+            // Criar mapa
+            $scope.map = L.map(mapElement, {
+              center: [$scope.lat, $scope.lon],
+              zoom: $scope.zoom,
+              minZoom: $scope.zoom,
+              maxZoom: $scope.zoom + 6,
+              zoomControl: true,
+              dragging: true,
+              doubleClickZoom: true,
+              scrollWheelZoom: true
+            });
+            
+            // Adicionar marcador
+            $scope.marker = L.marker([$scope.lat, $scope.lon], {
+              icon: L.icon({
+                iconUrl: 'assets/marker2.png',
+                iconSize: [42, 42]
+              }),
+              zIndexOffset: 1000
+            }).addTo($scope.map);
+            
+            // Toggle do marcador ao clicar no mapa
+            $scope.map.on('click', function() {
+              if ($scope.markerInMap) {
+                $scope.map.removeLayer($scope.marker);
+                $scope.markerInMap = false;
+              } else {
+                $scope.map.addLayer($scope.marker);
+                $scope.markerInMap = true;
+              }
+            });
+            
+            // Observar mudanças
+            var unwatch = $scope.$watchGroup(['period', 'year', 'wmsConfig'], function(newValues, oldValues) {
+              console.log('WMS: Watch disparado - Nova config:', {
+                period: newValues[0],
+                year: newValues[1],
+                wmsConfig: newValues[2] ? 'presente' : 'ausente'
+              });
+              console.log('WMS: Antiga config:', {
+                period: oldValues[0],
+                year: oldValues[1],
+                wmsConfig: oldValues[2] ? 'presente' : 'ausente'
+              });
+              
+              if ($scope.period && $scope.year && $scope.wmsConfig) {
+                $scope.updateWmsLayer();
+              }
+            });
+            
+            // Cleanup completo quando o scope é destruído
+            $scope.$on('$destroy', function() {
+              console.log('WMS: Destruindo componente');
+              
+              // Cancelar watch
+              if (unwatch) {
+                unwatch();
+              }
+              
+              // Cancelar timeout de loading
+              if ($scope.loadingTimeout) {
+                $timeout.cancel($scope.loadingTimeout);
+              }
+              
+              // Remover layer WMS
+              if ($scope.wmsLayer && $scope.map) {
+                $scope.map.removeLayer($scope.wmsLayer);
+                $scope.wmsLayer = null;
+              }
+              
+              // Remover mapa
+              if ($scope.map) {
+                $scope.map.remove();
+                $scope.map = null;
+              }
+            });
+            
+            // Adicionar evento para garantir que o marcador permaneça visível
+            $scope.map.on('layeradd', function(e) {
+              if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
+                setTimeout(function() {
+                  if ($scope.marker && $scope.map.hasLayer($scope.marker)) {
+                    $scope.marker.setZIndexOffset(1000);
+                  }
+                }, 50);
+              }
+            });
+            
+            // Carregar layer inicial
+            if ($scope.period && $scope.year && $scope.wmsConfig) {
+              $scope.updateWmsLayer();
+            }
+            
+            // Adicionar controle de escala
+            L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+            
+            // Forçar recalculo do tamanho do mapa
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+                if ($scope.marker && $scope.markerInMap) {
+                  $scope.marker.setZIndexOffset(1000);
+                }
+              }
+            }, 100);
+            
+            
+            // Check adicional para cenários com múltiplos mapas
+            setTimeout(function() {
+              if ($scope.map) {
+                $scope.map.invalidateSize();
+                if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
+                  $scope.map.addLayer($scope.marker);
+                }
+              }
+            }, 500);
+            
+          }, 0);
+        }
+      };
+    })
     .directive('visparamSelector', function() {
       return {
         template: `
