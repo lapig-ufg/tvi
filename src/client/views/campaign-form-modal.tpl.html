@@ -156,12 +156,12 @@
                     
                     <div ng-show="campaign.wmsConfig.enabled">
                         <div class="form-group">
-                            <label class="form-label required">URL Base do Servidor WMS</label>
+                            <label class="form-label" ng-class="{'required': campaign.wmsConfig.enabled}">URL Base do Servidor WMS</label>
                             <input type="text" 
                                    class="form-input" 
                                    ng-model="campaign.wmsConfig.baseUrl" 
                                    placeholder="Ex: https://servidor.com/geoserver/wms"
-                                   required>
+                                   ng-required="campaign.wmsConfig.enabled">
                         </div>
                         
                         <div class="form-group">

@@ -1527,6 +1527,11 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         $scope.campaign.defaultVisParam = null;
     }
     
+    // Inicializar imageType se não existir
+    if (!$scope.campaign.imageType) {
+        $scope.campaign.imageType = 'landsat'; // Padrão para Landsat
+    }
+    
     // Inicializar configuração WMS se não existir
     if (!$scope.campaign.wmsConfig) {
         $scope.campaign.wmsConfig = {
@@ -1584,6 +1589,21 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         if (!$scope.campaign._id && $scope.isNew) {
             NotificationDialog.error('ID da campanha é obrigatório');
             return;
+        }
+        
+        // Validar parâmetros de visualização para Landsat e Sentinel
+        if (($scope.campaign.imageType === 'landsat' || $scope.campaign.imageType === 'sentinel-2') &&
+            (!$scope.campaign.visParams || $scope.campaign.visParams.length === 0)) {
+            NotificationDialog.error('Selecione pelo menos um parâmetro de visualização');
+            return;
+        }
+        
+        // Validar configuração WMS
+        if ($scope.campaign.imageType === 'wms' && $scope.campaign.wmsConfig.enabled) {
+            if (!$scope.campaign.wmsConfig.baseUrl || $scope.campaign.wmsConfig.baseUrl.trim() === '') {
+                NotificationDialog.error('URL Base do Servidor WMS é obrigatória quando WMS está habilitado');
+                return;
+            }
         }
         
         // Se há visparams selecionados mas nenhum padrão, definir o primeiro como padrão
