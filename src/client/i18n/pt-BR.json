@@ -16,7 +16,8 @@
     "CHOOSE": "Escolher",
     "ALL": "Todos",
     "NOT_CONSOLIDATED": "Não Consolidados",
-    "USER": "Usuário"
+    "USER": "Usuário",
+    "APPLY": "Aplicar"
   },
   "NAVBAR": {
     "POINTS": "Pontos",
@@ -74,7 +75,9 @@
     "CHARTS": {
       "LANDSAT_SERIES": "Série temporal LANDSAT",
       "MODIS_SERIES": "Série temporal MODIS",
-      "NDDI_SERIES": "Série Temporal do NDDI"
+      "NDDI_SERIES": "Série Temporal do NDDI",
+      "SHOW_TIMESERIES": "Exibir Gráficos de Séries Temporais",
+      "FILTER_PERIOD": "Filtrar Período"
     }
   },
   "TEMPORAL": {
@@ -113,7 +116,9 @@
       "LANDSAT_SERIES": "Série temporal LANDSAT",
       "MODIS_SERIES": "Série temporal MODIS",
       "NDDI_SERIES": "Série Temporal do NDDI",
-      "PRECIPITATION": "Precipitação"
+      "PRECIPITATION": "Precipitação",
+      "SHOW_TIMESERIES": "Exibir Gráficos de Séries Temporais",
+      "FILTER_PERIOD": "Filtrar Período"
     }
   },
   "LANGUAGES": {
@@ -145,7 +150,8 @@
     "POINTS_CORRECTED": "Pontos corrigidos: {{count}}",
     "CAMPAIGN_NO_ISSUES": "Campanha sem problemas com as inspeções.",
     "CONFIRM_REMOVE_INSPECTIONS": "Tem certeza que deseja remover as inspeções do ponto identificado como {{pointId}}?\nTenha em mente que uma vez concluída a remoção, não será mais possível reverter esta ação.",
-    "INSPECTIONS_REMOVED": "As inspeções do ponto {{pointId}} foram removidas com sucesso."
+    "INSPECTIONS_REMOVED": "As inspeções do ponto {{pointId}} foram removidas com sucesso.",
+    "INVALID_DATE_RANGE": "Intervalo de datas inválido. O ano inicial deve ser menor ou igual ao ano final."
   },
   "DASHBOARD": {
     "INSPECTED_POINTS": "Número de pontos inspecionados",

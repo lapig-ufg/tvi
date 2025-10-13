@@ -355,21 +355,46 @@
                 <img class="img-responsive" src="assets/finish.jpg"/>
             </center>
         </div>
-        <div ng-hide="isObjectEmpty(point) && pointLoaded " class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-2 col-lg-offset-2  main-content" ng-show="showTimeseries">
+        <div ng-hide="isObjectEmpty(point) && pointLoaded " class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-2 col-lg-offset-2  main-content">
             <!--  	<div class="row" ng-hide="isChaco  || isRaisg">-->
             <div class="row" style="padding-left: 5px;">
-                <fieldset  ng-show="showChartsLandsat" >
-                    <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
-                    <div id="LANDSAT"></div>
-                </fieldset>
-                <fieldset ng-show="showCharts">
-                    <div style="margin-bottom: 0px"><h4>{{ 'TEMPORAL.CHARTS.MODIS_SERIES' | i18n }}:</h4></div>
-                    <div id="NDVI"></div>
-                </fieldset>
-                <fieldset ng-show="showChartsNDDI">
-                    <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.NDDI_SERIES' | i18n }}:</span>
-                    <div id="NDDI"></div>
-                </fieldset>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">
+                            <button type="button" class="btn btn-primary" ng-click="toggleTimeseriesCharts()">
+                                <i class="glyphicon" ng-class="{'glyphicon-plus': !showTimeseriesCharts, 'glyphicon-minus': showTimeseriesCharts}"></i>
+                                {{ 'TEMPORAL.CHARTS.SHOW_TIMESERIES' | i18n }}
+                            </button>
+                            
+                            <div ng-show="showTimeseriesCharts" style="display: inline-block; margin-left: 20px;">
+                                <label style="margin-right: 10px;">{{ 'TEMPORAL.CHARTS.FILTER_PERIOD' | i18n }}:</label>
+                                <input type="number" ng-model="chartFilterStartYear" placeholder="Ano inicial" 
+                                       style="width: 100px; margin-right: 10px;" min="1985" max="2025">
+                                <label style="margin-right: 10px;">até</label>
+                                <input type="number" ng-model="chartFilterEndYear" placeholder="Ano final" 
+                                       style="width: 100px; margin-right: 10px;" min="1985" max="2025">
+                                <button type="button" class="btn btn-sm btn-info" ng-click="updateChartFilter()">
+                                    {{ 'COMMON.APPLY' | i18n }}
+                                </button>
+                            </div>
+                        </h4>
+                    </div>
+                    
+                    <div class="panel-body" ng-show="showTimeseriesCharts && showTimeseries">
+                        <fieldset  ng-show="showChartsLandsat" >
+                            <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
+                            <div id="LANDSAT"></div>
+                        </fieldset>
+                        <fieldset ng-show="showCharts">
+                            <div style="margin-bottom: 0px"><h4>{{ 'TEMPORAL.CHARTS.MODIS_SERIES' | i18n }}:</h4></div>
+                            <div id="NDVI"></div>
+                        </fieldset>
+                        <fieldset ng-show="showChartsNDDI">
+                            <span style="font-size: 18px; font-weight: bold;">{{ 'TEMPORAL.CHARTS.NDDI_SERIES' | i18n }}:</span>
+                            <div id="NDDI"></div>
+                        </fieldset>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -10,8 +10,16 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.sentinelMosaics   = [];
     $scope.tilesCapabilities = [];
     
+    // Variáveis para controle dos gráficos
+    $scope.showTimeseriesCharts = false;
+    $scope.chartFilterStartYear = 1985;
+    $scope.chartFilterEndYear = new Date().getFullYear();
+    
     // Estados para lazy loading
     $scope.mapStates = {}; // { index: { visible: boolean, loading: boolean } }
+    
+    // Declarar as funções de gráfico no escopo principal
+    var createModisChart, createLandsatChart, createNDDIChart;
     
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
@@ -239,6 +247,39 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         return 'col-xs-12 col-sm-6 col-md-8 col-lg-9';
     };
 
+    // Função para alternar exibição dos gráficos
+    $scope.toggleTimeseriesCharts = function() {
+        $scope.showTimeseriesCharts = !$scope.showTimeseriesCharts;
+        
+        // Se estiver mostrando os gráficos e ainda não foram carregados, carregá-los
+        if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
+            if ($scope.datesFromService) {
+                createModisChart($scope.datesFromService);
+            }
+            createLandsatChart();
+            createNDDIChart();
+        }
+    };
+    
+    // Função para atualizar o filtro de período dos gráficos
+    $scope.updateChartFilter = function() {
+        // Validar os anos
+        if ($scope.chartFilterStartYear && $scope.chartFilterEndYear && 
+            $scope.chartFilterStartYear <= $scope.chartFilterEndYear) {
+            
+            // Recriar os gráficos com o novo filtro
+            if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
+                if ($scope.datesFromService) {
+                    createModisChart($scope.datesFromService);
+                }
+                createLandsatChart();
+                createNDDIChart();
+            }
+        } else {
+            NotificationDialog.warning(i18nService.translate('ALERTS.INVALID_DATE_RANGE'));
+        }
+    };
+
     $rootScope.campaignFinished = false
     util.waitUserData(function () {
         $scope.showloading = false;
@@ -426,7 +467,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             return dry.sort()
         }
 
-        var createModisChart = function (datesFromService) {
+        createModisChart = function (datesFromService) {
             Plotly.purge('NDVI');
             requester._get('time-series/MOD13Q1_NDVI', {
                 "longitude": $scope.point.lon,
@@ -439,18 +480,29 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         var ndviSg = [];
                         var date = [];
                         var text = [];
-                        $scope.showCharts = data.values.length > 0;
+                        var filteredCount = 0;
 
                         for (var i = 0; i < data.values.length; i++) {
                             var dateObj = new Date(data.values[i][0])
                             var month = dateObj.getUTCMonth() + 1;
                             var day = dateObj.getUTCDate();
                             var year = dateObj.getUTCFullYear();
+                            
+                            // Aplicar filtro de período se definido
+                            if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
+                                if (year < $scope.chartFilterStartYear || year > $scope.chartFilterEndYear) {
+                                    continue;
+                                }
+                            }
+                            
+                            filteredCount++;
                             ndvi.push(data.values[i][1]);
                             ndviSg.push(data.values[i][3]);
                             date.push(data.values[i][0]);
                             text.push(day + "/" + month + "/" + year);
                         }
+                        
+                        $scope.showCharts = filteredCount > 0;
 
                         var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
                         var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
@@ -528,6 +580,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             initPrec = dataPrecip.text[i].split("-")
 
                             if (initPrec[0] >= initDate[0]) {
+                                // Aplicar filtro de período também aos dados de precipitação
+                                var precipYear = parseInt(initPrec[0]);
+                                if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
+                                    if (precipYear < $scope.chartFilterStartYear || precipYear > $scope.chartFilterEndYear) {
+                                        continue;
+                                    }
+                                }
+                                
                                 precData[count] = dataPrecip.text[i];
                                 precValue[count] = dataPrecip.precipit[i];
                                 var temp = dataPrecip.text[i].split("-");
@@ -598,7 +658,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
-        var createLandsatChart = function () {
+        createLandsatChart = function () {
             Plotly.purge('LANDSAT');
 
             requester._get(`timeseries/landsat/ndvi`, {
@@ -606,44 +666,70 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 "lat": $scope.point.lat
             }, function (data) {
                 if (data && data.length > 0) {
-                    $scope.showChartsLandsat = true;
-                    let d3 = Plotly.d3;
-                    let gd3 = d3.select('#LANDSAT');
-                    let gd = gd3.node();
-
-                    // Criando os traços diretamente dos dados retornados
-                    let trace1 = {
-                        x: data[0].x,
-                        y: data[0].y,
-                        type: "scatter",
-                        mode: "lines",
-                        name: "NDVI (Savgol)",
-                        line: {
-                            color: "rgb(50, 168, 82)"
+                    // Aplicar filtro de período se definido
+                    let filteredData = [];
+                    if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
+                        for (let i = 0; i < data.length; i++) {
+                            let filteredX = [];
+                            let filteredY = [];
+                            
+                            for (let j = 0; j < data[i].x.length; j++) {
+                                let year = new Date(data[i].x[j]).getFullYear();
+                                if (year >= $scope.chartFilterStartYear && year <= $scope.chartFilterEndYear) {
+                                    filteredX.push(data[i].x[j]);
+                                    filteredY.push(data[i].y[j]);
+                                }
+                            }
+                            
+                            filteredData.push({
+                                x: filteredX,
+                                y: filteredY
+                            });
                         }
-                    };
+                    } else {
+                        filteredData = data;
+                    }
+                    
+                    $scope.showChartsLandsat = filteredData[0].x.length > 0;
+                    
+                    if ($scope.showChartsLandsat) {
+                        let d3 = Plotly.d3;
+                        let gd3 = d3.select('#LANDSAT');
+                        let gd = gd3.node();
 
-                    let trace2 = {
-                        x: data[1].x,
-                        y: data[1].y,
-                        type: "scatter",
-                        mode: "markers",
-                        name: "NDVI (Original)",
-                        marker: {
-                            color: "rgba(50, 168, 82, 0.3)"
-                        }
-                    };
+                        // Criando os traços com os dados filtrados
+                        let trace1 = {
+                            x: filteredData[0].x,
+                            y: filteredData[0].y,
+                            type: "scatter",
+                            mode: "lines",
+                            name: "NDVI (Savgol)",
+                            line: {
+                                color: "rgb(50, 168, 82)"
+                            }
+                        };
 
-                    let trace3 = {
-                        x: data[2].x,
-                        y: data[2].y,
-                        type: "bar",
-                        name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
-                        marker: {
-                            color: "blue"
-                        },
-                        yaxis: "y2"
-                    };
+                        let trace2 = {
+                            x: filteredData[1].x,
+                            y: filteredData[1].y,
+                            type: "scatter",
+                            mode: "markers",
+                            name: "NDVI (Original)",
+                            marker: {
+                                color: "rgba(50, 168, 82, 0.3)"
+                            }
+                        };
+
+                        let trace3 = {
+                            x: filteredData[2].x,
+                            y: filteredData[2].y,
+                            type: "bar",
+                            name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
+                            marker: {
+                                color: "blue"
+                            },
+                            yaxis: "y2"
+                        };
 
                     let layout = {
                         height: 400,
@@ -674,17 +760,18 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         }
                     };
 
-                    let dataChart = [trace1, trace2, trace3];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
-                    Plotly.Plots.resize(gd);
-
-                    window.onresize = function () {
+                        let dataChart = [trace1, trace2, trace3];
+                        Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
                         Plotly.Plots.resize(gd);
-                    };
+
+                        window.onresize = function () {
+                            Plotly.Plots.resize(gd);
+                        };
+                    }
                 }
             });
         };
-        var createNDDIChart = function () {
+        createNDDIChart = function () {
             Plotly.purge('NDDI');
 
             requester._get(`timeseries/nddi`, {
@@ -692,22 +779,48 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 "lat": $scope.point.lat
             }, function (data) {
                 if (data && data.length > 0) {
-                    $scope.showChartsNDDI = true;
-                    let d3 = Plotly.d3;
-                    let gd3 = d3.select('#NDDI');
-                    let gd = gd3.node();
-
-                    // Criando os traços diretamente dos dados retornados
-                    let trace = {
-                        x: data[0].x,
-                        y: data[0].y,
-                        type: "scatter",
-                        mode: "lines",
-                        name: "NDDI (MapBiomas Mosaics)",
-                        line: {
-                            color: "rgb(0, 168, 82)"
+                    // Aplicar filtro de período se definido
+                    let filteredData = [];
+                    if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
+                        for (let i = 0; i < data.length; i++) {
+                            let filteredX = [];
+                            let filteredY = [];
+                            
+                            for (let j = 0; j < data[i].x.length; j++) {
+                                let year = new Date(data[i].x[j]).getFullYear();
+                                if (year >= $scope.chartFilterStartYear && year <= $scope.chartFilterEndYear) {
+                                    filteredX.push(data[i].x[j]);
+                                    filteredY.push(data[i].y[j]);
+                                }
+                            }
+                            
+                            filteredData.push({
+                                x: filteredX,
+                                y: filteredY
+                            });
                         }
-                    };
+                    } else {
+                        filteredData = data;
+                    }
+                    
+                    $scope.showChartsNDDI = filteredData[0].x.length > 0;
+                    
+                    if ($scope.showChartsNDDI) {
+                        let d3 = Plotly.d3;
+                        let gd3 = d3.select('#NDDI');
+                        let gd = gd3.node();
+
+                        // Criando os traços com os dados filtrados
+                        let trace = {
+                            x: filteredData[0].x,
+                            y: filteredData[0].y,
+                            type: "scatter",
+                            mode: "lines",
+                            name: "NDDI (MapBiomas Mosaics)",
+                            line: {
+                                color: "rgb(0, 168, 82)"
+                            }
+                        };
 
                     let layout = {
                         height: 400,
@@ -727,13 +840,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         }
                     };
 
-                    let dataChart = [trace];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
-                    Plotly.Plots.resize(gd);
-
-                    window.onresize = function () {
+                        let dataChart = [trace];
+                        Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
                         Plotly.Plots.resize(gd);
-                    };
+
+                        window.onresize = function () {
+                            Plotly.Plots.resize(gd);
+                        };
+                    }
                 }
             });
         };
@@ -1212,12 +1326,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
             // Buscar configurações da campanha do novo endpoint
             loadCampaignConfig(function() {
-                // Mostrar gráficos apenas se showTimeseries for true (após carregar as configurações)
-                if (!$scope.isChaco && $scope.showTimeseries) {
-                    createModisChart(data.point.dates);
-                    createLandsatChart();
-                    createNDDIChart();
-                }
+                // Os gráficos agora só serão carregados quando o usuário clicar no botão
+                // Resetar a flag sempre que carregar um novo ponto
+                $scope.showTimeseriesCharts = false;
             });
             
             $scope.counter = 0;

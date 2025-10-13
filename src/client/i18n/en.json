@@ -16,7 +16,8 @@
     "CHOOSE": "Choose",
     "ALL": "All",
     "NOT_CONSOLIDATED": "Not Consolidated",
-    "USER": "User"
+    "USER": "User",
+    "APPLY": "Apply"
   },
   "NAVBAR": {
     "POINTS": "Points",
@@ -74,7 +75,9 @@
     "CHARTS": {
       "LANDSAT_SERIES": "LANDSAT time series",
       "MODIS_SERIES": "MODIS time series",
-      "NDDI_SERIES": "NDDI Time Series"
+      "NDDI_SERIES": "NDDI Time Series",
+      "SHOW_TIMESERIES": "Show Time Series Charts",
+      "FILTER_PERIOD": "Filter Period"
     }
   },
   "TEMPORAL": {
@@ -113,7 +116,9 @@
       "LANDSAT_SERIES": "LANDSAT time series",
       "MODIS_SERIES": "MODIS time series",
       "NDDI_SERIES": "NDDI Time Series",
-      "PRECIPITATION": "Precipitation"
+      "PRECIPITATION": "Precipitation",
+      "SHOW_TIMESERIES": "Show Time Series Charts",
+      "FILTER_PERIOD": "Filter Period"
     }
   },
   "LANGUAGES": {
@@ -145,7 +150,8 @@
     "POINTS_CORRECTED": "Points corrected: {{count}}",
     "CAMPAIGN_NO_ISSUES": "Campaign has no issues with inspections.",
     "CONFIRM_REMOVE_INSPECTIONS": "Are you sure you want to remove the inspections from the point identified as {{pointId}}?\nBe aware that once the removal is completed, it will no longer be possible to reverse this action.",
-    "INSPECTIONS_REMOVED": "The inspections from point {{pointId}} were successfully removed."
+    "INSPECTIONS_REMOVED": "The inspections from point {{pointId}} were successfully removed.",
+    "INVALID_DATE_RANGE": "Invalid date range. The start year must be less than or equal to the end year."
   },
   "DASHBOARD": {
     "INSPECTED_POINTS": "Number of inspected points",
