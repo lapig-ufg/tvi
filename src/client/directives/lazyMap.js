@@ -146,6 +146,10 @@ angular.module('application')
     const loadingMaps = new Set();
     const callbacks = new Map();
     
+    // Cache de mapas visíveis para preservar entre mudanças de período
+    let visibleMapsCache = [];
+    let shouldRestoreFromCache = false;
+    
     this.isLoaded = function(index) {
         return loadedMaps.has(index);
     };
@@ -180,9 +184,32 @@ angular.module('application')
         }
     };
     
+    // Salvar estado de mapas visíveis
+    this.saveVisibleMaps = function(visibleIndices) {
+        visibleMapsCache = [...visibleIndices];
+        shouldRestoreFromCache = true;
+    };
+    
+    // Verificar se deve restaurar do cache
+    this.shouldRestoreMap = function(index) {
+        return shouldRestoreFromCache && visibleMapsCache.includes(index);
+    };
+    
+    // Obter mapas visíveis do cache
+    this.getVisibleMapsFromCache = function() {
+        return visibleMapsCache;
+    };
+    
+    // Limpar cache após restauração
+    this.clearCache = function() {
+        shouldRestoreFromCache = false;
+        visibleMapsCache = [];
+    };
+    
     this.reset = function() {
         loadedMaps.clear();
         loadingMaps.clear();
         callbacks.clear();
+        // Não limpar o cache aqui para preservar entre resets
     };
 });

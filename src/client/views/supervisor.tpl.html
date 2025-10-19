@@ -283,7 +283,7 @@
                 <!-- Container com Bootstrap Grid -->
                 <div class="row maps-grid" style="margin: 0;">
                     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-bottom: 0;">
-                    <div ng-repeat="map in maps track by (map.year + '-' + period + '-' + mapKey)" 
+                    <div ng-repeat="map in maps track by map.index" 
                          ng-class="getMapBoxClass(maps.length)"
                          lazy-map
                          map-index="{{map.index}}"

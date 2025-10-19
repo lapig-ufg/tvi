@@ -300,6 +300,23 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             console.log('wmsPeriod:', $scope.wmsPeriod);
             console.log('wmsEnabled:', $scope.wmsEnabled);
             
+            // Salvar a posição atual do scroll e mapas visíveis
+            var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            var visibleMapIndices = [];
+            
+            // Identificar quais mapas estão visíveis atualmente
+            for (var index in $scope.mapStates) {
+                if ($scope.mapStates[index].visible) {
+                    visibleMapIndices.push(parseInt(index));
+                }
+            }
+            
+            console.log('Salvando posição do scroll:', scrollPosition);
+            console.log('Mapas visíveis:', visibleMapIndices);
+            
+            // Salvar no serviço para persistir entre mudanças
+            mapLoadingService.saveVisibleMaps(visibleMapIndices);
+            
             $scope.period = newPeriod;
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
             
@@ -310,10 +327,35 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             // Forçar atualização completa dos mapas
             $timeout(function() {
                 generateMaps();
-                // Forçar digest cycle
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
+                
+                // Restaurar mapas visíveis e posição do scroll após um pequeno delay
+                $timeout(function() {
+                    // Obter mapas visíveis do cache
+                    var cachedVisibleMaps = mapLoadingService.getVisibleMapsFromCache();
+                    
+                    // Forçar carregamento dos mapas que estavam visíveis
+                    cachedVisibleMaps.forEach(function(index) {
+                        if (index < $scope.maps.length) {
+                            $scope.$broadcast('forceLoadMap', index);
+                            // Marcar como visível no novo estado
+                            if ($scope.mapStates[index]) {
+                                $scope.mapStates[index].visible = true;
+                            }
+                        }
+                    });
+                    
+                    // Restaurar posição do scroll
+                    window.scrollTo(0, scrollPosition);
+                    console.log('Posição do scroll restaurada para:', scrollPosition);
+                    
+                    // Limpar cache após usar
+                    mapLoadingService.clearCache();
+                    
+                    // Forçar digest cycle
+                    if (!$scope.$$phase) {
+                        $scope.$apply();
+                    }
+                }, 200);
             }, 100);
         }
 
