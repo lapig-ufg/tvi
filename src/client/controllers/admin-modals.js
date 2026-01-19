@@ -1518,6 +1518,7 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     $scope.landsatVisParams = [];
     $scope.sentinelVisParams = [];
     $scope.loading = true;
+    $scope.currentYear = new Date().getFullYear();
     
     // Inicializar arrays se não existirem
     if (!$scope.campaign.visParams) {
