@@ -1690,7 +1690,7 @@ module.exports = function(app) {
                     try {
                         processedCount++;
                         
-                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                        if (!feature.geometry || !feature.geometry.coordinates) {
                             errorCount++;
                             emitToUser('feature-error', {
                                 campaignId: campaignId,
@@ -1699,12 +1699,49 @@ module.exports = function(app) {
                             });
                             continue;
                         }
-                        
+
+                        // Suportar Point e MultiPoint
+                        let coords;
+                        const geomType = feature.geometry.type;
+                        if (geomType === 'MultiPoint') {
+                            // MultiPoint: coordinates é array de arrays [[lon, lat], ...]
+                            if (!feature.geometry.coordinates[0] || feature.geometry.coordinates[0].length < 2) {
+                                errorCount++;
+                                emitToUser('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: processedCount - 1,
+                                    error: 'Invalid MultiPoint coordinates'
+                                });
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates[0]; // Usa o primeiro ponto
+                        } else if (geomType === 'Point') {
+                            // Point: coordinates é [lon, lat]
+                            if (feature.geometry.coordinates.length < 2) {
+                                errorCount++;
+                                emitToUser('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: processedCount - 1,
+                                    error: 'Invalid Point coordinates'
+                                });
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates;
+                        } else {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: `Unsupported geometry type: ${geomType}. Only Point and MultiPoint are supported.`
+                            });
+                            continue;
+                        }
+
                         const coordinate = {
-                            X: feature.geometry.coordinates[0],
-                            Y: feature.geometry.coordinates[1]
+                            X: coords[0],
+                            Y: coords[1]
                         };
-                        
+
                         // Validar coordenadas
                         if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
                             errorCount++;
@@ -1991,7 +2028,7 @@ module.exports = function(app) {
                     try {
                         processedCount++;
                         
-                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                        if (!feature.geometry || !feature.geometry.coordinates) {
                             errorCount++;
                             emitToUser('feature-error', {
                                 campaignId: campaignId,
@@ -2000,12 +2037,49 @@ module.exports = function(app) {
                             });
                             continue;
                         }
-                        
+
+                        // Suportar Point e MultiPoint
+                        let coords;
+                        const geomType = feature.geometry.type;
+                        if (geomType === 'MultiPoint') {
+                            // MultiPoint: coordinates é array de arrays [[lon, lat], ...]
+                            if (!feature.geometry.coordinates[0] || feature.geometry.coordinates[0].length < 2) {
+                                errorCount++;
+                                emitToUser('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: processedCount - 1,
+                                    error: 'Invalid MultiPoint coordinates'
+                                });
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates[0]; // Usa o primeiro ponto
+                        } else if (geomType === 'Point') {
+                            // Point: coordinates é [lon, lat]
+                            if (feature.geometry.coordinates.length < 2) {
+                                errorCount++;
+                                emitToUser('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: processedCount - 1,
+                                    error: 'Invalid Point coordinates'
+                                });
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates;
+                        } else {
+                            errorCount++;
+                            emitToUser('feature-error', {
+                                campaignId: campaignId,
+                                featureIndex: processedCount - 1,
+                                error: `Unsupported geometry type: ${geomType}. Only Point and MultiPoint are supported.`
+                            });
+                            continue;
+                        }
+
                         const coordinate = {
-                            X: feature.geometry.coordinates[0],
-                            Y: feature.geometry.coordinates[1]
+                            X: coords[0],
+                            Y: coords[1]
                         };
-                        
+
                         // Validar coordenadas
                         if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
                             errorCount++;
@@ -2296,7 +2370,7 @@ module.exports = function(app) {
                 
                 for (const feature of batch) {
                     try {
-                        if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length < 2) {
+                        if (!feature.geometry || !feature.geometry.coordinates) {
                             errorCount++;
                             if (io) {
                                 io.to('geojson-upload').emit('feature-error', {
@@ -2307,12 +2381,55 @@ module.exports = function(app) {
                             }
                             continue;
                         }
-                        
+
+                        // Suportar Point e MultiPoint
+                        let coords;
+                        const geomType = feature.geometry.type;
+                        if (geomType === 'MultiPoint') {
+                            // MultiPoint: coordinates é array de arrays [[lon, lat], ...]
+                            if (!feature.geometry.coordinates[0] || feature.geometry.coordinates[0].length < 2) {
+                                errorCount++;
+                                if (io) {
+                                    io.to('geojson-upload').emit('feature-error', {
+                                        campaignId: campaignId,
+                                        featureIndex: i + batch.indexOf(feature),
+                                        error: 'Invalid MultiPoint coordinates'
+                                    });
+                                }
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates[0]; // Usa o primeiro ponto
+                        } else if (geomType === 'Point') {
+                            // Point: coordinates é [lon, lat]
+                            if (feature.geometry.coordinates.length < 2) {
+                                errorCount++;
+                                if (io) {
+                                    io.to('geojson-upload').emit('feature-error', {
+                                        campaignId: campaignId,
+                                        featureIndex: i + batch.indexOf(feature),
+                                        error: 'Invalid Point coordinates'
+                                    });
+                                }
+                                continue;
+                            }
+                            coords = feature.geometry.coordinates;
+                        } else {
+                            errorCount++;
+                            if (io) {
+                                io.to('geojson-upload').emit('feature-error', {
+                                    campaignId: campaignId,
+                                    featureIndex: i + batch.indexOf(feature),
+                                    error: `Unsupported geometry type: ${geomType}. Only Point and MultiPoint are supported.`
+                                });
+                            }
+                            continue;
+                        }
+
                         const coordinate = {
-                            X: feature.geometry.coordinates[0],
-                            Y: feature.geometry.coordinates[1]
+                            X: coords[0],
+                            Y: coords[1]
                         };
-                        
+
                         // Validar coordenadas
                         if (isNaN(coordinate.X) || isNaN(coordinate.Y)) {
                             errorCount++;
