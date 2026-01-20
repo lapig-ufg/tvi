@@ -473,9 +473,9 @@ Application
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({ 
-                iconUrl: 'assets/marker2.png', 
-                iconSize: [42, 42] 
+              icon: L.icon({
+                iconUrl: 'assets/marker2.png',
+                iconSize: [42, 42]
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
@@ -498,7 +498,23 @@ Application
                 $scope.updateTileLayer();
               }
             });
-            
+
+            // Watch para mudanças de coordenadas (novo ponto)
+            $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
+                if ($scope.map && $scope.lon && $scope.lat) {
+                  // Recentrar mapa na nova posição
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
+                  // Atualizar posição do marcador
+                  if ($scope.marker) {
+                    $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                  }
+                  // Atualizar tiles
+                  $scope.updateTileLayer();
+                }
+              }
+            });
+
             // Adicionar evento para garantir que o marcador permaneça visível quando os tiles carregam
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
@@ -762,9 +778,9 @@ Application
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({ 
-                iconUrl: 'assets/marker2.png', 
-                iconSize: [42, 42] 
+              icon: L.icon({
+                iconUrl: 'assets/marker2.png',
+                iconSize: [42, 42]
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
@@ -787,7 +803,23 @@ Application
                 $scope.updateTileLayer();
               }
             });
-            
+
+            // Watch para mudanças de coordenadas (novo ponto)
+            $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
+                if ($scope.map && $scope.lon && $scope.lat) {
+                  // Recentrar mapa na nova posição
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
+                  // Atualizar posição do marcador
+                  if ($scope.marker) {
+                    $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                  }
+                  // Atualizar tiles
+                  $scope.updateTileLayer();
+                }
+              }
+            });
+
             // Adicionar evento para garantir que o marcador permaneça visível quando os tiles carregam
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
@@ -1310,12 +1342,28 @@ Application
                 year: oldValues[1],
                 wmsConfig: oldValues[2] ? 'presente' : 'ausente'
               });
-              
+
               if ($scope.period && $scope.year && $scope.wmsConfig) {
                 $scope.updateWmsLayer();
               }
             });
-            
+
+            // Watch para mudanças de coordenadas (novo ponto)
+            $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
+                if ($scope.map && $scope.lon && $scope.lat) {
+                  // Recentrar mapa na nova posição
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
+                  // Atualizar posição do marcador
+                  if ($scope.marker) {
+                    $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                  }
+                  // Atualizar camada WMS
+                  $scope.updateWmsLayer();
+                }
+              }
+            });
+
             // Cleanup completo quando o scope é destruído
             $scope.$on('$destroy', function() {
               console.log('WMS: Destruindo componente');
