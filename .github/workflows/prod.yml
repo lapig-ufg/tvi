@@ -23,10 +23,16 @@ jobs:
             echo "$1=$2" >> $GITHUB_ENV
             echo "$1=$2" >> $GITHUB_OUTPUT
           }
+          REPO_NAME="${{ github.event.repository.name }}"
           # Defina as variáveis
           set_var "DOCKER_PATH" "prod"
-          set_var "APPLICATION_NAME" "app_tvi"
+          set_var "APPLICATION_NAME" "$REPO_NAME"
           set_var "LAST_COMMIT_HASH" "$(git log --pretty=format:%h -n 1)"
+
+          # Log para debug
+          echo "Repository: $REPO_NAME"
+          echo "Docker Path: prod"
+          echo "Commit Hash: $(git log --pretty=format:%h -n 1)"
 
       - name: Create version.json
         run: echo "{\"commitId\":\"$LAST_COMMIT_HASH\"}" > version.json
@@ -58,16 +64,19 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: self-hosted
+    runs-on: vm1
 
     steps:
-      - name: Pull Image on Server
-        run: |
-          docker pull lapig/${{ needs.build.outputs.APPLICATION_NAME }}:${{ needs.build.outputs.DOCKER_PATH }}_latest
-
       - name: Restart Application
         run: |
-          /compose/resetapp.sh --title "Plataforma TVI" \
-          --github "https://github.com/${{ github.repository }}" \
-          --commit "${{ needs.build.outputs.LAST_COMMIT_HASH }}" \
-          ${{ needs.build.outputs.APPLICATION_NAME }}
+          zelador ${{ needs.build.outputs.APPLICATION_NAME }}  ${{ needs.build.outputs.DOCKER_PATH }} \
+            --title="TVI"   \
+           --commit=${{ needs.build.outputs.LAST_COMMIT_HASH }} \
+           --repo=${{ github.repository }}                                              
+
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed successfully"
+          echo "Application: ${{ needs.build.outputs.APPLICATION_NAME }}"
+          echo "Version: ${{ needs.build.outputs.DOCKER_PATH }}_${{ needs.build.outputs.LAST_COMMIT_HASH }}"
