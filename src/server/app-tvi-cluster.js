@@ -1,25 +1,43 @@
 require('dotenv').config();
-
-
 const cluster = require('cluster');
-let clusterSize = require('os').cpus().length;
+const os = require('os');
 
-if (cluster.isMaster) {
-  if (process.env.NODE_ENV === 'dev') {
-    clusterSize = 2
-  }
+const totalCPUs = os.cpus().length;
 
-  for (let i=0; i < clusterSize; i++) {
-    let ENV_VAR = {}
-    if (i == 0) {
-      ENV_VAR = { 'PRIMARY_WORKER': 1 }
+/**
+ * Calcula número de workers baseado em percentual de CPUs
+ * Default: 10% dos CPUs disponíveis
+ * Máximo: 80% dos CPUs
+ * Garante mínimo 2 e número par
+ */
+function getWorkerCount() {
+    if (process.env.NODE_ENV === 'dev') {
+        return 2;
     }
-    cluster.fork(ENV_VAR);
-  }
 
-  cluster.on("exit", function(worker) {
-    console.log(process.env.APP_NAME, worker.id, "has exited.")
-  })
+    const cpuPercent = parseFloat(process.env.CPU_PERCENT) || 0.1;
+    const maxCPUs = Math.floor(totalCPUs * 0.8); // Limite de 80%
+    
+    let numCPUs = Math.floor(totalCPUs * cpuPercent);
+    numCPUs = Math.min(numCPUs, maxCPUs); // Nunca passa de 80%
+
+    // Garante mínimo 2 e número par
+    return Math.max(2, numCPUs % 2 === 0 ? numCPUs : numCPUs + 1);
+}
+
+if (totalCPUs > 1 && cluster.isMaster) {
+    const clusterWorkerSize = getWorkerCount();
+    
+    console.log(`Total CPUs: ${totalCPUs}, Workers: ${clusterWorkerSize} (${Math.round((clusterWorkerSize/totalCPUs)*100)}%)`);
+
+    for (let i = 0; i < clusterWorkerSize; i++) {
+        const ENV_VAR = i === 0 ? { PRIMARY_WORKER: 1 } : {};
+        cluster.fork(ENV_VAR);
+    }
+
+    cluster.on('exit', (worker) => {
+        console.log(`${process.env.APP_NAME} Worker ${worker.id} has exited.`);
+    });
 } else {
-  require('./app.js');
+    require('./app.js');
 }
