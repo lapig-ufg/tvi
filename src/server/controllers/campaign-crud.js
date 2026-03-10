@@ -3207,8 +3207,13 @@ module.exports = function(app) {
                 // Executar bulk a cada BATCH_SIZE operações
                 if (bulkOps.length >= BATCH_SIZE) {
                     try {
-                        const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
-                        updatedCount += result.modifiedCount || 0;
+                        const result = await new Promise((resolve, reject) => {
+                            pointsCollection.bulkWrite(bulkOps, { ordered: false }, (err, r) => {
+                                if (err && !err.result) return reject(err);
+                                resolve(err ? err.result : r);
+                            });
+                        });
+                        updatedCount += result.nModified || result.modifiedCount || 0;
                     } catch (bulkError) {
                         if (logger) {
                             await logger.warn('Erro parcial no bulkWrite de classificações', {
@@ -3237,8 +3242,13 @@ module.exports = function(app) {
             // Executar operações restantes
             if (bulkOps.length > 0) {
                 try {
-                    const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
-                    updatedCount += result.modifiedCount || 0;
+                    const result = await new Promise((resolve, reject) => {
+                        pointsCollection.bulkWrite(bulkOps, { ordered: false }, (err, r) => {
+                            if (err && !err.result) return reject(err);
+                            resolve(err ? err.result : r);
+                        });
+                    });
+                    updatedCount += result.nModified || result.modifiedCount || 0;
                 } catch (bulkError) {
                     if (logger) {
                         await logger.warn('Erro parcial no bulkWrite final de classificações', {
@@ -3455,8 +3465,28 @@ module.exports = function(app) {
                 return results;
             };
 
+            // Helper: bulkWrite com Promise explícita (compatível com MongoDB driver 2.2.36)
+            const executeBulkWrite = (ops) => {
+                return new Promise((resolve, reject) => {
+                    pointsCollection.bulkWrite(ops, { ordered: false }, (err, result) => {
+                        if (err) {
+                            // BulkWrite parcial: erros individuais não invalidam toda a operação
+                            if (err.result) {
+                                resolve(err.result);
+                            } else {
+                                reject(err);
+                            }
+                        } else {
+                            resolve(result);
+                        }
+                    });
+                });
+            };
+
             // Fase de processamento: iterar features do GeoJSON
             let bulkOps = [];
+
+            console.log(`[IMPORT-FILE] Iniciando processamento de ${totalFeatures} features para campanha ${campaignId} (tolerância: ${distanceThreshold}m)`);
 
             for (let i = 0; i < geojsonData.features.length; i++) {
                 const feature = geojsonData.features[i];
@@ -3484,6 +3514,10 @@ module.exports = function(app) {
 
                 if (nearbyPoints.length === 0) {
                     notMatchedCount++;
+                    // Log das primeiras 5 features sem correspondência para diagnóstico
+                    if (notMatchedCount <= 5) {
+                        console.log(`[IMPORT-FILE] Feature ${i} sem correspondência: lon=${fLon}, lat=${fLat}`);
+                    }
                     continue;
                 }
 
@@ -3491,10 +3525,18 @@ module.exports = function(app) {
                 const classifications = extractClassifications(feature.properties);
                 if (classifications.length === 0) {
                     noClassCount++;
+                    if (noClassCount <= 3) {
+                        console.log(`[IMPORT-FILE] Feature ${i} sem CLASS_YYYY. Props: ${Object.keys(feature.properties || {}).slice(0, 10).join(', ')}`);
+                    }
                     continue;
                 }
 
                 matchedCount++;
+
+                // Log do primeiro match para validação
+                if (matchedCount === 1) {
+                    console.log(`[IMPORT-FILE] Primeiro match: feature ${i} (lon=${fLon}, lat=${fLat}) -> ${nearbyPoints.length} ponto(s), dist=${nearbyPoints[0].distance.toFixed(2)}m, ${classifications.length} classificações`);
+                }
 
                 // Aplicar classificação em todos os pontos dentro do raio
                 for (const point of nearbyPoints) {
@@ -3535,9 +3577,12 @@ module.exports = function(app) {
                 // Executar bulk a cada BATCH_SIZE operações
                 if (bulkOps.length >= BATCH_SIZE) {
                     try {
-                        const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
-                        updatedCount += result.modifiedCount || 0;
+                        const result = await executeBulkWrite(bulkOps);
+                        const modified = result.nModified || result.modifiedCount || 0;
+                        updatedCount += modified;
+                        console.log(`[IMPORT-FILE] BulkWrite: ${bulkOps.length} ops -> ${modified} modificados (total: ${updatedCount})`);
                     } catch (bulkError) {
+                        console.error(`[IMPORT-FILE] BulkWrite ERRO: ${bulkError.message}`);
                         if (logger) {
                             await logger.warn('Erro parcial no bulkWrite de classificações (arquivo)', {
                                 module: 'campaignCrud',
@@ -3567,9 +3612,12 @@ module.exports = function(app) {
             // Executar operações restantes
             if (bulkOps.length > 0) {
                 try {
-                    const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
-                    updatedCount += result.modifiedCount || 0;
+                    const result = await executeBulkWrite(bulkOps);
+                    const modified = result.nModified || result.modifiedCount || 0;
+                    updatedCount += modified;
+                    console.log(`[IMPORT-FILE] BulkWrite final: ${bulkOps.length} ops -> ${modified} modificados (total: ${updatedCount})`);
                 } catch (bulkError) {
+                    console.error(`[IMPORT-FILE] BulkWrite final ERRO: ${bulkError.message}`);
                     if (logger) {
                         await logger.warn('Erro parcial no bulkWrite final de classificações (arquivo)', {
                             module: 'campaignCrud',
@@ -3579,6 +3627,8 @@ module.exports = function(app) {
                     }
                 }
             }
+
+            console.log(`[IMPORT-FILE] Concluído: matched=${matchedCount}, updated=${updatedCount}, skipped=${skippedCount}, notMatched=${notMatchedCount}, noClass=${noClassCount}`);
 
             const duration = Math.round((new Date() - startTime) / 1000);
 

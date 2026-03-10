@@ -31,16 +31,14 @@
 
                         <!-- Seletor de modo -->
                         <div class="import-mode-selector">
-                            <label class="mode-option" ng-class="{'active': importMode === 'properties'}">
-                                <input type="radio" ng-model="importMode" value="properties">
+                            <div class="mode-option" ng-class="{'active': importMode === 'properties'}" ng-click="importMode = 'properties'">
                                 <i class="fas fa-database"></i>
                                 <span>Das propriedades dos pontos</span>
-                            </label>
-                            <label class="mode-option" ng-class="{'active': importMode === 'file'}">
-                                <input type="radio" ng-model="importMode" value="file">
+                            </div>
+                            <div class="mode-option" ng-class="{'active': importMode === 'file'}" ng-click="importMode = 'file'">
                                 <i class="fas fa-file-upload"></i>
                                 <span>De arquivo GeoJSON</span>
-                            </label>
+                            </div>
                         </div>
 
                         <!-- Modo: Propriedades -->
@@ -355,10 +353,6 @@
     font-weight: 500;
     color: #4a5568;
     font-size: 0.875rem;
-}
-
-.mode-option input[type="radio"] {
-    display: none;
 }
 
 .mode-option:hover {
