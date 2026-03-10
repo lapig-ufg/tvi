@@ -553,8 +553,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                     swipeEl = null;
                 }
                 if (map) {
-                    map.off();
-                    map.remove();
+                    safeDestroyMap(map);
                     map = null;
                 }
             });

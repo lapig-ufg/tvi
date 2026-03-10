@@ -261,6 +261,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
             templateUrl: 'views/campaign-form-modal.tpl.html',
             controller: 'CampaignFormModalController',
             size: 'lg',
+            windowClass: 'modern-modal-window',
             resolve: {
                 campaign: function() {
                     return angular.copy($scope.newCampaign);
@@ -294,6 +295,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
             templateUrl: 'views/campaign-form-modal.tpl.html',
             controller: 'CampaignFormModalController',
             size: 'lg',
+            windowClass: 'modern-modal-window',
             resolve: {
                 campaign: function() {
                     return angular.copy(campaign);
@@ -371,6 +373,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
             templateUrl: 'views/import-classifications-modal.tpl.html',
             controller: 'ImportClassificationsModalController',
             size: 'lg',
+            windowClass: 'upload-modal-window',
             resolve: {
                 campaign: function() { return campaign; }
             }

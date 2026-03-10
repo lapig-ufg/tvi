@@ -1,4 +1,31 @@
 'use strict';
+
+/**
+ * Destrói um mapa Leaflet de forma segura, cancelando animações de zoom
+ * pendentes para evitar erros "Cannot read properties of null" nos callbacks
+ * internos _onZoomTransitionEnd / _resetView / _updateLevels.
+ */
+function safeDestroyMap(map) {
+  if (!map) return;
+  try {
+    // Cancela animações de zoom CSS pendentes
+    if (map._animatingZoom) {
+      map._animatingZoom = false;
+      // Remove o listener de transitionend do DOM que dispara _onZoomTransitionEnd
+      var pane = map._mapPane;
+      if (pane) {
+        L.DomUtil.removeClass(pane, 'leaflet-zoom-anim');
+      }
+    }
+    // Remove todos os event listeners do Leaflet
+    map.off();
+    // Remove o mapa e limpa o DOM
+    map.remove();
+  } catch (e) {
+    // Ignora erros durante a destruição - o mapa já está sendo descartado
+  }
+}
+
 Application
     .directive('numberFormat', function ($filter) {
       return {
@@ -119,8 +146,7 @@ Application
             $scope.$on('$destroy', function() {
               $scope._destroyed = true;
               if ($scope.map) {
-                $scope.map.off();
-                $scope.map.remove();
+                safeDestroyMap($scope.map);
                 $scope.map = null;
               }
             });
@@ -208,8 +234,7 @@ Application
 
             $scope.$on('$destroy', function() {
               if ($scope.map) {
-                $scope.map.off();
-                $scope.map.remove();
+                safeDestroyMap($scope.map);
                 $scope.map = null;
               }
             });
@@ -575,8 +600,7 @@ Application
                 $scope.tileLayer.off();
               }
               if ($scope.map) {
-                $scope.map.off();
-                $scope.map.remove();
+                safeDestroyMap($scope.map);
                 $scope.map = null;
               }
             });
@@ -967,8 +991,7 @@ Application
                 $scope.tileLayer.off();
               }
               if ($scope.map) {
-                $scope.map.off();
-                $scope.map.remove();
+                safeDestroyMap($scope.map);
                 $scope.map = null;
               }
             });
@@ -1493,8 +1516,7 @@ Application
               }
 
               if ($scope.map) {
-                $scope.map.off();
-                $scope.map.remove();
+                safeDestroyMap($scope.map);
                 $scope.map = null;
               }
             });

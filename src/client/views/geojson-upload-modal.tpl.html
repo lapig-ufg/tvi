@@ -1,5 +1,5 @@
 <!-- GeoJSON Upload Modal - Interface Moderna -->
-<div class="modal-dialog upload-modal">
+<div class="upload-modal">
     <div class="modal-content">
         <div class="modal-header" ng-class="{
             'success': uploadProgress.isCompleted && uploadProgress.success,
@@ -269,7 +269,8 @@
 
 <style>
 /* GeoJSON Upload Modal - Modern Interface */
-.upload-modal {
+.upload-modal-window .modal-dialog,
+.modal-90-width .modal-dialog {
     width: 90%;
     max-width: 800px;
     margin: 30px auto;

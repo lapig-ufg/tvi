@@ -521,6 +521,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
             templateUrl: 'views/campaign-form-modal.tpl.html',
             controller: 'CampaignFormModalController',
             size: 'lg',
+            windowClass: 'modern-modal-window',
             resolve: {
                 campaign: function() {
                     return angular.copy($scope.details.campaign);

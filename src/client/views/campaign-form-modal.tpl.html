@@ -1,5 +1,5 @@
 <!-- Modal de Formulário de Campanha - Interface Moderna -->
-<div class="modal-dialog modern-modal">
+<div class="modern-modal">
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">
@@ -333,13 +333,17 @@
 </div>
 
 <style>
-/* Modal Container */
+/* Modal Container - windowClass aplica ao wrapper do $uibModal */
+.modern-modal-window .modal-dialog {
+    width: 90%;
+    max-width: 900px;
+    margin: 30px auto;
+}
+
 .modern-modal {
-    width: 100%;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    margin: 0px auto !important;
 }
 
 .modern-modal .modal-content {
