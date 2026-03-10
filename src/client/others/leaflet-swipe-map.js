@@ -20,7 +20,21 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
             var swipePosition = 0.5; // Posição inicial do swipe (50%)
             var swipeEl = null;
             var isDragging = false;
-            
+            var destroyed = false;
+            var pendingTimeouts = [];
+
+            // Wrapper para $timeout que rastreia timeouts pendentes
+            function safeTimeout(fn, delay) {
+                if (destroyed) return null;
+                var t = $timeout(function() {
+                    var idx = pendingTimeouts.indexOf(t);
+                    if (idx > -1) pendingTimeouts.splice(idx, 1);
+                    if (!destroyed && map) fn();
+                }, delay);
+                pendingTimeouts.push(t);
+                return t;
+            }
+
             // Controle de atualizações pendentes
             var updateQueue = {
                 left: null,
@@ -135,7 +149,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                     var container = layer.getContainer();
                     if (container) {
                         container.style.transition = 'opacity 0.5s ease-in-out';
-                        $timeout(function() {
+                        safeTimeout(function() {
                             layer.setOpacity(1);
                         }, 50);
                     }
@@ -158,7 +172,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                 // Se já está atualizando, aguardar
                 if ((!updateOnlyRight && isUpdating.left) || isUpdating.right) {
                     // Agendar nova atualização após a atual terminar
-                    $timeout(function() {
+                    safeTimeout(function() {
                         updateLayers(updateOnlyRight);
                     }, 100);
                     return;
@@ -170,8 +184,8 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                         var container = layer.getContainer();
                         container.style.transition = 'opacity 0.3s ease-out';
                         layer.setOpacity(0);
-                        $timeout(function() {
-                            if (map.hasLayer(layer)) {
+                        safeTimeout(function() {
+                            if (map && map.hasLayer(layer)) {
                                 map.removeLayer(layer);
                             }
                             if (callback) callback();
@@ -211,7 +225,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                                 rightLayerObj.addTo(map);
                                 
                                 // Garantir ordem correta das camadas após adicionar
-                                $timeout(function() {
+                                safeTimeout(function() {
                                     ensureLayerOrder();
                                     isUpdating.right = false;
                                 }, 50);
@@ -225,7 +239,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                     
                     // Garantir que o swipe control existe se ambas as camadas existem
                     if (leftLayerObj && rightLayerObj && !swipeEl) {
-                        $timeout(function() {
+                        safeTimeout(function() {
                             createSwipeControl();
                         }, 100);
                     }
@@ -261,7 +275,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                 if (!updateOnlyRight && swipeEl) {
                     swipeEl.style.opacity = '0';
                     swipeEl.style.transition = 'opacity 0.3s ease-out';
-                    $timeout(function() {
+                    safeTimeout(function() {
                         if (swipeEl) {
                             swipeEl.remove();
                             swipeEl = null;
@@ -287,7 +301,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
 
                     // Garantir ordem correta e aplicar clip inicial se ambas as camadas existirem
                     if (leftLayerObj && rightLayerObj) {
-                        $timeout(function() {
+                        safeTimeout(function() {
                             ensureLayerOrder();
                             createSwipeControl();
                             isUpdating.left = false;
@@ -304,13 +318,10 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                     }
                     
                     // Forçar o mapa a atualizar e carregar os tiles
-                    $timeout(function() {
+                    safeTimeout(function() {
                         map.invalidateSize();
-                        // Forçar redraw
-                        if (map) {
-                            var center = map.getCenter();
-                            map.setView(center, map.getZoom(), { reset: true });
-                        }
+                        var center = map.getCenter();
+                        map.setView(center, map.getZoom(), { reset: true });
                     }, 200);
                 }
             }
@@ -492,7 +503,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
                 updateSwipe(mapRect.left + mapRect.width * swipePosition);
                 
                 // Fazer fade in do controle
-                $timeout(function() {
+                safeTimeout(function() {
                     if (swipeEl) {
                         swipeEl.style.opacity = '1';
                     }
@@ -500,19 +511,19 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
             }
 
             // Inicializar o mapa após o elemento estar pronto
-            $timeout(function() {
+            safeTimeout(function() {
                 initMap();
             }, 100);
 
             // Observar mudanças nas camadas
             scope.$watch('leftLayer', function(newVal, oldVal) {
-                if (newVal !== oldVal && map) {
+                if (!destroyed && newVal !== oldVal && map) {
                     updateLayers();
                 }
             }, true);
 
             scope.$watch('rightLayer', function(newVal, oldVal) {
-                if (newVal !== oldVal && map) {
+                if (!destroyed && newVal !== oldVal && map) {
                     // Sempre atualizar apenas a camada direita quando ela mudar
                     // A camada esquerda (Landsat) deve permanecer fixa
                     updateLayers(true);
@@ -521,8 +532,8 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
 
             // Observar mudanças no centro do mapa
             scope.$watch('[lat, lon]', function(newVal, oldVal) {
-                if (map && newVal[0] && newVal[1]) {
-                    map.setView([newVal[0], newVal[1]], scope.zoom);
+                if (!destroyed && map && newVal[0] && newVal[1]) {
+                    map.setView([newVal[0], newVal[1]], scope.zoom, { animate: false });
                     if (marker) {
                         marker.setLatLng([newVal[0], newVal[1]]);
                     }
@@ -531,11 +542,20 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
 
             // Cleanup
             scope.$on('$destroy', function() {
+                destroyed = true;
+
+                // Cancelar todos os $timeout pendentes
+                pendingTimeouts.forEach(function(t) { $timeout.cancel(t); });
+                pendingTimeouts.length = 0;
+
                 if (swipeEl) {
                     swipeEl.remove();
+                    swipeEl = null;
                 }
                 if (map) {
+                    map.off();
                     map.remove();
+                    map = null;
                 }
             });
         }

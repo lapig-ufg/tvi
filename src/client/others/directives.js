@@ -103,20 +103,27 @@ Application
             });
 
             L.control.scale({metric: true, imperial: false}).addTo($scope.map);
-            
-            // Force map to recalculate size after initialization
+
+            $scope._destroyed = false;
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-              }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
             }, 200);
-            
-            // Additional check for single map scenarios
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-              }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
             }, 500);
+
+            $scope.$on('$destroy', function() {
+              $scope._destroyed = true;
+              if ($scope.map) {
+                $scope.map.off();
+                $scope.map.remove();
+                $scope.map = null;
+              }
+            });
 
           });
         }
@@ -198,6 +205,14 @@ Application
             updateTileLayer();
 
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
+
+            $scope.$on('$destroy', function() {
+              if ($scope.map) {
+                $scope.map.off();
+                $scope.map.remove();
+                $scope.map = null;
+              }
+            });
           }, 0);
         }
       }
@@ -309,6 +324,8 @@ Application
           visparams: '='
         },
         controller: function ($scope, $element, $injector) {
+
+          $scope._destroyed = false;
 
           /* ---------- estado ---------- */
           // Função para obter o visparam atual
@@ -501,15 +518,13 @@ Application
 
             // Watch para mudanças de coordenadas (novo ponto)
             $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  // Recentrar mapa na nova posição
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
-                  // Atualizar posição do marcador
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
-                  // Atualizar tiles
                   $scope.updateTileLayer();
                 }
               }
@@ -519,6 +534,7 @@ Application
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
                 setTimeout(function() {
+                  if ($scope._destroyed || !$scope.map) return;
                   if ($scope.marker && $scope.map.hasLayer($scope.marker)) {
                     $scope.marker.setZIndexOffset(1000);
                   }
@@ -528,36 +544,42 @@ Application
 
             /* primeira renderização */
             fetchCapabilities();
-            
-            // Garantir que temos o visparam mais atual antes da primeira renderização
+
             $scope.selectedVisparam = getCurrentVisparam();
-            
+
             if ($scope.period && $scope.year) {
               $scope.updateTileLayer();
             }
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
-            
-            // Force map to recalculate size and ensure marker is visible
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                // Garantir que o marcador esteja visível após o redimensionamento
-                if ($scope.marker && $scope.markerInMap) {
-                  $scope.marker.setZIndexOffset(1000);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap) {
+                $scope.marker.setZIndexOffset(1000);
               }
             }, 100);
-            
-            // Additional check for grid scenarios with multiple maps
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                // Re-adicionar o marcador se ele não estiver visível
-                if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
-                  $scope.map.addLayer($scope.marker);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
+                $scope.map.addLayer($scope.marker);
               }
             }, 500);
+
+            // Cleanup ao destruir
+            $scope.$on('$destroy', function() {
+              $scope._destroyed = true;
+              if ($scope.tileLayer) {
+                $scope.tileLayer.off();
+              }
+              if ($scope.map) {
+                $scope.map.off();
+                $scope.map.remove();
+                $scope.map = null;
+              }
+            });
           }, 0);
         }
       };
@@ -612,6 +634,8 @@ Application
           visparams: '='
         },
         controller: function ($scope, $element, $injector) {
+          $scope._destroyed = false;
+
           /* ---------- estado ---------- */
           // Função para obter o visparam atual
           function getCurrentVisparam() {
@@ -883,15 +907,13 @@ Application
 
             // Watch para mudanças de coordenadas (novo ponto)
             $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  // Recentrar mapa na nova posição
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
-                  // Atualizar posição do marcador
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
-                  // Atualizar tiles
                   $scope.updateTileLayer();
                 }
               }
@@ -901,6 +923,7 @@ Application
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
                 setTimeout(function() {
+                  if ($scope._destroyed || !$scope.map) return;
                   if ($scope.marker && $scope.map.hasLayer($scope.marker)) {
                     $scope.marker.setZIndexOffset(1000);
                   }
@@ -910,36 +933,45 @@ Application
 
             /* primeira renderização */
             fetchCapabilities();
-            
-            // Garantir que temos o visparam mais atual antes da primeira renderização
+
             $scope.selectedVisparam = getCurrentVisparam();
-            
+
             if ($scope.period && $scope.year) {
               $scope.updateTileLayer();
             }
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
-            
-            // Force map to recalculate size and ensure marker is visible
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                // Garantir que o marcador esteja visível após o redimensionamento
-                if ($scope.marker && $scope.markerInMap) {
-                  $scope.marker.setZIndexOffset(1000);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap) {
+                $scope.marker.setZIndexOffset(1000);
               }
             }, 100);
-            
-            // Additional check for grid scenarios with multiple maps
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                // Re-adicionar o marcador se ele não estiver visível
-                if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
-                  $scope.map.addLayer($scope.marker);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
+                $scope.map.addLayer($scope.marker);
               }
             }, 500);
+
+            // Cleanup ao destruir
+            $scope.$on('$destroy', function() {
+              $scope._destroyed = true;
+              if (loadingTimeout) {
+                $timeout.cancel(loadingTimeout);
+              }
+              if ($scope.tileLayer) {
+                $scope.tileLayer.off();
+              }
+              if ($scope.map) {
+                $scope.map.off();
+                $scope.map.remove();
+                $scope.map = null;
+              }
+            });
           }, 0);
         }
       };
@@ -966,6 +998,7 @@ Application
           wmsConfig: '='
         },
         controller: function($scope, $element) {
+          $scope._destroyed = false;
           $scope.markerInMap = true;
           $scope.loading = false; // Começar sem loading, será mostrado quando tiles iniciarem
           $scope.tileRetryCount = {}; // Contador de tentativas por tile
@@ -1427,15 +1460,13 @@ Application
 
             // Watch para mudanças de coordenadas (novo ponto)
             $scope.$watchGroup(['lon', 'lat'], function (newValues, oldValues) {
+              if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  // Recentrar mapa na nova posição
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom);
-                  // Atualizar posição do marcador
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
-                  // Atualizar camada WMS
                   $scope.updateWmsLayer();
                 }
               }
@@ -1443,57 +1474,55 @@ Application
 
             // Cleanup completo quando o scope é destruído
             $scope.$on('$destroy', function() {
-              console.log('WMS: Destruindo componente');
-              
-              // Cancelar watch
+              $scope._destroyed = true;
+
               if (unwatch) {
                 unwatch();
               }
-              
-              // Cancelar timeout de loading
+
               if ($scope.loadingTimeout) {
                 $timeout.cancel($scope.loadingTimeout);
               }
-              
-              // Remover layer WMS
-              if ($scope.wmsLayer && $scope.map) {
-                $scope.map.removeLayer($scope.wmsLayer);
+
+              if ($scope.wmsLayer) {
+                $scope.wmsLayer.off();
+                if ($scope.map) {
+                  $scope.map.removeLayer($scope.wmsLayer);
+                }
                 $scope.wmsLayer = null;
               }
-              
-              // Remover mapa
+
               if ($scope.map) {
+                $scope.map.off();
                 $scope.map.remove();
                 $scope.map = null;
               }
             });
-            
+
             // Adicionar evento para garantir que o marcador permaneça visível
             $scope.map.on('layeradd', function(e) {
               if (e.layer !== $scope.marker && $scope.marker && $scope.markerInMap) {
                 setTimeout(function() {
+                  if ($scope._destroyed || !$scope.map) return;
                   if ($scope.marker && $scope.map.hasLayer($scope.marker)) {
                     $scope.marker.setZIndexOffset(1000);
                   }
                 }, 50);
               }
             });
-            
+
             // Carregar layer inicial
             if ($scope.period && $scope.year && $scope.wmsConfig) {
               $scope.updateWmsLayer();
             }
-            
-            // Adicionar controle de escala
+
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
-            
-            // Forçar recalculo do tamanho do mapa
+
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                if ($scope.marker && $scope.markerInMap) {
-                  $scope.marker.setZIndexOffset(1000);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap) {
+                $scope.marker.setZIndexOffset(1000);
               }
             }, 100);
             
