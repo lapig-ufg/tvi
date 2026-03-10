@@ -3115,7 +3115,7 @@ module.exports = function(app) {
                 return res.status(404).json({ error: 'Campanha não encontrada' });
             }
 
-            const totalPoints = await pointsCollection.countDocuments({ campaign: campaignId });
+            const totalPoints = await pointsCollection.count({ campaign: campaignId });
             if (totalPoints === 0) {
                 return res.status(400).json({ error: 'Campanha não possui pontos' });
             }
