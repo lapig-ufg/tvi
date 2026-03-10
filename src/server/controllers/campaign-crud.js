@@ -3297,5 +3297,296 @@ module.exports = function(app) {
         }
     };
 
+    // Importar classificações a partir de upload de arquivo GeoJSON
+    CampaignCrud.importClassificationsFromFile = async (req, res) => {
+        const campaignId = req.params.id;
+        const startTime = new Date();
+
+        try {
+            const { geojsonContent, filename } = req.body;
+
+            if (!geojsonContent) {
+                return res.status(400).json({ error: 'Conteúdo do GeoJSON não fornecido' });
+            }
+
+            // Validar campanha
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campanha não encontrada' });
+            }
+
+            const totalPoints = await pointsCollection.count({ campaign: campaignId });
+            if (totalPoints === 0) {
+                return res.status(400).json({ error: 'Campanha não possui pontos' });
+            }
+
+            // Parse do GeoJSON
+            let geojsonData;
+            try {
+                geojsonData = JSON.parse(geojsonContent);
+            } catch (parseError) {
+                return res.status(400).json({ error: 'Arquivo GeoJSON inválido: erro de parse' });
+            }
+
+            if (!geojsonData || geojsonData.type !== 'FeatureCollection' || !Array.isArray(geojsonData.features)) {
+                return res.status(400).json({ error: 'Arquivo GeoJSON inválido: deve ser um FeatureCollection com features' });
+            }
+
+            const totalFeatures = geojsonData.features.length;
+            if (totalFeatures === 0) {
+                return res.status(400).json({ error: 'Arquivo GeoJSON não contém features' });
+            }
+
+            // Responder imediatamente
+            res.json({
+                success: true,
+                message: 'Importação a partir de arquivo iniciada',
+                totalFeatures: totalFeatures,
+                totalPoints: totalPoints
+            });
+
+            // Processar assincronamente
+            const io = app.io;
+            const BATCH_SIZE = 500;
+            let processed = 0;
+            let matchedCount = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+            let notMatchedCount = 0;
+            let noClassCount = 0;
+
+            const roundCoord = (n) => parseFloat(parseFloat(n).toFixed(8));
+
+            const emitProgress = (event, data) => {
+                if (io) {
+                    io.to('import-classifications-file').emit(event, {
+                        ...data,
+                        campaignId: campaignId
+                    });
+                }
+            };
+
+            emitProgress('import-file-started', {
+                totalFeatures: totalFeatures,
+                totalPoints: totalPoints,
+                filename: filename || 'arquivo.geojson'
+            });
+
+            // Fase de indexação: construir Map de coordenadas dos pontos da campanha
+            const coordMap = new Map();
+            const cursor = pointsCollection.find({ campaign: campaignId }).batchSize(1000);
+
+            while (await cursor.hasNext()) {
+                const point = await cursor.next();
+                if (point.lon != null && point.lat != null) {
+                    const key = roundCoord(point.lon) + '_' + roundCoord(point.lat);
+                    if (!coordMap.has(key)) {
+                        coordMap.set(key, []);
+                    }
+                    coordMap.set(key, coordMap.get(key).concat({
+                        _id: point._id,
+                        userName: point.userName || []
+                    }));
+                }
+            }
+
+            if (logger) {
+                await logger.info('Índice de coordenadas construído para importação por arquivo', {
+                    module: 'campaignCrud',
+                    function: 'importClassificationsFromFile',
+                    metadata: { campaignId, indexSize: coordMap.size, totalFeatures }
+                });
+            }
+
+            // Função de extração de classificações (mesma lógica do endpoint existente)
+            const extractClassifications = (properties) => {
+                const inspections = [];
+                if (!properties) return inspections;
+                Object.keys(properties).forEach(key => {
+                    const keyLower = key.toLowerCase();
+                    const match = keyLower.match(/^class_(\d{4})$/);
+                    if (match) {
+                        const year = parseInt(match[1]);
+                        inspections.push({
+                            year: year,
+                            class: properties[key.toUpperCase()] || properties[key]
+                        });
+                    }
+                });
+                return inspections;
+            };
+
+            // Fase de processamento: iterar features do GeoJSON
+            let bulkOps = [];
+
+            for (let i = 0; i < geojsonData.features.length; i++) {
+                const feature = geojsonData.features[i];
+                processed++;
+
+                // Extrair coordenadas da feature
+                if (!feature.geometry || !feature.geometry.coordinates ||
+                    !Array.isArray(feature.geometry.coordinates) ||
+                    feature.geometry.coordinates.length < 2) {
+                    notMatchedCount++;
+                    continue;
+                }
+
+                const coords = feature.geometry.coordinates;
+                const lon = roundCoord(coords[0]);
+                const lat = roundCoord(coords[1]);
+                const key = lon + '_' + lat;
+
+                const matchedPoints = coordMap.get(key);
+                if (!matchedPoints || matchedPoints.length === 0) {
+                    notMatchedCount++;
+                    continue;
+                }
+
+                // Extrair classificações da feature
+                const classifications = extractClassifications(feature.properties);
+                if (classifications.length === 0) {
+                    noClassCount++;
+                    continue;
+                }
+
+                matchedCount++;
+
+                // Aplicar classificação em todos os pontos correspondentes à coordenada
+                for (const point of matchedPoints) {
+                    const alreadyImported = Array.isArray(point.userName) &&
+                        point.userName.some(u => u.includes('Classificação Automática'));
+
+                    if (alreadyImported) {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    const inspection = {
+                        counter: 0,
+                        form: classifications.map(item => ({
+                            initialYear: item.year,
+                            finalYear: item.year,
+                            landUse: item.class
+                        })),
+                        fillDate: new Date()
+                    };
+
+                    bulkOps.push({
+                        updateOne: {
+                            filter: {
+                                _id: point._id,
+                                userName: { $nin: ['Classificação Automática'] }
+                            },
+                            update: {
+                                $push: {
+                                    inspection: inspection,
+                                    userName: 'Classificação Automática'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Executar bulk a cada BATCH_SIZE operações
+                if (bulkOps.length >= BATCH_SIZE) {
+                    try {
+                        const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
+                        updatedCount += result.modifiedCount || 0;
+                    } catch (bulkError) {
+                        if (logger) {
+                            await logger.warn('Erro parcial no bulkWrite de classificações (arquivo)', {
+                                module: 'campaignCrud',
+                                function: 'importClassificationsFromFile',
+                                metadata: { campaignId, error: bulkError.message }
+                            });
+                        }
+                    }
+                    bulkOps = [];
+                }
+
+                // Emitir progresso a cada 100 features
+                if (processed % 100 === 0 || processed === totalFeatures) {
+                    emitProgress('import-file-progress', {
+                        processed: processed,
+                        matched: matchedCount,
+                        updated: updatedCount,
+                        skipped: skippedCount,
+                        notMatched: notMatchedCount,
+                        noClassCount: noClassCount,
+                        totalFeatures: totalFeatures,
+                        progress: Math.round((processed / totalFeatures) * 100)
+                    });
+                }
+            }
+
+            // Executar operações restantes
+            if (bulkOps.length > 0) {
+                try {
+                    const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
+                    updatedCount += result.modifiedCount || 0;
+                } catch (bulkError) {
+                    if (logger) {
+                        await logger.warn('Erro parcial no bulkWrite final de classificações (arquivo)', {
+                            module: 'campaignCrud',
+                            function: 'importClassificationsFromFile',
+                            metadata: { campaignId, error: bulkError.message }
+                        });
+                    }
+                }
+            }
+
+            const duration = Math.round((new Date() - startTime) / 1000);
+
+            emitProgress('import-file-completed', {
+                totalFeatures: totalFeatures,
+                totalPoints: totalPoints,
+                matchedCount: matchedCount,
+                updatedCount: updatedCount,
+                skippedCount: skippedCount,
+                notMatchedCount: notMatchedCount,
+                noClassCount: noClassCount,
+                duration: duration
+            });
+
+            if (logger) {
+                await logger.info('Importação de classificações por arquivo concluída', {
+                    module: 'campaignCrud',
+                    function: 'importClassificationsFromFile',
+                    metadata: {
+                        campaignId,
+                        filename,
+                        totalFeatures,
+                        totalPoints,
+                        matchedCount,
+                        updatedCount,
+                        skippedCount,
+                        notMatchedCount,
+                        noClassCount,
+                        duration
+                    }
+                });
+            }
+
+        } catch (error) {
+            if (logger) {
+                await logger.logError(error, req, {
+                    module: 'campaignCrud',
+                    function: 'importClassificationsFromFile'
+                });
+            }
+
+            if (app.io) {
+                app.io.to('import-classifications-file').emit('import-file-failed', {
+                    campaignId: campaignId,
+                    error: error.message
+                });
+            }
+
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Erro interno ao importar classificações do arquivo' });
+            }
+        }
+    };
+
     return CampaignCrud;
 };

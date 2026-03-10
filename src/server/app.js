@@ -93,8 +93,8 @@ app.middleware.repository.init(() => {
 		app.use(responseTime());
 		
 		// Enhanced body parser configuration for production
-		const jsonParser = bodyParser.json({ 
-			limit: '100mb',
+		const jsonParser = bodyParser.json({
+			limit: '500mb',
 			verify: function(req, res, buf, encoding) {
 				// Log large requests in production for debugging
 				if (process.env.NODE_ENV === 'prod' && buf.length > 1000000) {
@@ -103,9 +103,9 @@ app.middleware.repository.init(() => {
 			}
 		});
 		
-		const urlencodedParser = bodyParser.urlencoded({ 
-			extended: true, 
-			limit: '100mb' 
+		const urlencodedParser = bodyParser.urlencoded({
+			extended: true,
+			limit: '500mb'
 		});
 		
 		// Apply parsers with error handling

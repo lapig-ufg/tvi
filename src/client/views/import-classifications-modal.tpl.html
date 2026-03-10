@@ -28,32 +28,104 @@
                             <i class="fas fa-info-circle"></i>
                             <span>Importar Classificações Automáticas</span>
                         </div>
-                        <div class="campaign-info-summary">
-                            <div class="summary-item">
-                                <span class="summary-label">Campanha:</span>
-                                <span class="summary-value">{{ campaign._id }}</span>
+
+                        <!-- Seletor de modo -->
+                        <div class="import-mode-selector">
+                            <label class="mode-option" ng-class="{'active': importMode === 'properties'}">
+                                <input type="radio" ng-model="importMode" value="properties">
+                                <i class="fas fa-database"></i>
+                                <span>Das propriedades dos pontos</span>
+                            </label>
+                            <label class="mode-option" ng-class="{'active': importMode === 'file'}">
+                                <input type="radio" ng-model="importMode" value="file">
+                                <i class="fas fa-file-upload"></i>
+                                <span>De arquivo GeoJSON</span>
+                            </label>
+                        </div>
+
+                        <!-- Modo: Propriedades -->
+                        <div ng-if="importMode === 'properties'">
+                            <div class="campaign-info-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Campanha:</span>
+                                    <span class="summary-value">{{ campaign._id }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Total de Pontos:</span>
+                                    <span class="summary-value">{{ campaign.totalPoints }}</span>
+                                </div>
                             </div>
-                            <div class="summary-item">
-                                <span class="summary-label">Total de Pontos:</span>
-                                <span class="summary-value">{{ campaign.totalPoints }}</span>
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <i class="fas fa-search"></i>
+                                    <span>Busca propriedades <strong>CLASS_YYYY</strong> nos dados importados de cada ponto</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Cria inspeções automáticas com as classificações encontradas</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Pontos já importados anteriormente serão ignorados (idempotente)</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-user-tag"></i>
+                                    <span>Inspeções criadas com o usuário <strong>"Classificação Automática"</strong></span>
+                                </div>
                             </div>
                         </div>
-                        <div class="info-list">
-                            <div class="info-item">
-                                <i class="fas fa-search"></i>
-                                <span>Busca propriedades <strong>CLASS_YYYY</strong> nos dados importados de cada ponto</span>
+
+                        <!-- Modo: Arquivo -->
+                        <div ng-if="importMode === 'file'">
+                            <div class="campaign-info-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Campanha:</span>
+                                    <span class="summary-value">{{ campaign._id }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Total de Pontos:</span>
+                                    <span class="summary-value">{{ campaign.totalPoints }}</span>
+                                </div>
                             </div>
-                            <div class="info-item">
-                                <i class="fas fa-magic"></i>
-                                <span>Cria inspeções automáticas com as classificações encontradas</span>
+
+                            <div class="file-upload-area">
+                                <div class="file-dropzone" ng-class="{'has-file': fileInfo}">
+                                    <input type="file" accept=".geojson,.json" onchange="angular.element(this).scope().setFile(this)" class="file-input-hidden">
+                                    <div ng-if="!fileInfo" class="dropzone-placeholder">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>Selecione um arquivo GeoJSON</span>
+                                        <small>.geojson ou .json</small>
+                                    </div>
+                                    <div ng-if="fileInfo" class="file-details">
+                                        <i class="fas fa-file-code file-icon"></i>
+                                        <div class="file-meta">
+                                            <strong>{{ fileInfo.name }}</strong>
+                                            <span>{{ fileInfo.size }} — {{ fileInfo.featuresCount }} features</span>
+                                            <span ng-if="fileInfo.classProperties.length > 0" class="class-props">
+                                                Propriedades: {{ fileInfo.classProperties.join(', ') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div ng-if="fileError" class="file-error">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    {{ fileError }}
+                                </div>
                             </div>
-                            <div class="info-item">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Pontos já importados anteriormente serão ignorados (idempotente)</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-user-tag"></i>
-                                <span>Inspeções criadas com o usuário <strong>"Classificação Automática"</strong></span>
+
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>Correspondência por <strong>coordenadas</strong> (lon/lat) entre o arquivo e os pontos da campanha</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-search"></i>
+                                    <span>Busca propriedades <strong>CLASS_YYYY</strong> nas features do arquivo</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Pontos já importados anteriormente serão ignorados (idempotente)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -89,6 +161,15 @@
                             <span class="stat-label">Processados</span>
                         </div>
                     </div>
+                    <div class="stat-card" ng-if="importMode === 'file'">
+                        <div class="stat-icon matched">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ matchedCount }}</span>
+                            <span class="stat-label">Correspondidos</span>
+                        </div>
+                    </div>
                     <div class="stat-card">
                         <div class="stat-icon success">
                             <i class="fas fa-check"></i>
@@ -116,6 +197,15 @@
                             <span class="stat-label">Sem Classificação</span>
                         </div>
                     </div>
+                    <div class="stat-card" ng-if="importMode === 'file'">
+                        <div class="stat-icon danger">
+                            <i class="fas fa-unlink"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ notMatchedCount }}</span>
+                            <span class="stat-label">Não Encontrados</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="elapsed-time">
@@ -136,6 +226,10 @@
                             <span class="result-stat-label">Total de Pontos:</span>
                             <span class="result-stat-value">{{ totalPoints }}</span>
                         </div>
+                        <div class="result-stat" ng-if="importMode === 'file'">
+                            <span class="result-stat-label">Pontos Correspondidos:</span>
+                            <span class="result-stat-value">{{ matchedFinal }}</span>
+                        </div>
                         <div class="result-stat">
                             <span class="result-stat-label">Pontos Atualizados:</span>
                             <span class="result-stat-value success-text">{{ updatedFinal }}</span>
@@ -147,6 +241,10 @@
                         <div class="result-stat">
                             <span class="result-stat-label">Sem Classificação:</span>
                             <span class="result-stat-value">{{ noClassFinal }}</span>
+                        </div>
+                        <div class="result-stat" ng-if="importMode === 'file'">
+                            <span class="result-stat-label">Não Encontrados:</span>
+                            <span class="result-stat-value danger-text">{{ notMatchedFinal }}</span>
                         </div>
                         <div class="result-stat">
                             <span class="result-stat-label">Duração:</span>
@@ -168,7 +266,9 @@
                 <i class="fas fa-times"></i>
                 {{ isCompleted ? 'Fechar' : 'Cancelar' }}
             </button>
-            <button class="btn-confirm" ng-click="startImport()" ng-if="!isProcessing && !isCompleted">
+            <button class="btn-confirm" ng-click="startImport()"
+                ng-if="!isProcessing && !isCompleted"
+                ng-disabled="importMode === 'file' && (!fileInfo || fileError)">
                 <i class="fas fa-file-import"></i>
                 Iniciar Importação
             </button>
@@ -181,6 +281,145 @@
 </div>
 
 <style>
+.import-mode-selector {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.mode-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+}
+
+.mode-option input[type="radio"] {
+    display: none;
+}
+
+.mode-option:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+}
+
+.mode-option.active {
+    border-color: #d69e2e;
+    background: #fffff0;
+    color: #744210;
+}
+
+.mode-option i {
+    font-size: 1rem;
+}
+
+.file-upload-area {
+    margin: 1rem 0;
+}
+
+.file-dropzone {
+    position: relative;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+    background: #f7fafc;
+}
+
+.file-dropzone:hover {
+    border-color: #d69e2e;
+    background: #fffff0;
+}
+
+.file-dropzone.has-file {
+    border-color: #38a169;
+    border-style: solid;
+    background: #f0fff4;
+}
+
+.file-input-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.dropzone-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #718096;
+}
+
+.dropzone-placeholder i {
+    font-size: 2rem;
+    color: #a0aec0;
+}
+
+.dropzone-placeholder small {
+    font-size: 0.8125rem;
+    color: #a0aec0;
+}
+
+.file-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: left;
+}
+
+.file-icon {
+    font-size: 2rem;
+    color: #38a169;
+}
+
+.file-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.file-meta strong {
+    color: #2d3748;
+    font-size: 0.9375rem;
+}
+
+.file-meta span {
+    font-size: 0.8125rem;
+    color: #718096;
+}
+
+.file-meta .class-props {
+    color: #d69e2e;
+    font-weight: 500;
+}
+
+.file-error {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #fff5f5;
+    color: #c53030;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .campaign-info-summary {
     background: #f7fafc;
     border-radius: 8px;
@@ -255,6 +494,16 @@
     color: #718096;
 }
 
+.stat-icon.matched {
+    background: #ebf4ff;
+    color: #5a67d8;
+}
+
+.stat-icon.danger {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
 .stat-info {
     display: flex;
     flex-direction: column;
@@ -316,6 +565,10 @@
 
 .result-stat-value.warning-text {
     color: #d69e2e;
+}
+
+.result-stat-value.danger-text {
+    color: #e53e3e;
 }
 
 .progress-section {
@@ -412,5 +665,11 @@
 
 .btn-confirm:hover {
     background: #b7791f;
+}
+
+.btn-confirm:disabled {
+    background: #cbd5e0;
+    color: #a0aec0;
+    cursor: not-allowed;
 }
 </style>

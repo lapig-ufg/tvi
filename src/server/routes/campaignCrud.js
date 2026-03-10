@@ -433,6 +433,11 @@ module.exports = function (app) {
         errorHandler.asyncHandler(campaignCrud.importClassifications)
     );
 
+    app.post('/api/campaigns/:id/import-classifications-file',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(campaignCrud.importClassificationsFromFile)
+    );
+
     /**
      * @swagger
      * /api/campaigns/{id}/points:

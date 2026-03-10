@@ -1802,24 +1802,115 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.noClassFinal = 0;
     $scope.durationFinal = 0;
 
+    // Modo de importação: 'properties' ou 'file'
+    $scope.importMode = 'properties';
+    $scope.selectedFile = null;
+    $scope.fileInfo = null;
+    $scope.fileError = '';
+    $scope.notMatchedCount = 0;
+    $scope.matchedCount = 0;
+    $scope.notMatchedFinal = 0;
+    $scope.matchedFinal = 0;
+
     var socket = null;
     var elapsedTimer = null;
+    var fileContent = null;
+
+    $scope.setFile = function(element) {
+        var file = element.files[0];
+        if (!file) {
+            $scope.$apply(function() {
+                $scope.selectedFile = null;
+                $scope.fileInfo = null;
+                $scope.fileError = '';
+                fileContent = null;
+            });
+            return;
+        }
+
+        $scope.$apply(function() {
+            $scope.selectedFile = file;
+            $scope.fileInfo = null;
+            $scope.fileError = '';
+        });
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                try {
+                    fileContent = e.target.result;
+                    var geojson = JSON.parse(fileContent);
+
+                    if (!geojson || geojson.type !== 'FeatureCollection' || !Array.isArray(geojson.features)) {
+                        $scope.fileError = 'Arquivo inválido: deve ser um FeatureCollection com features.';
+                        $scope.fileInfo = null;
+                        fileContent = null;
+                        return;
+                    }
+
+                    // Detectar propriedades CLASS_YYYY
+                    var classProps = {};
+                    var sampleSize = Math.min(geojson.features.length, 50);
+                    for (var i = 0; i < sampleSize; i++) {
+                        var props = geojson.features[i].properties;
+                        if (props) {
+                            Object.keys(props).forEach(function(key) {
+                                if (/^class_\d{4}$/i.test(key)) {
+                                    classProps[key.toUpperCase()] = true;
+                                }
+                            });
+                        }
+                    }
+
+                    var classPropsArr = Object.keys(classProps).sort();
+
+                    $scope.fileInfo = {
+                        name: file.name,
+                        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+                        featuresCount: geojson.features.length,
+                        classProperties: classPropsArr
+                    };
+
+                    if (classPropsArr.length === 0) {
+                        $scope.fileError = 'Nenhuma propriedade CLASS_YYYY encontrada nas features.';
+                    }
+                } catch (parseErr) {
+                    $scope.fileError = 'Erro ao ler o arquivo: JSON inválido.';
+                    $scope.fileInfo = null;
+                    fileContent = null;
+                }
+            });
+        };
+        reader.onerror = function() {
+            $scope.$apply(function() {
+                $scope.fileError = 'Erro ao ler o arquivo.';
+                $scope.fileInfo = null;
+                fileContent = null;
+            });
+        };
+        reader.readAsText(file);
+    };
 
     $scope.startImport = function() {
+        if ($scope.importMode === 'file') {
+            startImportFromFile();
+        } else {
+            startImportFromProperties();
+        }
+    };
+
+    function startImportFromProperties() {
         $scope.isProcessing = true;
         $scope.elapsedTime = 0;
 
-        // Timer de tempo decorrido
         elapsedTimer = setInterval(function() {
             $scope.elapsedTime++;
             $scope.$apply();
         }, 1000);
 
-        // Conectar socket
         socket = window.getAdminSocket();
         socket.emit('join', 'import-classifications');
 
-        // Listeners
         socket.on('import-classifications-started', function(data) {
             if (data.campaignId !== campaign._id) return;
             $timeout(function() {
@@ -1865,7 +1956,6 @@ Application.controller('ImportClassificationsModalController', function ($scope,
             });
         });
 
-        // Fazer chamada HTTP
         $http.post('/api/campaigns/' + campaign._id + '/import-classifications').then(
             function(response) {
                 // Resposta recebida, aguardando eventos do socket
@@ -1880,7 +1970,89 @@ Application.controller('ImportClassificationsModalController', function ($scope,
                 });
             }
         );
-    };
+    }
+
+    function startImportFromFile() {
+        if (!fileContent || !$scope.fileInfo) return;
+
+        $scope.isProcessing = true;
+        $scope.elapsedTime = 0;
+
+        elapsedTimer = setInterval(function() {
+            $scope.elapsedTime++;
+            $scope.$apply();
+        }, 1000);
+
+        socket = window.getAdminSocket();
+        socket.emit('join', 'import-classifications-file');
+
+        socket.on('import-file-started', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.totalPoints = data.totalPoints;
+            });
+        });
+
+        socket.on('import-file-progress', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.processed = data.processed;
+                $scope.updated = data.updated;
+                $scope.skipped = data.skipped;
+                $scope.matchedCount = data.matched;
+                $scope.notMatchedCount = data.notMatched;
+                $scope.noClassCount = data.noClassCount;
+                $scope.progress = data.progress;
+            });
+        });
+
+        socket.on('import-file-completed', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.isProcessing = false;
+                $scope.isCompleted = true;
+                $scope.success = true;
+                $scope.totalPoints = data.totalPoints;
+                $scope.updatedFinal = data.updatedCount;
+                $scope.skippedFinal = data.skippedCount;
+                $scope.noClassFinal = data.noClassCount;
+                $scope.matchedFinal = data.matchedCount;
+                $scope.notMatchedFinal = data.notMatchedCount;
+                $scope.durationFinal = data.duration;
+                $scope.progress = 100;
+                cleanupTimer();
+            });
+        });
+
+        socket.on('import-file-failed', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.isProcessing = false;
+                $scope.isCompleted = true;
+                $scope.success = false;
+                $scope.errorMessage = data.error || 'Erro desconhecido';
+                cleanupTimer();
+            });
+        });
+
+        $http.post('/api/campaigns/' + campaign._id + '/import-classifications-file', {
+            geojsonContent: fileContent,
+            filename: $scope.selectedFile ? $scope.selectedFile.name : 'arquivo.geojson'
+        }, { timeout: 600000 }).then(
+            function(response) {
+                // Resposta recebida, aguardando eventos do socket
+            },
+            function(error) {
+                $timeout(function() {
+                    $scope.isProcessing = false;
+                    $scope.isCompleted = true;
+                    $scope.success = false;
+                    $scope.errorMessage = (error.data && error.data.error) || 'Erro ao iniciar importação do arquivo';
+                    cleanupTimer();
+                });
+            }
+        );
+    }
 
     function cleanupTimer() {
         if (elapsedTimer) {
@@ -1895,7 +2067,12 @@ Application.controller('ImportClassificationsModalController', function ($scope,
             socket.off('import-classifications-progress');
             socket.off('import-classifications-completed');
             socket.off('import-classifications-failed');
+            socket.off('import-file-started');
+            socket.off('import-file-progress');
+            socket.off('import-file-completed');
+            socket.off('import-file-failed');
             socket.emit('leave', 'import-classifications');
+            socket.emit('leave', 'import-classifications-file');
         }
     }
 
