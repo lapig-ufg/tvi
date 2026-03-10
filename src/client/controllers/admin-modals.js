@@ -6,7 +6,7 @@ window.getAdminSocket = function() {
         // Creating new global socket connection...
         try {
             window.adminSocket = io('/', {
-                transports: ['polling', 'websocket'],
+                transports: ['websocket'],
                 forceNew: false,
                 reconnection: true,
                 timeout: 15000,
@@ -34,7 +34,7 @@ window.getAdminSocket = function() {
             
         } catch (error) {
             console.error('Erro ao criar socket global:', error);
-            window.adminSocket = io();
+            window.adminSocket = io({ transports: ['websocket'] });
         }
     } else {
         // Reusing existing global socket

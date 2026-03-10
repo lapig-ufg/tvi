@@ -8,7 +8,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
-        transports: ['websocket', 'polling']
+        transports: ['websocket']
     });
     
     // Estados da aplicação

@@ -11,7 +11,9 @@ const express = require('express')
 
 const app = express();
 const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+	transports: ['websocket']
+});
 const MongoStore = require('connect-mongo')(session);
 const cookie = parseCookie('LAPIG')
 const mongoAdapter = require('socket.io-adapter-mongo');
