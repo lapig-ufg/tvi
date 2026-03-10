@@ -3303,7 +3303,8 @@ module.exports = function(app) {
         const startTime = new Date();
 
         try {
-            const { geojsonContent, filename } = req.body;
+            const { geojsonContent, filename, maxDistance } = req.body;
+            const distanceThreshold = Math.min(Math.max(parseFloat(maxDistance) || 50, 1), 1000);
 
             if (!geojsonContent) {
                 return res.status(400).json({ error: 'Conteúdo do GeoJSON não fornecido' });
@@ -3355,7 +3356,21 @@ module.exports = function(app) {
             let notMatchedCount = 0;
             let noClassCount = 0;
 
-            const roundCoord = (n) => parseFloat(parseFloat(n).toFixed(8));
+            // Distância Haversine em metros
+            const haversineDistance = (lat1, lon1, lat2, lon2) => {
+                const R = 6371000;
+                const toRad = (deg) => deg * Math.PI / 180;
+                const dLat = toRad(lat2 - lat1);
+                const dLon = toRad(lon2 - lon1);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            };
+
+            // Chave de grid espacial (~111m por célula)
+            const GRID_STEP = 0.001;
+            const gridKey = (lon, lat) => parseFloat(lon).toFixed(3) + '_' + parseFloat(lat).toFixed(3);
 
             const emitProgress = (event, data) => {
                 if (io) {
@@ -3369,32 +3384,35 @@ module.exports = function(app) {
             emitProgress('import-file-started', {
                 totalFeatures: totalFeatures,
                 totalPoints: totalPoints,
+                distanceThreshold: distanceThreshold,
                 filename: filename || 'arquivo.geojson'
             });
 
-            // Fase de indexação: construir Map de coordenadas dos pontos da campanha
-            const coordMap = new Map();
+            // Fase de indexação: construir grid espacial dos pontos da campanha
+            const spatialGrid = new Map();
             const cursor = pointsCollection.find({ campaign: campaignId }).batchSize(1000);
 
             while (await cursor.hasNext()) {
                 const point = await cursor.next();
                 if (point.lon != null && point.lat != null) {
-                    const key = roundCoord(point.lon) + '_' + roundCoord(point.lat);
-                    if (!coordMap.has(key)) {
-                        coordMap.set(key, []);
+                    const key = gridKey(point.lon, point.lat);
+                    if (!spatialGrid.has(key)) {
+                        spatialGrid.set(key, []);
                     }
-                    coordMap.set(key, coordMap.get(key).concat({
+                    spatialGrid.get(key).push({
                         _id: point._id,
+                        lon: point.lon,
+                        lat: point.lat,
                         userName: point.userName || []
-                    }));
+                    });
                 }
             }
 
             if (logger) {
-                await logger.info('Índice de coordenadas construído para importação por arquivo', {
+                await logger.info('Grid espacial construído para importação por arquivo', {
                     module: 'campaignCrud',
                     function: 'importClassificationsFromFile',
-                    metadata: { campaignId, indexSize: coordMap.size, totalFeatures }
+                    metadata: { campaignId, gridCells: spatialGrid.size, totalFeatures, distanceThreshold }
                 });
             }
 
@@ -3416,6 +3434,27 @@ module.exports = function(app) {
                 return inspections;
             };
 
+            // Buscar pontos candidatos nas 9 células vizinhas (3x3)
+            const findNearbyPoints = (fLon, fLat) => {
+                const results = [];
+                for (let dLon = -1; dLon <= 1; dLon++) {
+                    for (let dLat = -1; dLat <= 1; dLat++) {
+                        const key = (parseFloat(fLon) + dLon * GRID_STEP).toFixed(3) + '_' +
+                                    (parseFloat(fLat) + dLat * GRID_STEP).toFixed(3);
+                        const cellPoints = spatialGrid.get(key);
+                        if (cellPoints) {
+                            for (const point of cellPoints) {
+                                const dist = haversineDistance(fLat, fLon, point.lat, point.lon);
+                                if (dist <= distanceThreshold) {
+                                    results.push({ ...point, distance: dist });
+                                }
+                            }
+                        }
+                    }
+                }
+                return results;
+            };
+
             // Fase de processamento: iterar features do GeoJSON
             let bulkOps = [];
 
@@ -3432,12 +3471,18 @@ module.exports = function(app) {
                 }
 
                 const coords = feature.geometry.coordinates;
-                const lon = roundCoord(coords[0]);
-                const lat = roundCoord(coords[1]);
-                const key = lon + '_' + lat;
+                const fLon = parseFloat(coords[0]);
+                const fLat = parseFloat(coords[1]);
 
-                const matchedPoints = coordMap.get(key);
-                if (!matchedPoints || matchedPoints.length === 0) {
+                if (isNaN(fLon) || isNaN(fLat)) {
+                    notMatchedCount++;
+                    continue;
+                }
+
+                // Busca espacial: pontos da campanha dentro do raio de tolerância
+                const nearbyPoints = findNearbyPoints(fLon, fLat);
+
+                if (nearbyPoints.length === 0) {
                     notMatchedCount++;
                     continue;
                 }
@@ -3451,8 +3496,8 @@ module.exports = function(app) {
 
                 matchedCount++;
 
-                // Aplicar classificação em todos os pontos correspondentes à coordenada
-                for (const point of matchedPoints) {
+                // Aplicar classificação em todos os pontos dentro do raio
+                for (const point of nearbyPoints) {
                     const alreadyImported = Array.isArray(point.userName) &&
                         point.userName.some(u => u.includes('Classificação Automática'));
 
@@ -3545,6 +3590,7 @@ module.exports = function(app) {
                 skippedCount: skippedCount,
                 notMatchedCount: notMatchedCount,
                 noClassCount: noClassCount,
+                distanceThreshold: distanceThreshold,
                 duration: duration
             });
 

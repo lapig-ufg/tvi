@@ -1807,6 +1807,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.selectedFile = null;
     $scope.fileInfo = null;
     $scope.fileError = '';
+    $scope.maxDistance = 50;
     $scope.notMatchedCount = 0;
     $scope.matchedCount = 0;
     $scope.notMatchedFinal = 0;
@@ -2037,7 +2038,8 @@ Application.controller('ImportClassificationsModalController', function ($scope,
 
         $http.post('/api/campaigns/' + campaign._id + '/import-classifications-file', {
             geojsonContent: fileContent,
-            filename: $scope.selectedFile ? $scope.selectedFile.name : 'arquivo.geojson'
+            filename: $scope.selectedFile ? $scope.selectedFile.name : 'arquivo.geojson',
+            maxDistance: $scope.maxDistance || 50
         }, { timeout: 600000 }).then(
             function(response) {
                 // Resposta recebida, aguardando eventos do socket

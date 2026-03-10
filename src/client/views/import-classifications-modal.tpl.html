@@ -113,10 +113,21 @@
                                 </div>
                             </div>
 
+                            <div class="distance-config">
+                                <label class="distance-label">
+                                    <i class="fas fa-ruler"></i>
+                                    Tolerância espacial (metros):
+                                </label>
+                                <div class="distance-input-group">
+                                    <input type="number" ng-model="maxDistance" min="1" max="1000" step="10" class="distance-input">
+                                    <span class="distance-hint">Distância máxima (Haversine) para correspondência entre pontos</span>
+                                </div>
+                            </div>
+
                             <div class="info-list">
                                 <div class="info-item">
                                     <i class="fas fa-map-marker-alt"></i>
-                                    <span>Correspondência por <strong>coordenadas</strong> (lon/lat) entre o arquivo e os pontos da campanha</span>
+                                    <span>Correspondência <strong>espacial</strong> (Haversine) entre geometry do arquivo e lon/lat dos pontos da campanha</span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fas fa-search"></i>
@@ -285,6 +296,50 @@
     display: flex;
     gap: 0.75rem;
     margin: 1rem 0;
+}
+
+.distance-config {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.distance-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.distance-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.distance-input {
+    width: 120px;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    transition: border-color 0.2s;
+}
+
+.distance-input:focus {
+    outline: none;
+    border-color: #d69e2e;
+}
+
+.distance-hint {
+    font-size: 0.75rem;
+    color: #a0aec0;
 }
 
 .mode-option {
