@@ -589,8 +589,18 @@ Application
     .directive('landsatMap', function ($timeout, capabilitiesService, $injector) {
       return {
         template: `
-          <div style="width: 100%; height: 100%;">
+          <div style="width: 100%; height: 100%; position: relative;">
             <div id="landsat-map-{{::$id}}" style="width: 100%; height: 100%;"></div>
+            <div ng-show="loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; z-index: 500;">
+              <div style="text-align: center;">
+                <i class="fa fa-spinner fa-spin" style="font-size: 2em; color: #337ab7;"></i>
+                <p style="margin-top: 10px; color: #666;">Carregando...</p>
+              </div>
+            </div>
+            <div ng-show="error && !loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 10px 15px; border-radius: 4px; z-index: 500;">
+              <i class="fa fa-exclamation-triangle" style="color: #d9534f;"></i>
+              <span style="color: #666; margin-left: 5px;">{{errorMessage}}</span>
+            </div>
           </div>
         `,
         scope: {
@@ -625,10 +635,18 @@ Application
               // Visparams padrão do Landsat se nenhum for fornecido
               $scope.visparams = ['landsat-tvi-false'];
           }
-          
+
           $scope.tilesCapabilities = [];
           $scope.markerInMap = true;
-          
+
+          // Estado de loading e erro para tiles
+          $scope.loading = true;
+          $scope.error = false;
+          $scope.errorMessage = '';
+          var tilesLoading = 0;
+          var firstTileLoaded = false;
+          var loadingTimeout = null;
+
           // Escutar mudanças de visparam do scope pai
           $scope.$on('landsatVisparamChanged', function(event, newVisparam) {
             $scope.selectedVisparam = newVisparam;
@@ -737,22 +755,81 @@ Application
           /* ---------- Define updateTileLayer antes de usar ---------- */
           $scope.updateTileLayer = function () {
             if (!$scope.map) return;
-            
+
+            // Cancelar timeout anterior
+            if (loadingTimeout) {
+              $timeout.cancel(loadingTimeout);
+              loadingTimeout = null;
+            }
+
+            // Reset estados
+            $scope.loading = true;
+            $scope.error = false;
+            $scope.errorMessage = '';
+            tilesLoading = 0;
+            firstTileLoaded = false;
+
             // Garantir que estamos usando o visparam mais atual
             if (!$scope.selectedVisparam || $scope.selectedVisparam !== getCurrentVisparam()) {
               $scope.selectedVisparam = getCurrentVisparam();
             }
-            
+
             if ($scope.tileLayer) {
+              $scope.tileLayer.off(); // Remover listeners antigos
               $scope.map.removeLayer($scope.tileLayer);
             }
-            
+
             $scope.tileLayer = L.tileLayer(buildTileUrl(), {
               subdomains: ['1', '2', '3', '4', '5'],
               attribution: `Landsat ${$scope.period} – ${$scope.year}`,
               maxZoom: 18
-            }).addTo($scope.map);
-            
+            });
+
+            // Handler: início do carregamento de tile
+            $scope.tileLayer.on('tileloadstart', function() {
+              tilesLoading++;
+              if (!$scope.loading) {
+                $scope.loading = true;
+                $scope.$apply();
+              }
+            });
+
+            // Handler: tile carregado com sucesso
+            $scope.tileLayer.on('tileload', function() {
+              tilesLoading--;
+              firstTileLoaded = true;
+              if (tilesLoading <= 0) {
+                $scope.loading = false;
+                $scope.$apply();
+              }
+            });
+
+            // Handler: erro ao carregar tile
+            $scope.tileLayer.on('tileerror', function(error) {
+              tilesLoading--;
+              console.warn('Erro ao carregar tile Landsat:', $scope.year, $scope.period);
+              if (tilesLoading <= 0 && !firstTileLoaded) {
+                $scope.loading = false;
+                $scope.error = true;
+                $scope.errorMessage = 'Imagem não disponível para ' + $scope.year;
+                $scope.$apply();
+              }
+            });
+
+            $scope.tileLayer.addTo($scope.map);
+
+            // Timeout de segurança: 30 segundos
+            loadingTimeout = $timeout(function() {
+              if ($scope.loading && tilesLoading > 0) {
+                console.warn('Timeout ao carregar tiles Landsat:', $scope.year);
+                $scope.loading = false;
+                if (!firstTileLoaded) {
+                  $scope.error = true;
+                  $scope.errorMessage = 'Timeout ao carregar ' + $scope.year;
+                }
+              }
+            }, 30000);
+
             // Garantir que o marcador esteja sempre no topo usando setZIndexOffset
             if ($scope.marker && $scope.markerInMap) {
               $scope.marker.setZIndexOffset(1000);
