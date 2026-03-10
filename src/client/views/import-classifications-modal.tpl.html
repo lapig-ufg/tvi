@@ -1,0 +1,416 @@
+<!-- Import Classifications Modal -->
+<div class="modal-dialog upload-modal">
+    <div class="modal-content">
+        <div class="modal-header" ng-class="{
+            'success': isCompleted && success,
+            'error': isCompleted && !success,
+            'processing': isProcessing
+        }">
+            <h3 class="modal-title">
+                <i class="fas" ng-class="{
+                    'fa-file-import': !isProcessing && !isCompleted,
+                    'fa-spinner fa-spin': isProcessing,
+                    'fa-check-circle': isCompleted && success,
+                    'fa-times-circle': isCompleted && !success
+                }"></i>
+                <span ng-if="!isProcessing && !isCompleted">Importar Classificações</span>
+                <span ng-if="isProcessing">Importando Classificações...</span>
+                <span ng-if="isCompleted && success">Importação Concluída</span>
+                <span ng-if="isCompleted && !success">Falha na Importação</span>
+            </h3>
+        </div>
+        <div class="modal-body">
+            <!-- Confirmation State -->
+            <div ng-if="!isProcessing && !isCompleted" class="upload-form">
+                <div class="info-section">
+                    <div class="info-card">
+                        <div class="info-header">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Importar Classificações Automáticas</span>
+                        </div>
+                        <div class="campaign-info-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Campanha:</span>
+                                <span class="summary-value">{{ campaign._id }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Total de Pontos:</span>
+                                <span class="summary-value">{{ campaign.totalPoints }}</span>
+                            </div>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <i class="fas fa-search"></i>
+                                <span>Busca propriedades <strong>CLASS_YYYY</strong> nos dados importados de cada ponto</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-magic"></i>
+                                <span>Cria inspeções automáticas com as classificações encontradas</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Pontos já importados anteriormente serão ignorados (idempotente)</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-user-tag"></i>
+                                <span>Inspeções criadas com o usuário <strong>"Classificação Automática"</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing State -->
+            <div ng-if="isProcessing" class="upload-progress">
+                <div class="progress-header">
+                    <div class="progress-title">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Processando Classificações
+                    </div>
+                    <div class="file-badge">
+                        {{ campaign._id }}
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" ng-style="{'width': progress + '%'}"></div>
+                    </div>
+                    <div class="progress-percentage">{{ progress }}%</div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon processed">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ processed }}</span>
+                            <span class="stat-label">Processados</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ updated }}</span>
+                            <span class="stat-label">Atualizados</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-forward"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ skipped }}</span>
+                            <span class="stat-label">Já Importados</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ noClassCount }}</span>
+                            <span class="stat-label">Sem Classificação</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="elapsed-time">
+                    <i class="fas fa-clock"></i>
+                    Tempo decorrido: {{ elapsedTime }}s
+                </div>
+            </div>
+
+            <!-- Result State -->
+            <div ng-if="isCompleted" class="upload-result">
+                <div ng-if="success" class="result-success">
+                    <div class="result-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h4 class="result-title">Importação Concluída com Sucesso</h4>
+                    <div class="result-stats">
+                        <div class="result-stat">
+                            <span class="result-stat-label">Total de Pontos:</span>
+                            <span class="result-stat-value">{{ totalPoints }}</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-stat-label">Pontos Atualizados:</span>
+                            <span class="result-stat-value success-text">{{ updatedFinal }}</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-stat-label">Já Importados (ignorados):</span>
+                            <span class="result-stat-value warning-text">{{ skippedFinal }}</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-stat-label">Sem Classificação:</span>
+                            <span class="result-stat-value">{{ noClassFinal }}</span>
+                        </div>
+                        <div class="result-stat">
+                            <span class="result-stat-label">Duração:</span>
+                            <span class="result-stat-value">{{ durationFinal }}s</span>
+                        </div>
+                    </div>
+                </div>
+                <div ng-if="!success" class="result-error">
+                    <div class="result-icon error">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <h4 class="result-title">Falha na Importação</h4>
+                    <p class="result-message">{{ errorMessage }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" ng-click="cancel()" ng-if="!isProcessing">
+                <i class="fas fa-times"></i>
+                {{ isCompleted ? 'Fechar' : 'Cancelar' }}
+            </button>
+            <button class="btn-confirm" ng-click="startImport()" ng-if="!isProcessing && !isCompleted">
+                <i class="fas fa-file-import"></i>
+                Iniciar Importação
+            </button>
+            <button class="btn-confirm" ng-click="close()" ng-if="isCompleted && success">
+                <i class="fas fa-check"></i>
+                Concluir
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.campaign-info-summary {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+.summary-value {
+    font-size: 1.125rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.stat-icon.processed {
+    background: #ebf8ff;
+    color: #3182ce;
+}
+
+.stat-icon.success {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.stat-icon.warning {
+    background: #fffaf0;
+    color: #d69e2e;
+}
+
+.stat-icon.info {
+    background: #f7fafc;
+    color: #718096;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.stat-label {
+    font-size: 0.8125rem;
+    color: #718096;
+}
+
+.elapsed-time {
+    text-align: center;
+    color: #718096;
+    font-size: 0.9375rem;
+    padding-top: 0.5rem;
+}
+
+.elapsed-time i {
+    margin-right: 0.5rem;
+}
+
+.result-stats {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.result-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.result-stat:last-child {
+    border-bottom: none;
+}
+
+.result-stat-label {
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.result-stat-value {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.result-stat-value.success-text {
+    color: #38a169;
+}
+
+.result-stat-value.warning-text {
+    color: #d69e2e;
+}
+
+.progress-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.progress-bar-container {
+    flex: 1;
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4299e1, #48bb78);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.progress-percentage {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #2d3748;
+    min-width: 50px;
+    text-align: right;
+}
+
+.result-success, .result-error {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.result-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.result-icon.success {
+    color: #38a169;
+}
+
+.result-icon.error {
+    color: #e53e3e;
+}
+
+.result-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.result-message {
+    color: #e53e3e;
+    margin-top: 0.5rem;
+}
+
+.btn-cancel {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #cbd5e0;
+}
+
+.btn-confirm {
+    background: #d69e2e;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-confirm:hover {
+    background: #b7791f;
+}
+</style>

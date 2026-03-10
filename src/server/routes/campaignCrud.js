@@ -423,11 +423,16 @@ module.exports = function (app) {
             function: 'campaignCrud'
         });
     }
-    app.post('/api/campaigns/upload-geojson', 
-        requireSuperAdmin, 
+    app.post('/api/campaigns/upload-geojson',
+        requireSuperAdmin,
         errorHandler.asyncHandler(campaignCrud.uploadGeoJSON)
     );
-    
+
+    app.post('/api/campaigns/:id/import-classifications',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(campaignCrud.importClassifications)
+    );
+
     /**
      * @swagger
      * /api/campaigns/{id}/points:

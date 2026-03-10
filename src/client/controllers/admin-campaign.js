@@ -366,6 +366,22 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         });
     };
 
+    $scope.importClassifications = function(campaign) {
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/import-classifications-modal.tpl.html',
+            controller: 'ImportClassificationsModalController',
+            size: 'lg',
+            resolve: {
+                campaign: function() { return campaign; }
+            }
+        });
+        modalInstance.result.then(function(result) {
+            if (result && result.success) {
+                $scope.loadCampaigns();
+            }
+        });
+    };
+
     $scope.viewPoints = function(campaign) {
         $uibModal.open({
             templateUrl: 'views/campaign-points-modal.tpl.html',

@@ -1781,3 +1781,134 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         $scope.campaign.wmsConfig.layers.splice(index, 1);
     };
 });
+
+Application.controller('ImportClassificationsModalController', function ($scope, $uibModalInstance, $http, $timeout, campaign) {
+    $scope.campaign = campaign;
+    $scope.isProcessing = false;
+    $scope.isCompleted = false;
+    $scope.success = false;
+    $scope.progress = 0;
+    $scope.processed = 0;
+    $scope.updated = 0;
+    $scope.skipped = 0;
+    $scope.noClassCount = 0;
+    $scope.elapsedTime = 0;
+    $scope.errorMessage = '';
+
+    // Result finals
+    $scope.totalPoints = 0;
+    $scope.updatedFinal = 0;
+    $scope.skippedFinal = 0;
+    $scope.noClassFinal = 0;
+    $scope.durationFinal = 0;
+
+    var socket = null;
+    var elapsedTimer = null;
+
+    $scope.startImport = function() {
+        $scope.isProcessing = true;
+        $scope.elapsedTime = 0;
+
+        // Timer de tempo decorrido
+        elapsedTimer = setInterval(function() {
+            $scope.elapsedTime++;
+            $scope.$apply();
+        }, 1000);
+
+        // Conectar socket
+        socket = window.getAdminSocket();
+        socket.emit('join', 'import-classifications');
+
+        // Listeners
+        socket.on('import-classifications-started', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.totalPoints = data.totalPoints;
+            });
+        });
+
+        socket.on('import-classifications-progress', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.processed = data.processed;
+                $scope.updated = data.updated;
+                $scope.skipped = data.skipped;
+                $scope.noClassCount = data.noClassCount;
+                $scope.progress = data.progress;
+            });
+        });
+
+        socket.on('import-classifications-completed', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.isProcessing = false;
+                $scope.isCompleted = true;
+                $scope.success = true;
+                $scope.totalPoints = data.totalPoints;
+                $scope.updatedFinal = data.updatedCount;
+                $scope.skippedFinal = data.skippedCount;
+                $scope.noClassFinal = data.noClassCount;
+                $scope.durationFinal = data.duration;
+                $scope.progress = 100;
+                cleanupTimer();
+            });
+        });
+
+        socket.on('import-classifications-failed', function(data) {
+            if (data.campaignId !== campaign._id) return;
+            $timeout(function() {
+                $scope.isProcessing = false;
+                $scope.isCompleted = true;
+                $scope.success = false;
+                $scope.errorMessage = data.error || 'Erro desconhecido';
+                cleanupTimer();
+            });
+        });
+
+        // Fazer chamada HTTP
+        $http.post('/api/campaigns/' + campaign._id + '/import-classifications').then(
+            function(response) {
+                // Resposta recebida, aguardando eventos do socket
+            },
+            function(error) {
+                $timeout(function() {
+                    $scope.isProcessing = false;
+                    $scope.isCompleted = true;
+                    $scope.success = false;
+                    $scope.errorMessage = (error.data && error.data.error) || 'Erro ao iniciar importação';
+                    cleanupTimer();
+                });
+            }
+        );
+    };
+
+    function cleanupTimer() {
+        if (elapsedTimer) {
+            clearInterval(elapsedTimer);
+            elapsedTimer = null;
+        }
+    }
+
+    function cleanupSocket() {
+        if (socket) {
+            socket.off('import-classifications-started');
+            socket.off('import-classifications-progress');
+            socket.off('import-classifications-completed');
+            socket.off('import-classifications-failed');
+            socket.emit('leave', 'import-classifications');
+        }
+    }
+
+    $scope.cancel = function() {
+        $uibModalInstance.dismiss('cancel');
+    };
+
+    $scope.close = function() {
+        $uibModalInstance.close({ success: true });
+    };
+
+    $scope.$on('$destroy', function() {
+        cleanupTimer();
+        cleanupSocket();
+    });
+});

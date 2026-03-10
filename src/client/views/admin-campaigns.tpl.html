@@ -255,6 +255,10 @@
                                         title="Upload GeoJSON">
                                     <i class="fas fa-upload"></i>
                                 </button>
+                                <button class="action-btn import-class" ng-click="importClassifications(campaign)"
+                                        title="Importar Classificações" ng-disabled="!campaign.totalPoints">
+                                    <i class="fas fa-file-import"></i>
+                                </button>
                                 <button class="action-btn view" ng-click="viewPoints(campaign)"
                                         title="Ver pontos" ng-disabled="!campaign.totalPoints">
                                     <i class="fas fa-map-marker-alt"></i>
@@ -870,6 +874,15 @@
 
 .action-btn.upload:hover {
     background: #5a67d8;
+}
+
+.action-btn.import-class {
+    background: #d69e2e;
+    color: white;
+}
+
+.action-btn.import-class:hover {
+    background: #b7791f;
 }
 
 .action-btn.view {

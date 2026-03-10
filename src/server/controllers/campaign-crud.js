@@ -3103,5 +3103,199 @@ module.exports = function(app) {
         };
     }
 
+    // Importar classificações das propriedades dos pontos
+    CampaignCrud.importClassifications = async (req, res) => {
+        const campaignId = req.params.id;
+        const startTime = new Date();
+
+        try {
+            // Validar campanha
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campanha não encontrada' });
+            }
+
+            const totalPoints = await pointsCollection.countDocuments({ campaign: campaignId });
+            if (totalPoints === 0) {
+                return res.status(400).json({ error: 'Campanha não possui pontos' });
+            }
+
+            // Responder imediatamente
+            res.json({ success: true, message: 'Importação iniciada', totalPoints: totalPoints });
+
+            // Processar assincronamente
+            const io = app.io;
+            const BATCH_SIZE = 500;
+            let processed = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+            let noClassCount = 0;
+
+            const emitProgress = (event, data) => {
+                if (io) {
+                    io.to('import-classifications').emit(event, {
+                        ...data,
+                        campaignId: campaignId
+                    });
+                }
+            };
+
+            emitProgress('import-classifications-started', { totalPoints: totalPoints });
+
+            const extractClassifications = (properties) => {
+                const inspections = [];
+                if (!properties) return inspections;
+                Object.keys(properties).forEach(key => {
+                    const keyLower = key.toLowerCase();
+                    const match = keyLower.match(/^class_(\d{4})$/);
+                    if (match) {
+                        const year = parseInt(match[1]);
+                        inspections.push({
+                            year: year,
+                            class: properties[key.toUpperCase()] || properties[key]
+                        });
+                    }
+                });
+                return inspections;
+            };
+
+            const cursor = pointsCollection.find({ campaign: campaignId }).batchSize(BATCH_SIZE);
+            let bulkOps = [];
+
+            while (await cursor.hasNext()) {
+                const point = await cursor.next();
+                processed++;
+
+                const classifications = extractClassifications(point.properties);
+
+                if (classifications.length === 0) {
+                    noClassCount++;
+                } else {
+                    // Verificar se já foi importado
+                    const alreadyImported = point.userName && point.userName.includes('Classificação Automática');
+
+                    if (alreadyImported) {
+                        skippedCount++;
+                    } else {
+                        const inspection = {
+                            counter: 0,
+                            form: classifications.map(item => ({
+                                initialYear: item.year,
+                                finalYear: item.year,
+                                landUse: item.class
+                            })),
+                            fillDate: new Date()
+                        };
+
+                        bulkOps.push({
+                            updateOne: {
+                                filter: {
+                                    _id: point._id,
+                                    userName: { $nin: ['Classificação Automática'] }
+                                },
+                                update: {
+                                    $push: {
+                                        inspection: inspection,
+                                        userName: 'Classificação Automática'
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Executar bulk a cada BATCH_SIZE operações
+                if (bulkOps.length >= BATCH_SIZE) {
+                    try {
+                        const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
+                        updatedCount += result.modifiedCount || 0;
+                    } catch (bulkError) {
+                        if (logger) {
+                            await logger.warn('Erro parcial no bulkWrite de classificações', {
+                                module: 'campaignCrud',
+                                function: 'importClassifications',
+                                metadata: { campaignId, error: bulkError.message }
+                            });
+                        }
+                    }
+                    bulkOps = [];
+                }
+
+                // Emitir progresso a cada 100 pontos
+                if (processed % 100 === 0 || processed === totalPoints) {
+                    emitProgress('import-classifications-progress', {
+                        processed: processed,
+                        updated: updatedCount,
+                        skipped: skippedCount,
+                        noClassCount: noClassCount,
+                        totalPoints: totalPoints,
+                        progress: Math.round((processed / totalPoints) * 100)
+                    });
+                }
+            }
+
+            // Executar operações restantes
+            if (bulkOps.length > 0) {
+                try {
+                    const result = await pointsCollection.bulkWrite(bulkOps, { ordered: false });
+                    updatedCount += result.modifiedCount || 0;
+                } catch (bulkError) {
+                    if (logger) {
+                        await logger.warn('Erro parcial no bulkWrite final de classificações', {
+                            module: 'campaignCrud',
+                            function: 'importClassifications',
+                            metadata: { campaignId, error: bulkError.message }
+                        });
+                    }
+                }
+            }
+
+            const duration = Math.round((new Date() - startTime) / 1000);
+
+            emitProgress('import-classifications-completed', {
+                totalPoints: totalPoints,
+                updatedCount: updatedCount,
+                skippedCount: skippedCount,
+                noClassCount: noClassCount,
+                duration: duration
+            });
+
+            if (logger) {
+                await logger.info('Importação de classificações concluída', {
+                    module: 'campaignCrud',
+                    function: 'importClassifications',
+                    metadata: {
+                        campaignId,
+                        totalPoints,
+                        updatedCount,
+                        skippedCount,
+                        noClassCount,
+                        duration
+                    }
+                });
+            }
+
+        } catch (error) {
+            if (logger) {
+                await logger.logError(error, req, {
+                    module: 'campaignCrud',
+                    function: 'importClassifications'
+                });
+            }
+
+            if (app.io) {
+                app.io.to('import-classifications').emit('import-classifications-failed', {
+                    campaignId: campaignId,
+                    error: error.message
+                });
+            }
+
+            // Se a resposta ainda não foi enviada
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Erro interno ao importar classificações' });
+            }
+        }
+    };
+
     return CampaignCrud;
 };

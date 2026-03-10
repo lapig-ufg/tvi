@@ -132,6 +132,10 @@ app.middleware.repository.init(() => {
 				socket.join(room);
 				// Socket entrou na sala
 			});
+
+			socket.on('leave', function(room) {
+				socket.leave(room);
+			});
 			
 			// Join na sala de cache para receber atualizações
 			socket.join('cache-updates');
