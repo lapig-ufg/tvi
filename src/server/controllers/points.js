@@ -69,6 +69,52 @@ module.exports = function(app) {
 			metadata: { campaign: campaign._id, username, numInspec: campaign.numInspec }
 		});
 
+		// === Cleanup de pontos órfãos ===
+		// Pontos com underInspection > 0 mas sem sessão ativa devem ser resetados
+		// Isso resolve o problema de pontos bloqueados quando usuários fecham o navegador sem logout
+		try {
+			// Buscar IDs de pontos com sessão ativa
+			const activeSessions = await status.find({
+				campaign: campaign._id,
+				status: "Online"
+			}).toArray();
+
+			const activePointIds = activeSessions
+				.filter(s => s.atualPoint)
+				.map(s => s.atualPoint);
+
+			// Resetar underInspection de pontos sem sessão ativa
+			const orphanFilter = {
+				campaign: campaign._id,
+				underInspection: { $gt: 0 },
+				_id: { $nin: activePointIds }
+			};
+
+			const cleanupResult = await points.updateMany(
+				orphanFilter,
+				{ $set: { underInspection: 0 } }
+			);
+
+			if (cleanupResult.modifiedCount > 0) {
+				await logger.info('Cleaned up orphan points', {
+					module: 'points',
+					function: 'findPoint',
+					metadata: {
+						cleanedPoints: cleanupResult.modifiedCount,
+						campaign: campaign._id
+					}
+				});
+			}
+		} catch (cleanupError) {
+			await logger.warn('Failed to cleanup orphan points', {
+				module: 'points',
+				function: 'findPoint',
+				metadata: { error: cleanupError.message }
+			});
+			// Continua execução mesmo se cleanup falhar
+		}
+		// === Fim do cleanup ===
+
 		var findOneFilter = {
 			"$and": [
 				{ "userName": { "$nin": [ username ] } },
