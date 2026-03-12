@@ -940,24 +940,6 @@ fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
   }
 }
 
-/* Dica de Ctrl+Scroll para zoom nos mapas Leaflet */
-.map-scroll-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 13px;
-  z-index: 1000;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  white-space: nowrap;
-}
-
 /* Estilos específicos para OpenLayers - sem bordas nos tiles */
 .ol-viewport {
   position: relative !important;
