@@ -48,6 +48,58 @@ function safeDestroyMap(map) {
   }
 }
 
+/**
+ * WORKAROUND: Leaflet <= 1.9.4 — GridLayer._updateLevels e _resetView acessam
+ * this._map sem null-check. Quando um mapa é destruído durante uma animação de
+ * zoom pendente (requestAnimFrame ou setTimeout de 250ms), o callback assíncrono
+ * dispara fire('zoomanim')/fire('viewreset') em layers cujo _map já foi anulado.
+ * Ref: https://github.com/Leaflet/Leaflet/issues/6298
+ * Remover quando o Leaflet corrigir esses métodos internamente.
+ */
+(function patchLeafletNullMapGuards() {
+  if (!L) return;
+
+  // GridLayer: _updateLevels, _resetView, _animateZoom
+  if (L.GridLayer && L.GridLayer.prototype) {
+    var proto = L.GridLayer.prototype;
+
+    var origUpdateLevels = proto._updateLevels;
+    proto._updateLevels = function () {
+      if (!this._map) return;
+      return origUpdateLevels.apply(this, arguments);
+    };
+
+    var origResetView = proto._resetView;
+    proto._resetView = function () {
+      if (!this._map) return;
+      return origResetView.apply(this, arguments);
+    };
+
+    var origGridAnimateZoom = proto._animateZoom;
+    proto._animateZoom = function () {
+      if (!this._map) return;
+      return origGridAnimateZoom.apply(this, arguments);
+    };
+  }
+
+  // ImageOverlay: _animateZoom, _reset
+  if (L.ImageOverlay && L.ImageOverlay.prototype) {
+    var imgProto = L.ImageOverlay.prototype;
+
+    var origImgAnimateZoom = imgProto._animateZoom;
+    imgProto._animateZoom = function () {
+      if (!this._map) return;
+      return origImgAnimateZoom.apply(this, arguments);
+    };
+
+    var origImgReset = imgProto._reset;
+    imgProto._reset = function () {
+      if (!this._map) return;
+      return origImgReset.apply(this, arguments);
+    };
+  }
+})();
+
 Application
     .directive('numberFormat', function ($filter) {
       return {
