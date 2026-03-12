@@ -120,7 +120,7 @@ app.middleware.repository.init(() => {
 		app.use(urlencodedParser);
 		
 		// Log environment and parser status
-		console.log(`[${process.env.NODE_ENV || 'dev'}] Body parser configured with 100MB limit`);
+		console.log(`[${process.env.NODE_ENV || 'dev'}] Body parser configured with 500MB limit`);
 		console.log(`[${process.env.NODE_ENV || 'dev'}] Multer disabled globally - use route-specific middleware for file uploads`);
 
 		// Tornar io disponível para outros modules
