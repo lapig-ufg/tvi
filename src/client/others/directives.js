@@ -11,7 +11,6 @@ function safeDestroyMap(map) {
     // Cancela animações de zoom CSS pendentes
     if (map._animatingZoom) {
       map._animatingZoom = false;
-      // Remove o listener de transitionend do DOM que dispara _onZoomTransitionEnd
       var pane = map._mapPane;
       if (pane) {
         L.DomUtil.removeClass(pane, 'leaflet-zoom-anim');
@@ -24,6 +23,91 @@ function safeDestroyMap(map) {
   } catch (e) {
     // Ignora erros durante a destruição - o mapa já está sendo descartado
   }
+}
+
+/**
+ * Configura zoom por Ctrl+Scroll no mapa Leaflet.
+ * Sem Ctrl, o scroll da roda do mouse passa para a página normalmente.
+ * Exibe uma dica visual temporária quando o usuário tenta usar scroll sem Ctrl.
+ */
+function setupCtrlScrollZoom(map, mapElement) {
+  // Desabilita scroll zoom nativo do Leaflet
+  map.scrollWheelZoom.disable();
+
+  var hintEl = null;
+  var hintTimeout = null;
+
+  function showHint() {
+    if (!hintEl) {
+      hintEl = document.createElement('div');
+      hintEl.className = 'map-scroll-hint';
+      hintEl.textContent = 'Use Ctrl + scroll para zoom';
+      mapElement.style.position = 'relative';
+      mapElement.appendChild(hintEl);
+    }
+    hintEl.style.opacity = '1';
+    if (hintTimeout) clearTimeout(hintTimeout);
+    hintTimeout = setTimeout(function() {
+      if (hintEl) hintEl.style.opacity = '0';
+    }, 1500);
+  }
+
+  L.DomEvent.on(mapElement, 'wheel', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+      // Com Ctrl: faz zoom no mapa e impede zoom do browser
+      e.preventDefault();
+      e.stopPropagation();
+      var delta = e.deltaY > 0 ? -1 : 1;
+      var currentZoom = map.getZoom();
+      var newZoom = currentZoom + delta;
+      if (newZoom >= map.getMinZoom() && newZoom <= map.getMaxZoom()) {
+        map.setZoom(newZoom, { animate: true });
+      }
+    } else {
+      // Sem Ctrl: mostra dica e deixa o scroll passar para a página
+      showHint();
+    }
+  });
+
+  // Cleanup: remover hint ao destruir
+  map.on('unload', function() {
+    if (hintEl && hintEl.parentNode) {
+      hintEl.parentNode.removeChild(hintEl);
+    }
+    if (hintTimeout) clearTimeout(hintTimeout);
+  });
+}
+
+/**
+ * Sincroniza o nível de zoom entre todos os mapas irmãos na mesma página.
+ * Quando um mapa faz zoom, todos os outros acompanham via $rootScope events.
+ */
+function setupZoomSync(map, $scope, $rootScope) {
+  var syncing = false;
+
+  // Quando ESTE mapa faz zoom, notifica os demais
+  map.on('zoomend', function() {
+    if (syncing) return;
+    var zoom = map.getZoom();
+    $rootScope.$broadcast('mapZoomSync', { zoom: zoom, sourceId: $scope.$id });
+  });
+
+  // Quando OUTRO mapa faz zoom, sincroniza este
+  var deregister = $rootScope.$on('mapZoomSync', function(event, data) {
+    if (data.sourceId === $scope.$id) return; // ignora o próprio
+    if ($scope._destroyed || !$scope.map) return;
+    var currentZoom = map.getZoom();
+    if (currentZoom !== data.zoom && data.zoom >= map.getMinZoom() && data.zoom <= map.getMaxZoom()) {
+      syncing = true;
+      map.setZoom(data.zoom, { animate: false });
+      setTimeout(function() { syncing = false; }, 100);
+    }
+  });
+
+  // Cleanup
+  $scope.$on('$destroy', function() {
+    deregister();
+  });
 }
 
 Application
@@ -155,7 +239,7 @@ Application
         }
       }
     })
-    .directive('planetMap', function($timeout) {
+    .directive('planetMap', function($timeout, $rootScope) {
       return {
         template: `
                 <div>
@@ -181,16 +265,21 @@ Application
               return;
             }
             $scope.markerInMap = true;
+            $scope._destroyed = false;
             $scope.map = L.map(mapElement, {
               center: [$scope.lat, $scope.lon],
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: true,
+              scrollWheelZoom: false,
               zoom: $scope.zoom,
               minZoom: $scope.zoom,
               maxZoom: $scope.zoom + 6,
             });
+
+            // Ctrl+Scroll para zoom e sincronização entre mapas
+            setupCtrlScrollZoom($scope.map, mapElement);
+            setupZoomSync($scope.map, $scope, $rootScope);
 
             function updateTileLayer() {
               if ($scope.tileLayer) {
@@ -233,6 +322,7 @@ Application
             L.control.scale({ metric: true, imperial: false }).addTo($scope.map);
 
             $scope.$on('$destroy', function() {
+              $scope._destroyed = true;
               if ($scope.map) {
                 safeDestroyMap($scope.map);
                 $scope.map = null;
@@ -333,7 +423,7 @@ Application
     //     }
     //   }
     // })
-    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService) {
+    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, $rootScope) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -510,8 +600,12 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: true
+              scrollWheelZoom: false
             });
+
+            // Ctrl+Scroll para zoom e sincronização entre mapas
+            setupCtrlScrollZoom($scope.map, mapElement);
+            setupZoomSync($scope.map, $scope, $rootScope);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
@@ -546,7 +640,8 @@ Application
               if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
+                  // Preservar zoom atual do usuário ao mudar de ponto
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.map.getZoom(), { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
@@ -632,7 +727,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, capabilitiesService, $injector) {
+    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, $rootScope) {
       return {
         template: `
           <div style="width: 100%; height: 100%; position: relative;">
@@ -898,8 +993,12 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: true
+              scrollWheelZoom: false
             });
+
+            // Ctrl+Scroll para zoom e sincronização entre mapas
+            setupCtrlScrollZoom($scope.map, mapElement);
+            setupZoomSync($scope.map, $scope, $rootScope);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
@@ -934,7 +1033,8 @@ Application
               if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
+                  // Preservar zoom atual do usuário ao mudar de ponto
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.map.getZoom(), { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
@@ -999,7 +1099,7 @@ Application
         }
       };
     })
-    .directive('wmsMap', function($timeout, $injector) {
+    .directive('wmsMap', function($timeout, $injector, $rootScope) {
       return {
         template: `
           <div style="width: 100%; height: 100%; min-height: 300px; position: relative;">
@@ -1440,9 +1540,13 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: true
+              scrollWheelZoom: false
             });
-            
+
+            // Ctrl+Scroll para zoom e sincronização entre mapas
+            setupCtrlScrollZoom($scope.map, mapElement);
+            setupZoomSync($scope.map, $scope, $rootScope);
+
             // Adicionar marcador
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
               icon: L.icon({
@@ -1451,7 +1555,7 @@ Application
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
-            
+
             // Toggle do marcador ao clicar no mapa
             $scope.map.on('click', function() {
               if ($scope.markerInMap) {
@@ -1462,7 +1566,7 @@ Application
                 $scope.markerInMap = true;
               }
             });
-            
+
             // Observar mudanças
             var unwatch = $scope.$watchGroup(['period', 'year', 'wmsConfig'], function(newValues, oldValues) {
               console.log('WMS: Watch disparado - Nova config:', {
@@ -1486,7 +1590,8 @@ Application
               if ($scope._destroyed) return;
               if (newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
                 if ($scope.map && $scope.lon && $scope.lat) {
-                  $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
+                  // Preservar zoom atual do usuário ao mudar de ponto
+                  $scope.map.setView([$scope.lat, $scope.lon], $scope.map.getZoom(), { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                   }
