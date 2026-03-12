@@ -428,6 +428,11 @@ module.exports = function (app) {
         errorHandler.asyncHandler(campaignCrud.uploadGeoJSON)
     );
 
+    app.get('/api/campaigns/:id/pre-validate-classifications',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(campaignCrud.preValidateClassifications)
+    );
+
     app.post('/api/campaigns/:id/import-classifications',
         requireSuperAdmin,
         errorHandler.asyncHandler(campaignCrud.importClassifications)

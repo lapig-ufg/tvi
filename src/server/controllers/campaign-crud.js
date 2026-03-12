@@ -3103,6 +3103,71 @@ module.exports = function(app) {
         };
     }
 
+    // Pré-validação: verifica se existem propriedades CLASS_YYYY nos pontos da campanha
+    CampaignCrud.preValidateClassifications = async (req, res) => {
+        const campaignId = req.params.id;
+
+        try {
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campanha não encontrada' });
+            }
+
+            const totalPoints = await pointsCollection.count({ campaign: campaignId });
+            if (totalPoints === 0) {
+                return res.status(400).json({ error: 'Campanha não possui pontos', hasClassProperties: false });
+            }
+
+            // Amostrar até 50 pontos para verificar propriedades CLASS_YYYY
+            const sampleSize = Math.min(totalPoints, 50);
+            const samplePoints = await new Promise((resolve, reject) => {
+                pointsCollection.find({ campaign: campaignId })
+                    .limit(sampleSize)
+                    .toArray((err, docs) => {
+                        if (err) return reject(err);
+                        resolve(docs || []);
+                    });
+            });
+
+            const classPattern = /^class_\d{4}$/i;
+            let pointsWithClass = 0;
+            const classKeys = new Set();
+            const allPropertyKeys = new Set();
+
+            samplePoints.forEach(point => {
+                if (!point.properties) return;
+                let hasClass = false;
+                Object.keys(point.properties).forEach(key => {
+                    allPropertyKeys.add(key);
+                    if (classPattern.test(key)) {
+                        classKeys.add(key.toUpperCase());
+                        hasClass = true;
+                    }
+                });
+                if (hasClass) pointsWithClass++;
+            });
+
+            res.json({
+                success: true,
+                totalPoints: totalPoints,
+                sampleSize: sampleSize,
+                hasClassProperties: classKeys.size > 0,
+                pointsWithClassInSample: pointsWithClass,
+                classProperties: Array.from(classKeys).sort(),
+                allProperties: Array.from(allPropertyKeys).sort()
+            });
+
+        } catch (error) {
+            if (logger) {
+                await logger.logError(error, req, {
+                    module: 'campaignCrud',
+                    function: 'preValidateClassifications'
+                });
+            }
+            res.status(500).json({ error: 'Erro ao validar propriedades da campanha' });
+        }
+    };
+
     // Importar classificações das propriedades dos pontos
     CampaignCrud.importClassifications = async (req, res) => {
         const campaignId = req.params.id;

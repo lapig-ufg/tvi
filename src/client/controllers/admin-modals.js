@@ -1787,6 +1787,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.isProcessing = false;
     $scope.isCompleted = false;
     $scope.success = false;
+    $scope.isWarning = false;
     $scope.progress = 0;
     $scope.processed = 0;
     $scope.updated = 0;
@@ -1794,6 +1795,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.noClassCount = 0;
     $scope.elapsedTime = 0;
     $scope.errorMessage = '';
+    $scope.warningMessage = '';
 
     // Result finals
     $scope.totalPoints = 0;
@@ -1803,7 +1805,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.durationFinal = 0;
 
     // Modo de importação: 'properties' ou 'file'
-    $scope.importMode = 'properties';
+    $scope.importMode = 'file';
     $scope.selectedFile = null;
     $scope.fileInfo = null;
     $scope.fileError = '';
@@ -1813,9 +1815,34 @@ Application.controller('ImportClassificationsModalController', function ($scope,
     $scope.notMatchedFinal = 0;
     $scope.matchedFinal = 0;
 
+    // Pré-validação para modo propriedades
+    $scope.preValidation = null;
+    $scope.isValidating = false;
+
     var socket = null;
     var elapsedTimer = null;
     var fileContent = null;
+
+    // Carregar pré-validação ao abrir o modal
+    function loadPreValidation() {
+        $scope.isValidating = true;
+        $http.get('/api/campaigns/' + campaign._id + '/pre-validate-classifications').then(
+            function(response) {
+                $timeout(function() {
+                    $scope.preValidation = response.data;
+                    $scope.isValidating = false;
+                });
+            },
+            function() {
+                $timeout(function() {
+                    $scope.preValidation = { hasClassProperties: false, allProperties: [] };
+                    $scope.isValidating = false;
+                });
+            }
+        );
+    }
+
+    loadPreValidation();
 
     $scope.setFile = function(element) {
         var file = element.files[0];
@@ -1935,13 +1962,29 @@ Application.controller('ImportClassificationsModalController', function ($scope,
             $timeout(function() {
                 $scope.isProcessing = false;
                 $scope.isCompleted = true;
-                $scope.success = true;
                 $scope.totalPoints = data.totalPoints;
                 $scope.updatedFinal = data.updatedCount;
                 $scope.skippedFinal = data.skippedCount;
                 $scope.noClassFinal = data.noClassCount;
                 $scope.durationFinal = data.duration;
                 $scope.progress = 100;
+
+                if (data.updatedCount > 0) {
+                    $scope.success = true;
+                    $scope.isWarning = false;
+                } else if (data.noClassCount > 0 && data.updatedCount === 0) {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Nenhum ponto possui propriedades CLASS_YYYY. Use o modo "De arquivo GeoJSON" para importar classificações a partir de um arquivo externo.';
+                } else if (data.skippedCount > 0 && data.updatedCount === 0) {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Todos os pontos já possuem classificações importadas anteriormente.';
+                } else {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Nenhuma classificação foi importada. Verifique se os dados estão no formato esperado.';
+                }
                 cleanupTimer();
             });
         });
@@ -2012,7 +2055,6 @@ Application.controller('ImportClassificationsModalController', function ($scope,
             $timeout(function() {
                 $scope.isProcessing = false;
                 $scope.isCompleted = true;
-                $scope.success = true;
                 $scope.totalPoints = data.totalPoints;
                 $scope.updatedFinal = data.updatedCount;
                 $scope.skippedFinal = data.skippedCount;
@@ -2021,6 +2063,27 @@ Application.controller('ImportClassificationsModalController', function ($scope,
                 $scope.notMatchedFinal = data.notMatchedCount;
                 $scope.durationFinal = data.duration;
                 $scope.progress = 100;
+
+                if (data.updatedCount > 0) {
+                    $scope.success = true;
+                    $scope.isWarning = false;
+                } else if (data.notMatchedCount > 0 && data.matchedCount === 0) {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Nenhuma feature do arquivo correspondeu espacialmente aos pontos da campanha. Verifique se as coordenadas são compatíveis ou aumente a tolerância.';
+                } else if (data.noClassCount > 0 && data.updatedCount === 0) {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'As features corresponderam, mas nenhuma possui propriedades CLASS_YYYY. Verifique o formato do arquivo.';
+                } else if (data.skippedCount > 0 && data.updatedCount === 0) {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Todos os pontos correspondidos já possuem classificações importadas anteriormente.';
+                } else {
+                    $scope.success = false;
+                    $scope.isWarning = true;
+                    $scope.warningMessage = 'Nenhuma classificação foi importada. Verifique o arquivo e as coordenadas.';
+                }
                 cleanupTimer();
             });
         });
