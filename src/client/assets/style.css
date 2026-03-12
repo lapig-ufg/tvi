@@ -535,6 +535,7 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 
 
 .ee-mapbox {
+  position: relative;
   border: 1px solid #ccc;
   border-radius: 4px;
   overflow: hidden;
@@ -543,34 +544,26 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   min-height: 400px;
 }
 
-/* Container scrollável para os mapas - removido para usar scroll da página */
+/* Grid de mapas — usa flexbox para wrapping correto */
 .maps-grid {
-  /* Sem altura máxima - usa o scroll natural da página */
+  display: flex;
+  flex-wrap: wrap;
   overflow: visible;
+  clear: both;
 }
 
-/* Remover margens e paddings quando em grid */
+/* Remover espaçamento padrão do Bootstrap entre mapas na grid */
+.maps-grid > [class*="col-"] {
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+/* Remover margens e bordas quando em grid */
 .maps-grid .ee-mapbox {
   margin: 0;
   border: none;
   border-radius: 0;
-}
-
-/* Adicionar espaçamento de 2px apenas entre linhas */
-.maps-grid [class*="col-"] {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-/* Remover padding inferior da última linha */
-.maps-grid .row:last-child [class*="col-"] {
-  padding-bottom: 0;
-}
-
-/* Remover espaçamento entre colunas do Bootstrap na grid */
-.maps-grid .row {
-  margin-left: 0;
-  margin-right: 0;
 }
 
 /* Header do mapa com informações */
@@ -595,7 +588,8 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 .ee-mapbox landsat-map,
 .ee-mapbox inspection-map,
 .ee-mapbox planet-map,
-.ee-mapbox sentinel-map {
+.ee-mapbox sentinel-map,
+.ee-mapbox wms-map {
   display: block;
   width: 100%;
   height: 100%;
@@ -611,7 +605,8 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 .ee-mapbox.col-lg-12 landsat-map,
 .ee-mapbox.col-lg-12 inspection-map,
 .ee-mapbox.col-lg-12 planet-map,
-.ee-mapbox.col-lg-12 sentinel-map {
+.ee-mapbox.col-lg-12 sentinel-map,
+.ee-mapbox.col-lg-12 wms-map {
   height: 600px !important;
   min-height: 600px !important;
 }
@@ -620,7 +615,8 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 .ee-mapbox div[id^="map-"],
 .ee-mapbox div[id^="landsat-map-"],
 .ee-mapbox div[id^="planet-map-"],
-.ee-mapbox div[id^="sentinel-map-"] {
+.ee-mapbox div[id^="sentinel-map-"],
+.ee-mapbox div[id^="wms-map-"] {
   height: 400px;
   min-height: 400px;
 }
@@ -630,10 +626,12 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   /* Quando há apenas 1 mapa - altura muito maior para ocupar mais espaço */
   .ee-mapbox.col-lg-12 landsat-map > div,
   .ee-mapbox.col-lg-12 inspection-map > div,
+  .ee-mapbox.col-lg-12 wms-map > div,
   .ee-mapbox.col-lg-12 div[id^="map-"],
   .ee-mapbox.col-lg-12 div[id^="landsat-map-"],
   .ee-mapbox.col-lg-12 div[id^="planet-map-"],
-  .ee-mapbox.col-lg-12 div[id^="sentinel-map-"] {
+  .ee-mapbox.col-lg-12 div[id^="sentinel-map-"],
+  .ee-mapbox.col-lg-12 div[id^="wms-map-"] {
     height: 600px !important;
     min-height: 600px !important;
   }
@@ -641,10 +639,12 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   /* Quando há 2 mapas */
   .ee-mapbox.col-lg-6 landsat-map > div,
   .ee-mapbox.col-lg-6 inspection-map > div,
+  .ee-mapbox.col-lg-6 wms-map > div,
   .ee-mapbox.col-lg-6 div[id^="map-"],
   .ee-mapbox.col-lg-6 div[id^="landsat-map-"],
   .ee-mapbox.col-lg-6 div[id^="planet-map-"],
-  .ee-mapbox.col-lg-6 div[id^="sentinel-map-"] {
+  .ee-mapbox.col-lg-6 div[id^="sentinel-map-"],
+  .ee-mapbox.col-lg-6 div[id^="wms-map-"] {
     height: 450px !important;
     min-height: 450px !important;
   }
@@ -652,10 +652,12 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   /* Quando há 3 mapas */
   .ee-mapbox.col-lg-4 landsat-map > div,
   .ee-mapbox.col-lg-4 inspection-map > div,
+  .ee-mapbox.col-lg-4 wms-map > div,
   .ee-mapbox.col-lg-4 div[id^="map-"],
   .ee-mapbox.col-lg-4 div[id^="landsat-map-"],
   .ee-mapbox.col-lg-4 div[id^="planet-map-"],
-  .ee-mapbox.col-lg-4 div[id^="sentinel-map-"] {
+  .ee-mapbox.col-lg-4 div[id^="sentinel-map-"],
+  .ee-mapbox.col-lg-4 div[id^="wms-map-"] {
     height: 400px !important;
     min-height: 400px !important;
   }
@@ -663,12 +665,13 @@ input[type=button].disableButton::-webkit-inner-spin-button,
   /* Quando há 4 ou mais mapas */
   .ee-mapbox.col-lg-3 landsat-map > div,
   .ee-mapbox.col-lg-3 inspection-map > div,
+  .ee-mapbox.col-lg-3 wms-map > div,
   .ee-mapbox.col-lg-3 div[id^="map-"],
   .ee-mapbox.col-lg-3 div[id^="landsat-map-"],
   .ee-mapbox.col-lg-3 div[id^="planet-map-"],
-  .ee-mapbox.col-lg-3 div[id^="sentinel-map-"] {
+  .ee-mapbox.col-lg-3 div[id^="sentinel-map-"],
+  .ee-mapbox.col-lg-3 div[id^="wms-map-"] {
     height: 350px !important;
-    /*min-height: 350px !important;*/
   }
 }
 
@@ -676,12 +679,13 @@ input[type=button].disableButton::-webkit-inner-spin-button,
 @media (max-width: 767px) {
   .ee-mapbox landsat-map > div,
   .ee-mapbox inspection-map > div,
+  .ee-mapbox wms-map > div,
   .ee-mapbox div[id^="map-"],
   .ee-mapbox div[id^="landsat-map-"],
   .ee-mapbox div[id^="planet-map-"],
-  .ee-mapbox div[id^="sentinel-map-"] {
+  .ee-mapbox div[id^="sentinel-map-"],
+  .ee-mapbox div[id^="wms-map-"] {
     height: 350px !important;
-    /*min-height: 350px !important;*/
   }
 }
 

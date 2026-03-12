@@ -270,8 +270,8 @@
 
             </div>
 
-            <div class="row">
-                <div class="maps-grid" style="margin: 5px; width: 100%">
+            <div>
+                <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index" 
                          ng-class="getMapBoxClass(maps.length)"
                          lazy-map
@@ -347,7 +347,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="clearfix"></div>
             </div>
         </div>
         <div ng-show="isObjectEmpty(point) && pointLoaded" class="row  main-content">
