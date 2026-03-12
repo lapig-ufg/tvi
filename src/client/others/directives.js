@@ -4,33 +4,47 @@
  * Destrói um mapa Leaflet de forma segura, cancelando animações de zoom
  * pendentes para evitar erros "Cannot read properties of null" nos callbacks
  * internos _onZoomTransitionEnd / _resetView / _updateLevels.
+ *
+ * WORKAROUND: Leaflet <= 1.9.4 não protege a cadeia remove() → fire('zoomanim')
+ * → GridLayer._setView() → _updateLevels() quando _map já é null.
+ * O setTimeout(250ms) em _animateZoom também dispara _onZoomTransitionEnd após
+ * o mapa ser destruído. Remover este workaround quando o Leaflet corrigir o
+ * cleanup de animações pendentes em Map.remove().
+ * Ref: https://github.com/Leaflet/Leaflet/issues/6298
  */
 function safeDestroyMap(map) {
   if (!map) return;
   try {
-    // Desativa flag de animação para que callbacks pendentes façam early return
+    // 1. Desativa flag de animação — callbacks pendentes fazem early return
     map._animatingZoom = false;
 
-    // Remove a classe CSS de animação do mapPane
+    // 2. Remove classe CSS de animação do mapPane
     if (map._mapPane) {
       L.DomUtil.removeClass(map._mapPane, 'leaflet-zoom-anim');
     }
 
-    // Remove o listener DOM de transitionend do proxy (não é removido por map.off())
+    // 3. Remove listener DOM transitionend do proxy (não removido por map.off())
     if (map._proxy) {
       L.DomEvent.off(map._proxy, L.DomUtil.TRANSITION_END, map._catchTransitionEnd, map);
     }
 
-    // Substitui _onZoomTransitionEnd por no-op para que setTimeout(250ms) pendente
-    // e qualquer outro callback assíncrono não tente acessar estado destruído
+    // 4. Neutraliza callbacks assíncronos pendentes (setTimeout de 250ms)
     map._onZoomTransitionEnd = function() {};
 
-    // Remove todos os event listeners do Leaflet (sistema Evented)
+    // 5. Desconecta todos os tile layers antes do remove() para evitar que
+    //    fire('zoomanim'/'viewreset') durante a destruição chame _updateLevels
+    //    ou _resetView em layers cujo _map já é null
+    map.eachLayer(function(layer) {
+      try { layer.off(); } catch (ignored) {}
+    });
+
+    // 6. Remove todos os event listeners do mapa (sistema Evented)
     map.off();
-    // Remove o mapa e limpa o DOM
+
+    // 7. Remove o mapa e limpa o DOM
     map.remove();
   } catch (e) {
-    // Ignora erros durante a destruição - o mapa já está sendo descartado
+    // Ignora erros durante a destruição — o mapa já está sendo descartado
   }
 }
 
@@ -95,6 +109,8 @@ Application
           bounds: '='
         },
         controller: function ($scope, $element) {
+          $scope._destroyed = false;
+
           angular.element($element).ready(function () {
 
             $scope.tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
@@ -138,8 +154,6 @@ Application
             });
 
             L.control.scale({metric: true, imperial: false}).addTo($scope.map);
-
-            $scope._destroyed = false;
 
             setTimeout(function() {
               if ($scope._destroyed || !$scope.map) return;
