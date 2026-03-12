@@ -31,7 +31,8 @@ function safeDestroyMap(map) {
  * Exibe uma dica visual temporária quando o usuário tenta usar scroll sem Ctrl.
  */
 function setupCtrlScrollZoom(map, mapElement) {
-  // Desabilita scroll zoom nativo do Leaflet
+  // Estratégia: manter scrollWheelZoom habilitado no Leaflet (para botões +/- funcionarem)
+  // mas desabilitar e reabilitar dinamicamente conforme Ctrl é pressionado.
   map.scrollWheelZoom.disable();
 
   var hintEl = null;
@@ -42,7 +43,6 @@ function setupCtrlScrollZoom(map, mapElement) {
       hintEl = document.createElement('div');
       hintEl.className = 'map-scroll-hint';
       hintEl.textContent = 'Use Ctrl + scroll para zoom';
-      mapElement.style.position = 'relative';
       mapElement.appendChild(hintEl);
     }
     hintEl.style.opacity = '1';
@@ -52,11 +52,11 @@ function setupCtrlScrollZoom(map, mapElement) {
     }, 1500);
   }
 
-  L.DomEvent.on(mapElement, 'wheel', function(e) {
+  // Interceptar wheel na fase de captura (antes do Leaflet) para controlar propagação
+  mapElement.addEventListener('wheel', function(e) {
     if (e.ctrlKey || e.metaKey) {
-      // Com Ctrl: faz zoom no mapa e impede zoom do browser
+      // Com Ctrl: impede zoom do browser e faz zoom no mapa manualmente
       e.preventDefault();
-      e.stopPropagation();
       var delta = e.deltaY > 0 ? -1 : 1;
       var currentZoom = map.getZoom();
       var newZoom = currentZoom + delta;
@@ -67,7 +67,7 @@ function setupCtrlScrollZoom(map, mapElement) {
       // Sem Ctrl: mostra dica e deixa o scroll passar para a página
       showHint();
     }
-  });
+  }, { passive: false, capture: true });
 
   // Cleanup: remover hint ao destruir
   map.on('unload', function() {
@@ -271,7 +271,7 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: false,
+              scrollWheelZoom: true,
               zoom: $scope.zoom,
               minZoom: $scope.zoom,
               maxZoom: $scope.zoom + 6,
@@ -600,7 +600,7 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: false
+              scrollWheelZoom: true
             });
 
             // Ctrl+Scroll para zoom e sincronização entre mapas
@@ -993,7 +993,7 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: false
+              scrollWheelZoom: true
             });
 
             // Ctrl+Scroll para zoom e sincronização entre mapas
@@ -1540,7 +1540,7 @@ Application
               zoomControl: true,
               dragging: true,
               doubleClickZoom: true,
-              scrollWheelZoom: false
+              scrollWheelZoom: true
             });
 
             // Ctrl+Scroll para zoom e sincronização entre mapas
