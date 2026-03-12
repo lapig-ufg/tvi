@@ -8,15 +8,24 @@
 function safeDestroyMap(map) {
   if (!map) return;
   try {
-    // Cancela animações de zoom CSS pendentes
-    if (map._animatingZoom) {
-      map._animatingZoom = false;
-      var pane = map._mapPane;
-      if (pane) {
-        L.DomUtil.removeClass(pane, 'leaflet-zoom-anim');
-      }
+    // Desativa flag de animação para que callbacks pendentes façam early return
+    map._animatingZoom = false;
+
+    // Remove a classe CSS de animação do mapPane
+    if (map._mapPane) {
+      L.DomUtil.removeClass(map._mapPane, 'leaflet-zoom-anim');
     }
-    // Remove todos os event listeners do Leaflet
+
+    // Remove o listener DOM de transitionend do proxy (não é removido por map.off())
+    if (map._proxy) {
+      L.DomEvent.off(map._proxy, L.DomUtil.TRANSITION_END, map._catchTransitionEnd, map);
+    }
+
+    // Substitui _onZoomTransitionEnd por no-op para que setTimeout(250ms) pendente
+    // e qualquer outro callback assíncrono não tente acessar estado destruído
+    map._onZoomTransitionEnd = function() {};
+
+    // Remove todos os event listeners do Leaflet (sistema Evented)
     map.off();
     // Remove o mapa e limpa o DOM
     map.remove();
@@ -61,7 +70,7 @@ function setupCtrlScrollZoom(map, mapElement) {
       var currentZoom = map.getZoom();
       var newZoom = currentZoom + delta;
       if (newZoom >= map.getMinZoom() && newZoom <= map.getMaxZoom()) {
-        map.setZoom(newZoom, { animate: true });
+        map.setView(map.getCenter(), newZoom, { animate: true });
       }
     } else {
       // Sem Ctrl: mostra dica e deixa o scroll passar para a página
@@ -87,19 +96,23 @@ function setupZoomSync(map, $scope, $rootScope) {
 
   // Quando ESTE mapa faz zoom, notifica os demais
   map.on('zoomend', function() {
-    if (syncing) return;
+    if (syncing || $scope._destroyed) return;
     var zoom = map.getZoom();
     $rootScope.$broadcast('mapZoomSync', { zoom: zoom, sourceId: $scope.$id });
   });
 
   // Quando OUTRO mapa faz zoom, sincroniza este
   var deregister = $rootScope.$on('mapZoomSync', function(event, data) {
-    if (data.sourceId === $scope.$id) return; // ignora o próprio
+    if (data.sourceId === $scope.$id) return;
     if ($scope._destroyed || !$scope.map) return;
+    // Não sincronizar se o mapa está no meio de uma animação de zoom
+    if (map._animatingZoom) return;
     var currentZoom = map.getZoom();
     if (currentZoom !== data.zoom && data.zoom >= map.getMinZoom() && data.zoom <= map.getMaxZoom()) {
       syncing = true;
-      map.setZoom(data.zoom, { animate: false });
+      // Usar setView diretamente — map.setZoom() encapsula options em {zoom: options},
+      // fazendo o Leaflet ignorar animate:false e iniciar animação CSS
+      map.setView(map.getCenter(), data.zoom, { animate: false });
       setTimeout(function() { syncing = false; }, 100);
     }
   });
