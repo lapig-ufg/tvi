@@ -1246,10 +1246,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.timeInspectionPoint = data.point.dataPointTime.slice(-1)[0].totalPointTime * data.point.userName.length;
 
             initFormViewVariables();
-            generateMaps();
             getCampaignMatadata();
 
             loadCampaignConfig(function() {
+                generateMaps();
                 if (!$scope.isChaco && $scope.showTimeseries) {
                     createModisChart(data.point.dates);
                     createLandsatChart();

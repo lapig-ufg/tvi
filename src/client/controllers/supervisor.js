@@ -1363,11 +1363,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
             initFormViewVariables();
             //generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-            generateMaps();
             getCampaignMatadata();
 
-            // Buscar configurações da campanha do novo endpoint
             loadCampaignConfig(function() {
+                generateMaps();
                 // Os gráficos agora só serão carregados quando o usuário clicar no botão
                 // Resetar a flag sempre que carregar um novo ponto
                 $scope.showTimeseriesCharts = false;

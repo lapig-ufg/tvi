@@ -1130,12 +1130,13 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $rootScope.current = data.current;
             $scope.datesFromService = data.point.dates;
 
-            // Buscar configurações da campanha do novo endpoint
-            loadCampaignConfig();
-
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
-            generateMaps();
+
+            // Gerar mapas somente após config da campanha estar disponível
+            loadCampaignConfig(function() {
+                generateMaps();
+            });
 
             // Os gráficos agora só serão carregados quando o usuário clicar no botão
             // Resetar a flag sempre que carregar um novo ponto
