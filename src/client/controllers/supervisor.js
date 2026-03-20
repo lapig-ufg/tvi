@@ -383,6 +383,22 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }, 0);
         }
 
+        $scope.reloadMaps = function() {
+            var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+            generateMaps();
+
+            if (!$scope.isSentinel && $scope.landsatVisparam) {
+                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+            } else if ($scope.isSentinel && $scope.sentinelVisparam) {
+                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+            }
+
+            $timeout(function() {
+                window.scrollTo(0, scrollPosition);
+            }, 0);
+        };
+
         var generateOptionYears = function (initialYear, finalYear) {
             var options = [];
             for (var year = initialYear; year <= finalYear; year++) {

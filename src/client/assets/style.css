@@ -907,6 +907,31 @@ fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
 }
 
 
+/* Botão flutuante para recarregar mapas */
+.btn-reload-maps {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-reload-maps:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
 /* Ajustar altura do placeholder baseado no número de mapas */
 .ee-mapbox.col-lg-12 .map-placeholder {
   height: 600px;

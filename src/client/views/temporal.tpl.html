@@ -329,6 +329,12 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Botão flutuante para forçar recarregamento dos mapas -->
+                <button ng-click="reloadMaps()" class="btn btn-default btn-reload-maps"
+                        title="Recarregar mapas">
+                    <i class="fa fa-refresh"></i>
+                </button>
             </div>
         </div>
         <div ng-show="isObjectEmpty(point) && pointLoaded" class="row  main-content">
