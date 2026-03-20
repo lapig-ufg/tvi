@@ -1011,11 +1011,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
          * Mesmo padrão do temporal.js — ver comentários lá para detalhes do fluxo.
          */
         $scope.onMapVisible = function(index) {
-            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+            if (!$scope.mapStates[index] || $scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
                 return;
             }
 
             mapLoadingService.enqueue(index, function() {
+                // Guard: mapStates pode ter sido resetado entre enqueue e execução
+                if (!$scope.mapStates[index]) return;
+
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);

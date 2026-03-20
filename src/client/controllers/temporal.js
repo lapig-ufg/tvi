@@ -948,11 +948,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
          * 5. finishLoading(index) marca como concluído após os tiles começarem a carregar
          */
         $scope.onMapVisible = function(index) {
-            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+            if (!$scope.mapStates[index] || $scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
                 return;
             }
 
             mapLoadingService.enqueue(index, function() {
+                // Guard: mapStates pode ter sido resetado entre enqueue e execução
+                if (!$scope.mapStates[index]) return;
+
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
