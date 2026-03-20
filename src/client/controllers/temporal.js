@@ -937,7 +937,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     year: year,
                     url: url,
                     bounds: $scope.point.bounds,
-                    index: mapIndex
+                    index: mapIndex,
+                    uid: $scope.point._id + '_' + mapIndex
                 });
                 
                 // Inicializar estado do mapa

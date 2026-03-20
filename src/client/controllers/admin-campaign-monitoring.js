@@ -608,7 +608,8 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 				year: year,
 				url: url,
 				bounds: $scope.point.bounds,
-				index: mapIndex
+				index: mapIndex,
+			uid: $scope.point._id + '_' + mapIndex
 			});
 
 			$scope.mapStates[mapIndex] = { visible: false, loading: false };

@@ -1006,7 +1006,8 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     year: year,
                     url: url,
                     bounds: $scope.point.bounds,
-                    index: mapIndex
+                    index: mapIndex,
+                    uid: $scope.point._id + '_' + mapIndex
                 });
                 
                 // Inicializar estado do mapa
