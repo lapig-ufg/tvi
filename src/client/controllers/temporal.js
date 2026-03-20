@@ -878,7 +878,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.maps = [];
             $scope.mapStates = {}; // Resetar estados
             mapLoadingService.reset(); // Limpar serviço de loading
-            
+            $scope.$broadcast('resetLazyMaps');
+
             // Forçar Angular a recriar os componentes de mapa
             $scope.mapKey = Date.now();
             
@@ -937,8 +938,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     year: year,
                     url: url,
                     bounds: $scope.point.bounds,
-                    index: mapIndex,
-                    uid: $scope.point._id + '_' + mapIndex
+                    index: mapIndex
                 });
                 
                 // Inicializar estado do mapa

@@ -732,7 +732,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.maps = [];
             $scope.mapStates = {};
             mapLoadingService.reset();
-            
+            $scope.$broadcast('resetLazyMaps');
+
             if ($scope.isSentinel) {
                 generateSentinelMaps();
             } else {

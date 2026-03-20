@@ -95,6 +95,18 @@ angular.module('application')
                     activate();
                 }
             });
+
+            // Reset quando o controller regenera os mapas (novo ponto)
+            scope.$on('resetLazyMaps', function() {
+                isLoaded = false;
+
+                // Reconectar o IntersectionObserver para este elemento
+                if (observer) {
+                    observer.disconnect();
+                    observer = null;
+                }
+                setupObserver();
+            });
         }
     };
 })

@@ -272,7 +272,7 @@
 
             <div>
                 <div class="maps-grid">
-                    <div ng-repeat="map in maps track by map.uid" 
+                    <div ng-repeat="map in maps track by map.index" 
                          ng-class="getMapBoxClass(maps.length)"
                          lazy-map
                          map-index="{{map.index}}"

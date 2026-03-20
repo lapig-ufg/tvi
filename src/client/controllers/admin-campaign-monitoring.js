@@ -577,6 +577,7 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 		$scope.maps = [];
 		$scope.mapStates = {};
 		mapLoadingService.reset();
+		$scope.$broadcast('resetLazyMaps');
 
 		if (!$scope.point || !$scope.config.initialYear) return;
 
@@ -608,8 +609,7 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 				year: year,
 				url: url,
 				bounds: $scope.point.bounds,
-				index: mapIndex,
-			uid: $scope.point._id + '_' + mapIndex
+				index: mapIndex
 			});
 
 			$scope.mapStates[mapIndex] = { visible: false, loading: false };
