@@ -511,8 +511,9 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
             }
 
             // Inicializar o mapa após o elemento estar pronto
-            safeTimeout(function() {
-                initMap();
+            // Não usar safeTimeout aqui: map ainda é null antes de initMap()
+            $timeout(function() {
+                if (!destroyed) initMap();
             }, 100);
 
             // Observar mudanças nas camadas
