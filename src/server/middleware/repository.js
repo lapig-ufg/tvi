@@ -61,7 +61,7 @@ module.exports = function (app) {
                     if (err) return callback(err);
                     
                     // Garantir que as coleções necessárias existam
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig'];
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -172,6 +172,24 @@ module.exports = function (app) {
                         console.error('Erro ao criar índices para campaign:', err);
                     } else {
                         // Índices criados para collection campaign
+                    }
+                    cb();
+                });
+            },
+            // Índices para collection tvi_blocos
+            function(cb) {
+                if (!Repository.collections.tvi_blocos) return cb();
+
+                Repository.collections.tvi_blocos.createIndexes([
+                    // Atribuição atômica: próximo bloco disponível por campanha/rodada
+                    { key: { campaignId: 1, inspectionRound: 1, status: 1, blockIndex: 1 }, name: 'campaign_round_status_blockIndex' },
+                    // Buscar bloco ativo do inspetor
+                    { key: { campaignId: 1, assignedTo: 1, status: 1 }, name: 'campaign_assignedTo_status' },
+                    // Operações de timeout
+                    { key: { status: 1, assignedAt: 1 }, name: 'status_assignedAt' }
+                ], function(err) {
+                    if (err) {
+                        console.error('Erro ao criar índices para tvi_blocos:', err);
                     }
                     cb();
                 });

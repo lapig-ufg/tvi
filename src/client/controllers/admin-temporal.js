@@ -739,14 +739,15 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 generateLandsatMaps();
             }
             
+            // Enfileirar os primeiros mapas (serão ativados em sequência pelo service)
             $timeout(function() {
-                const initialMapsToLoad = Math.min(3, $scope.maps.length);
-                for (let i = 0; i < initialMapsToLoad; i++) {
+                var initialMapsToLoad = Math.min(3, $scope.maps.length);
+                for (var i = 0; i < initialMapsToLoad; i++) {
                     if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
                         $scope.onMapVisible(i);
                     }
                 }
-            }, 1000);
+            }, 200);
         };
         
         var generateSentinelMaps = function() {
@@ -950,32 +951,31 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             }
         };
         
+        /**
+         * Ativa um mapa via fila serializada do mapLoadingService.
+         * Mesmo padrão do temporal.js — ver comentários lá para detalhes do fluxo.
+         */
         $scope.onMapVisible = function(index) {
-            if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
+            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+                return;
+            }
+
+            mapLoadingService.enqueue(index, function() {
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
-                
+
+                // Aguardar compile/link do Angular antes de sinalizar ready
+                $timeout(function() {
+                    mapLoadingService.mapReady(index);
+                }, 0);
+
                 $timeout(function() {
                     $scope.mapStates[index].loading = false;
                     mapLoadingService.finishLoading(index);
-                }, 500);
-            }
-        };
-        
-        $scope.$on('preloadMaps', function(event, indices) {
-            indices.forEach(function(index) {
-                if (index >= 0 && index < $scope.maps.length && 
-                    !$scope.mapStates[index].visible && 
-                    !mapLoadingService.isLoaded(index) &&
-                    !mapLoadingService.isLoading(index)) {
-                    
-                    $timeout(function() {
-                        $scope.onMapVisible(index);
-                    }, 200);
-                }
+                }, 800);
             });
-        });
+        };
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;

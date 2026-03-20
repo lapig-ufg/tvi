@@ -243,9 +243,17 @@
                         </td>
                         <td class="campaign-actions">
                             <div class="action-buttons">
-                                <button class="action-btn manage" ng-click="manageCampaign(campaign)" 
+                                <button class="action-btn manage" ng-click="manageCampaign(campaign)"
                                         title="Gerenciar campanha">
                                     <i class="fas fa-cog"></i>
+                                </button>
+                                <button class="action-btn monitor" ng-click="monitorCampaign(campaign)"
+                                        title="Monitorar campanha" ng-disabled="!campaign.totalPoints">
+                                    <i class="fas fa-chart-bar"></i>
+                                </button>
+                                <button class="action-btn blocks" ng-click="manageBlocks(campaign)"
+                                        title="Gerenciar blocos de inspeção" ng-disabled="!campaign.totalPoints">
+                                    <i class="fas fa-cubes"></i>
                                 </button>
                                 <button class="action-btn edit" ng-click="editCampaign(campaign)" 
                                         title="Editar campanha">
@@ -865,6 +873,24 @@
 
 .action-btn.edit:hover {
     background: #3182ce;
+}
+
+.action-btn.monitor {
+    background: #ed8936;
+    color: white;
+}
+
+.action-btn.monitor:hover {
+    background: #dd6b20;
+}
+
+.action-btn.blocks {
+    background: #805ad5;
+    color: white;
+}
+
+.action-btn.blocks:hover {
+    background: #6b46c1;
 }
 
 .action-btn.upload {

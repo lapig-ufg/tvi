@@ -1017,58 +1017,47 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
             
             // Carregar automaticamente os primeiros mapas após um pequeno delay
+            // Enfileirar os primeiros mapas (serão ativados em sequência pelo service)
             $timeout(function() {
-                console.log('Carregando mapas iniciais - useWmsForCurrentPeriod:', $scope.useWmsForCurrentPeriod);
-                // Carregar os primeiros 2-3 mapas automaticamente
-                const initialMapsToLoad = Math.min(3, $scope.maps.length);
-                for (let i = 0; i < initialMapsToLoad; i++) {
+                var initialMapsToLoad = Math.min(3, $scope.maps.length);
+                for (var i = 0; i < initialMapsToLoad; i++) {
                     if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
                         $scope.onMapVisible(i);
                     }
                 }
-            }, 1000);
+            }, 200);
         }
-        
-        // Função chamada quando um mapa se torna visível
+
+        /**
+         * Ativa um mapa via fila serializada do mapLoadingService.
+         * Mesmo padrão do temporal.js — ver comentários lá para detalhes do fluxo.
+         */
         $scope.onMapVisible = function(index) {
-            if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
+            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+                return;
+            }
+
+            mapLoadingService.enqueue(index, function() {
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
-                
-                // Garantir que o visparam atual seja propagado para mapas recém-visíveis
+
                 $timeout(function() {
+                    mapLoadingService.mapReady(index);
+
                     if (!$scope.isSentinel && $scope.landsatVisparam) {
                         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
                     } else if ($scope.isSentinel && $scope.sentinelVisparam) {
                         $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
                     }
-                }, 100);
-                
-                // Simular carregamento completo após o mapa carregar
-                // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
+                }, 0);
+
                 $timeout(function() {
                     $scope.mapStates[index].loading = false;
                     mapLoadingService.finishLoading(index);
-                }, 500);
-            }
-        };
-        
-        // Listener para pré-carregar mapas
-        $scope.$on('preloadMaps', function(event, indices) {
-            indices.forEach(function(index) {
-                if (index >= 0 && index < $scope.maps.length && 
-                    !$scope.mapStates[index].visible && 
-                    !mapLoadingService.isLoaded(index) &&
-                    !mapLoadingService.isLoading(index)) {
-                    
-                    // Agendar pré-carregamento
-                    $timeout(function() {
-                        $scope.onMapVisible(index);
-                    }, 200);
-                }
+                }, 800);
             });
-        });
+        };
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;

@@ -426,6 +426,14 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         $location.path('/admin/campaigns/manage/' + campaign._id);
     };
 
+    $scope.monitorCampaign = function(campaign) {
+        $location.path('/admin/campaigns/' + campaign._id + '/monitoring');
+    };
+
+    $scope.manageBlocks = function(campaign) {
+        $location.path('/admin/campaigns/' + campaign._id + '/blocks');
+    };
+
     $scope.getProgressClass = function(progress) {
         if (progress < 33) return 'progress-bar-danger';
         if (progress < 66) return 'progress-bar-warning';

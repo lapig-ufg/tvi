@@ -333,14 +333,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     // Obter mapas visíveis do cache
                     var cachedVisibleMaps = mapLoadingService.getVisibleMapsFromCache();
                     
-                    // Forçar carregamento dos mapas que estavam visíveis
+                    // Restaurar mapas visíveis via fila serializada
                     cachedVisibleMaps.forEach(function(index) {
                         if (index < $scope.maps.length) {
-                            $scope.$broadcast('forceLoadMap', index);
-                            // Marcar como visível no novo estado
-                            if ($scope.mapStates[index]) {
-                                $scope.mapStates[index].visible = true;
-                            }
+                            $scope.onMapVisible(index);
                         }
                     });
                     
@@ -951,54 +947,54 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 };
             }
             
-            // Carregar automaticamente os primeiros mapas IMEDIATAMENTE
-            const initialMapsToLoad = Math.min(3, $scope.maps.length);
-            
-            for (let i = 0; i < initialMapsToLoad; i++) {
+            // Enfileirar os primeiros mapas visíveis (serão ativados em sequência pelo service)
+            var initialMapsToLoad = Math.min(3, $scope.maps.length);
+
+            for (var i = 0; i < initialMapsToLoad; i++) {
                 $scope.onMapVisible(i);
             }
         }
-        
-        // Função chamada quando um mapa se torna visível
+
+        /**
+         * Ativa um mapa via fila serializada do mapLoadingService.
+         *
+         * Fluxo:
+         * 1. onMapVisible(index) enfileira a ativação
+         * 2. Quando chega a vez: mapStates[index].visible = true → ng-if cria DOM
+         * 3. $timeout(0) garante que o digest/compile completou → diretiva Leaflet instanciada
+         * 4. mapReady(index) sinaliza ao service para avançar na fila após STAGGER_DELAY
+         * 5. finishLoading(index) marca como concluído após os tiles começarem a carregar
+         */
         $scope.onMapVisible = function(index) {
-            if (!$scope.mapStates[index].visible && !mapLoadingService.isLoaded(index)) {
+            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+                return;
+            }
+
+            mapLoadingService.enqueue(index, function() {
                 $scope.mapStates[index].visible = true;
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
-                
-                // Garantir que o visparam atual seja propagado para mapas recém-visíveis
+
+                // $timeout(0): aguarda o Angular compilar o ng-if e instanciar as diretivas
+                // Somente então sinalizamos mapReady para liberar a fila
                 $timeout(function() {
+                    mapLoadingService.mapReady(index);
+
+                    // Propagar visparam atual para o mapa recém-criado
                     if (!$scope.isSentinel && $scope.landsatVisparam) {
                         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
                     } else if ($scope.isSentinel && $scope.sentinelVisparam) {
                         $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
                     }
-                }, 100);
-                
-                // Simular carregamento completo após o mapa carregar
-                // Na prática, isso seria chamado quando o mapa terminar de carregar seus tiles
+                }, 0);
+
+                // Marcar loading como concluído após tempo para tiles iniciarem
                 $timeout(function() {
                     $scope.mapStates[index].loading = false;
                     mapLoadingService.finishLoading(index);
-                }, 500);
-            }
-        };
-        
-        // Listener para pré-carregar mapas
-        $scope.$on('preloadMaps', function(event, indices) {
-            indices.forEach(function(index) {
-                if (index >= 0 && index < $scope.maps.length && 
-                    !$scope.mapStates[index].visible && 
-                    !mapLoadingService.isLoaded(index) &&
-                    !mapLoadingService.isLoading(index)) {
-                    
-                    // Agendar pré-carregamento
-                    $timeout(function() {
-                        $scope.onMapVisible(index);
-                    }, 200);
-                }
+                }, 800);
             });
-        });
+        };
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;

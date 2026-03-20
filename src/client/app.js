@@ -35,6 +35,16 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 			templateUrl: 'views/campaign-management.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin/campaigns/:id/blocks', {
+			controller: 'AdminBlocksController',
+			templateUrl: 'views/admin-blocks.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/campaigns/:id/monitoring', {
+			controller: 'AdminCampaignMonitoringController',
+			templateUrl: 'views/admin-campaign-monitoring.tpl.html',
+			reloadOnSearch: false
+		})
 		.when('/admin/cache-tiles', {
 			controller: 'CacheManagerTilesController',
 			templateUrl: 'views/cache-manager-tiles.tpl.html',

@@ -10,6 +10,7 @@ module.exports = function(app) {
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
 	var statusLogin = app.repository.collections.status;
+	var blocosCollection = app.repository.collections.tvi_blocos;
 
 	Login.autenticateUser = async function(request, response, next) {
 		if(request.session.user && request.session.user.name) {
@@ -140,7 +141,12 @@ module.exports = function(app) {
 		if(user.type == 'inspector') {
 
 			statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
-			points.update({'_id': request.session.currentPointId}, {'$inc':{'underInspection': -1}})
+			// Só decrementa underInspection se a campanha NÃO usa sistema de blocos
+			// Com blocos, o underInspection é gerenciado pelo ciclo findPointFromBlock/updatePoint
+			var hasBlocks = await blocosCollection.count({ campaignId: campaign._id });
+			if (hasBlocks === 0) {
+				points.update({'_id': request.session.currentPointId}, {'$inc':{'underInspection': -1}})
+			}
 
 			await logger.info('Inspector logged off', {
 				module: 'login',
@@ -176,15 +182,24 @@ module.exports = function(app) {
 	app.on('socket-connect', function(session) {
 	})
 
-	app.on('socket-disconnect', function(session) {
+	app.on('socket-disconnect', async function(session) {
 
 		if(session && session.user && session.user.type == 'inspector') {
-			
+
 			var name = session.user.name;
 			var campaign = session.user.campaign;
 
 			statusLogin.update({"_id": name+"_"+campaign._id}, {$set:{"status":"Offline"}})
-			points.update({'_id': session.currentPointId}, {'$inc':{'underInspection': -1}})
+			// Só decrementa underInspection se a campanha NÃO usa sistema de blocos
+			try {
+				var hasBlocks = await blocosCollection.count({ campaignId: campaign._id });
+				if (hasBlocks === 0) {
+					points.update({'_id': session.currentPointId}, {'$inc':{'underInspection': -1}})
+				}
+			} catch (e) {
+				// Fallback: decrementa normalmente se erro ao verificar blocos
+				points.update({'_id': session.currentPointId}, {'$inc':{'underInspection': -1}})
+			}
 		}
 	})
 

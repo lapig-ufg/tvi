@@ -1,0 +1,840 @@
+<!-- Admin Blocks - Gerência de Blocos de Inspeção -->
+<div class="admin-blocks-container" ng-controller="AdminBlocksController">
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="back-btn" ng-click="navigateBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h1 class="header-title">Blocos de Inspeção</h1>
+                    <span class="header-subtitle" ng-show="campaign">{{ campaign._id }}</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="header-user">
+                    <span class="user-info">
+                        <i class="fas fa-user-shield"></i>
+                        {{ user.username }}
+                    </span>
+                    <button class="logout-btn" ng-click="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Painel de Geração -->
+    <div class="generate-panel" ng-show="summary.total === 0">
+        <div class="generate-content">
+            <h3><i class="fas fa-cubes"></i> Gerar Blocos de Inspeção</h3>
+            <p class="generate-description">
+                Particione os pontos desta campanha em blocos isolados para distribuição entre inspetores.
+            </p>
+            <div class="generate-form">
+                <div class="form-group">
+                    <label>Tamanho do bloco (pontos)</label>
+                    <input type="number" class="form-input" ng-model="generateForm.blockSize" min="1" max="1000">
+                </div>
+                <div class="form-group">
+                    <label>Timeout (minutos)</label>
+                    <input type="number" class="form-input" ng-model="generateForm.timeoutMinutes" min="1">
+                    <span class="form-hint">Padrão: 480 (8 horas)</span>
+                </div>
+                <button class="action-btn primary" ng-click="generateBlocks()" ng-disabled="loading">
+                    <i class="fas fa-magic"></i>
+                    Gerar Blocos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" ng-show="summary.total > 0">
+        <div class="stat-item">
+            <span class="stat-value">{{ summary.total || 0 }}</span>
+            <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item stat-available">
+            <span class="stat-value">{{ summary.byStatus.available || 0 }}</span>
+            <span class="stat-label">Disponíveis</span>
+        </div>
+        <div class="stat-item stat-assigned">
+            <span class="stat-value">{{ summary.byStatus.assigned || 0 }}</span>
+            <span class="stat-label">Em inspeção</span>
+        </div>
+        <div class="stat-item stat-completed">
+            <span class="stat-value">{{ summary.byStatus.completed || 0 }}</span>
+            <span class="stat-label">Concluídos</span>
+        </div>
+        <div class="stat-item stat-discarded">
+            <span class="stat-value">{{ summary.byStatus.discarded || 0 }}</span>
+            <span class="stat-label">Descartados</span>
+        </div>
+    </div>
+
+    <!-- Ações e Filtros -->
+    <div class="toolbar" ng-show="summary.total > 0">
+        <div class="toolbar-actions">
+            <button class="action-btn primary" ng-click="generateBlocks()" ng-show="summary.total === 0">
+                <i class="fas fa-magic"></i> Gerar Blocos
+            </button>
+            <button class="action-btn warning" ng-click="releaseExpired()">
+                <i class="fas fa-clock"></i> Liberar Expirados
+            </button>
+            <button class="action-btn danger" ng-click="deleteAllBlocks()">
+                <i class="fas fa-trash"></i> Remover Todos
+            </button>
+        </div>
+        <div class="toolbar-filters">
+            <select class="filter-select" ng-model="filters.status" ng-change="applyFilters()">
+                <option value="">Todos os status</option>
+                <option value="available">Disponível</option>
+                <option value="assigned">Em inspeção</option>
+                <option value="completed">Concluído</option>
+                <option value="discarded">Descartado</option>
+            </select>
+            <select class="filter-select" ng-model="filters.assignedTo" ng-change="applyFilters()">
+                <option value="">Todos os inspetores</option>
+                <option ng-repeat="inspector in getInspectorList()" value="{{inspector}}">{{inspector}}</option>
+            </select>
+            <select class="filter-select" ng-model="filters.inspectionRound" ng-change="applyFilters()">
+                <option value="">Todas as rodadas</option>
+                <option ng-repeat="r in [1,2,3,4,5]" value="{{r}}">Rodada {{r}}</option>
+            </select>
+            <button class="action-btn small" ng-click="clearFilters()">
+                <i class="fas fa-times"></i> Limpar
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumo por Inspetor -->
+    <div class="inspector-summary" ng-show="getInspectorList().length > 0">
+        <h4>Progresso por Inspetor</h4>
+        <div class="inspector-cards">
+            <div class="inspector-card" ng-repeat="inspector in getInspectorList()">
+                <span class="inspector-name">{{ inspector }}</span>
+                <div class="inspector-stats">
+                    <span class="mini-stat assigned" ng-show="summary.byInspector[inspector].assigned">
+                        {{ summary.byInspector[inspector].assigned }} em inspeção
+                    </span>
+                    <span class="mini-stat completed" ng-show="summary.byInspector[inspector].completed">
+                        {{ summary.byInspector[inspector].completed }} concluído(s)
+                    </span>
+                    <span class="mini-stat discarded" ng-show="summary.byInspector[inspector].discarded">
+                        {{ summary.byInspector[inspector].discarded }} descartado(s)
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-container" ng-show="loading">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p class="loading-text">Carregando...</p>
+    </div>
+
+    <!-- Tabela de Blocos -->
+    <div class="blocks-content" ng-hide="loading || summary.total === 0">
+        <div class="table-info">
+            <span class="info-text">
+                Mostrando {{ blocks.length }} de {{ pagination.totalBlocks }} blocos
+                <span class="page-info">(Página {{ pagination.currentPage }} de {{ pagination.totalPages }})</span>
+            </span>
+        </div>
+
+        <div class="table-container">
+            <table class="blocks-table">
+                <thead>
+                    <tr>
+                        <th>Bloco</th>
+                        <th>Rodada</th>
+                        <th>Pontos</th>
+                        <th>Status</th>
+                        <th>Inspetor</th>
+                        <th>Atribuído em</th>
+                        <th>Progresso</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="block in blocks" class="block-row">
+                        <td class="block-index">{{ block.blockIndex }}</td>
+                        <td>{{ block.inspectionRound }}</td>
+                        <td class="block-points">{{ block.pointIndexStart }} - {{ block.pointIndexEnd }} ({{ block.size }})</td>
+                        <td>
+                            <span class="status-badge" ng-class="getStatusClass(block.status)">
+                                {{ getStatusLabel(block.status) }}
+                            </span>
+                        </td>
+                        <td>{{ block.assignedTo || '-' }}</td>
+                        <td>{{ formatDate(block.assignedAt) }}</td>
+                        <td>
+                            <div class="block-progress" ng-show="block.status === 'assigned'">
+                                <div class="progress-container-small">
+                                    <div class="progress-bar-small"
+                                         ng-style="{'width': (block.currentPointOffset / block.size * 100) + '%'}">
+                                    </div>
+                                </div>
+                                <span class="progress-label">{{ block.currentPointOffset }}/{{ block.size }}</span>
+                            </div>
+                            <span ng-show="block.status === 'completed'">{{ block.size }}/{{ block.size }}</span>
+                            <span ng-show="block.status === 'available' || block.status === 'discarded'">-</span>
+                        </td>
+                        <td class="block-actions">
+                            <button class="action-btn small danger"
+                                    ng-click="discardBlock(block)"
+                                    ng-disabled="block.status === 'available' || block.status === 'discarded'"
+                                    title="Descartar bloco">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr ng-show="blocks.length === 0">
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>Nenhum bloco encontrado com os filtros selecionados</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="pagination-container" ng-show="pagination.totalPages > 1">
+            <div class="pagination">
+                <button class="page-btn" ng-click="goToPage(1)" ng-disabled="!pagination.hasPrev">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="page-btn" ng-click="prevPage()" ng-disabled="!pagination.hasPrev">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <button ng-repeat="page in getPages()"
+                        class="page-btn"
+                        ng-class="{active: page === pagination.currentPage}"
+                        ng-click="goToPage(page)">
+                    {{ page }}
+                </button>
+                <button class="page-btn" ng-click="nextPage()" ng-disabled="!pagination.hasNext">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="page-btn" ng-click="goToPage(pagination.totalPages)" ng-disabled="!pagination.hasNext">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container Principal */
+.admin-blocks-container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header (reutiliza estilos de admin-campaigns) */
+.admin-blocks-container .admin-header {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.admin-blocks-container .header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-blocks-container .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-blocks-container .header-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+}
+
+.header-subtitle {
+    font-size: 1rem;
+    color: #718096;
+    font-weight: 400;
+}
+
+.admin-blocks-container .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-blocks-container .back-btn {
+    background: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #4a5568;
+}
+
+.admin-blocks-container .back-btn:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.admin-blocks-container .header-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-blocks-container .user-info {
+    color: #4a5568;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-blocks-container .logout-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.admin-blocks-container .logout-btn:hover {
+    background: #c53030;
+}
+
+/* Painel de Geração */
+.generate-panel {
+    max-width: 1400px;
+    margin: 1.5rem auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 2rem;
+}
+
+.generate-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.generate-description {
+    color: #718096;
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+}
+
+.generate-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.form-input {
+    padding: 0.625rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1.125rem;
+    width: 160px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.form-hint {
+    font-size: 0.875rem;
+    color: #a0aec0;
+}
+
+/* Stats Bar */
+.admin-blocks-container .stats-bar {
+    background: white;
+    margin: 1.5rem auto;
+    max-width: 1400px;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.5rem;
+}
+
+.admin-blocks-container .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-align: center;
+}
+
+.admin-blocks-container .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.admin-blocks-container .stat-label {
+    font-size: 1rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-available .stat-value { color: #4299e1; }
+.stat-assigned .stat-value { color: #ed8936; }
+.stat-completed .stat-value { color: #48bb78; }
+.stat-discarded .stat-value { color: #e53e3e; }
+
+/* Toolbar */
+.toolbar {
+    max-width: 1400px;
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.toolbar-filters {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Botões de ação */
+.admin-blocks-container .action-btn {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.admin-blocks-container .action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.admin-blocks-container .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.admin-blocks-container .action-btn.primary {
+    background: #4299e1;
+    color: white;
+}
+
+.admin-blocks-container .action-btn.primary:hover {
+    background: #3182ce;
+}
+
+.admin-blocks-container .action-btn.warning {
+    background: #ed8936;
+    color: white;
+}
+
+.admin-blocks-container .action-btn.warning:hover {
+    background: #dd6b20;
+}
+
+.admin-blocks-container .action-btn.danger {
+    background: #e53e3e;
+    color: white;
+}
+
+.admin-blocks-container .action-btn.danger:hover {
+    background: #c53030;
+}
+
+.admin-blocks-container .action-btn.small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+/* Filtros */
+.admin-blocks-container .filter-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+}
+
+.admin-blocks-container .filter-select:focus {
+    outline: none;
+    border-color: #4299e1;
+}
+
+/* Resumo por Inspetor */
+.inspector-summary {
+    max-width: 1400px;
+    margin: 0 auto 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 1.25rem 2rem;
+}
+
+.inspector-summary h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.inspector-cards {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.inspector-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+}
+
+.inspector-name {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1.125rem;
+}
+
+.inspector-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mini-stat {
+    font-size: 0.85rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+}
+
+.mini-stat.assigned {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.mini-stat.completed {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.mini-stat.discarded {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Tabela de Blocos */
+.blocks-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.admin-blocks-container .table-info {
+    margin-bottom: 1rem;
+}
+
+.admin-blocks-container .info-text {
+    color: #4a5568;
+    font-size: 1.125rem;
+}
+
+.admin-blocks-container .page-info {
+    color: #718096;
+    margin-left: 0.5rem;
+}
+
+.admin-blocks-container .table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.blocks-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.blocks-table thead {
+    background: #f7fafc;
+}
+
+.blocks-table th {
+    padding: 0.875rem 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 1.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.block-row {
+    transition: background 0.2s;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.block-row:hover {
+    background: #f7fafc;
+}
+
+.blocks-table td {
+    padding: 0.75rem 1.25rem;
+    color: #2d3748;
+    font-size: 1.125rem;
+}
+
+.block-index {
+    font-weight: 600;
+    color: #4299e1;
+}
+
+.block-points {
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-available {
+    background: #ebf8ff;
+    color: #3182ce;
+}
+
+.status-assigned {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.status-completed {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.status-discarded {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Barra de progresso do bloco */
+.block-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.progress-container-small {
+    width: 60px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar-small {
+    height: 100%;
+    background: #ed8936;
+    transition: width 0.3s ease;
+    border-radius: 3px;
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+/* Loading */
+.admin-blocks-container .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    gap: 1rem;
+}
+
+.admin-blocks-container .loading-spinner {
+    font-size: 3rem;
+    color: #4299e1;
+}
+
+.admin-blocks-container .loading-text {
+    color: #718096;
+    font-size: 1.125rem;
+}
+
+/* Empty State */
+.admin-blocks-container .empty-state {
+    text-align: center;
+    padding: 3rem !important;
+    color: #a0aec0;
+}
+
+.admin-blocks-container .empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.admin-blocks-container .empty-state p {
+    font-size: 1.125rem;
+    margin: 0;
+}
+
+/* Paginação */
+.admin-blocks-container .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.admin-blocks-container .pagination {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.admin-blocks-container .page-btn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.625rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #4a5568;
+    font-weight: 500;
+    font-size: 1.125rem;
+}
+
+.admin-blocks-container .page-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.admin-blocks-container .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-blocks-container .page-btn.active {
+    background: #4299e1;
+    color: white;
+    border-color: #4299e1;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .admin-blocks-container .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .admin-blocks-container .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .toolbar {
+        flex-direction: column;
+    }
+
+    .generate-form {
+        flex-direction: column;
+    }
+
+    .admin-blocks-container .table-container {
+        overflow-x: auto;
+    }
+
+    .blocks-table {
+        min-width: 700px;
+    }
+}
+</style>

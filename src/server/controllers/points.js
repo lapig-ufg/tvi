@@ -8,6 +8,7 @@ module.exports = function(app) {
 	var points = app.repository.collections.points;
 	var mosaics = app.repository.collections.mosaics;
 	var status = app.repository.collections.status;
+	var blocosCollection = app.repository.collections.tvi_blocos;
 
 	var getImageDates = function(path, row, callback) {
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
@@ -301,6 +302,128 @@ module.exports = function(app) {
 		});
 	};
 
+	/**
+	 * Busca o próximo ponto a partir do sistema de blocos.
+	 * Atribui um bloco ao inspetor (ou reutiliza o ativo), retorna o ponto atual
+	 * e avança o offset. Mantém o mesmo formato de resposta de findPoint().
+	 */
+	var findPointFromBlock = async function(campaign, username, callback) {
+		try {
+			await logger.info('findPointFromBlock: iniciando', {
+				module: 'points',
+				function: 'findPointFromBlock',
+				metadata: { campaign: campaign._id, username: username }
+			});
+
+			var blocosController = app.controllers.blocos;
+			var block = await blocosController.claimNextBlock(campaign._id, username);
+
+			if (!block) {
+				// Nenhum bloco disponível — inspeção completa
+				var totalFilter = { campaign: campaign._id };
+				var countFilter = { campaign: campaign._id, userName: { $in: [username] } };
+
+				var total = await points.count(totalFilter);
+				var count = await points.count(countFilter);
+
+				return callback({
+					point: {},
+					total: total,
+					current: total,
+					user: username,
+					count: count
+				});
+			}
+
+			// Verificar se o bloco já foi completamente servido
+			if (block.currentPointOffset >= block.size) {
+				await blocosController.completeBlock(block._id);
+
+				// Recursão: buscar próximo bloco
+				return findPointFromBlock(campaign, username, callback);
+			}
+
+			// Buscar o ponto correspondente ao offset atual
+			var pointId = block.pointIds[block.currentPointOffset];
+			var point = await points.findOne({ _id: pointId });
+
+			if (!point) {
+				await logger.warn('findPointFromBlock: ponto não encontrado no bloco', {
+					module: 'points',
+					function: 'findPointFromBlock',
+					metadata: { pointId: pointId, blockId: block._id }
+				});
+
+				// Avançar offset e tentar próximo ponto
+				await blocosController.advanceBlockOffset(block._id);
+				return findPointFromBlock(campaign, username, callback);
+			}
+
+			// Incrementar underInspection no ponto
+			await points.updateOne(
+				{ _id: point._id },
+				{ $inc: { underInspection: 1 } }
+			);
+			point.underInspection = (point.underInspection || 0) + 1;
+
+			// Avançar offset no bloco
+			var updatedBlock = await blocosController.advanceBlockOffset(block._id);
+
+			// Verificar se o bloco foi completado após este avanço
+			if (updatedBlock && updatedBlock.currentPointOffset >= updatedBlock.size) {
+				await blocosController.completeBlock(block._id);
+			}
+
+			// Enriquecer ponto com dados de imagem e janela
+			getImageDates(point.path, point.row, async function(dates) {
+				point.dates = dates;
+				point.bounds = getWindow(point);
+
+				// Atualizar status do inspetor
+				var statusId = username + '_' + campaign._id;
+				status.updateOne({ _id: statusId }, {
+					$set: {
+						campaign: campaign._id,
+						status: 'Online',
+						name: username,
+						atualPoint: point._id,
+						dateLastPoint: new Date()
+					}
+				}, { upsert: true });
+
+				// Contagens
+				var totalFilter = { campaign: campaign._id };
+				var countFilter = { campaign: campaign._id, userName: { $in: [username] } };
+
+				var total = await points.count(totalFilter);
+				var count = await points.count(countFilter);
+
+				var result = {
+					point: point,
+					total: total,
+					current: point.index,
+					user: username,
+					count: count,
+					block: {
+						blockIndex: block.blockIndex,
+						inspectionRound: block.inspectionRound,
+						progress: (block.currentPointOffset + 1) + '/' + block.size
+					}
+				};
+
+				callback(result);
+			});
+
+		} catch (err) {
+			await logger.error('Erro em findPointFromBlock', {
+				module: 'points',
+				function: 'findPointFromBlock',
+				metadata: { error: err.message, stack: err.stack }
+			});
+			callback({ error: 'Erro interno no sistema de blocos' });
+		}
+	};
+
 	var classConsolidate = function(point, pointDb, user) {
 		var landUseInspections = {}
 		var classConsolidated = []
@@ -406,7 +529,11 @@ module.exports = function(app) {
 				}
 			});
 
-			findPoint(user.campaign, user.name, async function(result) {
+			// Roteamento condicional: blocos vs. legado
+			var hasBlocks = await blocosCollection.count({ campaignId: user.campaign._id });
+			var findFn = hasBlocks > 0 ? findPointFromBlock : findPoint;
+
+			findFn(user.campaign, user.name, async function(result) {
 				try {
 					request.session.currentPointId = result.point._id;
 					// Incluir dados da campanha na resposta
@@ -594,6 +721,22 @@ module.exports = function(app) {
 								}
 							});
 
+							// Decrementar underInspection após inspeção salva com sucesso
+							await points.updateOne(
+								{ _id: point._id, underInspection: { $gt: 0 } },
+								{ $inc: { underInspection: -1 } }
+							);
+
+							// Emitir evento de atualização para monitoramento em tempo real
+							if (app.io) {
+								app.io.to('campaign-monitoring-' + user.campaign._id).emit('inspection-update', {
+									campaignId: user.campaign._id,
+									pointId: point._id,
+									userName: user.name,
+									timestamp: new Date()
+								});
+							}
+
 							var result = { "success": true }
 
 							response.send(result);
@@ -733,7 +876,7 @@ module.exports = function(app) {
 		});
 	};
 
-	Points.getNextPoint = function(request, response) {
+	Points.getNextPoint = async function(request, response) {
 		const { point: formPoint } = request.body;
 		const user = request.session.user;
 
@@ -741,8 +884,11 @@ module.exports = function(app) {
 			return response.status(401).json({ error: 'Valid user session required' });
 		}
 
-		// Lógica similar ao getCurrentPoint mas com filtros do formPoint
-		findPoint(user.campaign, user.name, function(result) {
+		// Roteamento condicional: blocos vs. legado
+		var hasBlocks = await blocosCollection.count({ campaignId: user.campaign._id });
+		var findFn = hasBlocks > 0 ? findPointFromBlock : findPoint;
+
+		findFn(user.campaign, user.name, function(result) {
 			result.campaign = user.campaign;
 			response.json(result);
 		});

@@ -1,0 +1,790 @@
+<!-- Admin Campaign Monitoring -->
+<div class="admin-campaign-monitoring-container" ng-controller="AdminCampaignMonitoringController">
+
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="back-btn" ng-click="navigateBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="header-title">
+                    Monitoramento — {{ campaignId }}
+                </h1>
+            </div>
+            <div class="header-actions">
+                <div class="header-user">
+                    <span class="user-info">
+                        <i class="fas fa-user-shield"></i>
+                        {{ user.username }}
+                    </span>
+                    <button class="logout-btn" ng-click="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div ng-show="loading" style="text-align: center; padding: 4rem;">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <p style="margin-top: 1rem; color: #718096;">Carregando dados da campanha...</p>
+    </div>
+
+    <div ng-show="!loading">
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-value">{{ totalPoints | number }}</span>
+                <span class="stat-label">Total de Pontos</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ inspectedPoints | number }}</span>
+                <span class="stat-label">Inspecionados</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value mon-progress">{{ progressPercent }}%</span>
+                <span class="stat-label">Progresso</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" style="color: #48bb78;">{{ onlineInspectors }}</span>
+                <span class="stat-label">Inspetores Online</span>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="mon-section">
+            <div class="mon-section-header" ng-click="showCharts = !showCharts">
+                <h3>
+                    <i class="fas" ng-class="{'fa-chevron-down': !showCharts, 'fa-chevron-up': showCharts}"></i>
+                    Gráficos da Campanha
+                </h3>
+                <span ng-show="chartsLoading" class="mon-loading-badge">
+                    <i class="fa fa-spinner fa-spin"></i> Carregando...
+                </span>
+            </div>
+
+            <div ng-show="showCharts" class="mon-charts-grid">
+                <!-- Row 1: Pie charts -->
+                <div class="mon-charts-row">
+                    <div class="mon-chart-box">
+                        <div id="mon-totalInspec"></div>
+                    </div>
+                    <div class="mon-chart-box">
+                        <div id="mon-cachedPoints"></div>
+                    </div>
+                </div>
+                <!-- Row 2: Bar charts -->
+                <div class="mon-charts-row">
+                    <div class="mon-chart-box">
+                        <div id="mon-pointsInsp"></div>
+                    </div>
+                    <div class="mon-chart-box">
+                        <div id="mon-meanTime"></div>
+                    </div>
+                </div>
+                <!-- Row 3: Agreement + Land Cover -->
+                <div class="mon-charts-row">
+                    <div class="mon-chart-box">
+                        <div id="mon-agreementPoints"></div>
+                    </div>
+                    <div class="mon-chart-box">
+                        <div id="mon-coverPoints"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Status Section -->
+        <div class="mon-section">
+            <div class="mon-section-header" ng-click="showMemberStatus = !showMemberStatus">
+                <h3>
+                    <i class="fas" ng-class="{'fa-chevron-down': !showMemberStatus, 'fa-chevron-up': showMemberStatus}"></i>
+                    Status dos Membros
+                </h3>
+                <button class="mon-refresh-btn" ng-click="loadMemberStatus(); $event.stopPropagation();">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+            </div>
+
+            <div ng-show="showMemberStatus" class="mon-member-table-wrapper">
+                <table class="mon-member-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Status</th>
+                            <th>Ponto Atual</th>
+                            <th>Última Atividade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="(key, member) in tableStatus">
+                            <td>{{ member.name }}</td>
+                            <td>
+                                <span class="mon-status-badge" ng-class="{'mon-online': member.status === 'Online', 'mon-offline': member.status !== 'Online'}">
+                                    {{ member.status || 'Offline' }}
+                                </span>
+                            </td>
+                            <td>{{ member.atualPoint || '—' }}</td>
+                            <td>{{ member.dateLastPoint || '—' }}</td>
+                        </tr>
+                        <tr ng-if="isTableStatusEmpty()">
+                            <td colspan="4" style="text-align: center; color: #a0aec0;">Nenhum membro registrado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Inspector Cards Section -->
+        <div class="mon-section">
+            <div class="mon-section-header">
+                <h3><i class="fas fa-users"></i> Inspetores</h3>
+            </div>
+
+            <div class="mon-inspector-cards">
+                <div ng-if="inspectorCards.length === 0" class="mon-empty-state">
+                    Nenhum inspetor registrado nesta campanha.
+                </div>
+
+                <div class="mon-inspector-card"
+                     ng-repeat="inspector in inspectorCards"
+                     ng-click="selectInspector(inspector)"
+                     ng-class="{'mon-card-selected': selectedInspector && selectedInspector.name === inspector.name}">
+
+                    <div class="mon-card-header">
+                        <div class="mon-card-avatar" ng-class="{'mon-avatar-online': inspector.status === 'Online'}">
+                            {{ getInspectorInitials(inspector.name) }}
+                        </div>
+                        <div class="mon-card-info">
+                            <span class="mon-card-name">{{ inspector.name }}</span>
+                            <span class="mon-status-badge" ng-class="{'mon-online': inspector.status === 'Online', 'mon-offline': inspector.status !== 'Online'}">
+                                {{ inspector.status || 'Offline' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mon-card-progress">
+                        <div class="mon-progress-bar">
+                            <div class="mon-progress-fill" style="width: {{ getInspectorProgress(inspector) }}%;"
+                                 ng-class="{'mon-progress-low': getInspectorProgress(inspector) < 33, 'mon-progress-mid': getInspectorProgress(inspector) >= 33 && getInspectorProgress(inspector) < 66, 'mon-progress-high': getInspectorProgress(inspector) >= 66}">
+                            </div>
+                        </div>
+                        <span class="mon-progress-text">{{ inspector.inspectionCount }} / {{ inspector.totalPoints }} ({{ getInspectorProgress(inspector) }}%)</span>
+                    </div>
+
+                    <div class="mon-card-footer" ng-show="inspector.currentPoint">
+                        <small><i class="fas fa-map-marker-alt"></i> Ponto: {{ inspector.currentPoint }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Point Detail Section -->
+        <div class="mon-section" ng-show="selectedInspector">
+            <div class="mon-section-header">
+                <h3><i class="fas fa-map-marker-alt"></i> Ponto do Inspetor: {{ selectedInspector.name }}</h3>
+            </div>
+
+            <div ng-show="loadingPoint" style="text-align: center; padding: 2rem;">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p style="color: #718096;">Carregando ponto...</p>
+            </div>
+
+            <div ng-show="!loadingPoint && !point" class="mon-empty-state">
+                Este inspetor não possui ponto ativo no momento.
+            </div>
+
+            <div ng-show="!loadingPoint && point">
+                <!-- Point Info -->
+                <div class="mon-point-info">
+                    <span><strong>Índice:</strong> {{ point.index }}</span>
+                    <span><strong>Lat:</strong> {{ point.lat | number:6 }}</span>
+                    <span><strong>Lon:</strong> {{ point.lon | number:6 }}</span>
+                    <span ng-show="point.biome"><strong>Bioma:</strong> {{ point.biome }}</span>
+                    <span ng-show="point.county"><strong>Município:</strong> {{ point.county }}</span>
+                    <span ng-show="point.uf"><strong>UF:</strong> {{ point.uf }}</span>
+                </div>
+
+                <!-- Inspection Table -->
+                <div ng-show="point.inspection.length > 0" class="mon-inspection-table-wrapper">
+                    <div style="margin-bottom: 10px;">
+                        <button class="btn btn-sm" ng-repeat="element in dataTab"
+                                ng-click="sortTimeInspection(element)"
+                                ng-class="{'btn-primary': element.checked, 'btn-default': !element.checked}">
+                            {{ element.name }}
+                        </button>
+                    </div>
+
+                    <div class="mon-inspection-table-container">
+                        <!-- Coluna esquerda: nomes -->
+                        <div class="mon-insp-names">
+                            <table class="table table-condensed">
+                                <thead>
+                                    <tr><td style="font-weight: bold;">Inspetor</td></tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-if="dataTab[0].checked" ng-repeat="inspection in point.inspection">
+                                        <td>{{ inspection.userName }}</td>
+                                    </tr>
+                                    <tr ng-if="dataTab[1].checked" ng-repeat="p in point.dataPointTime track by $index"
+                                        ng-class="{boldElem: ($index === (point.dataPointTime.length - 1))}">
+                                        <td>{{ p.name }}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot ng-if="point.classConsolidated && point.classConsolidated.length > 0" style="font-weight: bold;">
+                                    <tr><td ng-show="dataTab[0].checked">Classe Consolidada</td></tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <!-- Coluna direita: dados -->
+                        <div class="mon-insp-data">
+                            <table class="table table-condensed">
+                                <thead>
+                                    <tr>
+                                        <td ng-if="dataTab[0].checked" ng-repeat="year in point.years" style="font-weight: bold;">{{ year }}</td>
+                                        <td ng-if="dataTab[1].checked" ng-repeat="col in ['Total (s)', 'Média (s)']" style="font-weight: bold;">{{ col }}</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-if="dataTab[0].checked" ng-repeat="inspection in point.inspection">
+                                        <td ng-repeat="landUse in inspection.landUse track by $index">{{ landUse }}</td>
+                                    </tr>
+                                    <tr ng-if="dataTab[1].checked" ng-repeat="pointTime in point.dataPointTime"
+                                        ng-class="{boldElem: ($index === (point.dataPointTime.length - 1))}">
+                                        <td>{{ pointTime.totalPointTime }}</td>
+                                        <td>{{ pointTime.meanPointTime | number:2 }}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot ng-if="point.classConsolidated && point.classConsolidated.length > 0" style="font-weight: bold;">
+                                    <tr>
+                                        <td ng-show="dataTab[0].checked" ng-repeat="landUse in point.classConsolidated track by $index">{{ landUse }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maps Grid -->
+                <div ng-show="maps.length > 0" style="margin-top: 1.5rem;">
+                    <h4 style="font-weight: bold; margin-bottom: 1rem;">
+                        <span ng-hide="isSentinel">Imagens Landsat</span>
+                        <span ng-show="isSentinel">Imagens Sentinel</span>
+                    </h4>
+
+                    <div class="maps-grid">
+                        <div ng-repeat="map in maps track by map.index"
+                             ng-class="getMapBoxClass(maps.length)"
+                             lazy-map
+                             map-index="{{map.index}}"
+                             total-maps="{{maps.length}}"
+                             on-visible="onMapVisible(map.index)">
+
+                            <!-- Placeholder -->
+                            <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
+                                <div class="map-header">
+                                    <span>{{ formatMapDate(map.date) }}</span>
+                                </div>
+                                <div class="map-loading-content">
+                                    <i class="fa fa-spinner fa-spin"></i>
+                                    <p>Carregando...</p>
+                                </div>
+                            </div>
+
+                            <!-- Mapa real -->
+                            <div ng-if="mapStates[map.index].visible">
+                                <div class="map-header">
+                                    <span>{{ formatMapDate(map.date) }}</span>
+                                </div>
+
+                                <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod"
+                                             lon="point.lon" lat="point.lat"
+                                             zoom="config.zoomLevel" period="period"
+                                             year="map.year" visparams="availableVisParams">
+                                </landsat-map>
+
+                                <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod"
+                                              lon="point.lon" lat="point.lat"
+                                              zoom="config.zoomLevel" period="period"
+                                              year="map.year" visparams="availableSentinelVisParams">
+                                </sentinel-map>
+
+                                <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod"
+                                         lon="point.lon" lat="point.lat"
+                                         zoom="config.zoomLevel" period="period"
+                                         year="map.year" wms-config="wmsConfig">
+                                </wms-map>
+
+                                <inspection-map ng-if="useDynamicMaps !== true"
+                                                lon="point.lon" lat="point.lat"
+                                                bounds="map.bounds" zoom="config.zoomLevel"
+                                                tms-url="map.url">
+                                </inspection-map>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CSS Embutido (padrão admin-campaigns) -->
+    <style>
+        .admin-campaign-monitoring-container {
+            min-height: 100vh;
+            background: #f7fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .admin-campaign-monitoring-container .admin-header {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .admin-campaign-monitoring-container .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-campaign-monitoring-container .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-campaign-monitoring-container .header-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .admin-campaign-monitoring-container .back-btn {
+            background: #edf2f7;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+
+        .admin-campaign-monitoring-container .back-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .admin-campaign-monitoring-container .header-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .admin-campaign-monitoring-container .header-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-campaign-monitoring-container .user-info {
+            color: #4a5568;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .admin-campaign-monitoring-container .logout-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-campaign-monitoring-container .logout-btn:hover {
+            background: #c53030;
+        }
+
+        /* Stats Bar */
+        .admin-campaign-monitoring-container .stats-bar {
+            background: white;
+            margin: 1.5rem auto;
+            max-width: 1400px;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .admin-campaign-monitoring-container .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .admin-campaign-monitoring-container .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .admin-campaign-monitoring-container .stat-label {
+            font-size: 0.85rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sections */
+        .mon-section {
+            background: white;
+            margin: 0 auto 1.5rem;
+            max-width: 1400px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .mon-section-header {
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .mon-section-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .mon-section-header h3 i {
+            margin-right: 0.5rem;
+            color: #718096;
+        }
+
+        .mon-loading-badge {
+            color: #718096;
+            font-size: 0.85rem;
+        }
+
+        .mon-refresh-btn {
+            background: #edf2f7;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+
+        .mon-refresh-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* Charts Grid */
+        .mon-charts-grid {
+            padding: 1.5rem 2rem;
+        }
+
+        .mon-charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mon-chart-box {
+            border: 1px solid #edf2f7;
+            border-radius: 8px;
+            padding: 0.5rem;
+            min-height: 300px;
+        }
+
+        /* Member Status Table */
+        .mon-member-table-wrapper {
+            padding: 0 2rem 1.5rem;
+            overflow-x: auto;
+        }
+
+        .mon-member-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .mon-member-table th {
+            background: #f7fafc;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #edf2f7;
+        }
+
+        .mon-member-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #edf2f7;
+            color: #2d3748;
+        }
+
+        .mon-status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .mon-online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .mon-offline {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        /* Inspector Cards */
+        .mon-inspector-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+        }
+
+        .mon-inspector-card {
+            border: 2px solid #edf2f7;
+            border-radius: 10px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .mon-inspector-card:hover {
+            border-color: #4299e1;
+            box-shadow: 0 4px 12px rgba(66,153,225,0.15);
+        }
+
+        .mon-card-selected {
+            border-color: #4299e1 !important;
+            background: #ebf8ff !important;
+        }
+
+        .mon-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .mon-card-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #4a5568;
+            flex-shrink: 0;
+        }
+
+        .mon-avatar-online {
+            background: #c6f6d5;
+            color: #22543d;
+            box-shadow: 0 0 0 3px #48bb78;
+        }
+
+        .mon-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .mon-card-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95rem;
+        }
+
+        .mon-card-progress {
+            margin-bottom: 0.5rem;
+        }
+
+        .mon-progress-bar {
+            height: 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.35rem;
+        }
+
+        .mon-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .mon-progress-low { background: #fc8181; }
+        .mon-progress-mid { background: #f6e05e; }
+        .mon-progress-high { background: #68d391; }
+
+        .mon-progress-text {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+        .mon-card-footer {
+            color: #718096;
+            font-size: 0.85rem;
+        }
+
+        .mon-card-footer i {
+            color: #e53e3e;
+        }
+
+        /* Point Info */
+        .mon-point-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            padding: 1rem 2rem;
+            background: #f7fafc;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 0.9rem;
+        }
+
+        /* Inspection Table */
+        .mon-inspection-table-wrapper {
+            padding: 1rem 2rem;
+        }
+
+        .mon-inspection-table-container {
+            display: flex;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .mon-insp-names {
+            flex: 0 0 150px;
+            border-right: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+
+        .mon-insp-data {
+            flex: 1;
+            overflow-x: auto;
+        }
+
+        .mon-inspection-table-container table {
+            margin: 0;
+        }
+
+        .boldElem {
+            font-weight: bold;
+        }
+
+        /* Empty State */
+        .mon-empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 0.95rem;
+        }
+
+        /* Maps Grid */
+        .admin-campaign-monitoring-container .maps-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -5px;
+        }
+
+        .admin-campaign-monitoring-container .ee-mapbox {
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        .admin-campaign-monitoring-container .map-placeholder {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-campaign-monitoring-container .map-header {
+            background: #edf2f7;
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+
+        .admin-campaign-monitoring-container .map-loading-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-campaign-monitoring-container .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .mon-charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .mon-inspector-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-campaign-monitoring-container .header-content {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</div>
