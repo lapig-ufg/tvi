@@ -906,19 +906,6 @@ fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
   color: #666;
 }
 
-/* Animação de loading */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.map-content-loaded {
-  animation: fadeIn 0.3s ease-in;
-}
 
 /* Ajustar altura do placeholder baseado no número de mapas */
 .ee-mapbox.col-lg-12 .map-placeholder {

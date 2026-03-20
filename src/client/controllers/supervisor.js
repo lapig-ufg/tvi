@@ -1044,7 +1044,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 mapLoadingService.startLoading(index);
 
                 $timeout(function() {
+                    $scope.mapStates[index].loading = false;
                     mapLoadingService.mapReady(index);
+                    mapLoadingService.finishLoading(index);
 
                     if (!$scope.isSentinel && $scope.landsatVisparam) {
                         $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
@@ -1052,11 +1054,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
                     }
                 }, 0);
-
-                $timeout(function() {
-                    $scope.mapStates[index].loading = false;
-                    mapLoadingService.finishLoading(index);
-                }, 800);
             });
         };
 

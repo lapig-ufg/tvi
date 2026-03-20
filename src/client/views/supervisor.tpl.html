@@ -290,7 +290,7 @@
                          on-visible="onMapVisible(map.index)">
                         
                         <!-- Placeholder enquanto o mapa não está carregado -->
-                        <div ng-if="!mapStates[map.index].visible" class="map-placeholder">
+                        <div ng-show="!mapStates[map.index].visible" class="map-placeholder">
                             <div class="map-header">
                                 <span>{{formatMapDate(map.date)}}</span>
                                 <span>{{periodo}}</span>
@@ -302,7 +302,7 @@
                         </div>
                         
                         <!-- Conteúdo real do mapa -->
-                        <div ng-if="mapStates[map.index].visible">
+                        <div ng-show="mapStates[map.index].visible">
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
                                 <span>{{formatMapDate(map.date)}}</span>

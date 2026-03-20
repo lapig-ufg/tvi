@@ -976,10 +976,12 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 $scope.mapStates[index].loading = true;
                 mapLoadingService.startLoading(index);
 
-                // $timeout(0): aguarda o Angular compilar o ng-if e instanciar as diretivas
+                // $timeout(0): aguarda o Angular processar o ng-show e instanciar as diretivas
                 // Somente então sinalizamos mapReady para liberar a fila
                 $timeout(function() {
+                    $scope.mapStates[index].loading = false;
                     mapLoadingService.mapReady(index);
+                    mapLoadingService.finishLoading(index);
 
                     // Propagar visparam atual para o mapa recém-criado
                     if (!$scope.isSentinel && $scope.landsatVisparam) {
@@ -988,12 +990,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
                     }
                 }, 0);
-
-                // Marcar loading como concluído após tempo para tiles iniciarem
-                $timeout(function() {
-                    $scope.mapStates[index].loading = false;
-                    mapLoadingService.finishLoading(index);
-                }, 800);
             });
         };
 
