@@ -14,7 +14,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     $scope.chartFilterEndYear = new Date().getFullYear();
     
     // Estados para lazy loading
-    $scope.mapStates = {}; // { index: { visible: boolean, loading: boolean } }
     
     // Declarar as funções de gráfico no escopo principal
     var createModisChart, createLandsatChart, createNDDIChart;
@@ -292,30 +291,20 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         $scope.changePeriod = function () {
-            var oldPeriod = $scope.period;
-            var newPeriod = oldPeriod === 'DRY' ? 'WET' : 'DRY';
-
-            // Capturar mapas visíveis e posição do scroll antes de regenerar
+            var newPeriod = $scope.period === 'DRY' ? 'WET' : 'DRY';
             var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-            var visibleMapIndices = [];
-            for (var index in $scope.mapStates) {
-                if ($scope.mapStates[index].visible) {
-                    visibleMapIndices.push(parseInt(index));
-                }
-            }
 
             $scope.period = newPeriod;
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
 
-            // Regenerar mapas sincronamente
             generateMaps();
 
-            // Restaurar visibilidade dos mapas que estavam carregados
-            visibleMapIndices.forEach(function(i) {
-                if (i < $scope.maps.length) {
-                    $scope.onMapVisible(i);
-                }
-            });
+            // Propagar visparam para os mapas recém-criados
+            if (!$scope.isSentinel && $scope.landsatVisparam) {
+                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+            } else if ($scope.isSentinel && $scope.sentinelVisparam) {
+                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+            }
 
             // Restaurar posição do scroll após o digest
             $timeout(function() {
@@ -844,8 +833,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
         const generateMaps = function () {
             $scope.maps = [];
-            $scope.mapStates = {}; // Resetar estados
-            $scope.$broadcast('resetLazyMaps');
 
             var tmsIdList = [];
 
@@ -905,33 +892,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     index: mapIndex
                 });
                 
-                // Inicializar estado do mapa
-                $scope.mapStates[mapIndex] = {
-                    visible: false,
-                    loading: false
-                };
             }
-            
         }
 
-        /**
-         * Ativa um mapa — chamado pelo IntersectionObserver da diretiva lazyMap
-         * ou diretamente ao restaurar mapas na troca de período.
-         */
-        $scope.onMapVisible = function(index) {
-            if (!$scope.mapStates[index] || $scope.mapStates[index].visible) {
-                return;
-            }
-
-            $scope.mapStates[index].visible = true;
-
-            // Propagar visparam atual para o mapa recém-criado
-            if (!$scope.isSentinel && $scope.landsatVisparam) {
-                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
-            } else if ($scope.isSentinel && $scope.sentinelVisparam) {
-                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
-            }
-        };
 
         $scope.getKml = function () {
             var lon = $scope.point.lon;

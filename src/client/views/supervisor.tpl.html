@@ -283,26 +283,8 @@
                 <!-- Container com Bootstrap Grid -->
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
-                         ng-class="getMapBoxClass(maps.length)"
-                         lazy-map
-                         map-index="{{map.index}}"
-                         total-maps="{{maps.length}}"
-                         on-visible="onMapVisible(map.index)">
-                        
-                        <!-- Placeholder enquanto o mapa não está carregado -->
-                        <div ng-show="!mapStates[map.index].visible" class="map-placeholder">
-                            <div class="map-header">
-                                <span>{{formatMapDate(map.date)}}</span>
-                                <span>{{periodo}}</span>
-                            </div>
-                            <div class="map-loading-content">
-                                <i class="fa fa-spinner fa-spin"></i>
-                                <p>{{ 'COMMON.LOADING' | i18n }}...</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Conteúdo real do mapa -->
-                        <div ng-show="mapStates[map.index].visible">
+                         ng-class="getMapBoxClass(maps.length)">
+                        <div>
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
                                 <span>{{formatMapDate(map.date)}}</span>
