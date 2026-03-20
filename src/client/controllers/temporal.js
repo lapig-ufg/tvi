@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, mapLoadingService, $timeout, NotificationDialog) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false
@@ -294,48 +294,32 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.changePeriod = function () {
             var oldPeriod = $scope.period;
             var newPeriod = oldPeriod === 'DRY' ? 'WET' : 'DRY';
-            
-            console.log('=== MUDANÇA DE PERÍODO ===');
-            console.log('De:', oldPeriod, 'Para:', newPeriod);
-            console.log('wmsPeriod:', $scope.wmsPeriod);
-            console.log('wmsEnabled:', $scope.wmsEnabled);
-            
-            // Salvar a posição atual do scroll e mapas visíveis
+
+            // Capturar mapas visíveis e posição do scroll antes de regenerar
             var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
             var visibleMapIndices = [];
-            
-            // Identificar quais mapas estão visíveis atualmente
             for (var index in $scope.mapStates) {
                 if ($scope.mapStates[index].visible) {
                     visibleMapIndices.push(parseInt(index));
                 }
             }
-            
-            console.log('Salvando posição do scroll:', scrollPosition);
-            console.log('Mapas visíveis:', visibleMapIndices);
-            
-            // Salvar no serviço para persistir entre mudanças
-            mapLoadingService.saveVisibleMaps(visibleMapIndices);
-            
+
             $scope.period = newPeriod;
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
-            
-            // Regenerar mapas sincronamente — sem esvaziar o array antes
-            // para evitar flash de DOM vazio (flickering)
+
+            // Regenerar mapas sincronamente
             generateMaps();
 
-            // Restaurar mapas que estavam visíveis via fila serializada
-            var cachedVisibleMaps = mapLoadingService.getVisibleMapsFromCache();
-            cachedVisibleMaps.forEach(function(index) {
-                if (index < $scope.maps.length) {
-                    $scope.onMapVisible(index);
+            // Restaurar visibilidade dos mapas que estavam carregados
+            visibleMapIndices.forEach(function(i) {
+                if (i < $scope.maps.length) {
+                    $scope.onMapVisible(i);
                 }
             });
 
-            // Restaurar posição do scroll e limpar cache
+            // Restaurar posição do scroll após o digest
             $timeout(function() {
                 window.scrollTo(0, scrollPosition);
-                mapLoadingService.clearCache();
             }, 0);
         }
 
@@ -861,7 +845,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const generateMaps = function () {
             $scope.maps = [];
             $scope.mapStates = {}; // Resetar estados
-            mapLoadingService.reset(); // Limpar serviço de loading
             $scope.$broadcast('resetLazyMaps');
 
             var tmsIdList = [];
@@ -929,52 +912,25 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 };
             }
             
-            // Enfileirar os primeiros mapas visíveis (serão ativados em sequência pelo service)
-            var initialMapsToLoad = Math.min(3, $scope.maps.length);
-
-            for (var i = 0; i < initialMapsToLoad; i++) {
-                $scope.onMapVisible(i);
-            }
         }
 
         /**
-         * Ativa um mapa via fila serializada do mapLoadingService.
-         *
-         * Fluxo:
-         * 1. onMapVisible(index) enfileira a ativação
-         * 2. Quando chega a vez: mapStates[index].visible = true → ng-if cria DOM
-         * 3. $timeout(0) garante que o digest/compile completou → diretiva Leaflet instanciada
-         * 4. mapReady(index) sinaliza ao service para avançar na fila após STAGGER_DELAY
-         * 5. finishLoading(index) marca como concluído após os tiles começarem a carregar
+         * Ativa um mapa — chamado pelo IntersectionObserver da diretiva lazyMap
+         * ou diretamente ao restaurar mapas na troca de período.
          */
         $scope.onMapVisible = function(index) {
-            if (!$scope.mapStates[index] || $scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
+            if (!$scope.mapStates[index] || $scope.mapStates[index].visible) {
                 return;
             }
 
-            mapLoadingService.enqueue(index, function() {
-                // Guard: mapStates pode ter sido resetado entre enqueue e execução
-                if (!$scope.mapStates[index]) return;
+            $scope.mapStates[index].visible = true;
 
-                $scope.mapStates[index].visible = true;
-                $scope.mapStates[index].loading = true;
-                mapLoadingService.startLoading(index);
-
-                // $timeout(0): aguarda o Angular processar o ng-show e instanciar as diretivas
-                // Somente então sinalizamos mapReady para liberar a fila
-                $timeout(function() {
-                    $scope.mapStates[index].loading = false;
-                    mapLoadingService.mapReady(index);
-                    mapLoadingService.finishLoading(index);
-
-                    // Propagar visparam atual para o mapa recém-criado
-                    if (!$scope.isSentinel && $scope.landsatVisparam) {
-                        $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
-                    } else if ($scope.isSentinel && $scope.sentinelVisparam) {
-                        $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
-                    }
-                }, 0);
-            });
+            // Propagar visparam atual para o mapa recém-criado
+            if (!$scope.isSentinel && $scope.landsatVisparam) {
+                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+            } else if ($scope.isSentinel && $scope.sentinelVisparam) {
+                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+            }
         };
 
         $scope.getKml = function () {
