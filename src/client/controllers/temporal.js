@@ -320,39 +320,23 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.period = newPeriod;
             $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
             
-            // Forçar destruição dos componentes atuais antes de recriar
-            $scope.maps = [];
-            $scope.mapStates = {};
-            
-            // Forçar atualização completa dos mapas
+            // Regenerar mapas sincronamente — sem esvaziar o array antes
+            // para evitar flash de DOM vazio (flickering)
+            generateMaps();
+
+            // Restaurar mapas que estavam visíveis via fila serializada
+            var cachedVisibleMaps = mapLoadingService.getVisibleMapsFromCache();
+            cachedVisibleMaps.forEach(function(index) {
+                if (index < $scope.maps.length) {
+                    $scope.onMapVisible(index);
+                }
+            });
+
+            // Restaurar posição do scroll e limpar cache
             $timeout(function() {
-                generateMaps();
-                
-                // Restaurar mapas visíveis e posição do scroll após um pequeno delay
-                $timeout(function() {
-                    // Obter mapas visíveis do cache
-                    var cachedVisibleMaps = mapLoadingService.getVisibleMapsFromCache();
-                    
-                    // Restaurar mapas visíveis via fila serializada
-                    cachedVisibleMaps.forEach(function(index) {
-                        if (index < $scope.maps.length) {
-                            $scope.onMapVisible(index);
-                        }
-                    });
-                    
-                    // Restaurar posição do scroll
-                    window.scrollTo(0, scrollPosition);
-                    console.log('Posição do scroll restaurada para:', scrollPosition);
-                    
-                    // Limpar cache após usar
-                    mapLoadingService.clearCache();
-                    
-                    // Forçar digest cycle
-                    if (!$scope.$$phase) {
-                        $scope.$apply();
-                    }
-                }, 200);
-            }, 100);
+                window.scrollTo(0, scrollPosition);
+                mapLoadingService.clearCache();
+            }, 0);
         }
 
         const generateOptionYears = function (initialYear, finalYear) {
@@ -880,9 +864,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             mapLoadingService.reset(); // Limpar serviço de loading
             $scope.$broadcast('resetLazyMaps');
 
-            // Forçar Angular a recriar os componentes de mapa
-            $scope.mapKey = Date.now();
-            
             var tmsIdList = [];
 
             $scope.tmsIdListWet = [];

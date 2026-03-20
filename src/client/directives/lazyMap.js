@@ -32,7 +32,7 @@ angular.module('application')
                 if (isLoaded) return;
                 isLoaded = true;
 
-                scope.$apply(function() {
+                scope.$evalAsync(function() {
                     scope.onVisible();
                 });
 
