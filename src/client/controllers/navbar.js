@@ -1,6 +1,6 @@
 'use strict'
 
-Application.controller('navController', function($rootScope, $scope, $location, $window, requester, util, i18nService) {
+Application.controller('navController', function($rootScope, $scope, $location, $window, requester, util, i18nService, diagnosticCapture) {
 
 	$rootScope.showNavInsp= false;
 	$rootScope.showNavSuper= false;
@@ -23,6 +23,15 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 		} else {
 			$window.alert(i18nService.translate('ALERTS.CAMPAIGN_NOT_FINISHED'))
 		}
+	};
+
+	/**
+	 * Abre a aba de tickets capturando diagnósticos da tela atual.
+	 * Screenshot e logs de console são persistidos via localStorage
+	 * para que a nova aba possa incluí-los no ticket.
+	 */
+	$scope.openTickets = function() {
+		diagnosticCapture.prepareAndOpenTickets('#/tickets');
 	};
 
 	requester._get('login/user', function(result) {

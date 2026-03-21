@@ -9,9 +9,9 @@
           <button style="margin-top: 7px;" type="button" class="btn btn-danger" href="#" class="glyphicon glyphicon-off" ng-click="logoff()" style="color:white">{{ 'COMMON.LOGOUT' | i18n }}</button>
         </label>
         <label class="pull-right" style="margin-right: 5px;">
-          <a href="#/tickets" style="margin-top: 7px;" class="btn btn-info" title="{{ 'TICKETS.TITLE' | i18n }}">
+          <button type="button" style="margin-top: 7px;" class="btn btn-info" ng-click="openTickets()" title="{{ 'TICKETS.TITLE' | i18n }}">
             <i class="fa fa-ticket"></i> {{ 'TICKETS.TITLE' | i18n }}
-          </a>
+          </button>
         </label>
         <!-- Language Selector for Inspector -->
         <language-selector class="pull-right" style="margin-right: 10px; margin-top: 11px;"></language-selector>
@@ -34,7 +34,7 @@
         <div class="col-md-4" style="display: flex; justify-content: flex-end; align-items: center;">
           <!-- Language Selector -->
           <language-selector style="margin-right: 10px;"></language-selector>
-          <a href="#/tickets" class="btn btn-info" style="color:white; margin-right: 5px"><i class="fa fa-ticket"></i> {{ 'TICKETS.TITLE' | i18n }}</a>
+          <button type="button" class="btn btn-info" ng-click="openTickets()" style="color:white; margin-right: 5px"><i class="fa fa-ticket"></i> {{ 'TICKETS.TITLE' | i18n }}</button>
           <button type="button" class="btn btn-success" href="#" ng-click="downloadFinalReport()" style="color:white; margin-right: 5px">{{ 'NAVBAR.INSPECTION_REPORT' | i18n }}</button>
           <button type="button" class="btn btn-danger" href="#" ng-click="logoff()" style="color:white">{{ 'COMMON.LOGOUT' | i18n }}</button>
         </div>
