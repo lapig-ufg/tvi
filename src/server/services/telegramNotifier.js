@@ -495,7 +495,9 @@ TelegramNotifier.prototype.sendDailySummary = async function () {
 
   try {
     var now = new Date();
-    var startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var brNow = self._brasiliaDate(now);
+    // Meia-noite de Brasília convertida para UTC (adiciona 3h)
+    var startOfDay = new Date(Date.UTC(brNow.getFullYear(), brNow.getMonth(), brNow.getDate(), 3, 0, 0));
 
     // Tickets criados hoje
     var createdToday = await self._count({ createdAt: { $gte: startOfDay } });
@@ -659,12 +661,9 @@ TelegramNotifier.prototype.flushSilentQueue = async function () {
  * Verifica se o horário atual está no período de silêncio.
  */
 TelegramNotifier.prototype.isSilentHours = function () {
-  // Usa hora local do sistema — o container deve montar /etc/localtime
-  // para que new Date().getHours() retorne o horário correto (Brasília)
-  var hour = new Date().getHours();
+  var hour = this._brasiliaDate().getHours();
 
   if (this.silentStart > this.silentEnd) {
-    // Faixa cruzando meia-noite (ex: 22h-7h)
     return hour >= this.silentStart || hour < this.silentEnd;
   }
   return hour >= this.silentStart && hour < this.silentEnd;
@@ -716,22 +715,35 @@ TelegramNotifier.prototype._esc = function (str) {
 };
 
 /**
- * Formata timestamp para exibição (dd/MM/yyyy às HH:mm).
+ * Retorna um objeto Date ajustado para o fuso de Brasília (UTC-3).
+ * Independe do timezone configurado no servidor/container.
+ */
+TelegramNotifier.prototype._brasiliaDate = function (date) {
+  var d = date || new Date();
+  // Criar nova data deslocada: hora UTC - 3h, representada como local
+  var utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
+  return new Date(utcMs - 3 * 60 * 60000);
+};
+
+/**
+ * Formata timestamp para exibição (dd/MM/yyyy às HH:mm) em horário de Brasília.
  */
 TelegramNotifier.prototype._formatTimestamp = function (date) {
   return this._formatDate(date) + ' às ' + this._formatTime(date);
 };
 
 TelegramNotifier.prototype._formatDate = function (date) {
-  var d = date.getDate().toString().padStart(2, '0');
-  var m = (date.getMonth() + 1).toString().padStart(2, '0');
-  var y = date.getFullYear();
+  var br = this._brasiliaDate(date);
+  var d = br.getDate().toString().padStart(2, '0');
+  var m = (br.getMonth() + 1).toString().padStart(2, '0');
+  var y = br.getFullYear();
   return d + '/' + m + '/' + y;
 };
 
 TelegramNotifier.prototype._formatTime = function (date) {
-  var h = date.getHours().toString().padStart(2, '0');
-  var min = date.getMinutes().toString().padStart(2, '0');
+  var br = this._brasiliaDate(date);
+  var h = br.getHours().toString().padStart(2, '0');
+  var min = br.getMinutes().toString().padStart(2, '0');
   return h + ':' + min;
 };
 
