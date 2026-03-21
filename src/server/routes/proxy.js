@@ -140,5 +140,34 @@ module.exports = function (app) {
 	 */
 	app.get('/service/spatial/precipitation', proxy.precipitationMaps);
 
+	/**
+	 * @swagger
+	 * /service/tile-proxy:
+	 *   get:
+	 *     summary: Proxy de imagens de tiles para captura de screenshot
+	 *     tags: [Proxy]
+	 *     parameters:
+	 *       - in: query
+	 *         name: url
+	 *         required: true
+	 *         schema:
+	 *           type: string
+	 *         description: URL da imagem do tile server
+	 *     responses:
+	 *       200:
+	 *         description: Imagem do tile
+	 *         content:
+	 *           image/png:
+	 *             schema:
+	 *               type: string
+	 *               format: binary
+	 *       400:
+	 *         description: URL não fornecida
+	 *       403:
+	 *         description: Domínio não permitido
+	 *       502:
+	 *         description: Erro ao buscar imagem
+	 */
+	app.get('/service/tile-proxy', proxy.tileProxy);
 
 }
