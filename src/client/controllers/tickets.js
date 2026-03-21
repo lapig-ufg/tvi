@@ -14,7 +14,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
     type: '',
     status: '',
     search: '',
-    mine: false
+    mine: true
   };
   $scope.loading = false;
 
@@ -59,7 +59,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   $scope.clearFilters = function () {
-    $scope.filters = { type: '', status: '', search: '', mine: false };
+    $scope.filters = { type: '', status: '', search: '', mine: true };
     $scope.pagination.page = 1;
     $scope.loadTickets();
   };
