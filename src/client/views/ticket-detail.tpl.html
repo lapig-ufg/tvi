@@ -1,0 +1,209 @@
+<div class="container-fluid" style="padding-top: 70px;">
+  <!-- Loading -->
+  <div class="text-center" ng-if="loading" style="padding: 40px;">
+    <i class="fa fa-spinner fa-spin fa-2x"></i>
+  </div>
+
+  <div ng-if="!loading && ticket">
+    <!-- Header -->
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <div class="row">
+          <div class="col-md-8">
+            <h3 class="panel-title" style="line-height: 34px;">
+              <code>{{ticket.ticketNumber}}</code> &mdash; {{ticket.title}}
+            </h3>
+          </div>
+          <div class="col-md-4 text-right">
+            <span class="label" ng-class="getTypeBadgeClass(ticket.type)" style="font-size: 13px;">
+              {{getTypeLabel(ticket.type)}}
+            </span>
+            <span class="label" ng-class="getStatusBadgeClass(ticket.status)" style="font-size: 13px;">
+              {{getStatusLabel(ticket.status)}}
+            </span>
+            <span class="label" ng-class="getSeverityBadgeClass(ticket.severity)" ng-if="ticket.severity" style="font-size: 13px;">
+              {{getSeverityLabel(ticket.severity)}}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Informações -->
+        <div class="row" style="margin-bottom: 15px;">
+          <div class="col-md-3">
+            <strong>{{ 'TICKETS.DETAIL.AUTHOR' | i18n }}:</strong><br>
+            {{ticket.author.name}}
+            <span class="text-muted">({{ticket.author.role}})</span>
+          </div>
+          <div class="col-md-3">
+            <strong>{{ 'TICKETS.DETAIL.CATEGORY' | i18n }}:</strong><br>
+            {{getCategoryLabel(ticket.category)}}
+          </div>
+          <div class="col-md-3">
+            <strong>{{ 'TICKETS.DETAIL.CREATED_AT' | i18n }}:</strong><br>
+            {{ticket.createdAt | date:'dd/MM/yyyy HH:mm'}}
+          </div>
+          <div class="col-md-3">
+            <!-- Votos -->
+            <strong>{{ 'TICKETS.DETAIL.VOTES' | i18n }}:</strong><br>
+            <button class="btn btn-xs" ng-class="hasVoted() ? 'btn-success' : 'btn-default'"
+                    ng-click="toggleVote()" ng-disabled="votingInProgress"
+                    title="{{ hasVoted() ? 'Remover voto' : 'Votar neste ticket' }}">
+              <i class="fa fa-thumbs-up"></i>
+              <span>{{ticket.voteCount || 0}}</span>
+            </button>
+            <span class="text-muted" style="font-size: 12px; margin-left: 5px;" ng-if="hasVoted()">
+              {{ 'TICKETS.DETAIL.YOU_VOTED' | i18n }}
+            </span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom: 15px;" ng-if="ticket.author.campaignId">
+          <div class="col-md-3">
+            <strong>{{ 'TICKETS.DETAIL.CAMPAIGN' | i18n }}:</strong><br>
+            {{ticket.author.campaignId}}
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Descrição -->
+        <h4>{{ 'TICKETS.DETAIL.DESCRIPTION' | i18n }}</h4>
+        <div style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee;">{{ticket.description}}</div>
+
+        <!-- Anexos -->
+        <div style="margin-top: 20px;">
+          <h4>
+            <i class="fa fa-paperclip"></i> {{ 'TICKETS.DETAIL.ATTACHMENTS' | i18n }}
+            <span class="badge" ng-if="ticket.attachments">{{ticket.attachments.length}}</span>
+          </h4>
+
+          <!-- Lista de anexos -->
+          <div ng-if="ticket.attachments && ticket.attachments.length > 0" class="row">
+            <div class="col-sm-4 col-md-3" ng-repeat="att in ticket.attachments" style="margin-bottom: 15px;">
+              <div class="thumbnail" style="position: relative;">
+                <a ng-href="{{getAttachmentUrl(att)}}" target="_blank">
+                  <img ng-src="{{getAttachmentUrl(att)}}" alt="{{att.filename}}"
+                       style="max-height: 180px; object-fit: cover; width: 100%;">
+                </a>
+                <div class="caption">
+                  <small class="text-muted" title="{{att.filename}}">
+                    {{att.filename.length > 25 ? att.filename.substring(0, 22) + '...' : att.filename}}
+                  </small><br>
+                  <small class="text-muted">
+                    {{formatFileSize(att.originalSize)}} &rarr; {{formatFileSize(att.compressedSize)}}
+                  </small><br>
+                  <small class="text-muted">{{att.uploadedBy}} &mdash; {{att.uploadedAt | date:'dd/MM/yyyy HH:mm'}}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div ng-if="!ticket.attachments || ticket.attachments.length === 0" class="text-muted" style="margin-bottom: 10px;">
+            {{ 'TICKETS.DETAIL.NO_ATTACHMENTS' | i18n }}
+          </div>
+
+          <!-- Upload de novo anexo -->
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="btn btn-default btn-sm" ng-disabled="uploadingFile">
+              <i class="fa fa-upload" ng-hide="uploadingFile"></i>
+              <i class="fa fa-spinner fa-spin" ng-show="uploadingFile"></i>
+              {{ 'TICKETS.DETAIL.UPLOAD_IMAGE' | i18n }}
+              <input type="file" accept="image/png,image/jpeg" style="display: none;"
+                     onchange="angular.element(this).scope().uploadAttachment(this.files)">
+            </label>
+            <small class="text-muted" style="margin-left: 10px;">PNG ou JPG, máx. 10 MB</small>
+            <div class="text-danger" ng-if="uploadError" style="margin-top: 5px;">
+              <small><i class="fa fa-exclamation-circle"></i> {{uploadError}}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Histórico de status -->
+        <div ng-if="ticket.statusHistory && ticket.statusHistory.length > 0" style="margin-top: 20px;">
+          <h4>{{ 'TICKETS.DETAIL.STATUS_HISTORY' | i18n }}</h4>
+          <table class="table table-condensed table-striped">
+            <thead>
+              <tr>
+                <th>{{ 'TICKETS.DETAIL.FROM' | i18n }}</th>
+                <th>{{ 'TICKETS.DETAIL.TO' | i18n }}</th>
+                <th>{{ 'TICKETS.DETAIL.CHANGED_BY' | i18n }}</th>
+                <th>{{ 'TICKETS.DETAIL.REASON' | i18n }}</th>
+                <th>{{ 'TICKETS.DETAIL.DATE' | i18n }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="h in ticket.statusHistory">
+                <td><span class="label" ng-class="getStatusBadgeClass(h.from)">{{getStatusLabel(h.from)}}</span></td>
+                <td><span class="label" ng-class="getStatusBadgeClass(h.to)">{{getStatusLabel(h.to)}}</span></td>
+                <td>{{h.changedBy}}</td>
+                <td>{{h.reason}}</td>
+                <td>{{h.changedAt | date:'dd/MM/yyyy HH:mm'}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comentários -->
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">
+          <i class="fa fa-comments"></i> {{ 'TICKETS.DETAIL.COMMENTS' | i18n }}
+          <span class="badge" ng-if="ticket.comments">{{ticket.comments.length}}</span>
+        </h3>
+      </div>
+      <div class="panel-body">
+        <!-- Lista de comentários -->
+        <div ng-if="!ticket.comments || ticket.comments.length === 0" class="text-muted text-center" style="padding: 20px;">
+          {{ 'TICKETS.DETAIL.NO_COMMENTS' | i18n }}
+        </div>
+
+        <div ng-repeat="comment in ticket.comments" class="media" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 10px;">
+          <div class="media-left">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: #5bc0de; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px;">
+              {{comment.author.name.charAt(0).toUpperCase()}}
+            </div>
+          </div>
+          <div class="media-body">
+            <h5 class="media-heading">
+              <strong>{{comment.author.name}}</strong>
+              <span class="text-muted" style="font-size: 12px;">({{comment.author.role}})</span>
+              <span class="text-muted pull-right" style="font-size: 12px;">{{comment.createdAt | date:'dd/MM/yyyy HH:mm'}}</span>
+              <span class="label label-warning" ng-if="comment.isInternal" style="margin-left: 5px; font-size: 10px;">Interno</span>
+            </h5>
+            <p style="white-space: pre-wrap;">{{comment.text}}</p>
+          </div>
+        </div>
+
+        <!-- Formulário de novo comentário -->
+        <hr>
+        <div class="form-group">
+          <label>{{ 'TICKETS.DETAIL.NEW_COMMENT' | i18n }}</label>
+          <textarea class="form-control" rows="3" ng-model="newComment.text"
+                    placeholder="{{ 'TICKETS.DETAIL.COMMENT_PLACEHOLDER' | i18n }}"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" ng-click="addComment()"
+                ng-disabled="submittingComment || !newComment.text.trim()">
+          <i class="fa fa-paper-plane" ng-hide="submittingComment"></i>
+          <i class="fa fa-spinner fa-spin" ng-show="submittingComment"></i>
+          {{ 'TICKETS.DETAIL.SEND_COMMENT' | i18n }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Botão voltar -->
+    <button class="btn btn-default" ng-click="goBack()">
+      <i class="fa fa-arrow-left"></i> {{ 'TICKETS.BACK_TO_LIST' | i18n }}
+    </button>
+  </div>
+
+  <!-- Ticket não encontrado -->
+  <div ng-if="!loading && !ticket" class="text-center" style="padding: 40px;">
+    <h4 class="text-muted">{{ 'TICKETS.NOT_FOUND' | i18n }}</h4>
+    <button class="btn btn-default" ng-click="goBack()">
+      <i class="fa fa-arrow-left"></i> {{ 'TICKETS.BACK_TO_LIST' | i18n }}
+    </button>
+  </div>
+</div>

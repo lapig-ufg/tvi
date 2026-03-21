@@ -1,0 +1,87 @@
+<div class="container-fluid" style="padding: 20px;">
+  <div class="row">
+    <div class="col-md-9">
+      <h2><i class="fa fa-chart-bar"></i> Dashboard de Tickets</h2>
+    </div>
+    <div class="col-md-3 text-right" style="padding-top: 20px;">
+      <a href="#/admin/tickets" class="btn btn-default btn-sm">
+        <i class="fa fa-list"></i> Ver todos os tickets
+      </a>
+    </div>
+  </div>
+
+  <div class="text-center" ng-if="loading" style="padding: 40px;">
+    <i class="fa fa-spinner fa-spin fa-2x"></i>
+    <p>Carregando estatísticas...</p>
+  </div>
+
+  <div ng-if="!loading && dashboard">
+    <!-- KPI Cards -->
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="col-md-4">
+        <div class="panel panel-primary">
+          <div class="panel-body text-center">
+            <h2 style="margin: 5px 0;">{{dashboard.kpi.openCount}}</h2>
+            <p style="margin: 0;">Tickets Abertos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-success">
+          <div class="panel-body text-center">
+            <h2 style="margin: 5px 0;">{{dashboard.kpi.resolvedThisMonth}}</h2>
+            <p style="margin: 0;">Resolvidos este Mês</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel panel-info">
+          <div class="panel-body text-center">
+            <h2 style="margin: 5px 0;">{{formatAvgResolution(dashboard.kpi.avgResolutionMs)}}</h2>
+            <p style="margin: 0;">Tempo Médio de Resolução</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos linha 1 -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">Distribuição por Tipo</div>
+          <div class="panel-body" style="min-height: 300px;">
+            <canvas id="chartByType"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">Tickets por Status</div>
+          <div class="panel-body" style="min-height: 300px;">
+            <canvas id="chartByStatus"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos linha 2 -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">Tickets Criados por Semana (últimas 12 semanas)</div>
+          <div class="panel-body" style="min-height: 300px;">
+            <canvas id="chartWeekly"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">Top Categorias</div>
+          <div class="panel-body" style="min-height: 300px;">
+            <canvas id="chartByCategory"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

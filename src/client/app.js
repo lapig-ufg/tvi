@@ -70,6 +70,31 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 			templateUrl: 'views/admin-vis-params.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/tickets', {
+			controller: 'TicketsListController',
+			templateUrl: 'views/tickets-list.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/tickets/new', {
+			controller: 'TicketFormController',
+			templateUrl: 'views/ticket-form.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/tickets/:id', {
+			controller: 'TicketDetailController',
+			templateUrl: 'views/ticket-detail.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/tickets', {
+			controller: 'AdminTicketsController',
+			templateUrl: 'views/admin-tickets.tpl.html',
+			reloadOnSearch: false
+		})
+		.when('/admin/tickets/dashboard', {
+			controller: 'AdminTicketsDashboardController',
+			templateUrl: 'views/admin-tickets-dashboard.tpl.html',
+			reloadOnSearch: false
+		})
 		.when('/admin', {
 			controller: 'AdminRedirectController',
 			template: '<div>Redirecionando...</div>'
@@ -149,7 +174,7 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 		}
 		
 		// Só verificar login para rotas específicas do sistema principal
-		var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard'];
+		var mainSystemRoutes = ['/temporal', '/supervisor', '/dashboard', '/tickets', '/tickets/new', '/tickets/:id'];
 		var isMainSystemRoute = nextPath && mainSystemRoutes.includes(nextPath);
 		
 		// Main system route check

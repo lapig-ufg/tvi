@@ -244,5 +244,59 @@
   },
   "CAMPAIGN": {
     "CAMPAIGN": "Campanha"
+  },
+  "TICKETS": {
+    "TITLE": "Tickets",
+    "NEW_TICKET": "Novo Ticket",
+    "MY_TICKETS": "Meus Tickets",
+    "SEARCH_PLACEHOLDER": "Buscar por título ou número...",
+    "CLEAR_FILTERS": "Limpar filtros",
+    "NO_TICKETS": "Nenhum ticket encontrado.",
+    "NOT_FOUND": "Ticket não encontrado.",
+    "BACK_TO_LIST": "Voltar para a lista",
+    "TABLE": {
+      "NUMBER": "Nº",
+      "TITLE": "Título",
+      "TYPE": "Tipo",
+      "STATUS": "Status",
+      "CREATED_AT": "Criado em",
+      "AUTHOR": "Autor",
+      "VOTES": "Votos"
+    },
+    "FORM": {
+      "TYPE": "Tipo",
+      "SELECT_TYPE": "Selecione o tipo...",
+      "CATEGORY": "Categoria",
+      "SELECT_CATEGORY": "Selecione a categoria...",
+      "SEVERITY": "Severidade",
+      "SELECT_SEVERITY": "Selecione a severidade...",
+      "TITLE_LABEL": "Título",
+      "TITLE_PLACEHOLDER": "Descreva brevemente o assunto (máx. 200 caracteres)",
+      "DESCRIPTION": "Descrição",
+      "DESCRIPTION_PLACEHOLDER": "Descreva detalhadamente a sua solicitação..."
+    },
+    "DETAIL": {
+      "AUTHOR": "Autor",
+      "CATEGORY": "Categoria",
+      "CREATED_AT": "Criado em",
+      "CAMPAIGN": "Campanha",
+      "DESCRIPTION": "Descrição",
+      "STATUS_HISTORY": "Histórico de Status",
+      "FROM": "De",
+      "TO": "Para",
+      "CHANGED_BY": "Alterado por",
+      "REASON": "Motivo",
+      "DATE": "Data",
+      "COMMENTS": "Comentários",
+      "NO_COMMENTS": "Nenhum comentário ainda.",
+      "NEW_COMMENT": "Novo comentário",
+      "COMMENT_PLACEHOLDER": "Escreva seu comentário...",
+      "SEND_COMMENT": "Enviar comentário",
+      "VOTES": "Votos",
+      "YOU_VOTED": "Você votou",
+      "ATTACHMENTS": "Anexos",
+      "NO_ATTACHMENTS": "Nenhum anexo.",
+      "UPLOAD_IMAGE": "Enviar imagem"
+    }
   }
 }

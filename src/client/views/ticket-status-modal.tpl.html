@@ -1,0 +1,40 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="fa fa-exchange"></i> Alterar Status &mdash; <code>{{ticket.ticketNumber}}</code>
+  </h4>
+</div>
+<div class="modal-body">
+  <p>
+    Status atual: <span class="label label-info">{{ticket.status}}</span>
+  </p>
+
+  <div class="form-group">
+    <label for="newStatus">Novo Status <span class="text-danger">*</span></label>
+    <select id="newStatus" class="form-control" ng-model="form.status">
+      <option value="">Selecione...</option>
+      <option ng-repeat="s in availableStatuses" value="{{s.value}}">{{s.label}}</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="reason">Motivo <span class="text-danger">*</span></label>
+    <textarea id="reason" class="form-control" rows="3" ng-model="form.reason"
+              placeholder="Descreva o motivo da alteração de status..."></textarea>
+  </div>
+
+  <div class="alert alert-danger" ng-if="errorMessage">
+    <i class="fa fa-exclamation-circle"></i> {{errorMessage}}
+  </div>
+
+  <div class="alert alert-warning" ng-if="availableStatuses.length === 0">
+    <i class="fa fa-info-circle"></i> Este ticket está em estado terminal e não pode ter seu status alterado.
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-click="submit()" ng-disabled="submitting || availableStatuses.length === 0">
+    <i class="fa fa-check" ng-hide="submitting"></i>
+    <i class="fa fa-spinner fa-spin" ng-show="submitting"></i>
+    Confirmar
+  </button>
+  <button class="btn btn-default" ng-click="cancel()">Cancelar</button>
+</div>

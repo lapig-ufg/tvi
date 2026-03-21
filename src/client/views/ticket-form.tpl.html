@@ -1,0 +1,77 @@
+<div class="container-fluid" style="padding-top: 70px;">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">
+        <i class="fa fa-plus-circle"></i> {{ 'TICKETS.NEW_TICKET' | i18n }}
+      </h3>
+    </div>
+    <div class="panel-body">
+      <form name="ticketForm" novalidate>
+        <!-- Tipo -->
+        <div class="form-group" ng-class="{'has-error': ticketForm.type.$touched && ticketForm.type.$invalid}">
+          <label for="ticketType">{{ 'TICKETS.FORM.TYPE' | i18n }} <span class="text-danger">*</span></label>
+          <select id="ticketType" name="type" class="form-control" ng-model="ticket.type" required>
+            <option value="">{{ 'TICKETS.FORM.SELECT_TYPE' | i18n }}</option>
+            <option ng-repeat="t in types" value="{{t.value}}">{{t.label}}</option>
+          </select>
+        </div>
+
+        <!-- Categoria -->
+        <div class="form-group" ng-class="{'has-error': ticketForm.category.$touched && ticketForm.category.$invalid}">
+          <label for="ticketCategory">{{ 'TICKETS.FORM.CATEGORY' | i18n }} <span class="text-danger">*</span></label>
+          <select id="ticketCategory" name="category" class="form-control" ng-model="ticket.category" required>
+            <option value="">{{ 'TICKETS.FORM.SELECT_CATEGORY' | i18n }}</option>
+            <option ng-repeat="c in categories" value="{{c.value}}">{{c.label}}</option>
+          </select>
+        </div>
+
+        <!-- Severidade (condicional) -->
+        <div class="form-group" ng-show="showSeverity()"
+             ng-class="{'has-error': ticketForm.severity.$touched && ticketForm.severity.$invalid && showSeverity()}">
+          <label for="ticketSeverity">{{ 'TICKETS.FORM.SEVERITY' | i18n }} <span class="text-danger">*</span></label>
+          <select id="ticketSeverity" name="severity" class="form-control" ng-model="ticket.severity"
+                  ng-required="showSeverity()">
+            <option value="">{{ 'TICKETS.FORM.SELECT_SEVERITY' | i18n }}</option>
+            <option ng-repeat="s in severities" value="{{s.value}}">{{s.label}}</option>
+          </select>
+        </div>
+
+        <!-- Título -->
+        <div class="form-group" ng-class="{'has-error': ticketForm.title.$touched && ticketForm.title.$invalid}">
+          <label for="ticketTitle">{{ 'TICKETS.FORM.TITLE_LABEL' | i18n }} <span class="text-danger">*</span></label>
+          <input type="text" id="ticketTitle" name="title" class="form-control"
+                 ng-model="ticket.title" ng-maxlength="200" required
+                 placeholder="{{ 'TICKETS.FORM.TITLE_PLACEHOLDER' | i18n }}">
+          <p class="help-block" ng-show="ticket.title.length > 0">
+            {{ticket.title.length}}/200
+          </p>
+        </div>
+
+        <!-- Descrição -->
+        <div class="form-group" ng-class="{'has-error': ticketForm.description.$touched && ticketForm.description.$invalid}">
+          <label for="ticketDescription">{{ 'TICKETS.FORM.DESCRIPTION' | i18n }} <span class="text-danger">*</span></label>
+          <textarea id="ticketDescription" name="description" class="form-control" rows="6"
+                    ng-model="ticket.description" required
+                    placeholder="{{ 'TICKETS.FORM.DESCRIPTION_PLACEHOLDER' | i18n }}"></textarea>
+        </div>
+
+        <!-- Mensagem de erro -->
+        <div class="alert alert-danger" ng-if="errorMessage">
+          <i class="fa fa-exclamation-circle"></i> {{errorMessage}}
+        </div>
+
+        <!-- Botões -->
+        <div class="form-group">
+          <button type="button" class="btn btn-primary" ng-click="submitTicket()" ng-disabled="submitting || ticketForm.$invalid">
+            <i class="fa fa-paper-plane" ng-hide="submitting"></i>
+            <i class="fa fa-spinner fa-spin" ng-show="submitting"></i>
+            {{ 'COMMON.SUBMIT' | i18n }}
+          </button>
+          <button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="submitting">
+            {{ 'COMMON.CANCEL' | i18n }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

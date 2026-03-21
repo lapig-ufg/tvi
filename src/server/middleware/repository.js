@@ -61,7 +61,7 @@ module.exports = function (app) {
                     if (err) return callback(err);
                     
                     // Garantir que as coleções necessárias existam
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos'];
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -197,7 +197,7 @@ module.exports = function (app) {
             // Índices para collection users
             function(cb) {
                 if (!Repository.collections.users) return cb();
-                
+
                 Repository.collections.users.createIndexes([
                     { key: { username: 1 }, unique: true, name: 'username_unique' },
                     { key: { username: 1, role: 1 }, name: 'username_role' }
@@ -206,6 +206,23 @@ module.exports = function (app) {
                         console.error('Erro ao criar índices para users:', err);
                     } else {
                         // Índices criados para collection users
+                    }
+                    cb();
+                });
+            },
+            // Índices para collection tickets
+            function(cb) {
+                if (!Repository.collections.tickets) return cb();
+
+                Repository.collections.tickets.createIndexes([
+                    { key: { ticketNumber: 1 }, unique: true, name: 'ticketNumber_unique' },
+                    { key: { status: 1, createdAt: -1 }, name: 'status_createdAt' },
+                    { key: { origin: 1, status: 1, createdAt: -1 }, name: 'origin_status_createdAt' },
+                    { key: { 'author.name': 1, createdAt: -1 }, name: 'author_name_createdAt' },
+                    { key: { type: 1, status: 1 }, name: 'type_status' }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para tickets:', err);
                     }
                     cb();
                 });

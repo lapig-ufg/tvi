@@ -244,5 +244,59 @@
   },
   "CAMPAIGN": {
     "CAMPAIGN": "Campaign"
+  },
+  "TICKETS": {
+    "TITLE": "Tickets",
+    "NEW_TICKET": "New Ticket",
+    "MY_TICKETS": "My Tickets",
+    "SEARCH_PLACEHOLDER": "Search by title or number...",
+    "CLEAR_FILTERS": "Clear filters",
+    "NO_TICKETS": "No tickets found.",
+    "NOT_FOUND": "Ticket not found.",
+    "BACK_TO_LIST": "Back to list",
+    "TABLE": {
+      "NUMBER": "#",
+      "TITLE": "Title",
+      "TYPE": "Type",
+      "STATUS": "Status",
+      "CREATED_AT": "Created at",
+      "AUTHOR": "Author",
+      "VOTES": "Votes"
+    },
+    "FORM": {
+      "TYPE": "Type",
+      "SELECT_TYPE": "Select type...",
+      "CATEGORY": "Category",
+      "SELECT_CATEGORY": "Select category...",
+      "SEVERITY": "Severity",
+      "SELECT_SEVERITY": "Select severity...",
+      "TITLE_LABEL": "Title",
+      "TITLE_PLACEHOLDER": "Briefly describe the subject (max. 200 characters)",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_PLACEHOLDER": "Describe your request in detail..."
+    },
+    "DETAIL": {
+      "AUTHOR": "Author",
+      "CATEGORY": "Category",
+      "CREATED_AT": "Created at",
+      "CAMPAIGN": "Campaign",
+      "DESCRIPTION": "Description",
+      "STATUS_HISTORY": "Status History",
+      "FROM": "From",
+      "TO": "To",
+      "CHANGED_BY": "Changed by",
+      "REASON": "Reason",
+      "DATE": "Date",
+      "COMMENTS": "Comments",
+      "NO_COMMENTS": "No comments yet.",
+      "NEW_COMMENT": "New comment",
+      "COMMENT_PLACEHOLDER": "Write your comment...",
+      "SEND_COMMENT": "Send comment",
+      "VOTES": "Votes",
+      "YOU_VOTED": "You voted",
+      "ATTACHMENTS": "Attachments",
+      "NO_ATTACHMENTS": "No attachments.",
+      "UPLOAD_IMAGE": "Upload image"
+    }
   }
 }
