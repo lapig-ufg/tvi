@@ -123,7 +123,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
 });
 
 /* --- Formulário de Novo Ticket --- */
-Application.controller('TicketFormController', function ($scope, $rootScope, $location, $http, requester, i18nService, diagnosticCapture) {
+Application.controller('TicketFormController', function ($scope, $rootScope, $location, $http, $timeout, requester, i18nService, diagnosticCapture) {
 
   $scope.ticket = {
     type: '',
@@ -144,7 +144,7 @@ Application.controller('TicketFormController', function ($scope, $rootScope, $lo
   $scope.hasScreenshot = false;
 
   diagnosticCapture.loadFromStorage(function () {
-    $scope.$apply(function () {
+    $timeout(function () {
       $scope.diagnosticsReady = diagnosticCapture.isReady();
       $scope.diagnosticsCounts = diagnosticCapture.getLogCounts();
       $scope.hasScreenshot = !!diagnosticCapture.getCapturedScreenshotDataUrl();

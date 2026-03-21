@@ -132,6 +132,27 @@ Application.service('diagnosticCapture', function () {
   }
 
   /**
+   * Reescreve URLs de tiles cross-origin no clone para passar pelo proxy local.
+   * Necessário porque html2canvas com useCORS tenta recarregar as imagens
+   * com CORS, mas os tile servers não enviam Access-Control-Allow-Origin.
+   * O proxy local (/service/tile-proxy) busca a imagem e retorna com CORS.
+   */
+  function proxyTileImages(clonedDoc) {
+    // Selecionar tiles de Leaflet e OpenLayers
+    var tileImgs = clonedDoc.querySelectorAll(
+      '.leaflet-tile-pane img, .leaflet-tile, .ol-layer img'
+    );
+
+    for (var i = 0; i < tileImgs.length; i++) {
+      var src = tileImgs[i].getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('/service/tile-proxy')) {
+        // Reescrever para passar pelo proxy local (same-origin)
+        tileImgs[i].setAttribute('src', '/service/tile-proxy?url=' + encodeURIComponent(src));
+      }
+    }
+  }
+
+  /**
    * Captura screenshot via html2canvas e retorna como data URL.
    * @param {Function} callback - function(err, dataUrl)
    */
@@ -148,6 +169,7 @@ Application.service('diagnosticCapture', function () {
       scale: 1,
       onclone: function (clonedDoc) {
         copyCanvasContent(document, clonedDoc);
+        proxyTileImages(clonedDoc);
       },
       ignoreElements: function (element) {
         return element.tagName === 'IFRAME';
@@ -286,7 +308,11 @@ Application.service('diagnosticCapture', function () {
       } catch (e) {
         originalConsole.error('[diagnosticCapture] Erro ao carregar do localStorage:', e);
         dataLoaded = false;
-        if (callback) callback(false);
+        try {
+          if (callback) callback(false);
+        } catch (callbackError) {
+          originalConsole.error('[diagnosticCapture] Erro no callback:', callbackError);
+        }
       }
     }
 
