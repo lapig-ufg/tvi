@@ -75,34 +75,6 @@ module.exports = function(app) {
 			"timezone": 'America/Sao_Paulo',
 			"toRun": [
 				{
-					"name": "publishLayers",
-					"cron": '0 0 19 * * *',
-					"runOnAppStart": false,
-					"params": {
-						"cmd": "python " + appRoot + "/integration/py/publish_layers.py",
-						"keys": [
-							{
-								"file": appRoot + "/integration/py/gee-keys/key85.json",
-								"startYear": 1985
-							},
-							{
-								"file": appRoot + "/integration/py/gee-keys/key86.json",
-								"startYear": 1986
-							},
-							{
-								"file": appRoot + "/integration/py/gee-keys/key87.json",
-								"startYear": 1987
-							}
-						]
-					}
-				},
-				{
-					"name": "populateCache",
-					"cron": '0 0 20 1 0 *',
-					"runOnAppStart": false,
-					"params": {}
-				},
-				{
 					"name": "logsCleaner",
 					"cron": '0 0 2 */7 * *',
 					"runOnAppStart": false,
@@ -112,6 +84,30 @@ module.exports = function(app) {
 						"batchSize": 1000,
 						"simulate": false
 					}
+				},
+				{
+					"name": "telegramQueueProcessor",
+					"cron": '*/30 * * * * *',
+					"runOnAppStart": false,
+					"params": {}
+				},
+				{
+					"name": "telegramDailySummary",
+					"cron": '0 59 23 * * *',
+					"runOnAppStart": false,
+					"params": {}
+				},
+				{
+					"name": "telegramIdleTicketAlert",
+					"cron": '0 0 8,12,16,20 * * *',
+					"runOnAppStart": false,
+					"params": {}
+				},
+				{
+					"name": "telegramSilentFlush",
+					"cron": '0 0 7 * * *',
+					"runOnAppStart": false,
+					"params": {}
 				}
 			]
 		},
@@ -120,9 +116,10 @@ module.exports = function(app) {
 
 	if(process.env.NODE_ENV === 'prod') {
 		config["mongo"]["port"] = "27017";
-		config.jobs.toRun[0].runOnAppStart = false;
-		config.jobs.toRun[1].runOnAppStart = false;
-		config.jobs.toRun[2].runOnAppStart = false;
+		// Desabilitar execução na inicialização por nome (não por índice)
+		config.jobs.toRun.forEach(function(job) {
+			job.runOnAppStart = false;
+		});
 		config["imgDir"] = "/STORAGE/tvi-imgs/";
 		if (!require('fs').existsSync(config.logDir)) {
 			try {

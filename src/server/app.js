@@ -42,7 +42,18 @@ app.middleware.repository.init(() => {
 				app.services.logger.init();
 			}
 		}
-		
+
+		// Inicializar o notificador Telegram após o repository estar pronto
+		if (app.services && app.services.telegramNotifier) {
+			if (typeof app.services.telegramNotifier === 'function') {
+				app.services.telegramNotifier = app.services.telegramNotifier(app);
+			}
+			if (app.services.telegramNotifier && !app.services.telegramNotifier.initialized && app.repository) {
+				app.services.telegramNotifier.app = app;
+				app.services.telegramNotifier.init();
+			}
+		}
+
 		const store = new MongoStore({ url: mongodbUrl });
 		io.adapter(mongoAdapter( mongodbUrl ));
 

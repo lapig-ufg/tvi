@@ -787,6 +787,83 @@ module.exports = function(app) {
 
 	}
 	
+	// ============================================================
+	// Jobs de Notificação Telegram
+	// ============================================================
+
+	/**
+	 * Processa a fila de notificações Telegram pendentes.
+	 * Aplica debounce por ticket, rate limit e horário silencioso.
+	 */
+	Jobs.telegramQueueProcessor = function(params, logStream, callback) {
+		if (!app.services.telegramNotifier || !app.services.telegramNotifier.enabled) {
+			return callback();
+		}
+		app.services.telegramNotifier.processQueue()
+			.then(function() { callback(); })
+			.catch(function(err) {
+				writeLog(logStream, 'Erro no processamento de fila Telegram: ' + err.message);
+				callback();
+			});
+	};
+
+	/**
+	 * Envia resumo diário consolidado de tickets no Telegram.
+	 */
+	Jobs.telegramDailySummary = function(params, logStream, callback) {
+		if (!app.services.telegramNotifier || !app.services.telegramNotifier.enabled) {
+			return callback();
+		}
+		writeLog(logStream, 'Gerando resumo diário de tickets...');
+		app.services.telegramNotifier.sendDailySummary()
+			.then(function() {
+				writeLog(logStream, 'Resumo diário enviado.');
+				callback();
+			})
+			.catch(function(err) {
+				writeLog(logStream, 'Erro no resumo diário: ' + err.message);
+				callback();
+			});
+	};
+
+	/**
+	 * Alerta sobre tickets sem atualização por período prolongado.
+	 */
+	Jobs.telegramIdleTicketAlert = function(params, logStream, callback) {
+		if (!app.services.telegramNotifier || !app.services.telegramNotifier.enabled) {
+			return callback();
+		}
+		writeLog(logStream, 'Verificando tickets ociosos...');
+		app.services.telegramNotifier.sendIdleTicketAlerts()
+			.then(function() {
+				writeLog(logStream, 'Verificação de ociosos concluída.');
+				callback();
+			})
+			.catch(function(err) {
+				writeLog(logStream, 'Erro no alerta de ociosos: ' + err.message);
+				callback();
+			});
+	};
+
+	/**
+	 * Libera notificações acumuladas durante o horário silencioso (22h-7h).
+	 */
+	Jobs.telegramSilentFlush = function(params, logStream, callback) {
+		if (!app.services.telegramNotifier || !app.services.telegramNotifier.enabled) {
+			return callback();
+		}
+		writeLog(logStream, 'Liberando fila silenciosa...');
+		app.services.telegramNotifier.flushSilentQueue()
+			.then(function() {
+				writeLog(logStream, 'Fila silenciosa liberada.');
+				callback();
+			})
+			.catch(function(err) {
+				writeLog(logStream, 'Erro no flush silencioso: ' + err.message);
+				callback();
+			});
+	};
+
 	Jobs.start = function() {
 		// Ensure log directory exists at startup
 		ensureLogDirectory();

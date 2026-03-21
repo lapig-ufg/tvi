@@ -213,6 +213,22 @@ module.exports = function (app) {
 
         var created = Array.isArray(result.ops) ? result.ops[0] : result;
         response.status(201).json(created);
+
+        // Notificação Telegram (fire-and-forget)
+        if (app.services.telegramNotifier) {
+          app.services.telegramNotifier.enqueue('TICKET_CREATED', {
+            ticketNumber: ticketNumber,
+            ticketId: created._id ? created._id.toString() : null,
+            type: body.type,
+            category: body.category,
+            severity: body.type === 'RECLAMACAO' ? body.severity : null,
+            title: body.title.trim(),
+            description: body.description.trim().substring(0, 200),
+            authorName: author.name,
+            authorRole: author.role,
+            campaignId: author.campaignId
+          }).catch(function () {});
+        }
       });
     });
   };
@@ -421,6 +437,16 @@ module.exports = function (app) {
             return response.status(500).json({ error: 'Erro ao atualizar ticket' });
           }
           response.json(result.value);
+
+          // Notificação Telegram (fire-and-forget)
+          if (app.services.telegramNotifier && result.value) {
+            app.services.telegramNotifier.enqueue('TICKET_UPDATED', {
+              ticketNumber: result.value.ticketNumber,
+              ticketId: id.toString(),
+              title: result.value.title,
+              authorName: author ? author.name : 'admin'
+            }).catch(function () {});
+          }
         }
       );
     });
@@ -520,6 +546,19 @@ module.exports = function (app) {
           });
 
           response.json(result.value);
+
+          // Notificação Telegram (fire-and-forget)
+          if (app.services.telegramNotifier) {
+            app.services.telegramNotifier.enqueue('TICKET_STATUS_CHANGED', {
+              ticketNumber: ticket.ticketNumber,
+              ticketId: id.toString(),
+              title: ticket.title,
+              fromStatus: ticket.status,
+              toStatus: body.status,
+              reason: body.reason.trim(),
+              changedBy: author ? author.name : 'admin'
+            }).catch(function () {});
+          }
         }
       );
     });
@@ -581,6 +620,18 @@ module.exports = function (app) {
         }
 
         response.json(comment);
+
+        // Notificação Telegram (fire-and-forget)
+        if (app.services.telegramNotifier) {
+          var notifEvent = comment.isInternal ? 'TICKET_INTERNAL_NOTE' : 'TICKET_COMMENTED';
+          app.services.telegramNotifier.enqueue(notifEvent, {
+            ticketNumber: result.value.ticketNumber,
+            ticketId: id.toString(),
+            title: result.value.title,
+            authorName: comment.author.name,
+            textPreview: comment.text.substring(0, 150)
+          }).catch(function () {});
+        }
       }
     );
   };
@@ -735,6 +786,15 @@ module.exports = function (app) {
             voteCount: updated.voteCount,
             votes: updated.votes
           });
+
+          // Notificação Telegram: apenas ao atingir threshold de votos (fire-and-forget)
+          var voteThreshold = parseInt(process.env.TELEGRAM_VOTE_THRESHOLD) || 3;
+          if (app.services.telegramNotifier && !alreadyVoted && updated.voteCount >= voteThreshold) {
+            app.services.telegramNotifier.enqueue('TICKET_VOTE_MILESTONE', {
+              ticketId: id.toString(),
+              voteCount: updated.voteCount
+            }).catch(function () {});
+          }
         }
       );
     });
@@ -867,6 +927,15 @@ module.exports = function (app) {
               uploadedBy: attachment.uploadedBy,
               uploadedAt: attachment.uploadedAt
             });
+
+            // Notificação Telegram (fire-and-forget)
+            if (app.services.telegramNotifier) {
+              app.services.telegramNotifier.enqueue('TICKET_ATTACHMENT_ADDED', {
+                ticketId: id.toString(),
+                filename: attachment.filename,
+                uploadedBy: attachment.uploadedBy
+              }).catch(function () {});
+            }
           }
         );
       });
@@ -958,6 +1027,13 @@ module.exports = function (app) {
         });
 
         response.json({ success: true });
+
+        // Notificação Telegram (fire-and-forget)
+        if (app.services.telegramNotifier) {
+          app.services.telegramNotifier.enqueue('TICKET_ATTACHMENT_REMOVED', {
+            ticketId: id.toString()
+          }).catch(function () {});
+        }
       }
     );
   };

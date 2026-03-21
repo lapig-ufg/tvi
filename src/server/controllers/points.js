@@ -679,7 +679,7 @@ module.exports = function(app) {
 			
 					if(pointDb.userName.length === user.campaign.numInspec - 1) {
 						updateStruct['$set'] = classConsolidate(point, pointDb, user);
-						
+
 						await logger.info('Point inspection complete - consolidating classification', {
 										module: 'points',
 							function: 'updatePoint',
@@ -690,6 +690,23 @@ module.exports = function(app) {
 								requiredInspections: user.campaign.numInspec
 							}
 						});
+
+						// Notificação Telegram: divergência de consolidação (fire-and-forget)
+						if (app.services.telegramNotifier && updateStruct['$set'].classConsolidated) {
+							var consolidated = updateStruct['$set'].classConsolidated;
+							var hasDivergence = false;
+							for (var ci = 0; ci < consolidated.length; ci++) {
+								if (consolidated[ci] === 'Não consolidado') { hasDivergence = true; break; }
+							}
+							if (hasDivergence) {
+								app.services.telegramNotifier.enqueue('CONSOLIDATION_DIVERGENCE', {
+									pointId: String(point._id),
+									campaignId: String(user.campaign._id),
+									numInspec: user.campaign.numInspec,
+									inspectors: pointDb.userName.concat([user.name])
+								}).catch(function () {});
+							}
+						}
 					}
 
 					points.update({ '_id': pointDb._id }, updateStruct, async function(err, item) {
