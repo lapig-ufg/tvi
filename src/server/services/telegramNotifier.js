@@ -216,41 +216,36 @@ TelegramNotifier.prototype._sleep = function (ms) {
 TelegramNotifier.prototype.processQueue = async function () {
   if (!this.enabled || !this.initialized) return;
 
+  // Lock em memória: impedir ciclos sobrepostos no mesmo worker
+  if (this._processing) return;
+  this._processing = true;
+
   var self = this;
 
   try {
-    // Buscar pendentes (não processados, não retidos, não em processamento por outro ciclo)
-    var cursor = this.queue.find({
-      processedAt: null,
-      silentHold: false,
-      _processingBatch: { $exists: false }
-    }).sort({ createdAt: 1 }).limit(50);
-
-    var docs = await new Promise(function (resolve, reject) {
-      cursor.toArray(function (err, results) {
-        if (err) return reject(err);
-        resolve(results || []);
-      });
-    });
-
-    if (docs.length === 0) return;
-
-    // Marcar os documentos encontrados como "em processamento" (proteção contra ciclos sobrepostos)
+    // Marcar pendentes atomicamente com batch ID usando findAndModify em loop
+    // Isso evita race condition entre find e update
     var processingBatchId = new Date().getTime().toString(36) + Math.random().toString(36).substr(2, 4);
-    var docIds = [];
-    for (var di = 0; di < docs.length; di++) { docIds.push(docs[di]._id); }
+    var docs = [];
 
-    await new Promise(function (resolve, reject) {
-      self.queue.update(
-        { _id: { $in: docIds } },
-        { $set: { _processingBatch: processingBatchId } },
-        { multi: true },
-        function (err) {
-          if (err) return reject(err);
-          resolve();
-        }
-      );
-    });
+    for (var claim = 0; claim < 50; claim++) {
+      var claimed = await new Promise(function (resolve) {
+        self.queue.findAndModify(
+          { processedAt: null, silentHold: false, _processingBatch: { $exists: false } },
+          [['createdAt', 1]],
+          { $set: { _processingBatch: processingBatchId } },
+          { new: true },
+          function (err, result) {
+            if (err || !result || !result.value) return resolve(null);
+            resolve(result.value);
+          }
+        );
+      });
+      if (!claimed) break;
+      docs.push(claimed);
+    }
+
+    if (docs.length === 0) { self._processing = false; return; }
 
     // Agrupar por ticketId + event para debounce
     var groups = {};
@@ -361,6 +356,8 @@ TelegramNotifier.prototype.processQueue = async function () {
     }
   } catch (err) {
     console.error('[TelegramNotifier] Erro em processQueue:', err.message);
+  } finally {
+    self._processing = false;
   }
 };
 
@@ -662,19 +659,15 @@ TelegramNotifier.prototype.flushSilentQueue = async function () {
  * Verifica se o horário atual está no período de silêncio.
  */
 TelegramNotifier.prototype.isSilentHours = function () {
-  var now = new Date();
-  // Converter para horário de Brasília (UTC-3, fixo — Brasil não observa horário de verão desde 2019)
-  var brasiliaOffset = -3 * 60;
-  var utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-  var brasiliaMinutes = utcMinutes + brasiliaOffset;
-  if (brasiliaMinutes < 0) brasiliaMinutes += 1440;
-  var brasiliaHour = Math.floor(brasiliaMinutes / 60);
+  // Usa hora local do sistema — o container deve montar /etc/localtime
+  // para que new Date().getHours() retorne o horário correto (Brasília)
+  var hour = new Date().getHours();
 
   if (this.silentStart > this.silentEnd) {
     // Faixa cruzando meia-noite (ex: 22h-7h)
-    return brasiliaHour >= this.silentStart || brasiliaHour < this.silentEnd;
+    return hour >= this.silentStart || hour < this.silentEnd;
   }
-  return brasiliaHour >= this.silentStart && brasiliaHour < this.silentEnd;
+  return hour >= this.silentStart && hour < this.silentEnd;
 };
 
 /**
