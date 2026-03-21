@@ -71,6 +71,65 @@
         <h4>{{ 'TICKETS.DETAIL.DESCRIPTION' | i18n }}</h4>
         <div style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee;">{{ticket.description}}</div>
 
+        <!-- Diagnósticos -->
+        <div ng-if="ticket.diagnostics" style="margin-top: 20px;">
+          <h4>
+            <i class="fa fa-stethoscope"></i> Diagnósticos
+          </h4>
+
+          <!-- Metadados do navegador -->
+          <div ng-if="ticket.diagnostics.metadata" style="margin-bottom: 10px;">
+            <table class="table table-condensed table-bordered" style="font-size: 12px; margin-bottom: 10px;">
+              <tbody>
+                <tr ng-if="ticket.diagnostics.metadata.userAgent">
+                  <td style="width: 160px;"><strong>User Agent</strong></td>
+                  <td><code style="font-size: 11px;">{{ticket.diagnostics.metadata.userAgent}}</code></td>
+                </tr>
+                <tr ng-if="ticket.diagnostics.metadata.url">
+                  <td><strong>URL</strong></td>
+                  <td><code>{{ticket.diagnostics.metadata.url}}</code></td>
+                </tr>
+                <tr ng-if="ticket.diagnostics.metadata.screenResolution">
+                  <td><strong>Resolução da tela</strong></td>
+                  <td>{{ticket.diagnostics.metadata.screenResolution}}</td>
+                </tr>
+                <tr ng-if="ticket.diagnostics.metadata.viewportSize">
+                  <td><strong>Tamanho da janela</strong></td>
+                  <td>{{ticket.diagnostics.metadata.viewportSize}}</td>
+                </tr>
+                <tr ng-if="ticket.diagnostics.capturedAt">
+                  <td><strong>Capturado em</strong></td>
+                  <td>{{ticket.diagnostics.capturedAt | date:'dd/MM/yyyy HH:mm:ss'}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Logs do console -->
+          <div ng-if="ticket.diagnostics.consoleLogs && ticket.diagnostics.consoleLogs.length > 0">
+            <h5>
+              <i class="fa fa-terminal"></i> Console
+              <span class="badge">{{ticket.diagnostics.consoleLogs.length}}</span>
+              <button class="btn btn-xs btn-default" ng-click="showConsoleLogs = !showConsoleLogs" style="margin-left: 10px;">
+                {{showConsoleLogs ? 'Ocultar' : 'Exibir'}}
+              </button>
+            </h5>
+            <div ng-show="showConsoleLogs"
+                 style="max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.5;">
+              <div ng-repeat="entry in ticket.diagnostics.consoleLogs track by $index"
+                   style="padding: 2px 0; border-bottom: 1px solid #333;">
+                <span style="color: #666; margin-right: 8px;">{{entry.timestamp | date:'HH:mm:ss.sss'}}</span>
+                <span ng-style="{
+                    color: entry.level === 'error' ? '#f44747' :
+                           entry.level === 'warn' ? '#cca700' :
+                           entry.level === 'info' ? '#3dc9b0' : '#d4d4d4'
+                  }" style="margin-right: 6px; font-weight: bold;">[{{entry.level | uppercase}}]</span>
+                <span style="white-space: pre-wrap; word-break: break-all;">{{entry.message}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Anexos -->
         <div style="margin-top: 20px;">
           <h4>

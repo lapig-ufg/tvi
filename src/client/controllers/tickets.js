@@ -123,7 +123,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
 });
 
 /* --- Formulário de Novo Ticket --- */
-Application.controller('TicketFormController', function ($scope, $rootScope, $location, requester, i18nService) {
+Application.controller('TicketFormController', function ($scope, $rootScope, $location, $http, requester, i18nService, diagnosticCapture) {
 
   $scope.ticket = {
     type: '',
@@ -135,6 +135,21 @@ Application.controller('TicketFormController', function ($scope, $rootScope, $lo
   };
   $scope.submitting = false;
   $scope.errorMessage = '';
+
+  // Carregar diagnósticos do localStorage (capturados na aba de inspeção).
+  // loadFromStorage é assíncrono: aguarda até 2.5s pelo screenshot que pode
+  // chegar após a abertura da aba (captura html2canvas ocorre em paralelo).
+  $scope.diagnosticsReady = false;
+  $scope.diagnosticsCounts = { log: 0, warn: 0, error: 0, info: 0 };
+  $scope.hasScreenshot = false;
+
+  diagnosticCapture.loadFromStorage(function () {
+    $scope.$apply(function () {
+      $scope.diagnosticsReady = diagnosticCapture.isReady();
+      $scope.diagnosticsCounts = diagnosticCapture.getLogCounts();
+      $scope.hasScreenshot = !!diagnosticCapture.getCapturedScreenshotDataUrl();
+    });
+  });
 
   $scope.types = [
     { value: 'RECLAMACAO', label: 'Reclamação' },
@@ -189,17 +204,55 @@ Application.controller('TicketFormController', function ($scope, $rootScope, $lo
       payload.severity = $scope.ticket.severity;
     }
 
+    // Incluir diagnósticos capturados (logs + metadados)
+    if (diagnosticCapture.hasData()) {
+      payload.diagnostics = {
+        consoleLogs: diagnosticCapture.getCapturedLogs(),
+        metadata: diagnosticCapture.getCapturedMetadata()
+      };
+    }
+
     requester._post('tickets', payload, function (result) {
-      $scope.submitting = false;
       if (result && result._id) {
+        // Upload do screenshot como anexo automático (se disponível)
+        var screenshotDataUrl = diagnosticCapture.getCapturedScreenshotDataUrl();
+        if (screenshotDataUrl) {
+          var blob = diagnosticCapture.dataUrlToBlob(screenshotDataUrl);
+          if (blob) {
+            var formData = new FormData();
+            formData.append('file', blob, 'screenshot-diagnostico.jpg');
+
+            $http.post('service/tickets/' + result._id + '/attachments', formData, {
+              transformRequest: angular.identity,
+              headers: { 'Content-Type': undefined }
+            }).then(function () {
+              diagnosticCapture.clear();
+              $scope.submitting = false;
+              $location.path('/tickets/' + result._id);
+            }, function () {
+              // Mesmo com falha no upload do screenshot, o ticket foi criado
+              diagnosticCapture.clear();
+              $scope.submitting = false;
+              $location.path('/tickets/' + result._id);
+            });
+            return;
+          }
+        }
+
+        diagnosticCapture.clear();
+        $scope.submitting = false;
         $location.path('/tickets/' + result._id);
       } else if (result && result.error) {
+        $scope.submitting = false;
         $scope.errorMessage = result.error;
+      } else {
+        $scope.submitting = false;
       }
     });
   };
 
   $scope.cancel = function () {
+    diagnosticCapture.clear();
     $location.path('/tickets');
   };
 });

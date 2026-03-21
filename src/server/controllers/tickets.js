@@ -133,6 +133,44 @@ module.exports = function (app) {
         return response.status(500).json({ error: 'Erro interno', logId: logId });
       }
 
+      // Processar dados de diagnóstico (console logs, metadados do navegador)
+      var diagnostics = null;
+      if (body.diagnostics) {
+        // Sanitizar: aceitar apenas campos conhecidos de metadata
+        var rawMeta = body.diagnostics.metadata || {};
+        var sanitizedMetadata = {};
+        var allowedMetaFields = ['userAgent', 'url', 'screenResolution', 'viewportSize', 'capturedAt'];
+        for (var i = 0; i < allowedMetaFields.length; i++) {
+          var field = allowedMetaFields[i];
+          if (rawMeta[field] && typeof rawMeta[field] === 'string') {
+            sanitizedMetadata[field] = rawMeta[field].substring(0, 500);
+          }
+        }
+
+        // Sanitizar logs: aceitar apenas entradas com estrutura válida, limitar a 200
+        var rawLogs = Array.isArray(body.diagnostics.consoleLogs)
+          ? body.diagnostics.consoleLogs.slice(0, 200)
+          : [];
+        var sanitizedLogs = [];
+        var validLevels = ['log', 'warn', 'error', 'info'];
+        for (var j = 0; j < rawLogs.length; j++) {
+          var entry = rawLogs[j];
+          if (entry && typeof entry.message === 'string' && validLevels.indexOf(entry.level) !== -1) {
+            sanitizedLogs.push({
+              level: entry.level,
+              message: entry.message.substring(0, 2000),
+              timestamp: typeof entry.timestamp === 'string' ? entry.timestamp.substring(0, 30) : ''
+            });
+          }
+        }
+
+        diagnostics = {
+          consoleLogs: sanitizedLogs,
+          metadata: sanitizedMetadata,
+          capturedAt: new Date()
+        };
+      }
+
       var now = new Date();
       var ticket = {
         ticketNumber: ticketNumber,
@@ -144,6 +182,7 @@ module.exports = function (app) {
         description: body.description.trim(),
         origin: origin,
         author: author,
+        diagnostics: diagnostics,
         comments: [],
         statusHistory: [],
         votes: [],
@@ -222,8 +261,8 @@ module.exports = function (app) {
     if (limit > 100) limit = 100;
     var skip = (page - 1) * limit;
 
-    // Projeção: excluir attachments.data da listagem para performance
-    var projection = { 'attachments.data': 0 };
+    // Projeção: excluir campos pesados da listagem para performance
+    var projection = { 'attachments.data': 0, 'diagnostics.consoleLogs': 0 };
 
     tickets.count(query, function (err, total) {
       if (err) {

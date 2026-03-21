@@ -55,6 +55,25 @@
                     placeholder="{{ 'TICKETS.FORM.DESCRIPTION_PLACEHOLDER' | i18n }}"></textarea>
         </div>
 
+        <!-- Diagnósticos capturados -->
+        <div class="alert alert-info" ng-if="diagnosticsReady" style="margin-top: 15px;">
+          <i class="fa fa-camera"></i> <strong>Diagnósticos capturados automaticamente</strong>
+          <ul style="margin-top: 8px; margin-bottom: 0; padding-left: 20px;">
+            <li ng-if="hasScreenshot">
+              <i class="fa fa-image"></i> Screenshot da tela
+            </li>
+            <li ng-if="diagnosticsCounts.log > 0 || diagnosticsCounts.info > 0">
+              <i class="fa fa-terminal"></i> {{diagnosticsCounts.log + diagnosticsCounts.info}} registros de console (log/info)
+            </li>
+            <li ng-if="diagnosticsCounts.warn > 0">
+              <i class="fa fa-exclamation-triangle" style="color: #f0ad4e;"></i> {{diagnosticsCounts.warn}} avisos (warn)
+            </li>
+            <li ng-if="diagnosticsCounts.error > 0">
+              <i class="fa fa-times-circle" style="color: #d9534f;"></i> {{diagnosticsCounts.error}} erros (error)
+            </li>
+          </ul>
+        </div>
+
         <!-- Mensagem de erro -->
         <div class="alert alert-danger" ng-if="errorMessage">
           <i class="fa fa-exclamation-circle"></i> {{errorMessage}}
