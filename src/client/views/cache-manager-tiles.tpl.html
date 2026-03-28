@@ -52,20 +52,85 @@
         <div ng-show="activeTab === 'overview'" class="tab-content">
             <!-- Real-time WebSocket Monitor -->
             <div class="status-section" style="margin-bottom: 20px;">
-                <div class="section-header">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h2 class="section-title">
                         <i class="fas fa-satellite-dish"></i>
                         Monitoramento em Tempo Real
-                        <span ng-if="wsBridge.connected" style="color: #2ecc71; font-size: 12px; margin-left: 8px;">
+                        <span ng-if="wsBridge.monitor.connected" style="color: #2ecc71; font-size: 12px; margin-left: 8px;">
                             <i class="fas fa-circle"></i> Conectado
                         </span>
-                        <span ng-if="!wsBridge.connected" style="color: #e74c3c; font-size: 12px; margin-left: 8px;">
-                            <i class="fas fa-circle"></i> Desconectado
+                        <span ng-if="!wsBridge.monitor.connected && !wsBridge.monitor.circuitOpen && !wsBridge.monitor.exhausted"
+                              style="color: #f39c12; font-size: 12px; margin-left: 8px;">
+                            <i class="fas fa-circle"></i> Reconectando ({{wsBridge.monitor.retryCount}}/10)
+                        </span>
+                        <span ng-if="wsBridge.monitor.circuitOpen"
+                              style="color: #e74c3c; font-size: 12px; margin-left: 8px;">
+                            <i class="fas fa-exclamation-triangle"></i> Bloqueado
+                        </span>
+                        <span ng-if="wsBridge.monitor.exhausted && !wsBridge.monitor.circuitOpen"
+                              style="color: #e74c3c; font-size: 12px; margin-left: 8px;">
+                            <i class="fas fa-times-circle"></i> Esgotado
                         </span>
                     </h2>
+                    <div>
+                        <button class="action-btn" style="font-size: 12px; padding: 4px 10px;"
+                                ng-click="loadBridgeStatus()" ng-disabled="wsBridge.loading"
+                                title="Atualizar status do bridge">
+                            <i class="fas fa-sync-alt" ng-class="{'fa-spin': wsBridge.loading}"></i>
+                        </button>
+                        <button class="action-btn" style="font-size: 12px; padding: 4px 10px; margin-left: 4px;"
+                                ng-click="reconnectBridge('all')"
+                                ng-if="wsBridge.monitor.circuitOpen || wsBridge.monitor.exhausted"
+                                title="Reconectar tudo (reseta circuit breaker)">
+                            <i class="fas fa-plug"></i> Reconectar
+                        </button>
+                    </div>
                 </div>
 
-                <div class="stats-grid" ng-if="wsBridge.connected">
+                <!-- Alerta de autenticação não carregada -->
+                <div ng-if="wsBridge.authLoaded === false && !wsBridge.monitor.connected"
+                     style="background: #fef3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-key" style="color: #856404; font-size: 18px;"></i>
+                        <div>
+                            <strong style="color: #856404;">Credenciais de autenticação indisponíveis</strong>
+                            <div style="font-size: 13px; color: #7f8c8d; margin-top: 4px;">
+                                O bridge não conseguiu carregar credenciais do super-admin no MongoDB.
+                                Verifique se existe um usuário com role "super-admin" no banco.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Circuit breaker / erro do monitor -->
+                <div ng-if="wsBridge.monitor.circuitOpen || wsBridge.monitor.exhausted"
+                     style="background: #fdf0e8; border: 1px solid #e67e22; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-exclamation-triangle" style="color: #e67e22; font-size: 18px;"></i>
+                        <div>
+                            <strong style="color: #d35400;">Bridge WebSocket desconectado</strong>
+                            <div style="font-size: 13px; color: #7f8c8d; margin-top: 4px;">
+                                {{wsBridge.monitor.circuitReason || 'Limite de tentativas atingido'}}
+                            </div>
+                            <div ng-if="wsBridge.monitor.lastError" style="font-size: 12px; color: #95a5a6; margin-top: 2px;">
+                                Erro: {{wsBridge.monitor.lastError}}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="action-btn" style="font-size: 12px; padding: 6px 14px; background: #e67e22; color: #fff; border: none; border-radius: 4px;"
+                                ng-click="reconnectBridge('monitor')">
+                            <i class="fas fa-plug"></i> Reconectar Monitor
+                        </button>
+                        <button class="action-btn" style="font-size: 12px; padding: 6px 14px; margin-left: 6px; background: #e67e22; color: #fff; border: none; border-radius: 4px;"
+                                ng-click="reconnectBridge('all')">
+                            <i class="fas fa-redo"></i> Reconectar Tudo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Métricas em tempo real (somente quando conectado) -->
+                <div class="stats-grid" ng-if="wsBridge.monitor.connected">
                     <div class="stat-card" style="border-left: 4px solid #2ecc71;">
                         <div class="stat-icon"><i class="fas fa-tachometer-alt"></i></div>
                         <div class="stat-content">
@@ -120,6 +185,44 @@
                             <span>{{camp.cachedPoints}}/{{camp.totalPoints}} pontos</span>
                             <span ng-if="camp.pointsPerSec > 0">{{camp.pointsPerSec}} pts/s</span>
                             <span>Fila: {{camp.celeryQueueStandard}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscrições WebSocket de campanhas -->
+                <div ng-if="wsBridge.campaigns.length > 0" style="margin-top: 14px;">
+                    <h3 style="font-size: 14px; color: #2c3e50; margin-bottom: 8px;">
+                        <i class="fas fa-broadcast-tower"></i> Subscrições WebSocket ({{wsBridge.campaigns.length}})
+                    </h3>
+                    <div ng-repeat="camp in wsBridge.campaigns" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin-bottom: 4px; background: #fff; border: 1px solid #ecf0f1; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-circle" style="font-size: 8px;"
+                               ng-style="{'color': camp.connected ? '#2ecc71' : camp.circuitOpen ? '#e74c3c' : '#f39c12'}"></i>
+                            <span style="font-weight: 500;">{{camp.campaignId}}</span>
+                            <span ng-if="camp.circuitOpen" style="font-size: 11px; color: #e74c3c; margin-left: 4px;"
+                                  title="{{camp.circuitReason}}">
+                                (bloqueado)
+                            </span>
+                            <span ng-if="camp.exhausted && !camp.circuitOpen" style="font-size: 11px; color: #e74c3c; margin-left: 4px;">
+                                (esgotado)
+                            </span>
+                            <span ng-if="!camp.connected && !camp.circuitOpen && !camp.exhausted && camp.retryCount > 0"
+                                  style="font-size: 11px; color: #f39c12; margin-left: 4px;">
+                                (tentativa {{camp.retryCount}}/10)
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="action-btn" style="font-size: 11px; padding: 2px 8px;"
+                                    ng-click="reconnectBridge('campaign', camp.campaignId)"
+                                    ng-if="camp.circuitOpen || camp.exhausted"
+                                    title="Reconectar esta campanha">
+                                <i class="fas fa-plug"></i>
+                            </button>
+                            <button class="action-btn" style="font-size: 11px; padding: 2px 8px; color: #e74c3c;"
+                                    ng-click="unsubscribeCampaignWs(camp.campaignId)"
+                                    title="Remover subscrição">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
                 </div>

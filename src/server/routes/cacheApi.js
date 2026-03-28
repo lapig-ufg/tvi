@@ -178,4 +178,10 @@ module.exports = function (app) {
         auth.requireCacheApiAuth,
         cacheManager.unsubscribeCampaignWs
     );
+
+    // Reconexão manual do bridge (reseta circuit breaker)
+    app.post('/api/cache/ws-bridge/reconnect',
+        auth.requireCacheApiAuth,
+        cacheManager.reconnectWsBridge
+    );
 };

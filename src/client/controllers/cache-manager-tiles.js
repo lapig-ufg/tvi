@@ -181,7 +181,18 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         deltaTiles: 0,
         celeryQueueStandard: 0,
         celeryQueueHigh: 0,
-        pod: ''
+        pod: '',
+        // Status detalhado do bridge (monitor + campanhas)
+        monitor: {
+            connected: false,
+            retryCount: 0,
+            circuitOpen: false,
+            circuitReason: null,
+            exhausted: false,
+            lastError: null
+        },
+        campaigns: [],
+        loading: false
     };
 
     // Progresso de campanha em tempo real (via WebSocket bridge)
@@ -194,6 +205,7 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         $scope.loadCacheStatus();
         $scope.loadActiveTasks();
         $scope.setupSocketListeners();
+        $scope.loadBridgeStatus();
 
         // Polling de fallback reduzido (60s) — dados primários vêm via WebSocket
         $scope.statsInterval = $interval(function() {
@@ -268,13 +280,108 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         }, 200);  // Batch a cada 200ms — máximo 5 digest cycles/s
     }
 
+    // === Funções de controle do WebSocket Bridge ===
+
+    /**
+     * Carrega status detalhado do bridge via REST.
+     */
+    $scope.loadBridgeStatus = function() {
+        $scope.wsBridge.loading = true;
+        requester._get('../api/cache/ws-bridge/status', function(response) {
+            $scope.wsBridge.loading = false;
+            if (response && response.success && response.data) {
+                $scope._applyBridgeStatus(response.data);
+            }
+        });
+    };
+
+    /**
+     * Aplica status do bridge ao $scope.
+     */
+    $scope._applyBridgeStatus = function(bridge) {
+        if (!bridge) return;
+        $scope.wsBridge.authLoaded = bridge.authLoaded;
+        $scope.wsBridge.monitor = {
+            connected: bridge.monitor.connected,
+            retryCount: bridge.monitor.retryCount || 0,
+            circuitOpen: bridge.monitor.circuitOpen || false,
+            circuitReason: bridge.monitor.circuitReason || null,
+            exhausted: bridge.monitor.exhausted || false,
+            lastError: bridge.monitor.lastError || null,
+            lastCloseCode: bridge.monitor.lastCloseCode || null,
+            lastAttempt: bridge.monitor.lastAttempt || null
+        };
+        $scope.wsBridge.campaigns = (bridge.campaigns || []).map(function(c) {
+            return {
+                campaignId: c.campaignId,
+                connected: c.connected,
+                retryCount: c.retryCount || 0,
+                circuitOpen: c.circuitOpen || false,
+                circuitReason: c.circuitReason || null,
+                exhausted: c.exhausted || false,
+                lastError: c.lastError || null
+            };
+        });
+        $scope.wsBridge.connected = bridge.monitor.connected;
+    };
+
+    /**
+     * Reconecta o bridge (monitor, campanha ou tudo).
+     */
+    $scope.reconnectBridge = function(target, campaignId) {
+        var data = { target: target };
+        if (campaignId) data.campaignId = campaignId;
+
+        requester._post('../api/cache/ws-bridge/reconnect', data, function(response) {
+            if (response && response.success) {
+                NotificationDialog.success(response.message, 'Reconexão');
+                // Recarregar status após 3s para ver resultado
+                $timeout(function() { $scope.loadBridgeStatus(); }, 3000);
+            } else {
+                NotificationDialog.error(response && response.error || 'Erro ao reconectar', 'Erro');
+            }
+        });
+    };
+
+    /**
+     * Inscreve monitoramento de uma campanha via WebSocket.
+     */
+    $scope.subscribeCampaignWs = function(campaignId) {
+        if (!campaignId) return;
+        requester._post('../api/cache/ws-bridge/campaign/' + campaignId + '/subscribe', {}, function(response) {
+            if (response && response.success) {
+                NotificationDialog.success(response.message, 'WebSocket');
+                $timeout(function() { $scope.loadBridgeStatus(); }, 2000);
+            } else {
+                NotificationDialog.error(response && response.error || 'Erro ao inscrever', 'Erro');
+            }
+        });
+    };
+
+    /**
+     * Remove monitoramento de uma campanha via WebSocket.
+     */
+    $scope.unsubscribeCampaignWs = function(campaignId) {
+        if (!campaignId) return;
+        requester._post('../api/cache/ws-bridge/campaign/' + campaignId + '/unsubscribe', {}, function(response) {
+            if (response && response.success) {
+                NotificationDialog.success(response.message, 'WebSocket');
+                $timeout(function() { $scope.loadBridgeStatus(); }, 1000);
+            } else {
+                NotificationDialog.error(response && response.error || 'Erro ao desinscrever', 'Erro');
+            }
+        });
+    };
+
     // Configurar listeners do Socket.IO
     $scope.setupSocketListeners = function() {
         socket.on('connect', function() {
             console.log('Connected to cache updates');
             socket.emit('join', 'cache-updates');
+            // Carregar status do bridge ao conectar
+            $timeout(function() { $scope.loadBridgeStatus(); }, 1000);
         });
-        
+
         socket.on('disconnect', function() {
             console.log('Disconnected from cache updates');
             $scope.$apply(function() {
@@ -286,6 +393,13 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         socket.on('cache-stats-update', function(data) {
             _pendingStatsUpdate = data;
             _scheduleBatchApply();
+        });
+
+        // Status do bridge WebSocket (circuit breaker, tentativas, etc.)
+        socket.on('ws-bridge-status', function(data) {
+            $scope.$apply(function() {
+                $scope._applyBridgeStatus(data);
+            });
         });
 
         // Progresso de campanha — debounced via batch

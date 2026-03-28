@@ -2049,5 +2049,27 @@ module.exports = function (app) {
         response.json({ success: true, message: `Parado monitoramento da campanha ${campaignId}` });
     };
 
+    /**
+     * Reconexão manual — reseta circuit breaker e contadores.
+     */
+    cacheManager.reconnectWsBridge = function (request, response) {
+        if (!app.tilesCacheWs) {
+            return response.status(503).json({ error: 'WebSocket bridge não disponível' });
+        }
+        const { target } = request.body || {};
+        if (target === 'monitor') {
+            app.tilesCacheWs.reconnectMonitor();
+            response.json({ success: true, message: 'Reconexão do monitor iniciada' });
+        } else if (target === 'campaign' && request.body.campaignId) {
+            app.tilesCacheWs.reconnectCampaign(request.body.campaignId);
+            response.json({ success: true, message: `Reconexão da campanha ${request.body.campaignId} iniciada` });
+        } else if (target === 'all') {
+            app.tilesCacheWs.reconnectAll();
+            response.json({ success: true, message: 'Reconexão de todas as conexões iniciada' });
+        } else {
+            response.status(400).json({ error: 'Informe target: "monitor", "campaign" (com campaignId) ou "all"' });
+        }
+    };
+
     return cacheManager;
 };
