@@ -60,7 +60,10 @@ module.exports = function(app) {
 				"visParamsLandsatCollections": "/api/vis-params/landsat-collections/",
 				"visParamsSentinelCollections": "/api/vis-params/sentinel-collections/",
 				"visParamsSentinelInitialize": "/api/vis-params/sentinel-collections/initialize",
-				"visParamsSentinelBands": "/api/vis-params/sentinel-collections/bands/{collection_name}"
+				"visParamsSentinelBands": "/api/vis-params/sentinel-collections/bands/{collection_name}",
+				"wsMonitor": "/api/cache/ws/monitor",
+				"wsCampaign": "/api/cache/ws/campaign/{campaign_id}",
+				"warmTiles": "/api/cache/warm-tiles"
 			},
 			"timeout": 30000,
 			"retryAttempts": 0,

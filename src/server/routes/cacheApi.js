@@ -155,8 +155,27 @@ module.exports = function (app) {
     );
     
     // Get queue length
-    app.get('/api/tasks/queue-length', 
-        auth.requireCacheApiAuth, 
+    app.get('/api/tasks/queue-length',
+        auth.requireCacheApiAuth,
         cacheManager.getQueueLength
+    );
+
+    // ===== WebSocket Bridge endpoints =====
+
+    // Status do bridge WebSocket → Socket.IO
+    app.get('/api/cache/ws-bridge/status',
+        auth.requireCacheApiAuth,
+        cacheManager.getWebSocketBridgeStatus
+    );
+
+    // Inscrever/desinscrever monitoramento de campanha via WebSocket
+    app.post('/api/cache/ws-bridge/campaign/:campaignId/subscribe',
+        auth.requireCacheApiAuth,
+        cacheManager.subscribeCampaignWs
+    );
+
+    app.post('/api/cache/ws-bridge/campaign/:campaignId/unsubscribe',
+        auth.requireCacheApiAuth,
+        cacheManager.unsubscribeCampaignWs
     );
 };

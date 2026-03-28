@@ -138,26 +138,28 @@ app.middleware.repository.init(() => {
 		app.io = io;
 
 		io.on('connection', function(socket){
-			// Cliente conectado via socket
-			
-			// Join em salas específicas
+			// Join em salas específicas (com verificação de sessão para salas sensíveis)
 			socket.on('join', function(room) {
+				if (room === 'cache-updates') {
+					// Sala de cache requer sessão admin ou super-admin
+					var session = socket.handshake.session;
+					var isAdmin = session && session.admin && session.admin.superAdmin;
+					var isSupervisor = session && session.user && session.user.type === 'supervisor';
+					if (!isAdmin && !isSupervisor) {
+						return;  // Silenciosamente recusar
+					}
+				}
 				socket.join(room);
-				// Socket entrou na sala
 			});
 
 			socket.on('leave', function(room) {
 				socket.leave(room);
 			});
-			
-			// Join na sala de cache para receber atualizações
-			socket.join('cache-updates');
-			
+
 			socket.on('disconnect', function(){
-				// Cliente desconectado
-				// Remover lógica de sessão que pode estar causando o erro
+				// Cleanup automático pelo Socket.IO
 			});
-			
+
 			// Heartbeat para manter conexão viva
 			socket.on('ping', function() {
 				socket.emit('pong');
@@ -180,7 +182,17 @@ app.middleware.repository.init(() => {
 			.then('controllers')
 			.then('routes')
 			.into(app);
-		
+
+		// Inicializar bridge WebSocket (Tiles API) → Socket.IO (Frontend)
+		try {
+			const { TilesCacheWebSocket } = require('./services/tilesCacheWebSocket');
+			app.tilesCacheWs = new TilesCacheWebSocket(app);
+			app.tilesCacheWs.start();
+			console.log('[TilesCacheWS] Bridge WebSocket → Socket.IO inicializado');
+		} catch (err) {
+			console.error('[TilesCacheWS] Erro ao inicializar bridge:', err.message);
+		}
+
 		// Setup Swagger documentation
 		const swaggerMiddleware = app.middleware.swagger;
 		swaggerMiddleware.setup();
@@ -202,17 +214,28 @@ app.middleware.repository.init(() => {
 
 		httpServer.setTimeout(1000 * 60 * 240);
 
-		[`exit`, `uncaughtException`].forEach((event) => {
-			if (event === 'uncaughtException') {
-				process.on(event, (e) => { 
-					console.error('Uncaught Exception:', e);
-				})
-			} else {
-				process.on(event, (e) => {
-					httpServer.close(() => process.exit())
-				})
+		// Graceful shutdown — fechar WebSocket bridge e HTTP server
+		function gracefulShutdown(signal) {
+			console.log(`[Shutdown] Recebido ${signal}, encerrando...`);
+			if (app.tilesCacheWs) {
+				app.tilesCacheWs.stop();
 			}
-		})
+			httpServer.close(() => {
+				console.log('[Shutdown] Servidor encerrado');
+				process.exit(0);
+			});
+			// Forçar saída após 10s
+			setTimeout(() => process.exit(1), 10000);
+		}
+
+		process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+		process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+		process.on('uncaughtException', (e) => {
+			console.error('Uncaught Exception:', e);
+		});
+		process.on('exit', () => {
+			if (app.tilesCacheWs) app.tilesCacheWs.stop();
+		});
 	});
 });
 

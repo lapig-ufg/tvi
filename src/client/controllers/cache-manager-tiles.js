@@ -173,30 +173,101 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         confirm: false
     };
     
+    // Estado do WebSocket bridge
+    $scope.wsBridge = {
+        connected: false,
+        lastUpdate: null,
+        tilesPerSec: 0,
+        deltaTiles: 0,
+        celeryQueueStandard: 0,
+        celeryQueueHigh: 0,
+        pod: ''
+    };
+
+    // Progresso de campanha em tempo real (via WebSocket bridge)
+    $scope.campaignProgress = {};
+
     // Inicialização
     $scope.init = function() {
         $scope.loadStats();
         $scope.loadCapabilities();
         $scope.loadCacheStatus();
-        $scope.loadActiveTasks(); // Load initial active tasks
+        $scope.loadActiveTasks();
         $scope.setupSocketListeners();
-        
-        // Atualizar estatísticas a cada 30 segundos
+
+        // Polling de fallback reduzido (60s) — dados primários vêm via WebSocket
         $scope.statsInterval = $interval(function() {
             if (!$scope.loading.stats) {
                 $scope.loadStats();
                 $scope.loadCacheStatus();
             }
-        }, 30000);
-        
-        // Atualizar tarefas ativas a cada 5 segundos
+        }, 60000);
+
+        // Tasks polling reduzido (15s) — dados primários vêm via WebSocket
         $scope.tasksInterval = $interval(function() {
             if (!$scope.loading.tasks && $scope.activeTab === 'monitoring') {
                 $scope.loadActiveTasks();
             }
-        }, 5000);
+        }, 15000);
     };
     
+    // Batch de atualizações — evita múltiplos $scope.$apply em 500ms
+    var _pendingStatsUpdate = null;
+    var _pendingCampaignUpdates = {};
+    var _batchTimer = null;
+
+    function _scheduleBatchApply() {
+        if (_batchTimer) return;
+        _batchTimer = $timeout(function() {
+            _batchTimer = null;
+
+            if (_pendingStatsUpdate) {
+                var data = _pendingStatsUpdate;
+                _pendingStatsUpdate = null;
+
+                if (data.source === 'websocket') {
+                    $scope.wsBridge.connected = data.connected !== false;
+                    $scope.wsBridge.lastUpdate = data.timestamp;
+                    $scope.wsBridge.tilesPerSec = data.tiles_per_sec || 0;
+                    $scope.wsBridge.deltaTiles = data.delta_tiles || 0;
+                    $scope.wsBridge.celeryQueueStandard = data.celery_queue_standard || 0;
+                    $scope.wsBridge.celeryQueueHigh = data.celery_queue_high || 0;
+                    $scope.wsBridge.pod = data.pod || '';
+
+                    if (data.connected !== false) {
+                        $scope.tilesStats.redis = $scope.tilesStats.redis || {};
+                        $scope.tilesStats.redis.total_keys = data.total_keys;
+                        $scope.tilesStats.redis.used_memory_human = data.redis_memory;
+                        $scope.tilesStats.summary = $scope.tilesStats.summary || {};
+                        $scope.tilesStats.summary.total_tiles_cached = data.tile_keys;
+                        $scope.tilesStats.local_cache = $scope.tilesStats.local_cache || {};
+                        $scope.tilesStats.local_cache.current_size = data.local_cache_size;
+                    }
+                } else {
+                    $scope.tilesStats = data;
+                }
+            }
+
+            // Campaign updates
+            for (var campId in _pendingCampaignUpdates) {
+                var campData = _pendingCampaignUpdates[campId];
+                $scope.campaignProgress[campId] = campData;
+
+                var task = $scope.activeTasks.find(function(t) {
+                    return t.campaignId === campId;
+                });
+                if (task) {
+                    task.progress = campData.cachePercentage;
+                    task.cachedPoints = campData.cachedPoints;
+                    task.totalPoints = campData.totalPoints;
+                    task.pointsPerSec = campData.pointsPerSec;
+                    if (campData.cachePercentage >= 100) task.status = 'completed';
+                }
+            }
+            _pendingCampaignUpdates = {};
+        }, 200);  // Batch a cada 200ms — máximo 5 digest cycles/s
+    }
+
     // Configurar listeners do Socket.IO
     $scope.setupSocketListeners = function() {
         socket.on('connect', function() {
@@ -206,13 +277,37 @@ Application.controller('CacheManagerTilesController', function ($scope, $interva
         
         socket.on('disconnect', function() {
             console.log('Disconnected from cache updates');
+            $scope.$apply(function() {
+                $scope.wsBridge.connected = false;
+            });
         });
         
-        // Cache statistics update
+        // Cache statistics update — debounced via batch (máx 5 digest/s)
         socket.on('cache-stats-update', function(data) {
-            $scope.$apply(function() {
-                $scope.tilesStats = data;
-            });
+            _pendingStatsUpdate = data;
+            _scheduleBatchApply();
+        });
+
+        // Progresso de campanha — debounced via batch
+        socket.on('campaign-progress', function(data) {
+            _pendingCampaignUpdates[data.campaign_id] = {
+                campaignId: data.campaign_id,
+                campaignName: data.campaign_name,
+                cachingStatus: data.caching_status,
+                imageType: data.image_type,
+                years: data.years,
+                totalPoints: data.total_points,
+                cachedPoints: data.cached_points,
+                pendingPoints: data.pending_points,
+                cachePercentage: data.cache_percentage,
+                deltaCached: data.delta_cached,
+                pointsPerSec: data.points_per_sec,
+                celeryQueueStandard: data.celery_queue_standard,
+                celeryQueueHigh: data.celery_queue_high,
+                timestamp: data.timestamp,
+                pod: data.pod
+            };
+            _scheduleBatchApply();
         });
         
         // Point cache events

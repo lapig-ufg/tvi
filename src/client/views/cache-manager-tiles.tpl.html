@@ -50,6 +50,81 @@
 
         <!-- Overview Tab -->
         <div ng-show="activeTab === 'overview'" class="tab-content">
+            <!-- Real-time WebSocket Monitor -->
+            <div class="status-section" style="margin-bottom: 20px;">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-satellite-dish"></i>
+                        Monitoramento em Tempo Real
+                        <span ng-if="wsBridge.connected" style="color: #2ecc71; font-size: 12px; margin-left: 8px;">
+                            <i class="fas fa-circle"></i> Conectado
+                        </span>
+                        <span ng-if="!wsBridge.connected" style="color: #e74c3c; font-size: 12px; margin-left: 8px;">
+                            <i class="fas fa-circle"></i> Desconectado
+                        </span>
+                    </h2>
+                </div>
+
+                <div class="stats-grid" ng-if="wsBridge.connected">
+                    <div class="stat-card" style="border-left: 4px solid #2ecc71;">
+                        <div class="stat-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{wsBridge.tilesPerSec}}/s</div>
+                            <div class="stat-label">Taxa de Geração</div>
+                            <div class="stat-percentage">+{{wsBridge.deltaTiles}} tiles</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="border-left: 4px solid #3498db;">
+                        <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{wsBridge.celeryQueueStandard}}</div>
+                            <div class="stat-label">Fila Celery (Standard)</div>
+                            <div class="stat-percentage">{{wsBridge.celeryQueueHigh}} alta prioridade</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="border-left: 4px solid #9b59b6;">
+                        <div class="stat-icon"><i class="fas fa-server"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{wsBridge.pod}}</div>
+                            <div class="stat-label">Pod Ativo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaign progress cards -->
+                <div ng-repeat="(campId, camp) in campaignProgress" class="status-section" style="margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{camp.campaignName || campId}}</strong>
+                            <span style="color: #7f8c8d; margin-left: 8px;">{{camp.imageType}} | {{camp.years}}</span>
+                        </div>
+                        <div>
+                            <span class="badge" ng-class="{
+                                'badge-success': camp.cachingStatus === 'completed',
+                                'badge-info': camp.cachingStatus === 'in_progress',
+                                'badge-warning': camp.cachingStatus === 'pending'
+                            }">{{camp.cachingStatus}}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <div class="progress" style="height: 20px; border-radius: 10px;">
+                            <div class="progress-bar progress-bar-striped"
+                                 ng-class="{'active': camp.cachingStatus === 'in_progress', 'progress-bar-success': camp.cachePercentage >= 100}"
+                                 style="width: {{camp.cachePercentage}}%; min-width: 30px;">
+                                {{camp.cachePercentage}}%
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #7f8c8d;">
+                            <span>{{camp.cachedPoints}}/{{camp.totalPoints}} pontos</span>
+                            <span ng-if="camp.pointsPerSec > 0">{{camp.pointsPerSec}} pts/s</span>
+                            <span>Fila: {{camp.celeryQueueStandard}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Redis Stats -->
             <div class="status-section">
                 <div class="section-header">

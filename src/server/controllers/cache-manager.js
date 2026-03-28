@@ -1088,7 +1088,7 @@ module.exports = function (app) {
             };
             
             const result = await tilesApi.startCampaignCache(params, request);
-            
+
             Internal.emitCacheUpdate('campaign-cache-started', {
                 campaignId: campaignId,
                 batchSize: batchSize,
@@ -1097,6 +1097,11 @@ module.exports = function (app) {
                 taskId: result.data && result.data.task_id,
                 source: 'tiles-api'
             });
+
+            // Inscrever no WebSocket de campanha para monitoramento em tempo real
+            if (app.tilesCacheWs) {
+                app.tilesCacheWs.subscribeCampaign(campaignId);
+            }
             
             response.json({
                 success: true,
@@ -2007,5 +2012,42 @@ module.exports = function (app) {
         }
     };
     
+    /**
+     * Status do bridge WebSocket → Socket.IO
+     */
+    cacheManager.getWebSocketBridgeStatus = function (request, response) {
+        if (!app.tilesCacheWs) {
+            return response.json({ success: true, data: { available: false } });
+        }
+        response.json({
+            success: true,
+            data: {
+                available: true,
+                ...app.tilesCacheWs.getStatus()
+            }
+        });
+    };
+
+    /**
+     * Inscrever/desinscrever monitoramento de campanha via WebSocket
+     */
+    cacheManager.subscribeCampaignWs = function (request, response) {
+        const { campaignId } = request.params;
+        if (!app.tilesCacheWs) {
+            return response.status(503).json({ error: 'WebSocket bridge não disponível' });
+        }
+        app.tilesCacheWs.subscribeCampaign(campaignId);
+        response.json({ success: true, message: `Monitorando campanha ${campaignId}` });
+    };
+
+    cacheManager.unsubscribeCampaignWs = function (request, response) {
+        const { campaignId } = request.params;
+        if (!app.tilesCacheWs) {
+            return response.status(503).json({ error: 'WebSocket bridge não disponível' });
+        }
+        app.tilesCacheWs.unsubscribeCampaign(campaignId);
+        response.json({ success: true, message: `Parado monitoramento da campanha ${campaignId}` });
+    };
+
     return cacheManager;
 };
