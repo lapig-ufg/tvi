@@ -101,6 +101,46 @@ function safeDestroyMap(map) {
 })();
 
 Application
+    .factory('mapSyncService', function () {
+      var maps = [];
+      var syncing = false;
+
+      function register(map) {
+        if (!map || maps.indexOf(map) !== -1) return;
+        maps.push(map);
+
+        map.on('moveend', function () {
+          if (syncing) return;
+          syncing = true;
+          var center = map.getCenter();
+          var zoom = map.getZoom();
+          for (var i = 0; i < maps.length; i++) {
+            if (maps[i] !== map) {
+              maps[i].setView(center, zoom, { animate: false });
+            }
+          }
+          syncing = false;
+        });
+      }
+
+      function unregister(map) {
+        var idx = maps.indexOf(map);
+        if (idx !== -1) {
+          maps.splice(idx, 1);
+        }
+      }
+
+      function clear() {
+        maps = [];
+        syncing = false;
+      }
+
+      return {
+        register: register,
+        unregister: unregister,
+        clear: clear
+      };
+    })
     .directive('numberFormat', function ($filter) {
       return {
         require: 'ngModel',
@@ -150,7 +190,7 @@ Application
         }
       }
     })
-    .directive('inspectionMap', function () {
+    .directive('inspectionMap', function (mapSyncService) {
       return {
         template: '<div id="map-{{::$id}}" style="width: 100%; height: 100%;"></div>',
         scope: {
@@ -195,6 +235,8 @@ Application
               ]
             });
 
+            mapSyncService.register($scope.map);
+
             $scope.map.on('click', function () {
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
@@ -219,6 +261,7 @@ Application
 
             $scope.$on('$destroy', function() {
               $scope._destroyed = true;
+              mapSyncService.unregister($scope.map);
               if ($scope.map) {
                 safeDestroyMap($scope.map);
                 $scope.map = null;
@@ -409,7 +452,7 @@ Application
     //     }
     //   }
     // })
-    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService) {
+    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, mapSyncService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -589,7 +632,7 @@ Application
               scrollWheelZoom: true
             });
 
-
+            mapSyncService.register($scope.map);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
@@ -674,6 +717,7 @@ Application
             // Cleanup ao destruir
             $scope.$on('$destroy', function() {
               $scope._destroyed = true;
+              mapSyncService.unregister($scope.map);
               if ($scope.tileLayer) {
                 $scope.tileLayer.off();
               }
@@ -710,7 +754,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, capabilitiesService, $injector) {
+    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, mapSyncService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -905,7 +949,7 @@ Application
               scrollWheelZoom: true
             });
 
-
+            mapSyncService.register($scope.map);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
@@ -990,6 +1034,7 @@ Application
             // Cleanup ao destruir
             $scope.$on('$destroy', function() {
               $scope._destroyed = true;
+              mapSyncService.unregister($scope.map);
               if ($scope.tileLayer) {
                 $scope.tileLayer.off();
               }
@@ -1002,7 +1047,7 @@ Application
         }
       };
     })
-    .directive('wmsMap', function($timeout, $injector) {
+    .directive('wmsMap', function($timeout, $injector, mapSyncService) {
       return {
         template: `
           <div style="width: 100%; height: 100%; min-height: 300px; position: relative;">
@@ -1446,7 +1491,7 @@ Application
               scrollWheelZoom: true
             });
 
-
+            mapSyncService.register($scope.map);
 
             // Adicionar marcador
             $scope.marker = L.marker([$scope.lat, $scope.lon], {
@@ -1503,6 +1548,7 @@ Application
             // Cleanup completo quando o scope é destruído
             $scope.$on('$destroy', function() {
               $scope._destroyed = true;
+              mapSyncService.unregister($scope.map);
 
               if (unwatch) {
                 unwatch();
