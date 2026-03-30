@@ -14,7 +14,6 @@ angular.module('application').factory('loadingInterceptor', function($q, $rootSc
         /\/timeseries\//i,    // Matches '/timeseries/'
         /MOD13Q1_NDVI/i,      // Matches MODIS timeseries
         /\/ndvi/i,            // Matches NDVI endpoints
-        /\/nddi/i,            // Matches NDDI endpoints
         /analytics.*csv/i,    // Matches analytics CSV endpoints
         /\/csv/i,             // Matches CSV endpoints
         /csv-borda/i          // Matches csv-borda endpoints

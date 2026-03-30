@@ -75,7 +75,6 @@
     "CHARTS": {
       "LANDSAT_SERIES": "LANDSAT time series",
       "MODIS_SERIES": "MODIS time series",
-      "NDDI_SERIES": "NDDI Time Series",
       "SHOW_TIMESERIES": "Show Time Series Charts",
       "FILTER_PERIOD": "Filter Period"
     }
@@ -115,7 +114,6 @@
     "CHARTS": {
       "LANDSAT_SERIES": "LANDSAT time series",
       "MODIS_SERIES": "MODIS time series",
-      "NDDI_SERIES": "NDDI Time Series",
       "PRECIPITATION": "Precipitation",
       "SHOW_TIMESERIES": "Show Time Series Charts",
       "FILTER_PERIOD": "Filter Period"
@@ -224,8 +222,7 @@
     "NDVI_SAVGOL": "NDVI (Savgol)",
     "NDVI_ORIGINAL": "NDVI (Original)",
     "PRECIPITATION": "Precipitation",
-    "PRECIPITATION_MM": "Precipitation (mm)",
-    "NDDI_MAPBIOMAS": "NDDI (MapBiomas Mosaics)"
+    "PRECIPITATION_MM": "Precipitation (mm)"
   },
   "VIS_PARAMS": {
     "NATURAL_COLOR": "Natural Color",

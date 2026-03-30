@@ -27,7 +27,6 @@ module.exports = function(app) {
 				"landsatTimeseries": "/api/timeseries/landsat/{lat}/{lon}",
 				"sentinelTimeseries": "/api/timeseries/sentinel2/{lat}/{lon}",
 				"modisTimeseries": "/api/timeseries/modis/{lat}/{lon}",
-				"nddiTimeseries": "/api/timeseries/nddi/{lat}/{lon}",
 				"cacheStats": "/api/cache/stats",
 				"cacheClear": "/api/cache/clear",
 				"cacheWarmup": "/api/cache/warmup",

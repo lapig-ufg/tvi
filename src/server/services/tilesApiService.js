@@ -370,22 +370,6 @@ class TilesApiService {
         }
     }
 
-    async getNddiTimeseries(lat, lon, params = {}, req = null) {
-        try {
-            const url = this.buildUrl(this.config.endpoints.nddiTimeseries, { lat, lon });
-            const config = await this.createRequestConfig({ params }, req);
-            const response = await this.client.get(url, config);
-            return response.data;
-        } catch (error) {
-            await this.logger.error('Error fetching NDDI timeseries', {
-                module: 'tilesApiService',
-                function: 'getNddiTimeseries',
-                metadata: { error: error.message, lat, lon, params }
-            });
-            throw error;
-        }
-    }
-
     // Cache management endpoints
     async getCacheStats(req = null) {
         try {

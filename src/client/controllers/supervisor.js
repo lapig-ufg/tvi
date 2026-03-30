@@ -3,7 +3,6 @@
 Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog) {
     $scope.showCharts = false
     $scope.showChartsLandsat = false
-    $scope.showChartsNDDI = false
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
@@ -18,7 +17,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     // Estados para lazy loading
     
     // Declarar as funções de gráfico no escopo principal
-    var createModisChart, createLandsatChart, createNDDIChart;
+    var createModisChart, createLandsatChart;
     
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
@@ -256,7 +255,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 createModisChart($scope.datesFromService);
             }
             createLandsatChart();
-            createNDDIChart();
         }
     };
     
@@ -272,7 +270,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     createModisChart($scope.datesFromService);
                 }
                 createLandsatChart();
-                createNDDIChart();
             }
         } else {
             NotificationDialog.warning(i18nService.translate('ALERTS.INVALID_DATE_RANGE'));
@@ -643,9 +640,8 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                                 gridwidth: 1
                             },
                             yaxis: {
-                                title: 'NDVI',
-                                fixedrange: true,
-                                rangemode: "nonnegative"
+                                title: 'NDVI / NDWI',
+                                fixedrange: true
                             },
                             yaxis5: {
                                 title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
@@ -657,11 +653,25 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                         var dataChart = [trace1, trace2, trace3, trace4, trace5];
 
-                        Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+                        // Buscar NDWI da API MODIS em paralelo
+                        requester._get(`timeseries/modis`, {
+                            "lon": $scope.point.lon,
+                            "lat": $scope.point.lat
+                        }, function (ndwiData) {
+                            if (ndwiData && ndwiData.length > 0) {
+                                for (var t = 0; t < ndwiData.length; t++) {
+                                    if (ndwiData[t].name && ndwiData[t].name.indexOf('NDWI') !== -1) {
+                                        dataChart.push(ndwiData[t]);
+                                    }
+                                }
+                            }
 
-                        window.onresize = function () {
-                            Plotly.Plots.resize(gd);
-                        };
+                            Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+
+                            window.onresize = function () {
+                                Plotly.Plots.resize(gd);
+                            };
+                        });
 
                     });
                 }
@@ -680,9 +690,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     let filteredData = [];
                     if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
                         for (let i = 0; i < data.length; i++) {
+                            let trace = Object.assign({}, data[i]);
                             let filteredX = [];
                             let filteredY = [];
-                            
+
                             for (let j = 0; j < data[i].x.length; j++) {
                                 let year = new Date(data[i].x[j]).getFullYear();
                                 if (year >= $scope.chartFilterStartYear && year <= $scope.chartFilterEndYear) {
@@ -690,56 +701,21 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                                     filteredY.push(data[i].y[j]);
                                 }
                             }
-                            
-                            filteredData.push({
-                                x: filteredX,
-                                y: filteredY
-                            });
+
+                            trace.x = filteredX;
+                            trace.y = filteredY;
+                            filteredData.push(trace);
                         }
                     } else {
                         filteredData = data;
                     }
-                    
+
                     $scope.showChartsLandsat = filteredData[0].x.length > 0;
-                    
+
                     if ($scope.showChartsLandsat) {
                         let d3 = Plotly.d3;
                         let gd3 = d3.select('#LANDSAT');
                         let gd = gd3.node();
-
-                        // Criando os traços com os dados filtrados
-                        let trace1 = {
-                            x: filteredData[0].x,
-                            y: filteredData[0].y,
-                            type: "scatter",
-                            mode: "lines",
-                            name: "NDVI (Savgol)",
-                            line: {
-                                color: "rgb(50, 168, 82)"
-                            }
-                        };
-
-                        let trace2 = {
-                            x: filteredData[1].x,
-                            y: filteredData[1].y,
-                            type: "scatter",
-                            mode: "markers",
-                            name: "NDVI (Original)",
-                            marker: {
-                                color: "rgba(50, 168, 82, 0.3)"
-                            }
-                        };
-
-                        let trace3 = {
-                            x: filteredData[2].x,
-                            y: filteredData[2].y,
-                            type: "bar",
-                            name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
-                            marker: {
-                                color: "blue"
-                            },
-                            yaxis: "y2"
-                        };
 
                     let layout = {
                         height: 400,
@@ -758,9 +734,8 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             gridwidth: 1
                         },
                         yaxis: {
-                            title: 'NDVI',
-                            fixedrange: true,
-                            rangemode: "nonnegative"
+                            title: 'NDVI / NDWI',
+                            fixedrange: true
                         },
                         yaxis2: {
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
@@ -770,8 +745,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         }
                     };
 
-                        let dataChart = [trace1, trace2, trace3];
-                        Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                        Plotly.newPlot(gd, filteredData, layout, { displayModeBar: false });
                         Plotly.Plots.resize(gd);
 
                         window.onresize = function () {
@@ -781,87 +755,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             });
         };
-        createNDDIChart = function () {
-            Plotly.purge('NDDI');
-
-            requester._get(`timeseries/nddi`, {
-                "lon": $scope.point.lon,
-                "lat": $scope.point.lat
-            }, function (data) {
-                if (data && data.length > 0) {
-                    // Aplicar filtro de período se definido
-                    let filteredData = [];
-                    if ($scope.chartFilterStartYear && $scope.chartFilterEndYear) {
-                        for (let i = 0; i < data.length; i++) {
-                            let filteredX = [];
-                            let filteredY = [];
-                            
-                            for (let j = 0; j < data[i].x.length; j++) {
-                                let year = new Date(data[i].x[j]).getFullYear();
-                                if (year >= $scope.chartFilterStartYear && year <= $scope.chartFilterEndYear) {
-                                    filteredX.push(data[i].x[j]);
-                                    filteredY.push(data[i].y[j]);
-                                }
-                            }
-                            
-                            filteredData.push({
-                                x: filteredX,
-                                y: filteredY
-                            });
-                        }
-                    } else {
-                        filteredData = data;
-                    }
-                    
-                    $scope.showChartsNDDI = filteredData[0].x.length > 0;
-                    
-                    if ($scope.showChartsNDDI) {
-                        let d3 = Plotly.d3;
-                        let gd3 = d3.select('#NDDI');
-                        let gd = gd3.node();
-
-                        // Criando os traços com os dados filtrados
-                        let trace = {
-                            x: filteredData[0].x,
-                            y: filteredData[0].y,
-                            type: "scatter",
-                            mode: "lines",
-                            name: "NDDI (MapBiomas Mosaics)",
-                            line: {
-                                color: "rgb(0, 168, 82)"
-                            }
-                        };
-
-                    let layout = {
-                        height: 400,
-                        legend: {
-                            xanchor: "center",
-                            yanchor: "top",
-                            orientation: "h",
-                            y: 1.2,
-                            x: 0.5
-                        },
-                        xaxis: {
-                            tickmode: 'auto',
-                            nticks: 19,
-                            fixedrange: true,
-                            gridcolor: '#828282',
-                            gridwidth: 1
-                        }
-                    };
-
-                        let dataChart = [trace];
-                        Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
-                        Plotly.Plots.resize(gd);
-
-                        window.onresize = function () {
-                            Plotly.Plots.resize(gd);
-                        };
-                    }
-                }
-            });
-        };
-
         // Função helper para determinar o sensor Landsat baseado no ano usando collections
         var getLandsatSensor = function(year) {
             // Se não temos capabilities do Landsat ou collections, usar lógica padrão
@@ -1242,7 +1135,6 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         };
 
         var loadPoint = function (data) {
-            Plotly.purge('NDDI');
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 

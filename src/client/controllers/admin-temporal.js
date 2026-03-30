@@ -3,7 +3,6 @@
 Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector) {
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
-    $scope.showChartsNDDI = false;
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
@@ -563,9 +562,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                                 gridwidth: 1
                             },
                             yaxis: {
-                                title: 'NDVI',
-                                fixedrange: true,
-                                rangemode: "nonnegative"
+                                title: 'NDVI / NDWI',
+                                fixedrange: true
                             },
                             yaxis5: {
                                 title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
@@ -576,11 +574,26 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                         };
 
                         var dataChart = [trace1, trace2, trace3, trace4, trace5];
-                        Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
 
-                        window.onresize = function () {
-                            Plotly.Plots.resize(gd);
-                        };
+                        // Buscar NDWI da API MODIS em paralelo
+                        requester._get(`admin/timeseries/modis`, {
+                            "lon": $scope.point.lon,
+                            "lat": $scope.point.lat
+                        }, function (ndwiData) {
+                            if (ndwiData && ndwiData.length > 0) {
+                                for (var t = 0; t < ndwiData.length; t++) {
+                                    if (ndwiData[t].name && ndwiData[t].name.indexOf('NDWI') !== -1) {
+                                        dataChart.push(ndwiData[t]);
+                                    }
+                                }
+                            }
+
+                            Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
+
+                            window.onresize = function () {
+                                Plotly.Plots.resize(gd);
+                            };
+                        });
                     });
                 }
             });
@@ -599,39 +612,6 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     let gd3 = d3.select('#LANDSAT');
                     let gd = gd3.node();
 
-                    let trace1 = {
-                        x: data[0].x,
-                        y: data[0].y,
-                        type: "scatter",
-                        mode: "lines",
-                        name: "NDVI (Savgol)",
-                        line: {
-                            color: "rgb(50, 168, 82)"
-                        }
-                    };
-
-                    let trace2 = {
-                        x: data[1].x,
-                        y: data[1].y,
-                        type: "scatter",
-                        mode: "markers",
-                        name: "NDVI (Original)",
-                        marker: {
-                            color: "rgba(50, 168, 82, 0.3)"
-                        }
-                    };
-
-                    let trace3 = {
-                        x: data[2].x,
-                        y: data[2].y,
-                        type: "bar",
-                        name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
-                        marker: {
-                            color: "blue"
-                        },
-                        yaxis: "y2"
-                    };
-
                     let layout = {
                         height: 400,
                         legend: {
@@ -649,9 +629,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             gridwidth: 1
                         },
                         yaxis: {
-                            title: 'NDVI',
-                            fixedrange: true,
-                            rangemode: "nonnegative"
+                            title: 'NDVI / NDWI',
+                            fixedrange: true
                         },
                         yaxis2: {
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
@@ -661,64 +640,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                         }
                     };
 
-                    let dataChart = [trace1, trace2, trace3];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
-                    Plotly.Plots.resize(gd);
-
-                    window.onresize = function () {
-                        Plotly.Plots.resize(gd);
-                    };
-                }
-            });
-        };
-
-        var createNDDIChart = function () {
-            Plotly.purge('NDDI');
-
-            $http.get('/service/admin/timeseries/nddi', {
-                params: {
-                    "lon": $scope.point.lon,
-                    "lat": $scope.point.lat
-                }
-            }).then(function (response) {
-                var data = response.data;
-                if (data && data.length > 0) {
-                    $scope.showChartsNDDI = true;
-                    let d3 = Plotly.d3;
-                    let gd3 = d3.select('#NDDI');
-                    let gd = gd3.node();
-
-                    let trace = {
-                        x: data[0].x,
-                        y: data[0].y,
-                        type: "scatter",
-                        mode: "lines",
-                        name: "NDDI (MapBiomas Mosaics)",
-                        line: {
-                            color: "rgb(0, 168, 82)"
-                        }
-                    };
-
-                    let layout = {
-                        height: 400,
-                        legend: {
-                            xanchor: "center",
-                            yanchor: "top",
-                            orientation: "h",
-                            y: 1.2,
-                            x: 0.5
-                        },
-                        xaxis: {
-                            tickmode: 'auto',
-                            nticks: 19,
-                            fixedrange: true,
-                            gridcolor: '#828282',
-                            gridwidth: 1
-                        }
-                    };
-
-                    let dataChart = [trace];
-                    Plotly.newPlot(gd, dataChart, layout, { displayModeBar: false });
+                    Plotly.newPlot(gd, data, layout, { displayModeBar: false });
                     Plotly.Plots.resize(gd);
 
                     window.onresize = function () {
@@ -1223,7 +1145,6 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         var loadPoint = function (data) {
-            Plotly.purge('NDDI');
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 
@@ -1254,7 +1175,6 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 if (!$scope.isChaco && $scope.showTimeseries) {
                     createModisChart(data.point.dates);
                     createLandsatChart();
-                    createNDDIChart();
                 }
             });
             

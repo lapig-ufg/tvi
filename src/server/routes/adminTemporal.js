@@ -315,41 +315,6 @@ module.exports = function (app) {
     
     /**
      * @swagger
-     * /service/admin/timeseries/nddi:
-     *   get:
-     *     summary: Get NDDI time series for admin
-     *     tags: [Admin Temporal]
-     *     parameters:
-     *       - in: query
-     *         name: lon
-     *         required: true
-     *         schema:
-     *           type: number
-     *         description: Longitude
-     *       - in: query
-     *         name: lat
-     *         required: true
-     *         schema:
-     *           type: number
-     *         description: Latitude
-     *       - in: query
-     *         name: startDate
-     *         schema:
-     *           type: string
-     *           format: date
-     *       - in: query
-     *         name: endDate
-     *         schema:
-     *           type: string
-     *           format: date
-     *     responses:
-     *       200:
-     *         description: NDDI time series data
-     */
-    app.get('/service/admin/timeseries/nddi', checkAdminAuth, timeseries.getTimeSeriesLandsatNDDIByLonLatAdmin);
-    
-    /**
-     * @swagger
      * /service/admin/dashboard/points-inspection:
      *   get:
      *     summary: Get points inspection summary for admin
@@ -448,7 +413,9 @@ module.exports = function (app) {
             success: true
         });
     });
-    
+
+    app.get('/service/admin/timeseries/modis', checkAdminAuth, timeseries.getTimeSeriesModisByLonLatAdmin);
+
     /**
      * @swagger
      * /service/admin/campaign/config:
