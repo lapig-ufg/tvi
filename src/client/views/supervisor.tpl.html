@@ -374,9 +374,17 @@
                         <span style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.LANDSAT_SERIES' | i18n }}:</span>
                         <div id="LANDSAT"></div>
                     </fieldset>
+                    <fieldset ng-show="showChartsLandsatNdwi">
+                        <span style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.LANDSAT_NDWI_SERIES' | i18n }}:</span>
+                        <div id="LANDSAT_NDWI"></div>
+                    </fieldset>
                     <fieldset >
                         <span ng-show="showCharts" style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.MODIS_SERIES' | i18n }}:</span>
                         <div id="NDVI"></div>
+                    </fieldset>
+                    <fieldset ng-show="showChartsModisNdwi">
+                        <span style="font-size: 18px; font-weight: bold;">{{ 'SUPERVISOR.CHARTS.MODIS_NDWI_SERIES' | i18n }}:</span>
+                        <div id="MODIS_NDWI"></div>
                     </fieldset>
                 </div>
             </div>

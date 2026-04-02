@@ -416,6 +416,9 @@ module.exports = function (app) {
 
     app.get('/service/admin/timeseries/modis', checkAdminAuth, timeseries.getTimeSeriesModisByLonLatAdmin);
 
+    app.get('/service/admin/timeseries/landsat/ndwi', checkAdminAuth, timeseries.getTimeSeriesLandsatNdwiByLonLatAdmin);
+    app.get('/service/admin/timeseries/modis/ndwi', checkAdminAuth, timeseries.getTimeSeriesModisNdwiByLonLatAdmin);
+
     /**
      * @swagger
      * /service/admin/campaign/config:

@@ -1104,12 +1104,22 @@
                         <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.LANDSAT_SERIES' | i18n }}</h4>
                         <div id="LANDSAT"></div>
                     </div>
-                    
+
+                    <div class="chart-container" ng-show="showChartsLandsatNdwi">
+                        <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.LANDSAT_NDWI_SERIES' | i18n }}</h4>
+                        <div id="LANDSAT_NDWI"></div>
+                    </div>
+
                     <div class="chart-container" ng-show="showCharts">
                         <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.MODIS_SERIES' | i18n }}</h4>
                         <div id="NDVI"></div>
                     </div>
-                    
+
+                    <div class="chart-container" ng-show="showChartsModisNdwi">
+                        <h4 class="chart-title">{{ 'SUPERVISOR.CHARTS.MODIS_NDWI_SERIES' | i18n }}</h4>
+                        <div id="MODIS_NDWI"></div>
+                    </div>
+
                 </div>
             </div>
         </div>

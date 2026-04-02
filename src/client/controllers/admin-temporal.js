@@ -562,7 +562,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                                 gridwidth: 1
                             },
                             yaxis: {
-                                title: 'NDVI / NDWI',
+                                title: 'NDVI',
                                 fixedrange: true
                             },
                             yaxis5: {
@@ -575,25 +575,11 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
                         var dataChart = [trace1, trace2, trace3, trace4, trace5];
 
-                        // Buscar NDWI da API MODIS em paralelo
-                        requester._get(`admin/timeseries/modis`, {
-                            "lon": $scope.point.lon,
-                            "lat": $scope.point.lat
-                        }, function (ndwiData) {
-                            if (ndwiData && ndwiData.length > 0) {
-                                for (var t = 0; t < ndwiData.length; t++) {
-                                    if (ndwiData[t].name && ndwiData[t].name.indexOf('NDWI') !== -1) {
-                                        dataChart.push(ndwiData[t]);
-                                    }
-                                }
-                            }
+                        Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
 
-                            Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
-
-                            window.onresize = function () {
-                                Plotly.Plots.resize(gd);
-                            };
-                        });
+                        window.onresize = function () {
+                            Plotly.Plots.resize(gd);
+                        };
                     });
                 }
             });
@@ -629,7 +615,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             gridwidth: 1
                         },
                         yaxis: {
-                            title: 'NDVI / NDWI',
+                            title: 'NDVI',
                             fixedrange: true
                         },
                         yaxis2: {
@@ -646,6 +632,113 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     window.onresize = function () {
                         Plotly.Plots.resize(gd);
                     };
+                }
+            });
+        };
+
+        var createLandsatNdwiChart = function () {
+            Plotly.purge('LANDSAT_NDWI');
+
+            requester._get(`admin/timeseries/landsat/ndwi`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
+            }, function (data) {
+                if (data && data.length > 0) {
+                    $scope.showChartsLandsatNdwi = true;
+
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#LANDSAT_NDWI');
+                    let gd = gd3.node();
+
+                    let layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        },
+                        yaxis: {
+                            title: 'NDWI',
+                            fixedrange: true
+                        },
+                        yaxis2: {
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
+                        }
+                    };
+
+                    Plotly.newPlot(gd, data, layout, { displayModeBar: false });
+                    Plotly.Plots.resize(gd);
+
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                } else {
+                    $scope.showChartsLandsatNdwi = false;
+                }
+            });
+        };
+
+        var createModisNdwiChart = function () {
+            Plotly.purge('MODIS_NDWI');
+
+            requester._get(`admin/timeseries/modis/ndwi`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
+            }, function (data) {
+                if (data && data.length > 0) {
+                    $scope.showChartsModisNdwi = true;
+
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#MODIS_NDWI');
+                    let gd = gd3.node();
+
+                    let layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        },
+                        yaxis: {
+                            title: 'NDWI',
+                            fixedrange: true
+                        },
+                        yaxis2: {
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
+                        }
+                    };
+
+                    Plotly.newPlot(gd, data, layout, { displayModeBar: false });
+
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                } else {
+                    $scope.showChartsModisNdwi = false;
                 }
             });
         };
@@ -1174,7 +1267,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 generateMaps();
                 if (!$scope.isChaco && $scope.showTimeseries) {
                     createModisChart(data.point.dates);
+                    createModisNdwiChart();
                     createLandsatChart();
+                    createLandsatNdwiChart();
                 }
             });
             

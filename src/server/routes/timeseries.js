@@ -164,4 +164,7 @@ module.exports = function (app) {
 	app.get('/api/timeseries/landsat/ndvi', timeseries.getTimeSeriesLandsatNdviByLonLat);
 
 	app.get('/service/timeseries/modis', timeseries.getTimeSeriesModisByLonLat);
+
+	app.get('/service/timeseries/landsat/ndwi', timeseries.getTimeSeriesLandsatNdwiByLonLat);
+	app.get('/service/timeseries/modis/ndwi', timeseries.getTimeSeriesModisNdwiByLonLat);
 }

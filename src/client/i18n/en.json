@@ -73,8 +73,10 @@
       "VISUALIZATION": "Visualization"
     },
     "CHARTS": {
-      "LANDSAT_SERIES": "LANDSAT time series",
-      "MODIS_SERIES": "MODIS time series",
+      "LANDSAT_SERIES": "NDVI LANDSAT time series",
+      "MODIS_SERIES": "NDVI MODIS time series",
+      "LANDSAT_NDWI_SERIES": "NDWI LANDSAT time series",
+      "MODIS_NDWI_SERIES": "NDWI MODIS time series",
       "SHOW_TIMESERIES": "Show Time Series Charts",
       "FILTER_PERIOD": "Filter Period"
     }
@@ -112,8 +114,10 @@
       "FALSE_COLOR": "False Color"
     },
     "CHARTS": {
-      "LANDSAT_SERIES": "LANDSAT time series",
-      "MODIS_SERIES": "MODIS time series",
+      "LANDSAT_SERIES": "NDVI LANDSAT time series",
+      "MODIS_SERIES": "NDVI MODIS time series",
+      "LANDSAT_NDWI_SERIES": "NDWI LANDSAT time series",
+      "MODIS_NDWI_SERIES": "NDWI MODIS time series",
       "PRECIPITATION": "Precipitation",
       "SHOW_TIMESERIES": "Show Time Series Charts",
       "FILTER_PERIOD": "Filter Period"

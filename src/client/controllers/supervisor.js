@@ -17,7 +17,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     // Estados para lazy loading
     
     // Declarar as funções de gráfico no escopo principal
-    var createModisChart, createLandsatChart;
+    var createModisChart, createLandsatChart, createLandsatNdwiChart, createModisNdwiChart;
     
     // Valores padrão para as configurações de visualização
     $scope.showTimeseries = true;
@@ -253,23 +253,27 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
             if ($scope.datesFromService) {
                 createModisChart($scope.datesFromService);
+                createModisNdwiChart();
             }
             createLandsatChart();
+            createLandsatNdwiChart();
         }
     };
-    
+
     // Função para atualizar o filtro de período dos gráficos
     $scope.updateChartFilter = function() {
         // Validar os anos
-        if ($scope.chartFilterStartYear && $scope.chartFilterEndYear && 
+        if ($scope.chartFilterStartYear && $scope.chartFilterEndYear &&
             $scope.chartFilterStartYear <= $scope.chartFilterEndYear) {
-            
+
             // Recriar os gráficos com o novo filtro
             if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
                 if ($scope.datesFromService) {
                     createModisChart($scope.datesFromService);
+                    createModisNdwiChart();
                 }
                 createLandsatChart();
+                createLandsatNdwiChart();
             }
         } else {
             NotificationDialog.warning(i18nService.translate('ALERTS.INVALID_DATE_RANGE'));
@@ -640,7 +644,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                                 gridwidth: 1
                             },
                             yaxis: {
-                                title: 'NDVI / NDWI',
+                                title: 'NDVI',
                                 fixedrange: true
                             },
                             yaxis5: {
@@ -653,25 +657,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
                         var dataChart = [trace1, trace2, trace3, trace4, trace5];
 
-                        // Buscar NDWI da API MODIS em paralelo
-                        requester._get(`timeseries/modis`, {
-                            "lon": $scope.point.lon,
-                            "lat": $scope.point.lat
-                        }, function (ndwiData) {
-                            if (ndwiData && ndwiData.length > 0) {
-                                for (var t = 0; t < ndwiData.length; t++) {
-                                    if (ndwiData[t].name && ndwiData[t].name.indexOf('NDWI') !== -1) {
-                                        dataChart.push(ndwiData[t]);
-                                    }
-                                }
-                            }
+                        Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
 
-                            Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
-
-                            window.onresize = function () {
-                                Plotly.Plots.resize(gd);
-                            };
-                        });
+                        window.onresize = function () {
+                            Plotly.Plots.resize(gd);
+                        };
 
                     });
                 }
@@ -734,7 +724,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                             gridwidth: 1
                         },
                         yaxis: {
-                            title: 'NDVI / NDWI',
+                            title: 'NDVI',
                             fixedrange: true
                         },
                         yaxis2: {
@@ -755,6 +745,114 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 }
             });
         };
+
+        var createLandsatNdwiChart = function () {
+            Plotly.purge('LANDSAT_NDWI');
+
+            requester._get(`timeseries/landsat/ndwi`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
+            }, function (data) {
+                if (data && data.length > 0) {
+                    $scope.showChartsLandsatNdwi = true;
+
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#LANDSAT_NDWI');
+                    let gd = gd3.node();
+
+                    let layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        },
+                        yaxis: {
+                            title: 'NDWI',
+                            fixedrange: true
+                        },
+                        yaxis2: {
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
+                        }
+                    };
+
+                    Plotly.newPlot(gd, data, layout, { displayModeBar: false });
+                    Plotly.Plots.resize(gd);
+
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                } else {
+                    $scope.showChartsLandsatNdwi = false;
+                }
+            });
+        };
+
+        var createModisNdwiChart = function () {
+            Plotly.purge('MODIS_NDWI');
+
+            requester._get(`timeseries/modis/ndwi`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
+            }, function (data) {
+                if (data && data.length > 0) {
+                    $scope.showChartsModisNdwi = true;
+
+                    let d3 = Plotly.d3;
+                    let gd3 = d3.select('#MODIS_NDWI');
+                    let gd = gd3.node();
+
+                    let layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        },
+                        yaxis: {
+                            title: 'NDWI',
+                            fixedrange: true
+                        },
+                        yaxis2: {
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
+                        }
+                    };
+
+                    Plotly.newPlot(gd, data, layout, { displayModeBar: false });
+
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                } else {
+                    $scope.showChartsModisNdwi = false;
+                }
+            });
+        };
+
         // Função helper para determinar o sensor Landsat baseado no ano usando collections
         var getLandsatSensor = function(year) {
             // Se não temos capabilities do Landsat ou collections, usar lógica padrão

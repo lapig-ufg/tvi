@@ -370,6 +370,55 @@ class TilesApiService {
         }
     }
 
+    // NDWI Timeseries endpoints (separated from NDVI)
+    async getLandsatNdwiTimeseries(lat, lon, params = {}, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.landsatNdwiTimeseries, { lat, lon });
+            const config = await this.createRequestConfig({ params }, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching Landsat NDWI timeseries', {
+                module: 'tilesApiService',
+                function: 'getLandsatNdwiTimeseries',
+                metadata: { error: error.message, lat, lon, params }
+            });
+            throw error;
+        }
+    }
+
+    async getSentinelNdwiTimeseries(lat, lon, params = {}, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.sentinelNdwiTimeseries, { lat, lon });
+            const config = await this.createRequestConfig({ params }, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching Sentinel NDWI timeseries', {
+                module: 'tilesApiService',
+                function: 'getSentinelNdwiTimeseries',
+                metadata: { error: error.message, lat, lon, params }
+            });
+            throw error;
+        }
+    }
+
+    async getModisNdwiTimeseries(lat, lon, params = {}, req = null) {
+        try {
+            const url = this.buildUrl(this.config.endpoints.modisNdwiTimeseries, { lat, lon });
+            const config = await this.createRequestConfig({ params }, req);
+            const response = await this.client.get(url, config);
+            return response.data;
+        } catch (error) {
+            await this.logger.error('Error fetching MODIS NDWI timeseries', {
+                module: 'tilesApiService',
+                function: 'getModisNdwiTimeseries',
+                metadata: { error: error.message, lat, lon, params }
+            });
+            throw error;
+        }
+    }
+
     // Cache management endpoints
     async getCacheStats(req = null) {
         try {

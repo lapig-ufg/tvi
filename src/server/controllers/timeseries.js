@@ -235,6 +235,68 @@ module.exports = function (app) {
         }
     };
 
+    // ===== NDWI endpoints (rotas independentes do tiles API) =====
+
+    Timeseries.getTimeSeriesLandsatNdwiByLonLat = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            await logger.error("lon lat not found", {
+                module: 'timeseries',
+                function: 'getTimeSeriesLandsatNdwiByLonLat',
+                req: request
+            });
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            const params = {};
+            if (data_inicio) params.data_inicio = data_inicio;
+            if (data_fim) params.data_fim = data_fim;
+
+            const result = await tilesApi.getLandsatNdwiTimeseries(lat, lon, params, request);
+            response.status(200).send(result);
+        } catch (error) {
+            await logger.error("Error fetching Landsat NDWI timeseries", {
+                module: 'timeseries',
+                function: 'getTimeSeriesLandsatNdwiByLonLat',
+                metadata: { error: error.message, lon, lat, data_inicio, data_fim },
+                req: request
+            });
+            response.status(500).send({ error: "Failed to fetch Landsat NDWI timeseries data" });
+        }
+    };
+
+    Timeseries.getTimeSeriesModisNdwiByLonLat = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            await logger.error("lon lat not found", {
+                module: 'timeseries',
+                function: 'getTimeSeriesModisNdwiByLonLat',
+                req: request
+            });
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            const params = {};
+            if (data_inicio) params.data_inicio = data_inicio;
+            if (data_fim) params.data_fim = data_fim;
+
+            const result = await tilesApi.getModisNdwiTimeseries(lat, lon, params, request);
+            response.status(200).send(result);
+        } catch (error) {
+            await logger.error("Error fetching MODIS NDWI timeseries", {
+                module: 'timeseries',
+                function: 'getTimeSeriesModisNdwiByLonLat',
+                metadata: { error: error.message, lon, lat, data_inicio, data_fim },
+                req: request
+            });
+            response.status(500).send({ error: "Failed to fetch MODIS NDWI timeseries data" });
+        }
+    };
+
     // ===== MÉTODOS ADMIN (sem dependência de sessão) =====
     
     Timeseries.getTimeSeriesLandsatNdviByLonLatAdmin = async function (request, response) {
@@ -337,6 +399,49 @@ module.exports = function (app) {
                 error: "Failed to fetch MODIS timeseries data",
                 source: app.config.tilesApi && app.config.tilesApi.baseUrl ? 'new-api' : 'legacy'
             });
+        }
+    };
+
+    // Admin NDWI endpoints
+    Timeseries.getTimeSeriesLandsatNdwiByLonLatAdmin = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            const params = {};
+            if (data_inicio) params.data_inicio = data_inicio;
+            if (data_fim) params.data_fim = data_fim;
+
+            const result = await tilesApi.getLandsatNdwiTimeseries(lat, lon, params, request);
+            response.status(200).send(result);
+        } catch (error) {
+            console.error("Admin - Error fetching Landsat NDWI timeseries:", error.message);
+            response.status(500).send({ error: "Failed to fetch Landsat NDWI timeseries data" });
+        }
+    };
+
+    Timeseries.getTimeSeriesModisNdwiByLonLatAdmin = async function (request, response) {
+        const { lon, lat, data_inicio, data_fim } = request.query;
+
+        if (!lon || !lat) {
+            console.error("Admin - lon lat not found");
+            return response.status(400).send({ error: "Longitude and latitude are required" });
+        }
+
+        try {
+            const params = {};
+            if (data_inicio) params.data_inicio = data_inicio;
+            if (data_fim) params.data_fim = data_fim;
+
+            const result = await tilesApi.getModisNdwiTimeseries(lat, lon, params, request);
+            response.status(200).send(result);
+        } catch (error) {
+            console.error("Admin - Error fetching MODIS NDWI timeseries:", error.message);
+            response.status(500).send({ error: "Failed to fetch MODIS NDWI timeseries data" });
         }
     };
 
