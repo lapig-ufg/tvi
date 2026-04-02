@@ -3,6 +3,8 @@
 Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector) {
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
+    $scope.showChartsLandsatNdwi = false;
+    $scope.showChartsModisNdwi = false;
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];

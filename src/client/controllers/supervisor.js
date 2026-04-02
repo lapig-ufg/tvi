@@ -2,7 +2,9 @@
 
 Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog) {
     $scope.showCharts = false
-    $scope.showChartsLandsat = false
+    $scope.showChartsLandsat = false;
+    $scope.showChartsLandsatNdwi = false;
+    $scope.showChartsModisNdwi = false;
     $scope.showCorrectCampaign = false;
     $scope.showloading = true;
     $scope.planetMosaics = [];
@@ -746,7 +748,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         };
 
-        var createLandsatNdwiChart = function () {
+        createLandsatNdwiChart = function () {
             Plotly.purge('LANDSAT_NDWI');
 
             requester._get(`timeseries/landsat/ndwi`, {
@@ -800,7 +802,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         };
 
-        var createModisNdwiChart = function () {
+        createModisNdwiChart = function () {
             Plotly.purge('MODIS_NDWI');
 
             requester._get(`timeseries/modis/ndwi`, {

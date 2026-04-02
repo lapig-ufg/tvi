@@ -3,7 +3,9 @@
 Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog) {
 
     $scope.pointLoaded = false;
-    $scope.showChartsLandsat = false
+    $scope.showChartsLandsat = false;
+    $scope.showChartsLandsatNdwi = false;
+    $scope.showChartsModisNdwi = false;
     $scope.planetMosaics = [];
     $scope.sentinelMosaics   = [];
     
