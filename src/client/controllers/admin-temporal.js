@@ -360,229 +360,55 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             return date;
         };
 
-        var trace2NDVI = function (values, date) {
-            var ndvi = [];
-            for (var i = 0; i < date.length; i++) {
-                for (var j = 0; j < values.length; j = j + 2) {
-                    var dateFromValues = new Date(values[j][0]);
-                    var dateFromDate = new Date(date[i]);
-
-                    if (((dateFromDate.getUTCMonth() + 1) == (dateFromValues.getUTCMonth() + 1)) && (dateFromDate.getUTCFullYear() == dateFromValues.getUTCFullYear())) {
-                        ndvi.push(values[j][1]);
-                    }
-                }
-            }
-            return ndvi;
-        };
-
-        var getPrecipitationData = function (callback) {
-            requester._get('admin/spatial/precipitation', {
-                "longitude": $scope.point.lon,
-                "latitude": $scope.point.lat
-            }, function (data) {
-                var precipit = [];
-                var date = [];
-                var text = [];
-
-                for (var i = 0; i < data.values.length; i++) {
-                    precipit.push(data.values[i][1]);
-                    date.push(new Date(data.values[i][0]));
-                    var dateObj = new Date(data.values[i][0]);
-                    var month = dateObj.getUTCMonth() + 1;
-                    var day = dateObj.getUTCDate();
-                    var year = dateObj.getUTCFullYear();
-                    text.push(day + "/" + month + "/" + year);
-                }
-
-                var result = {
-                    "precipit": precipit,
-                    "date": date,
-                    "text": text
-                };
-
-                callback(result);
-            });
-        };
-
-        var getDryDate = function (dates, tmsIdList) {
-            var dry = [];
-            for (var key in dates) {
-                for (var i = 0; i < tmsIdList.length; i++) {
-                    if (key == tmsIdList[i]) {
-                        var year = parseInt(dates[key].split('-')[0]);
-                        if (year >= 2000) {
-                            dry.push(dates[key]);
-                        }
-                    }
-                }
-            }
-            return dry.sort();
-        };
-
-        var createModisChart = function (datesFromService) {
+        var createModisChart = function () {
             Plotly.purge('NDVI');
-            requester._get('admin/time-series/MOD13Q1_NDVI', {
-                "longitude": $scope.point.lon,
-                "latitude": $scope.point.lat
+
+            requester._get(`admin/timeseries/modis`, {
+                "lon": $scope.point.lon,
+                "lat": $scope.point.lat
             }, function (data) {
-                if(data){
-                    getPrecipitationData(function (dataPrecip) {
-                        var ndvi = [];
-                        var ndviSg = [];
-                        var date = [];
-                        var text = [];
-                        $scope.showCharts = data.values.length > 0;
+                if (data && data.length > 0) {
+                    $scope.showCharts = true;
 
-                        for (var i = 0; i < data.values.length; i++) {
-                            var dateObj = new Date(data.values[i][0]);
-                            var month = dateObj.getUTCMonth() + 1;
-                            var day = dateObj.getUTCDate();
-                            var year = dateObj.getUTCFullYear();
-                            ndvi.push(data.values[i][1]);
-                            ndviSg.push(data.values[i][3]);
-                            date.push(data.values[i][0]);
-                            text.push(day + "/" + month + "/" + year);
+                    var d3 = Plotly.d3;
+                    var gd3 = d3.select('#NDVI');
+                    var gd = gd3.node();
+
+                    var layout = {
+                        height: 400,
+                        legend: {
+                            xanchor: "center",
+                            yanchor: "top",
+                            orientation: "h",
+                            y: 1.2,
+                            x: 0.5
+                        },
+                        xaxis: {
+                            tickmode: 'auto',
+                            nticks: 19,
+                            fixedrange: true,
+                            gridcolor: '#828282',
+                            gridwidth: 1
+                        },
+                        yaxis: {
+                            title: 'NDVI',
+                            fixedrange: true
+                        },
+                        yaxis2: {
+                            title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
+                            overlaying: "y",
+                            side: "right",
+                            fixedrange: true
                         }
+                    };
 
-                        var dry = getDryDate(datesFromService, $scope.tmsIdListDry);
-                        var wet = getDryDate(datesFromService, $scope.tmsIdListWet);
+                    Plotly.newPlot(gd, data, layout, {displayModeBar: false});
 
-                        var d3 = Plotly.d3;
-                        var gd3 = d3.select('#NDVI');
-                        var gd = gd3.node();
-
-                        var trace1 = {
-                            x: date,
-                            y: ndvi,
-                            text: date,
-                            name: "NDVI",
-                            hoverinfo: "text+y",
-                            line: {
-                                width: 1.5,
-                                color: '#f6b2b2'
-                            }
-                        };
-
-                        var trace2 = {
-                            x: date,
-                            y: ndviSg,
-                            text: date,
-                            name: "NDVI (savGol)",
-                            hoverinfo: "none",
-                            line: {
-                                width: 1,
-                                color: '#db2828'
-                            }
-                        };
-
-                        var trace3 = {
-                            x: dry,
-                            y: trace2NDVI(data.values, dry),
-                            text: dry,
-                            name: 'Landsat (' + i18nService.translate('PERIODS.DRY') + ')',
-                            hoverinfo: "none",
-                            mode: 'markers',
-                            marker: {
-                                size: 6,
-                                color: '#818181'
-                            }
-                        };
-
-                        var trace4 = {
-                            x: wet,
-                            y: trace2NDVI(data.values, wet),
-                            text: wet,
-                            name: 'Landsat (' + i18nService.translate('PERIODS.WET') + ')',
-                            hoverinfo: "none",
-                            mode: 'markers',
-                            marker: {
-                                color: '#323232',
-                                size: 6
-                            }
-                        };
-
-                        var initDate = date.length > 0 ? date[0].split("-") : ["1985", "01", "01"];
-                        var initPrec = 0;
-                        var precData = [];
-                        var precValue = [];
-                        var precText = [];
-
-                        for (var i = 0; i < dataPrecip.text.length; i++) {
-                            dataPrecip.text[i] = dataPrecip.text[i].split("/");
-                            dataPrecip.text[i] = dataPrecip.text[i].reverse();
-                            dataPrecip.text[i] = dataPrecip.text[i].toString();
-                            dataPrecip.text[i] = dataPrecip.text[i].replace(',', '-');
-                            dataPrecip.text[i] = dataPrecip.text[i].replace(',', '-');
-                        }
-
-                        var count = 0;
-                        for (var i = 0; i < dataPrecip.text.length; i++) {
-                            initPrec = dataPrecip.text[i].split("-");
-
-                            if (initPrec[0] >= initDate[0]) {
-                                precData[count] = dataPrecip.text[i];
-                                precValue[count] = dataPrecip.precipit[i];
-                                var temp = dataPrecip.text[i].split("-");
-                                precText[count] = temp[0] + '-' + temp[1];
-                                count++;
-                            }
-                        }
-
-                        var trace5 = {
-                            x: precData,
-                            y: precValue,
-                            text: precText,
-                            name: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
-                            hoverinfo: 'text+y',
-                            opacity: 0.5,
-                            mode: 'markers',
-                            marker: {
-                                size: 6,
-                                color: '#0000ff',
-                                line: {
-                                    width: 0.1
-                                }
-                            },
-                            yaxis: 'y5',
-                            type: 'bar'
-                        };
-
-                        var layout = {
-                            height: 400,
-                            legend: {
-                                xanchor: "center",
-                                yanchor: "top",
-                                orientation: "h",
-                                y: 1.2,
-                                x: 0.5
-                            },
-                            xaxis: {
-                                tickmode: 'auto',
-                                nticks: 19,
-                                fixedrange: true,
-                                gridcolor: '#828282',
-                                gridwidth: 1
-                            },
-                            yaxis: {
-                                title: 'NDVI',
-                                fixedrange: true
-                            },
-                            yaxis5: {
-                                title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION'),
-                                fixedrange: true,
-                                overlaying: 'y',
-                                side: 'right'
-                            }
-                        };
-
-                        var dataChart = [trace1, trace2, trace3, trace4, trace5];
-
-                        Plotly.newPlot(gd, dataChart, layout, {displayModeBar: false});
-
-                        window.onresize = function () {
-                            Plotly.Plots.resize(gd);
-                        };
-                    });
+                    window.onresize = function () {
+                        Plotly.Plots.resize(gd);
+                    };
+                } else {
+                    $scope.showCharts = false;
                 }
             });
         };
@@ -1268,7 +1094,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             loadCampaignConfig(function() {
                 generateMaps();
                 if (!$scope.isChaco && $scope.showTimeseries) {
-                    createModisChart(data.point.dates);
+                    createModisChart();
                     createModisNdwiChart();
                     createLandsatChart();
                     createLandsatNdwiChart();
