@@ -174,10 +174,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
             if ($scope.datesFromService) {
                 createModisChart($scope.datesFromService);
-                createModisNdwiChart();
+                if (createModisNdwiChart) createModisNdwiChart();
             }
             createLandsatChart();
-            createLandsatNdwiChart();
+            if (createLandsatNdwiChart) createLandsatNdwiChart();
         }
     };
 
@@ -191,10 +191,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
                 if ($scope.datesFromService) {
                     createModisChart($scope.datesFromService);
-                    createModisNdwiChart();
+                    if (createModisNdwiChart) createModisNdwiChart();
                 }
                 createLandsatChart();
-                createLandsatNdwiChart();
+                if (createLandsatNdwiChart) createLandsatNdwiChart();
             }
         } else {
             NotificationDialog.warning(i18nService.translate('ALERTS.INVALID_DATE_RANGE'));

@@ -255,10 +255,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
             if ($scope.datesFromService) {
                 createModisChart($scope.datesFromService);
-                createModisNdwiChart();
+                if (createModisNdwiChart) createModisNdwiChart();
             }
             createLandsatChart();
-            createLandsatNdwiChart();
+            if (createLandsatNdwiChart) createLandsatNdwiChart();
         }
     };
 
@@ -272,10 +272,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             if ($scope.showTimeseriesCharts && $scope.point && !$scope.isChaco) {
                 if ($scope.datesFromService) {
                     createModisChart($scope.datesFromService);
-                    createModisNdwiChart();
+                    if (createModisNdwiChart) createModisNdwiChart();
                 }
                 createLandsatChart();
-                createLandsatNdwiChart();
+                if (createLandsatNdwiChart) createLandsatNdwiChart();
             }
         } else {
             NotificationDialog.warning(i18nService.translate('ALERTS.INVALID_DATE_RANGE'));
