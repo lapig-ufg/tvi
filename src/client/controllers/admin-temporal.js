@@ -398,8 +398,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
-                            fixedrange: true,
-                            autorange: "reversed"
+                            fixedrange: true
                         }
                     };
 
@@ -451,8 +450,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
-                            fixedrange: true,
-                            autorange: "reversed"
+                            fixedrange: true
                         }
                     };
 
@@ -504,8 +502,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
-                            fixedrange: true,
-                            autorange: "reversed"
+                            fixedrange: true
                         }
                     };
 
@@ -559,8 +556,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                             title: i18nService.translate('TEMPORAL.CHARTS.PRECIPITATION') + ' (mm)',
                             overlaying: "y",
                             side: "right",
-                            fixedrange: true,
-                            autorange: "reversed"
+                            fixedrange: true
                         }
                     };
 
