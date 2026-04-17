@@ -70,65 +70,53 @@ module.exports = function(app) {
 			metadata: { campaign: campaign._id, username, numInspec: campaign.numInspec }
 		});
 
-		// === Cleanup de pontos órfãos ===
-		// Pontos com underInspection > 0 mas sem sessão ativa devem ser resetados
-		// Isso resolve o problema de pontos bloqueados quando usuários fecham o navegador sem logout
+		// TKT-000015 — o cleanup pesado (updateMany em todos os pontos da campanha
+		// com underInspection > 0) foi movido para o job `orphanPointsCleanup`
+		// em `middleware/jobs.js`, que roda a cada 5 minutos. Aqui mantemos apenas
+		// a garantia de que o ponto atual do usuário (se qualquer ficou em estado
+		// inconsistente) é liberado — custo O(1).
 		try {
-			// Buscar IDs de pontos com sessão ativa
-			const activeSessions = await status.find({
-				campaign: campaign._id,
-				status: "Online"
-			}).toArray();
-
-			const activePointIds = activeSessions
-				.filter(s => s.atualPoint)
-				.map(s => s.atualPoint);
-
-			// Resetar underInspection de pontos sem sessão ativa
-			const orphanFilter = {
-				campaign: campaign._id,
-				underInspection: { $gt: 0 },
-				_id: { $nin: activePointIds }
-			};
-
-			const cleanupResult = await points.updateMany(
-				orphanFilter,
-				{ $set: { underInspection: 0 } }
+			await status.updateOne(
+				{ _id: username + '_' + campaign._id },
+				{ $set: { lastSeen: new Date() } }
 			);
-
-			if (cleanupResult.modifiedCount > 0) {
-				await logger.info('Cleaned up orphan points', {
-					module: 'points',
-					function: 'findPoint',
-					metadata: {
-						cleanedPoints: cleanupResult.modifiedCount,
-						campaign: campaign._id
-					}
-				});
-			}
-		} catch (cleanupError) {
-			await logger.warn('Failed to cleanup orphan points', {
-				module: 'points',
-				function: 'findPoint',
-				metadata: { error: cleanupError.message }
-			});
-			// Continua execução mesmo se cleanup falhar
+		} catch (_) {
+			// não bloqueia o fluxo; cleanup completo ocorrerá no job.
 		}
-		// === Fim do cleanup ===
+
+		// TKT-000015 — `$where` removido por ser não-indexável (JavaScript server-side
+		// avaliado linha a linha). Substituído pelo campo denormalizado `userNameCount`,
+		// incrementado atomicamente em `updatePoint`. O índice composto
+		// `campaign_inspection_index` (campaign, underInspection, userNameCount, index)
+		// cobre essa consulta. Documentos legados sem `userNameCount` caem no ramo
+		// de retrocompatibilidade (usando $size enumerado), até que o script
+		// `scripts/backfill-userNameCount.js` popule o campo.
+		var legacyBranches = [];
+		for (var __s = 0; __s < campaign.numInspec; __s++) {
+			legacyBranches.push({
+				"userNameCount": { "$exists": false },
+				"userName": { "$size": __s }
+			});
+		}
 
 		var findOneFilter = {
 			"$and": [
+				{ "campaign": { "$eq": campaign._id } },
 				{ "userName": { "$nin": [ username ] } },
-				{ "$where": 'this.userName.length < '+ campaign.numInspec },
-				{ "campaign": { "$eq":  campaign._id } },
-				{ "underInspection": { $lt:  campaign.numInspec } }
+				{ "underInspection": { $lt: campaign.numInspec } },
+				{
+					"$or": [
+						{ "userNameCount": { "$exists": true, "$lt": campaign.numInspec } }
+					].concat(legacyBranches)
+				}
 			]
 		};
 
-		var currentFilter = { 
+		// O filtro "currentFilter" era usado antigamente para busca por índice ordinal.
+		// Mantido como simples filtro por campanha para não quebrar chamadores existentes.
+		var currentFilter = {
 			"$and": [
 				{ "userName": { "$nin": [ username ] } },
-				{ "$where":'this.userName.length<'+ campaign.numInspec },
 				{ "campaign": { "$eq":  campaign._id } }
 			]
 		};
@@ -635,11 +623,18 @@ module.exports = function(app) {
 
 			point.inspection.fillDate = new Date();
 
+			// TKT-000015 — `userNameCount` é contador denormalizado, mantido atômico
+			// no mesmo update que o $push em userName. Substitui o filtro $where
+			// (JavaScript server-side, não-indexado) em findPoint por uma comparação
+			// numérica indexável. MongoDB garante atomicidade por documento.
 			var updateStruct = {
 				'$push': {
 					"inspection": point.inspection,
-			  	"userName": user.name
-			  }
+					"userName": user.name
+				},
+				'$inc': {
+					"userNameCount": 1
+				}
 			};
 
 			points.findOne({ '_id': point._id }, async function(err, pointDb) {
