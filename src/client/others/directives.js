@@ -237,7 +237,12 @@ Application
 
             mapSyncService.register($scope.map);
 
-            $scope.map.on('click', function () {
+            // Exigir Shift+click para alternar o marcador, evitando que cliques
+            // acidentais (ex.: duplo clique para aplicar zoom) ocultem o marcador.
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -336,7 +341,12 @@ Application
               }
             });
 
-            $scope.map.on('click', function () {
+            // Exigir Shift+click para alternar o marcador, evitando que cliques
+            // acidentais (ex.: duplo clique para aplicar zoom) ocultem o marcador.
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -643,8 +653,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function () {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -670,6 +685,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateTileLayer();
                 }
@@ -960,8 +982,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function () {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -987,6 +1014,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateTileLayer();
                 }
@@ -1125,6 +1159,10 @@ Application
           var retryInProgress = {}; // Controlar retries em andamento
           var totalRetries = 0; // Contador global de retries
           var maxTotalRetries = 20; // Limite total de retries para evitar loops
+          // Rastrear setTimeout de retry de tiles para cancelamento agressivo
+          // ao destruir a diretiva (TKT-000030). Evita que callbacks pendentes
+          // acessem $scope.map/$scope.wmsLayer já liberados.
+          var pendingRetryTimeouts = new Set();
           
           // Função para atualizar layer WMS
           $scope.updateWmsLayer = function() {
@@ -1340,34 +1378,43 @@ Application
                 
                 // Marcar retry em andamento
                 retryInProgress[tileKey] = true;
-                
+
                 // Cancelar timeout anterior se existir
                 if (tile._retryTimeout) {
+                  pendingRetryTimeouts.delete(tile._retryTimeout);
                   clearTimeout(tile._retryTimeout);
                   tile._retryTimeout = null;
                 }
-                
+
                 // Usar timeout com referência para poder cancelar se necessário
                 tile._retryTimeout = setTimeout(function() {
+                  pendingRetryTimeouts.delete(tile._retryTimeout);
+                  // Abortar se a diretiva foi destruída durante o delay (TKT-000030).
+                  if ($scope._destroyed) {
+                    delete retryInProgress[tileKey];
+                    return;
+                  }
                   // Limpar flag de retry em andamento
                   delete retryInProgress[tileKey];
-                  
+
                   // Verificar se ainda deve tentar
-                  if (tile && tile.src && $scope.wmsLayer && $scope.map && $scope.map.hasLayer($scope.wmsLayer) && 
+                  if (tile && tile.src && $scope.wmsLayer && $scope.map && $scope.map.hasLayer($scope.wmsLayer) &&
                       $scope.tileRetryCount[tileKey] <= $scope.maxRetries) {
                     // Salvar URL original
                     var originalSrc = tile.src.split('&_retry=')[0].split('?_retry=')[0];
-                    
+
                     // Adicionar flag para evitar loop infinito
                     tile._isRetrying = true;
-                    
+
                     // Forçar novo carregamento alterando src
                     tile.src = '';
                     setTimeout(function() {
+                      if ($scope._destroyed) return;
                       if ($scope.wmsLayer && $scope.map && $scope.map.hasLayer($scope.wmsLayer)) {
                         tile.src = originalSrc + (originalSrc.indexOf('?') === -1 ? '?' : '&') + '_retry=' + Date.now();
                         // Remover flag após definir novo src
                         setTimeout(function() {
+                          if ($scope._destroyed) return;
                           if (tile) {
                             tile._isRetrying = false;
                           }
@@ -1381,6 +1428,7 @@ Application
                     }
                   }
                 }, delay);
+                pendingRetryTimeouts.add(tile._retryTimeout);
               } else {
                 console.error('WMS: Tile', tileKey, 'falhou após', $scope.maxRetries, 'tentativas');
                 
@@ -1449,10 +1497,9 @@ Application
             
             // Forçar atualização do layer
             setTimeout(function() {
-              if ($scope.wmsLayer && $scope.map) {
-                $scope.wmsLayer.redraw();
-                $scope.map.invalidateSize();
-              }
+              if ($scope._destroyed || !$scope.wmsLayer || !$scope.map) return;
+              $scope.wmsLayer.redraw();
+              $scope.map.invalidateSize();
             }, 500);
             
             // Garantir que o marcador esteja sempre no topo
@@ -1502,8 +1549,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function() {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function(evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -1539,6 +1591,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateWmsLayer();
                 }
@@ -1554,8 +1613,28 @@ Application
                 unwatch();
               }
 
+              // Cancelar todos os setTimeout de retry pendentes (TKT-000030).
+              // Sem isso, callbacks agendados continuariam executando após o
+              // destroy e tentariam acessar $scope.map/$scope.wmsLayer nulos.
+              pendingRetryTimeouts.forEach(function(t) {
+                clearTimeout(t);
+              });
+              pendingRetryTimeouts.clear();
+
               if ($scope.loadingTimeout) {
                 $timeout.cancel($scope.loadingTimeout);
+              }
+
+              // Limpar quaisquer _retryTimeout residuais nos tiles da layer
+              // que não tenham sido rastreados pelo Set (defesa em profundidade).
+              if ($scope.wmsLayer && $scope.wmsLayer._tiles) {
+                for (var residualKey in $scope.wmsLayer._tiles) {
+                  var residualTile = $scope.wmsLayer._tiles[residualKey];
+                  if (residualTile && residualTile._retryTimeout) {
+                    clearTimeout(residualTile._retryTimeout);
+                    residualTile._retryTimeout = null;
+                  }
+                }
               }
 
               if ($scope.wmsLayer) {
@@ -1602,14 +1681,13 @@ Application
             
             // Check adicional para cenários com múltiplos mapas
             setTimeout(function() {
-              if ($scope.map) {
-                $scope.map.invalidateSize();
-                if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
-                  $scope.map.addLayer($scope.marker);
-                }
+              if ($scope._destroyed || !$scope.map) return;
+              $scope.map.invalidateSize();
+              if ($scope.marker && $scope.markerInMap && !$scope.map.hasLayer($scope.marker)) {
+                $scope.map.addLayer($scope.marker);
               }
             }, 500);
-            
+
           }, 0);
         }
       };

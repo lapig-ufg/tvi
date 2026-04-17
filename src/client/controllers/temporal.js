@@ -289,26 +289,36 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             });
         }
 
+        // Debounce de changePeriod para evitar que cliques rápidos encadeados
+        // disparem o ciclo destroy/create das diretivas wms-map dentro da
+        // janela de cleanup, o que expõe race conditions (TKT-000030).
+        var changePeriodTimer = null;
         $scope.changePeriod = function () {
-            var newPeriod = $scope.period === 'DRY' ? 'WET' : 'DRY';
-            var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-            $scope.period = newPeriod;
-            $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
-
-            generateMaps();
-
-            // Propagar visparam para os mapas recém-criados
-            if (!$scope.isSentinel && $scope.landsatVisparam) {
-                $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
-            } else if ($scope.isSentinel && $scope.sentinelVisparam) {
-                $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+            if (changePeriodTimer) {
+                $timeout.cancel(changePeriodTimer);
             }
+            changePeriodTimer = $timeout(function () {
+                changePeriodTimer = null;
+                var newPeriod = $scope.period === 'DRY' ? 'WET' : 'DRY';
+                var scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
-            // Restaurar posição do scroll após o digest
-            $timeout(function() {
-                window.scrollTo(0, scrollPosition);
-            }, 0);
+                $scope.period = newPeriod;
+                $scope.periodo = ($scope.period == 'DRY') ? i18nService.translate('PERIODS.DRY') : i18nService.translate('PERIODS.WET');
+
+                generateMaps();
+
+                // Propagar visparam para os mapas recém-criados
+                if (!$scope.isSentinel && $scope.landsatVisparam) {
+                    $scope.$broadcast('landsatVisparamChanged', $scope.landsatVisparam);
+                } else if ($scope.isSentinel && $scope.sentinelVisparam) {
+                    $scope.$broadcast('sentinelVisparamChanged', $scope.sentinelVisparam);
+                }
+
+                // Restaurar posição do scroll após o digest
+                $timeout(function() {
+                    window.scrollTo(0, scrollPosition);
+                }, 0);
+            }, 400);
         }
 
         $scope.reloadMaps = function() {
