@@ -1,3 +1,5 @@
+var weeklyBucket = require('../services/weeklyBucket');
+
 module.exports = function(app) {
 	var CampaignMonitoring = {};
 	const logger = app.services.logger;
@@ -481,6 +483,306 @@ module.exports = function(app) {
 						campaign: campaign,
 						totalPoints: totalPoints || 0
 					});
+				});
+			});
+		});
+	};
+
+	// ============================================================
+	// TKT-000013 — Avaliação supervisor × intérprete
+	// ============================================================
+
+	/**
+	 * Helper: para cada intérprete em `point.userName`, reconstrói o array
+	 * landUse por ano a partir de `inspection[i].form[].landUse`.
+	 */
+	var buildYearLandUseByInspector = function(point, initialYear, finalYear) {
+		var result = {}; // userName → [landUse por ano]
+		if (!Array.isArray(point.userName) || !Array.isArray(point.inspection)) return result;
+		for (var i = 0; i < point.userName.length; i++) {
+			var name = point.userName[i];
+			var insp = point.inspection[i];
+			if (!insp || !Array.isArray(insp.form)) continue;
+			var arr = new Array(finalYear - initialYear + 1);
+			for (var j = 0; j < insp.form.length; j++) {
+				var f = insp.form[j];
+				if (typeof f.initialYear !== 'number' || typeof f.finalYear !== 'number') continue;
+				for (var y = Math.max(f.initialYear, initialYear); y <= Math.min(f.finalYear, finalYear); y++) {
+					arr[y - initialYear] = f.landUse;
+				}
+			}
+			result[name] = arr;
+		}
+		return result;
+	};
+
+	/**
+	 * GET /confusion-matrix — Matriz de confusão intérprete × supervisor.
+	 * Considera apenas pontos editados (`pointEdited: true`) e, quando possível,
+	 * compara `inspection[].form[].landUse` com `classConsolidated` (valor pós-edição).
+	 */
+	CampaignMonitoring.confusionMatrix = function(req, res) {
+		var campaignId = req.params.id;
+		var filterUser = req.query.userName || null;
+		var filterYear = req.query.year ? parseInt(req.query.year, 10) : null;
+
+		withCampaign(campaignId, req, res, function(campaign) {
+			var mongoFilter = { campaign: campaignId, pointEdited: true };
+			if (filterUser) mongoFilter.userName = filterUser;
+
+			points.find(mongoFilter, { _id: 1, userName: 1, inspection: 1, classConsolidated: 1 }).toArray(function(err, docs) {
+				if (err) return res.status(500).json({ error: 'Erro de banco de dados' });
+
+				var classSet = {};
+				var counts = {}; // "interpreter|supervisor" → count
+
+				docs.forEach(function(doc) {
+					var byInspector = buildYearLandUseByInspector(doc, campaign.initialYear, campaign.finalYear);
+					var targets = filterUser ? [filterUser] : Object.keys(byInspector);
+					for (var t = 0; t < targets.length; t++) {
+						var name = targets[t];
+						var arr = byInspector[name];
+						if (!arr) continue;
+						var yStart = filterYear || campaign.initialYear;
+						var yEnd = filterYear || campaign.finalYear;
+						for (var y = yStart; y <= yEnd; y++) {
+							var idx = y - campaign.initialYear;
+							var inter = arr[idx];
+							var sup = Array.isArray(doc.classConsolidated) ? doc.classConsolidated[idx] : null;
+							if (!inter || !sup) continue;
+							classSet[inter] = true;
+							classSet[sup] = true;
+							var key = inter + '|' + sup;
+							counts[key] = (counts[key] || 0) + 1;
+						}
+					}
+				});
+
+				var classes = Object.keys(classSet).sort();
+				var matrix = classes.map(function() {
+					return classes.map(function() { return 0; });
+				});
+				var total = 0;
+				var diagonal = 0;
+				for (var k in counts) {
+					var parts = k.split('|');
+					var r = classes.indexOf(parts[0]);
+					var c = classes.indexOf(parts[1]);
+					if (r >= 0 && c >= 0) {
+						matrix[r][c] = counts[k];
+						total += counts[k];
+						if (r === c) diagonal += counts[k];
+					}
+				}
+
+				res.json({
+					userName: filterUser,
+					year: filterYear,
+					classes: classes,
+					matrix: matrix,
+					totalPoints: total,
+					agreementRate: total > 0 ? (diagonal / total) : 0
+				});
+			});
+		});
+	};
+
+	/**
+	 * GET /agreement-by-inspector — Taxa de concordância por intérprete.
+	 * "Concordou" = o ponto está completo e NÃO foi editado pelo supervisor.
+	 * "Editado" = `pointEdited: true`. "Não concordante" (minoria isolada) é
+	 * derivável comparando `landUse` do intérprete com `classConsolidated`.
+	 */
+	CampaignMonitoring.agreementByInspector = function(req, res) {
+		var campaignId = req.params.id;
+
+		withCampaign(campaignId, req, res, function(campaign) {
+			var cursor = points.find(
+				{ campaign: campaignId, userName: { $gt: [] } },
+				{ _id: 1, userName: 1, pointEdited: 1 }
+			);
+			cursor.toArray(function(err, docs) {
+				if (err) return res.status(500).json({ error: 'Erro de banco de dados' });
+				var byUser = {};
+				docs.forEach(function(doc) {
+					if (!Array.isArray(doc.userName)) return;
+					var wasEdited = doc.pointEdited === true;
+					doc.userName.forEach(function(name) {
+						if (!byUser[name]) byUser[name] = { total: 0, edited: 0, agreed: 0 };
+						byUser[name].total++;
+						if (wasEdited) byUser[name].edited++;
+						else byUser[name].agreed++;
+					});
+				});
+
+				var arr = Object.keys(byUser).map(function(name) {
+					var row = byUser[name];
+					return {
+						userName: name,
+						total: row.total,
+						agreed: row.agreed,
+						edited: row.edited,
+						rate: row.total > 0 ? (row.agreed / row.total) : 0
+					};
+				});
+				arr.sort(function(a, b) { return b.rate - a.rate; });
+				res.json({ inspectors: arr });
+			});
+		});
+	};
+
+	/**
+	 * GET /agreement-timeline — Evolução semanal da concordância.
+	 * Usa `editedAt` quando o ponto foi editado; senão, `fillDate` da última inspeção.
+	 */
+	CampaignMonitoring.agreementTimeline = function(req, res) {
+		var campaignId = req.params.id;
+		var filterUser = req.query.userName || null;
+		var weeks = req.query.weeks ? parseInt(req.query.weeks, 10) : 8;
+
+		withCampaign(campaignId, req, res, function(campaign) {
+			var buckets = weeklyBucket.getLastNWeeks(new Date(), weeks, campaign.weeklyGoalConfig);
+
+			var projection = { _id: 1, userName: 1, inspection: 1, pointEdited: 1, editedAt: 1 };
+			var mongoFilter = { campaign: campaignId, userName: { $gt: [] } };
+			if (filterUser) mongoFilter.userName = filterUser;
+
+			points.find(mongoFilter, projection).toArray(function(err, docs) {
+				if (err) return res.status(500).json({ error: 'Erro de banco de dados' });
+
+				var totals = buckets.map(function() { return 0; });
+				var edited = buckets.map(function() { return 0; });
+
+				docs.forEach(function(doc) {
+					var refDate = null;
+					if (doc.editedAt) {
+						refDate = doc.editedAt;
+					} else if (Array.isArray(doc.inspection) && doc.inspection.length > 0) {
+						var last = doc.inspection[doc.inspection.length - 1];
+						if (last && last.fillDate) refDate = last.fillDate;
+					}
+					if (!refDate) return;
+					var idx = weeklyBucket.bucketize(refDate, buckets);
+					if (idx < 0) return;
+					totals[idx]++;
+					if (doc.pointEdited === true) edited[idx]++;
+				});
+
+				res.json({
+					weeklyGoalConfig: weeklyBucket.normalizeConfig(campaign.weeklyGoalConfig),
+					userName: filterUser,
+					buckets: buckets.map(function(b, i) {
+						var rate = totals[i] > 0 ? ((totals[i] - edited[i]) / totals[i]) : 0;
+						return {
+							start: b.start.toISOString(),
+							end: b.end.toISOString(),
+							label: weeklyBucket.formatWeekLabel(b, (campaign.weeklyGoalConfig || {}).timezone),
+							inspected: totals[i],
+							edited: edited[i],
+							rate: rate
+						};
+					})
+				});
+			});
+		});
+	};
+
+	/**
+	 * GET /most-corrected-classes — Top N transições intérprete → supervisor.
+	 */
+	CampaignMonitoring.mostCorrectedClasses = function(req, res) {
+		var campaignId = req.params.id;
+		var filterUser = req.query.userName || null;
+		var topN = Math.max(1, Math.min(50, parseInt(req.query.topN || '20', 10)));
+
+		withCampaign(campaignId, req, res, function(campaign) {
+			var mongoFilter = { campaign: campaignId, pointEdited: true };
+			if (filterUser) mongoFilter.userName = filterUser;
+
+			points.find(mongoFilter, { userName: 1, inspection: 1, classConsolidated: 1 }).toArray(function(err, docs) {
+				if (err) return res.status(500).json({ error: 'Erro de banco de dados' });
+				var counts = {};
+				docs.forEach(function(doc) {
+					var byInspector = buildYearLandUseByInspector(doc, campaign.initialYear, campaign.finalYear);
+					var names = filterUser ? [filterUser] : Object.keys(byInspector);
+					names.forEach(function(name) {
+						var arr = byInspector[name];
+						if (!arr) return;
+						for (var y = campaign.initialYear; y <= campaign.finalYear; y++) {
+							var idx = y - campaign.initialYear;
+							var inter = arr[idx];
+							var sup = Array.isArray(doc.classConsolidated) ? doc.classConsolidated[idx] : null;
+							if (!inter || !sup || inter === sup) continue;
+							var key = inter + '→' + sup;
+							counts[key] = (counts[key] || 0) + 1;
+						}
+					});
+				});
+				var ranked = Object.keys(counts).map(function(k) {
+					var parts = k.split('→');
+					return { from: parts[0], to: parts[1], count: counts[k] };
+				}).sort(function(a, b) { return b.count - a.count; }).slice(0, topN);
+				res.json({ userName: filterUser, topN: topN, transitions: ranked });
+			});
+		});
+	};
+
+	// ============================================================
+	// TKT-000008 — Inspeções por intérprete, agregado por semana.
+	// ============================================================
+	CampaignMonitoring.inspectionsPerUserWeekly = function(req, res) {
+		var campaignId = req.params.id;
+		var weeks = req.query.weeks ? Math.max(1, Math.min(52, parseInt(req.query.weeks, 10))) : 8;
+
+		withCampaign(campaignId, req, res, function(campaign) {
+			var cfg = weeklyBucket.normalizeConfig(campaign.weeklyGoalConfig);
+			var buckets = weeklyBucket.getLastNWeeks(new Date(), weeks, cfg);
+			var firstStart = buckets[0].start;
+
+			// Limita a leitura a pontos cuja fillDate da primeira inspeção
+			// esteja dentro ou depois do início da janela. Campanhas antigas
+			// com fillDate ausente não entram no agrupamento (esperado).
+			var mongoFilter = {
+				campaign: campaignId,
+				userName: { $gt: [] },
+				'inspection.fillDate': { $gte: firstStart }
+			};
+
+			points.find(mongoFilter, { userName: 1, inspection: 1 }).toArray(function(err, docs) {
+				if (err) return res.status(500).json({ error: 'Erro de banco de dados' });
+
+				var perUser = {}; // userName → Array(numWeeks)
+				docs.forEach(function(doc) {
+					if (!Array.isArray(doc.userName) || !Array.isArray(doc.inspection)) return;
+					var len = Math.min(doc.userName.length, doc.inspection.length);
+					for (var i = 0; i < len; i++) {
+						var name = doc.userName[i];
+						var insp = doc.inspection[i];
+						if (!insp || !insp.fillDate) continue;
+						var idx = weeklyBucket.bucketize(insp.fillDate, buckets);
+						if (idx < 0) continue;
+						if (!perUser[name]) perUser[name] = buckets.map(function() { return 0; });
+						perUser[name][idx]++;
+					}
+				});
+
+				var inspectors = Object.keys(perUser).sort().map(function(name) {
+					return { userName: name, perWeek: perUser[name] };
+				});
+
+				var currentWeekIdx = buckets.length - 1;
+				res.json({
+					weeklyGoalConfig: cfg,
+					currentWeekStart: buckets[currentWeekIdx].start.toISOString(),
+					weeks: buckets.map(function(b, i) {
+						return {
+							weekStart: b.start.toISOString(),
+							weekEnd: b.end.toISOString(),
+							label: (i === currentWeekIdx) ? 'Semana atual' : weeklyBucket.formatWeekLabel(b, cfg.timezone),
+							isCurrent: i === currentWeekIdx
+						};
+					}),
+					inspectors: inspectors
 				});
 			});
 		});

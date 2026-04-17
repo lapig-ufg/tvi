@@ -61,7 +61,8 @@ module.exports = function (app) {
                     if (err) return callback(err);
                     
                     // Garantir que as coleções necessárias existam
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters'];
+                    // weekly_progress adicionada em TKT-000009 para persistir progresso e carry-over.
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -130,7 +131,7 @@ module.exports = function (app) {
             // Índices para collection points
             function(cb) {
                 if (!Repository.collections.points) return cb();
-                
+
                 Repository.collections.points.createIndexes([
                     // Índice composto para consultas por campanha e status
                     { key: { campaign: 1, _id: 1 }, name: 'campaign_id' },
@@ -145,7 +146,14 @@ module.exports = function (app) {
                     // Índice para data de importação
                     { key: { dateImport: -1 }, name: 'dateImport_desc' },
                     // Índice para cache
-                    { key: { cached: 1, enhance_in_cache: 1 }, name: 'cached_enhance' }
+                    { key: { cached: 1, enhance_in_cache: 1 }, name: 'cached_enhance' },
+                    // TKT-000015 — índice para o próximo ponto sem $where
+                    // (campaign, underInspection, userNameCount, index)
+                    { key: { campaign: 1, underInspection: 1, userNameCount: 1, index: 1 }, name: 'campaign_inspection_index' },
+                    // TKT-000008/000009 — filtragem por fillDate em janelas semanais
+                    { key: { campaign: 1, 'inspection.fillDate': 1 }, name: 'campaign_inspection_fillDate' },
+                    // TKT-000013 — consultas de pontos editados
+                    { key: { campaign: 1, pointEdited: 1 }, name: 'campaign_pointEdited' }
                 ], function(err) {
                     if (err) {
                         console.error('Erro ao criar índices para points:', err);
@@ -223,6 +231,21 @@ module.exports = function (app) {
                 ], function(err) {
                     if (err && err.code !== 11000) {
                         console.error('Erro ao criar índices para tickets:', err);
+                    }
+                    cb();
+                });
+            },
+            // TKT-000009 — índices para weekly_progress
+            function(cb) {
+                if (!Repository.collections.weekly_progress) return cb();
+
+                Repository.collections.weekly_progress.createIndexes([
+                    { key: { userName: 1, campaign: 1, weekStart: -1 }, name: 'user_campaign_weekStart' },
+                    { key: { campaign: 1, weekStart: -1 }, name: 'campaign_weekStart' },
+                    { key: { closed: 1, weekEnd: 1 }, name: 'closed_weekEnd' }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para weekly_progress:', err);
                     }
                     cb();
                 });

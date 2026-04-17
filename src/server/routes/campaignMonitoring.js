@@ -33,4 +33,13 @@ module.exports = function(app) {
 	app.get(base + '/member-status', requireSuperAdmin, monitoring.memberStatus);
 	app.get(base + '/inspector-cards', requireSuperAdmin, monitoring.inspectorCards);
 	app.post(base + '/point', requireSuperAdmin, monitoring.getPoint);
+
+	// TKT-000008 — agregação semanal de inspeções por intérprete
+	app.get(base + '/inspections-per-user-weekly', requireSuperAdmin, monitoring.inspectionsPerUserWeekly);
+
+	// TKT-000013 — avaliação supervisor × intérprete
+	app.get(base + '/confusion-matrix', requireSuperAdmin, monitoring.confusionMatrix);
+	app.get(base + '/agreement-by-inspector', requireSuperAdmin, monitoring.agreementByInspector);
+	app.get(base + '/agreement-timeline', requireSuperAdmin, monitoring.agreementTimeline);
+	app.get(base + '/most-corrected-classes', requireSuperAdmin, monitoring.mostCorrectedClasses);
 };

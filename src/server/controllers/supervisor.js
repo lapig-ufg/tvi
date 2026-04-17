@@ -446,12 +446,74 @@ module.exports = function (app) {
                     function: 'updatedClassConsolidated',
                     metadata: { hasPointId: !!pointId }
                 });
-                
-                return response.status(400).json({ 
+
+                return response.status(400).json({
                     error: 'Point ID required',
                     errorCode
                 });
             }
+
+            // TKT-000013: preservar histórico de edições para auditoria supervisor × intérprete.
+            // Lê o estado atual do ponto antes de sobrescrever `classConsolidated` para
+            // (a) registrar o snapshot original apenas na primeira edição e
+            // (b) anexar entrada em `editHistory` a cada edição.
+            var currentPoint = await new Promise(function (resolve, reject) {
+                pointsCollection.findOne({ _id: pointId }, function (err, doc) {
+                    if (err) { return reject(err); }
+                    resolve(doc);
+                });
+            });
+
+            if (!currentPoint) {
+                const errorCode = await logger.warn('Update class consolidated: point not found', {
+                    req: request,
+                    module: 'supervisor',
+                    function: 'updatedClassConsolidated',
+                    metadata: { pointId: pointId }
+                });
+                return response.status(404).json({
+                    error: 'Point not found',
+                    errorCode
+                });
+            }
+
+            // Identificador do editor: supervisor autenticado (session.user.name)
+            // ou super-admin (session.admin.superAdmin.username). Preferimos o primeiro
+            // por ser o fluxo normal da tela /supervisor; caímos para admin em ferramentas internas.
+            var editedBy = null;
+            if (request.session) {
+                if (request.session.user && request.session.user.name) {
+                    editedBy = request.session.user.name;
+                } else if (request.session.admin && request.session.admin.superAdmin && request.session.admin.superAdmin.username) {
+                    editedBy = request.session.admin.superAdmin.username;
+                }
+            }
+            var editedAt = new Date();
+
+            var previousClass = Array.isArray(currentPoint.classConsolidated)
+                ? currentPoint.classConsolidated.slice()
+                : [];
+
+            var setFields = {
+                classConsolidated: classArray,
+                pointEdited: true,
+                editedBy: editedBy,
+                editedAt: editedAt
+            };
+
+            // Preserva classConsolidated original apenas na primeira edição.
+            // Documentos legados sem o campo são retrocompatíveis: seguem funcionando,
+            // mas perdem a referência "antes da primeira edição" (ver script de backfill).
+            if (!currentPoint.classConsolidatedOriginal) {
+                setFields.classConsolidatedOriginal = previousClass;
+            }
+
+            var historyEntry = {
+                editedBy: editedBy,
+                editedAt: editedAt,
+                previousClass: previousClass,
+                newClass: Array.isArray(classArray) ? classArray.slice() : []
+            };
 
             await logger.info('Updating consolidated classification', {
                 req: request,
@@ -459,18 +521,26 @@ module.exports = function (app) {
                 function: 'updatedClassConsolidated',
                 metadata: {
                     pointId: pointId,
-                    classArray: classArray
+                    editedBy: editedBy,
+                    hadOriginalSnapshot: !!currentPoint.classConsolidatedOriginal
                 }
             });
 
-            await pointsCollection.update({'_id': pointId}, {$set: {'classConsolidated': classArray, 'pointEdited': true}});
+            await pointsCollection.update(
+                { _id: pointId },
+                {
+                    $set: setFields,
+                    $push: { editHistory: historyEntry }
+                }
+            );
 
             await logger.info('Consolidated classification updated successfully', {
                 req: request,
                 module: 'supervisor',
                 function: 'updatedClassConsolidated',
                 metadata: {
-                    pointId: pointId
+                    pointId: pointId,
+                    editedBy: editedBy
                 }
             });
 
