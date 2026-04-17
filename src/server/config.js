@@ -103,12 +103,6 @@ module.exports = function(app) {
 					"params": {}
 				},
 				{
-					"name": "telegramIdleTicketAlert",
-					"cron": '0 0 8,12,16,20 * * *',
-					"runOnAppStart": false,
-					"params": {}
-				},
-				{
 					"name": "telegramSilentFlush",
 					"cron": '0 0 7 * * *',
 					"runOnAppStart": false,

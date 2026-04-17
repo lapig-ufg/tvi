@@ -5,7 +5,7 @@
  * - Enfileirar eventos (tickets, campanhas) em coleção MongoDB
  * - Processar fila com debounce por ticket, rate limit e horário silencioso
  * - Formatar mensagens HTML ricas para o Telegram
- * - Enviar resumo diário, alertas de tickets ociosos
+ * - Enviar resumo diário
  *
  * Padrão: singleton factory, carregado via express-load em app.services.telegramNotifier
  */
@@ -74,7 +74,6 @@ function TelegramNotifier(app) {
   this.adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
   this.baseUrl = process.env.TVI_BASE_URL || 'https://tvi.lapig.iesa.ufg.br';
   this.debounceWindowMs = parseInt(process.env.TELEGRAM_DEBOUNCE_WINDOW_MS) || 60000;
-  this.idleHours = parseInt(process.env.TELEGRAM_IDLE_HOURS) || 48;
   this.voteThreshold = parseInt(process.env.TELEGRAM_VOTE_THRESHOLD) || 3;
   this.silentStart = parseInt(process.env.TELEGRAM_SILENT_START) || 22;
   this.silentEnd = parseInt(process.env.TELEGRAM_SILENT_END) || 7;
@@ -496,6 +495,32 @@ TelegramNotifier.prototype.sendDailySummary = async function () {
   try {
     var now = new Date();
     var brNow = self._brasiliaDate(now);
+    var dateKey = brNow.getFullYear() + '-' + String(brNow.getMonth() + 1).padStart(2, '0') + '-' + String(brNow.getDate()).padStart(2, '0');
+
+    // Guarda de idempotência: impedir envio duplicado no mesmo dia via lock atômico
+    var lockAcquired = await new Promise(function (resolve) {
+      self.queue.findAndModify(
+        { _id: '_daily_summary_lock', date: { $ne: dateKey } },
+        [],
+        { $set: { _id: '_daily_summary_lock', date: dateKey, sentAt: now } },
+        { upsert: true, new: true },
+        function (err, result) {
+          if (err) {
+            // Erro de duplicidade (E11000) indica que outro worker já adquiriu o lock
+            if (err.code === 11000) return resolve(false);
+            console.error('[TelegramNotifier] Erro ao adquirir lock de resumo diário:', err.message);
+            return resolve(false);
+          }
+          resolve(!!result && !!result.value);
+        }
+      );
+    });
+
+    if (!lockAcquired) {
+      console.log('[TelegramNotifier] Resumo diário já enviado hoje (' + dateKey + '), ignorando duplicata.');
+      return;
+    }
+
     // Meia-noite de Brasília convertida para UTC (adiciona 3h)
     var startOfDay = new Date(Date.UTC(brNow.getFullYear(), brNow.getMonth(), brNow.getDate(), 3, 0, 0));
 
@@ -556,57 +581,6 @@ TelegramNotifier.prototype.sendDailySummary = async function () {
   }
 };
 
-// ============================================================
-// ALERTA DE TICKETS OCIOSOS
-// ============================================================
-
-/**
- * Busca tickets sem atualização por mais de N horas e envia alerta.
- */
-TelegramNotifier.prototype.sendIdleTicketAlerts = async function () {
-  if (!this.enabled || !this.initialized || !this.tickets) return;
-
-  var self = this;
-
-  try {
-    var threshold = new Date(Date.now() - self.idleHours * 60 * 60 * 1000);
-    var openStatuses = ['ABERTO', 'EM_ANALISE', 'EM_DESENVOLVIMENTO'];
-
-    var cursor = self.tickets.find({
-      status: { $in: openStatuses },
-      updatedAt: { $lt: threshold }
-    }, {
-      ticketNumber: 1, title: 1, status: 1, updatedAt: 1, severity: 1
-    }).sort({ updatedAt: 1 }).limit(20);
-
-    var idleTickets = await new Promise(function (resolve, reject) {
-      cursor.toArray(function (err, results) {
-        if (err) return reject(err);
-        resolve(results || []);
-      });
-    });
-
-    if (idleTickets.length === 0) return;
-
-    var lines = [];
-    for (var i = 0; i < idleTickets.length; i++) {
-      var t = idleTickets[i];
-      var hoursIdle = Math.round((Date.now() - t.updatedAt.getTime()) / (60 * 60 * 1000));
-      var titleShort = (t.title || '').substring(0, 40);
-      lines.push('• <b>' + t.ticketNumber + '</b> — ' + self._esc(titleShort) + ' (' + (STATUS_LABELS[t.status] || t.status) + ', ' + hoursIdle + 'h)');
-    }
-
-    var ts = self._formatTimestamp(new Date());
-    var html = '⏰ <b>Tickets Ociosos (' + idleTickets.length + ')</b>\n'
-      + '\nSem atualização há mais de ' + self.idleHours + 'h:\n\n'
-      + lines.join('\n')
-      + '\n\n🕐 ' + ts;
-
-    await self.sendMessage(self.chatId, html);
-  } catch (err) {
-    console.error('[TelegramNotifier] Erro no alerta de ociosos:', err.message);
-  }
-};
 
 // ============================================================
 // FLUSH SILENT QUEUE

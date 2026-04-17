@@ -828,25 +828,6 @@ module.exports = function(app) {
 
 
 	/**
-	 * Alerta sobre tickets sem atualização por período prolongado.
-	 */
-	Jobs.telegramIdleTicketAlert = function(params, logStream, callback) {
-		if (!app.services.telegramNotifier || !app.services.telegramNotifier.enabled) {
-			return callback();
-		}
-		writeLog(logStream, 'Verificando tickets ociosos...');
-		app.services.telegramNotifier.sendIdleTicketAlerts()
-			.then(function() {
-				writeLog(logStream, 'Verificação de ociosos concluída.');
-				callback();
-			})
-			.catch(function(err) {
-				writeLog(logStream, 'Erro no alerta de ociosos: ' + err.message);
-				callback();
-			});
-	};
-
-	/**
 	 * Libera notificações acumuladas durante o horário silencioso (22h-7h).
 	 */
 	Jobs.telegramSilentFlush = function(params, logStream, callback) {
