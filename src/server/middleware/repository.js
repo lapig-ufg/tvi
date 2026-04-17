@@ -140,6 +140,8 @@ module.exports = function (app) {
                     { key: { campaign: 1, biome: 1 }, name: 'campaign_biome' },
                     { key: { campaign: 1, county: 1, uf: 1 }, name: 'campaign_county_uf' },
                     { key: { campaign: 1, mode: 1 }, name: 'campaign_mode' },
+                    // Índice para filtro de pontos editados pelo supervisor (TKT-000012)
+                    { key: { campaign: 1, pointEdited: 1 }, name: 'campaign_pointEdited' },
                     // Índice para contagem de inspeções
                     { key: { campaign: 1, 'inspection.counter': 1 }, name: 'campaign_inspection_counter' },
                     // Índice para data de importação

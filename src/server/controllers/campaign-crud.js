@@ -2774,7 +2774,8 @@ module.exports = function(app) {
             const uf = req.query.uf;
             const county = req.query.county;
             const pointId = req.query.pointId;
-            
+            const edited = req.query.edited; // TKT-000012: 'true' | 'false' | undefined
+
             // Construir query base
             let query = { campaign: campaignId };
             
@@ -2808,7 +2809,18 @@ module.exports = function(app) {
             if (user && user.trim()) {
                 query.userName = { $in: [user.trim()] };
             }
-            
+
+            // Filtro por estado de edição pelo supervisor (TKT-000012).
+            // - 'true'  -> somente pontos com pointEdited === true
+            // - 'false' -> somente pontos NÃO editados (cobre `false`, `null` e `undefined`)
+            if (typeof edited === 'string') {
+                if (edited === 'true') {
+                    query.pointEdited = true;
+                } else if (edited === 'false') {
+                    query.pointEdited = { $ne: true };
+                }
+            }
+
             // Buscar pontos
             const points = await pointsCollection
                 .find(query)
@@ -2865,7 +2877,8 @@ module.exports = function(app) {
                     biome,
                     uf,
                     county,
-                    pointId
+                    pointId,
+                    edited: (edited === 'true' || edited === 'false') ? edited : null
                 }
             });
         } catch (error) {

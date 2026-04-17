@@ -302,6 +302,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         biome: '',
         uf: '',
         county: '',
+        edited: '', // TKT-000012: '', 'true' ou 'false'
         minInspections: null,
         maxInspections: null
     };
@@ -369,6 +370,10 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             }
             if ($scope.filters.county) {
                 url += `&county=${encodeURIComponent($scope.filters.county)}`;
+            }
+            // TKT-000012: filtro por estado de edição pelo supervisor
+            if ($scope.filters.edited === 'true' || $scope.filters.edited === 'false') {
+                url += `&edited=${$scope.filters.edited}`;
             }
             if ($scope.filters.minInspections !== null && $scope.filters.minInspections !== undefined) {
                 url += `&minInspections=${$scope.filters.minInspections}`;
@@ -529,16 +534,17 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             biome: '',
             uf: '',
             county: '',
+            edited: '', // TKT-000012
             minInspections: null,
             maxInspections: null
         };
         $scope.filteredPoints = null;
-        
+
         // Reset pagination and reload from backend
         $scope.currentPage = 1;
         $scope.loadPoints();
     };
-    
+
     $scope.hasActiveFilters = function() {
         return !!(
             $scope.filters.pointId ||
@@ -547,6 +553,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             $scope.filters.biome ||
             $scope.filters.uf ||
             $scope.filters.county ||
+            $scope.filters.edited || // TKT-000012
             $scope.filters.minInspections !== null ||
             $scope.filters.maxInspections !== null
         );
@@ -934,6 +941,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             biome: '',
             uf: '',
             county: '',
+            edited: '', // TKT-000012
             minInspections: null,
             maxInspections: null
         };
