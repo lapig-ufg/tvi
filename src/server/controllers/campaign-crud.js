@@ -3019,8 +3019,12 @@ module.exports = function(app) {
                 classConsolidated: 1
             };
 
+            // O driver mongodb@2.2.x não reconhece `{ projection: {...} }` como
+            // opção e passa o objeto direto ao servidor, que interpreta como um
+            // campo literal "projection". Por isso passamos a projeção direta
+            // como 2º argumento (padrão usado em todo o restante do projeto).
             const points = await pointsCollection
-                .find(query, { projection })
+                .find(query, projection)
                 .limit(MAX_FEATURES)
                 .toArray();
 
