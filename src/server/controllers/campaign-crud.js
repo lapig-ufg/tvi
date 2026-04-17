@@ -2806,16 +2806,125 @@ module.exports = function(app) {
     CampaignCrud.deletePoints = async (req, res) => {
         try {
             const campaignId = req.params.id;
-            
+
             const result = await pointsCollection.deleteMany({ campaign: campaignId });
-            
-            res.json({ 
-                success: true, 
-                message: `Deleted ${result.deletedCount} points` 
+
+            res.json({
+                success: true,
+                message: `Deleted ${result.deletedCount} points`
             });
         } catch (error) {
             console.error('Error deleting points:', error);
             res.status(500).json({ error: 'Failed to delete points' });
+        }
+    };
+
+    /**
+     * Retorna os pontos de uma campanha em formato GeoJSON FeatureCollection.
+     *
+     * Projeção intencionalmente mínima: apenas as informações necessárias para
+     * renderização espacial (coordenadas + status derivado). Não expõe nomes
+     * de inspetores nem formulários — a aba de inspeções já cobre esse caso.
+     *
+     * Limite: aplica teto de features (default 50 000) para evitar payloads
+     * proibitivos em campanhas grandes. Quando o limite é atingido, devolve
+     * `truncated: true` e `total` com a contagem real para que o cliente
+     * possa avisar o usuário.
+     */
+    CampaignCrud.getPointsGeoJSON = async (req, res) => {
+        const MAX_FEATURES = 50000;
+        try {
+            const campaignId = req.params.id;
+
+            const campaign = await campaignCollection.findOne({ _id: campaignId });
+            if (!campaign) {
+                return res.status(404).json({ error: 'Campaign not found' });
+            }
+
+            const query = { campaign: campaignId };
+
+            // Contagem real antes de aplicar o limite — usada para aviso de truncamento
+            const total = await pointsCollection.count(query);
+
+            if (total === 0) {
+                return res.json({
+                    type: 'FeatureCollection',
+                    features: [],
+                    total: 0,
+                    returned: 0,
+                    truncated: false,
+                    limit: MAX_FEATURES,
+                    numInspec: campaign.numInspec || 0
+                });
+            }
+
+            // Projeção mínima: apenas campos necessários para o mapa
+            const projection = {
+                lon: 1,
+                lat: 1,
+                userName: 1,
+                pointEdited: 1,
+                classConsolidated: 1
+            };
+
+            const points = await pointsCollection
+                .find(query, { projection })
+                .limit(MAX_FEATURES)
+                .toArray();
+
+            const numInspec = campaign.numInspec || 0;
+
+            const features = [];
+            for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+
+                // Salta pontos sem coordenadas válidas — evita quebrar o Leaflet
+                if (
+                    point.lon === undefined || point.lon === null || isNaN(Number(point.lon)) ||
+                    point.lat === undefined || point.lat === null || isNaN(Number(point.lat))
+                ) {
+                    continue;
+                }
+
+                const inspectionCount = Array.isArray(point.userName) ? point.userName.length : 0;
+                let status = 'not-started';
+                if (inspectionCount >= numInspec && numInspec > 0) {
+                    status = 'completed';
+                } else if (inspectionCount > 0) {
+                    status = 'in-progress';
+                }
+
+                const hasClassConsolidated = Array.isArray(point.classConsolidated) && point.classConsolidated.length > 0;
+
+                features.push({
+                    type: 'Feature',
+                    id: point._id,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [Number(point.lon), Number(point.lat)]
+                    },
+                    properties: {
+                        _id: point._id,
+                        inspectionCount: inspectionCount,
+                        status: status,
+                        pointEdited: point.pointEdited === true,
+                        hasClassConsolidated: hasClassConsolidated
+                    }
+                });
+            }
+
+            return res.json({
+                type: 'FeatureCollection',
+                features: features,
+                total: total,
+                returned: features.length,
+                truncated: total > MAX_FEATURES,
+                limit: MAX_FEATURES,
+                numInspec: numInspec
+            });
+        } catch (error) {
+            console.error('Error building points GeoJSON:', error);
+            return res.status(500).json({ error: 'Failed to build points GeoJSON' });
         }
     };
 
