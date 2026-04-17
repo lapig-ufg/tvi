@@ -100,6 +100,25 @@ function safeDestroyMap(map) {
   }
 })();
 
+/**
+ * Aplica um tooltip de descoberta ao marcador principal dos mapas de inspeção,
+ * sinalizando o atalho Shift+clique para ocultar/mostrar o marcador (TKT-000025).
+ * O tooltip aparece ao passar o mouse sobre o marcador — suficiente para
+ * discoverability sem poluir a interface.
+ */
+function applyMarkerShiftHint(marker) {
+  if (!marker || typeof marker.bindTooltip !== 'function') return marker;
+  try {
+    marker.bindTooltip('Shift + clique no mapa para ocultar o marcador', {
+      direction: 'top',
+      offset: [0, -30],
+      opacity: 0.9,
+      className: 'marker-shift-hint'
+    });
+  } catch (_) { /* noop */ }
+  return marker;
+}
+
 Application
     .factory('mapSyncService', function () {
       var maps = [];
@@ -212,6 +231,7 @@ Application
                 iconSize: [42, 42]
               })
             });
+            applyMarkerShiftHint($scope.marker);
 
             $scope.markerInMap = true;
             var mapElement = $element[0].querySelector(`#map-${$scope.$id}`);
@@ -326,6 +346,7 @@ Application
                   iconSize: [42, 42]
                 })
               }).addTo($scope.map);
+              applyMarkerShiftHint($scope.marker);
 
               $scope.tileLayer = L.tileLayer.wms('/service/mapbiomas/wms', {
                 layers: $scope.mosaicUrl,
@@ -652,6 +673,7 @@ Application
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
+            applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom
@@ -981,6 +1003,7 @@ Application
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
+            applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom
@@ -1548,6 +1571,7 @@ Application
               }),
               zIndexOffset: 1000
             }).addTo($scope.map);
+            applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom

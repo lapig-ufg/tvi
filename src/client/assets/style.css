@@ -1023,3 +1023,22 @@ fieldset > .ee-mapbox.col-lg-12:first-child:last-child {
 
 .modal-80-percent{
 }
+
+/* Tooltip de descoberta do atalho Shift+clique no marcador (TKT-000025).
+ * Usa as classes padrão do Leaflet (.leaflet-tooltip) com sobreposição leve
+ * de estilo para integrar com a paleta neutra dos mapas de inspeção. */
+.leaflet-tooltip.marker-shift-hint {
+  background: rgba(45, 55, 72, 0.92);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.leaflet-tooltip.marker-shift-hint::before {
+  border-top-color: rgba(45, 55, 72, 0.92);
+}
