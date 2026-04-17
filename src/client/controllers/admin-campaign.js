@@ -294,6 +294,10 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         finalYear: 2024,
         numInspec: 3,
         showTimeseries: true,
+        // TKT-000006: por padrão, novas campanhas carregam os gráficos de
+        // série temporal automaticamente, mantendo o comportamento anterior
+        // ao introduzir o flag e preservando a experiência dos inspectors.
+        autoLoadTimeseries: true,
         showPointInfo: true,
         useDynamicMaps: false,
         imageType: 'landsat'

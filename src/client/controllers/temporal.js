@@ -244,6 +244,18 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     pixelBorder: false
                 }
             )
+
+            // TKT-000004: após o digest, rolar a sidebar até a última caixa
+            // adicionada para que fique visível sem exigir scroll manual.
+            $timeout(function () {
+                var forms = document.querySelectorAll('.form-lulc-panel .form-temporal');
+                if (forms && forms.length > 0) {
+                    var lastForm = forms[forms.length - 1];
+                    if (lastForm && typeof lastForm.scrollIntoView === 'function') {
+                        lastForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            }, 0);
         }
 
         $scope.formSubtraction = function () {
@@ -763,10 +775,13 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const initFormViewVariables = function () {
             $scope.optionYears = [];
 
+            // TKT-000031: iniciar a primeira caixa no começo da série temporal,
+            // ou seja, finalYear = initialYear. Dessa forma o inspector pode
+            // avançar período a período sem precisar redefinir o ano final.
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
-                    finalYear: $scope.config.finalYear,
+                    finalYear: $scope.config.initialYear,
                     landUse: '', // Inicializar vazio para forçar seleção
                     pixelBorder: false
                 }
@@ -780,6 +795,11 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     $scope.showTimeseries = config.showTimeseries;
                     $scope.showPointInfo = config.showPointInfo;
                     $scope.useDynamicMaps = config.useDynamicMaps;
+                    // TKT-000006: flag que indica se os gráficos devem ser
+                    // carregados automaticamente após abrir o ponto.
+                    // Padrão true para retrocompatibilidade com campanhas
+                    // existentes que não possuem o campo.
+                    $scope.autoLoadTimeseries = config.autoLoadTimeseries !== false;
                     $scope.hasVisParam = config.visParam !== null;
                     
                     // Verificar se é Sentinel baseado no imageType PRIMEIRO
@@ -881,14 +901,34 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 
+            // TKT-000031: restaurar o intervalo padrão dos filtros de gráfico
+            // ao avançar para um novo ponto, evitando que o filtro do ponto
+            // anterior permaneça aplicado sem indicação visual.
+            $scope.chartFilterStartYear = $scope.config.initialYear || 1985;
+            $scope.chartFilterEndYear = $scope.config.finalYear || new Date().getFullYear();
+
+            // Resetar a flag sempre que carregar um novo ponto. Quando a
+            // campanha estiver com autoLoadTimeseries habilitado, a flag será
+            // reativada dentro do callback de loadCampaignConfig.
+            $scope.showTimeseriesCharts = false;
+
             // Gerar mapas somente após config da campanha estar disponível
             loadCampaignConfig(function() {
                 generateMaps();
-            });
 
-            // Os gráficos agora só serão carregados quando o usuário clicar no botão
-            // Resetar a flag sempre que carregar um novo ponto
-            $scope.showTimeseriesCharts = false;
+                // TKT-000006: quando a campanha estiver configurada para
+                // carregar automaticamente os gráficos de série temporal,
+                // disparar as chamadas imediatamente após o ponto ser
+                // carregado, sem exigir clique do inspector.
+                if ($scope.autoLoadTimeseries && $scope.showTimeseries &&
+                    $scope.point && !$scope.isChaco) {
+                    $scope.showTimeseriesCharts = true;
+                    if (typeof createModisChart === 'function') createModisChart();
+                    if (typeof createModisNdwiChart === 'function') createModisNdwiChart();
+                    if (typeof createLandsatChart === 'function') createLandsatChart();
+                    if (typeof createLandsatNdwiChart === 'function') createLandsatNdwiChart();
+                }
+            });
 
             $scope.counter = 0;
 

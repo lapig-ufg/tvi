@@ -838,9 +838,11 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
         var initFormViewVariables = function () {
             $scope.optionYears = [];
+            // TKT-000031: iniciar a primeira caixa no começo da série temporal,
+            // mantendo comportamento consistente com o inspector padrão.
             $scope.answers = [{
                 initialYear: $scope.config.initialYear,
-                finalYear: $scope.config.finalYear,
+                finalYear: $scope.config.initialYear,
                 landUse: $scope.config.landUse[1]
             }];
         };

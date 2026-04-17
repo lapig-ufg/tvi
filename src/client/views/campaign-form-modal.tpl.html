@@ -105,7 +105,15 @@
                                 Mostrar Gráfico de Série Temporal
                             </span>
                         </label>
-                        
+
+                        <label class="checkbox-label" ng-show="campaign.showTimeseries">
+                            <input type="checkbox" ng-model="campaign.autoLoadTimeseries">
+                            <span class="checkbox-text">
+                                <i class="fas fa-bolt"></i>
+                                Carregar Gráficos Automaticamente
+                            </span>
+                        </label>
+
                         <label class="checkbox-label">
                             <input type="checkbox" ng-model="campaign.showPointInfo">
                             <span class="checkbox-text">
@@ -113,7 +121,7 @@
                                 Mostrar Informações do Ponto
                             </span>
                         </label>
-                        
+
                         <label class="checkbox-label">
                             <input type="checkbox" ng-model="campaign.useDynamicMaps">
                             <span class="checkbox-text">

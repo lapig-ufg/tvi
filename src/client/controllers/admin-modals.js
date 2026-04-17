@@ -1591,6 +1591,13 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     if (!$scope.campaign.imageType) {
         $scope.campaign.imageType = 'landsat'; // Padrão para Landsat
     }
+
+    // TKT-000006: garantir o default do flag de carregamento automático dos
+    // gráficos de série temporal. Quando ausente (campanhas antigas),
+    // assumir true para preservar o comportamento anterior.
+    if ($scope.campaign.autoLoadTimeseries === undefined || $scope.campaign.autoLoadTimeseries === null) {
+        $scope.campaign.autoLoadTimeseries = true;
+    }
     
     // Inicializar configuração WMS se não existir
     if (!$scope.campaign.wmsConfig) {

@@ -788,6 +788,10 @@ module.exports = function (app) {
                     showTimeseries: campaign.showTimeseries !== false,
                     showPointInfo: campaign.showPointInfo !== false,
                     useDynamicMaps: campaign.useDynamicMaps || false,
+                    // TKT-000006: sinaliza ao cliente se os gráficos de série
+                    // temporal devem ser carregados automaticamente após o
+                    // ponto ser aberto (padrão: true, mantendo retrocompatibilidade).
+                    autoLoadTimeseries: campaign.autoLoadTimeseries !== false,
                     visParam: campaign.visParam || null,
                     visParams: campaign.visParams || [],
                     defaultVisParam: campaign.defaultVisParam || null,

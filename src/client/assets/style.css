@@ -334,8 +334,11 @@ h3 {
 }
 
 .form-lulc-panel {
-  height: 500px;
-  overflow-y: auto;
+  /*
+   * TKT-000004: removida a altura fixa (height: 500px) e o scroll interno.
+   * O scroll vertical passa a ser exclusivo da sidebar, evitando rolagem
+   * aninhada ao adicionar várias caixinhas de classes de transição.
+   */
   /*padding-right: 0px;*/
   /*width: 318px;*/
   overflow-x: auto;
