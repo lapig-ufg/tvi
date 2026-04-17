@@ -10,6 +10,40 @@ module.exports = function(app) {
 	var status = app.repository.collections.status;
 	var blocosCollection = app.repository.collections.tvi_blocos;
 
+	// -------------------------------------------------------------------------
+	// Fallback case-insensitive para filtros de bioma/UF (TKT-000010).
+	// Replicado do supervisor.js para manter o controlador admin alinhado,
+	// sem introduzir dependência cruzada entre os módulos.
+	// -------------------------------------------------------------------------
+	const BIOME_PROPERTY_KEYS = ['biome', 'Biome', 'BIOME', 'bioma', 'Bioma', 'BIOMA'];
+	const UF_PROPERTY_KEYS = [
+		'uf', 'UF', 'Uf',
+		'estado', 'Estado', 'ESTADO',
+		'sigla_uf', 'SIGLA_UF', 'sigla_estado', 'SIGLA_ESTADO',
+		'unidade_federacao', 'UNIDADE_FEDERACAO',
+		'unidade_federativa', 'UNIDADE_FEDERATIVA'
+	];
+
+	function buildResolvedFieldExpression(topLevelField, propertyKeys) {
+		var expr = '$' + topLevelField;
+		for (var i = 0; i < propertyKeys.length; i++) {
+			expr = { $ifNull: [expr, '$properties.' + propertyKeys[i]] };
+		}
+		return expr;
+	}
+
+	function biomeOrClause(value) {
+		return BIOME_PROPERTY_KEYS
+			.map(function (k) { return { ['properties.' + k]: value }; })
+			.concat([{ biome: value }]);
+	}
+
+	function ufOrClause(value) {
+		return UF_PROPERTY_KEYS
+			.map(function (k) { return { ['properties.' + k]: value }; })
+			.concat([{ uf: value }]);
+	}
+
 	var getImageDates = function(path, row, callback) {
 		var filterMosaic = {'dates.path': path, 'dates.row': row };
 		var projMosaic = { dates: {$elemMatch: {path: path, row: row }}};
@@ -1015,12 +1049,18 @@ module.exports = function(app) {
 				}
 			}
 
+			// TKT-000010: usa $or sobre properties.* para aceitar pontos legados.
+			var fallbackClauses = [];
 			if (uf) {
-				filter["uf"] = uf;
+				fallbackClauses.push({ $or: ufOrClause(uf) });
 			}
-
 			if (biome) {
-				filter["biome"] = biome;
+				fallbackClauses.push({ $or: biomeOrClause(biome) });
+			}
+			if (fallbackClauses.length === 1) {
+				filter.$or = fallbackClauses[0].$or;
+			} else if (fallbackClauses.length > 1) {
+				filter.$and = fallbackClauses;
 			}
 
 			// Se o index for fornecido, tentamos usar o campo index para filtrar
@@ -1295,11 +1335,21 @@ module.exports = function(app) {
 				filter[key] = request.query[key];
 			}
 		}
-		points.distinct('biome', filter, function(err, biomes) {
+		// TKT-000010: fallback para pontos legados com bioma apenas em properties.*
+		const pipeline = [
+			{ $match: filter },
+			{ $project: { biomeResolved: buildResolvedFieldExpression('biome', BIOME_PROPERTY_KEYS) } },
+			{ $match: { biomeResolved: { $ne: null } } },
+			{ $group: { _id: '$biomeResolved' } }
+		];
+		points.aggregate(pipeline).toArray(function(err, docs) {
 			if (err) {
 				return response.status(500).json({ error: 'Internal server error' });
 			}
-			response.json(biomes.filter(b => b != null));
+			const result = (docs || [])
+				.map(d => d._id)
+				.filter(v => v != null && v !== '');
+			response.json(result);
 		});
 	};
 
@@ -1313,11 +1363,21 @@ module.exports = function(app) {
 				filter[key] = request.query[key];
 			}
 		}
-		points.distinct('uf', filter, function(err, ufs) {
+		// TKT-000010: fallback para pontos legados com uf apenas em properties.*
+		const pipeline = [
+			{ $match: filter },
+			{ $project: { ufResolved: buildResolvedFieldExpression('uf', UF_PROPERTY_KEYS) } },
+			{ $match: { ufResolved: { $ne: null } } },
+			{ $group: { _id: '$ufResolved' } }
+		];
+		points.aggregate(pipeline).toArray(function(err, docs) {
 			if (err) {
 				return response.status(500).json({ error: 'Internal server error' });
 			}
-			response.json(ufs.filter(u => u != null));
+			const result = (docs || [])
+				.map(d => d._id)
+				.filter(v => v != null && v !== '');
+			response.json(result);
 		});
 	};
 

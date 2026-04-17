@@ -37,6 +37,48 @@ module.exports = function(app) {
 
     const CampaignCrud = {};
 
+    // -------------------------------------------------------------------------
+    // Normalização de propriedades de GeoJSON (TKT-000010)
+    //
+    // A importação de pontos exige que os campos `biome` e `uf` sejam gravados
+    // no nível top-level do documento para que os filtros existentes
+    // (Points.biomeFilter / Points.ufFilter / CampaignCrud.listPoints) continuem
+    // funcionando via índices compostos.
+    //
+    // Antes, a extração era estritamente case-sensitive, falhando em GeoJSONs
+    // cujas chaves chegavam como `BIOMA`, `Bioma`, `UF`, `Estado`, etc. O helper
+    // abaixo resolve o valor de forma case-insensitive e aceita sinônimos
+    // comuns em português. Mantemos o `properties` original intocado no
+    // subdocumento para preservar qualquer metadado adicional da campanha.
+    // -------------------------------------------------------------------------
+    const BIOME_KEYS = ['biome', 'bioma'];
+    const UF_KEYS = ['uf', 'estado', 'sigla_uf', 'sigla_estado', 'unidade_federacao', 'unidade_federativa'];
+
+    function normalizeFeatureProperty(properties, candidates) {
+        if (!properties || typeof properties !== 'object') return null;
+        const keys = Object.keys(properties);
+        if (keys.length === 0) return null;
+
+        // Indexa as chaves em caixa baixa uma única vez para custo O(n).
+        const lowerIndex = new Map();
+        for (const key of keys) {
+            const lower = key.toLowerCase();
+            if (!lowerIndex.has(lower)) {
+                lowerIndex.set(lower, key);
+            }
+        }
+
+        for (const candidate of candidates) {
+            const matchKey = lowerIndex.get(candidate.toLowerCase());
+            if (!matchKey) continue;
+            const value = properties[matchKey];
+            if (value === null || typeof value === 'undefined') continue;
+            if (typeof value === 'string' && value.trim() === '') continue;
+            return typeof value === 'string' ? value.trim() : value;
+        }
+        return null;
+    }
+
     // Autenticação de super-admin
     CampaignCrud.adminLogin = async (req, res) => {
         try {
@@ -1867,8 +1909,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,
@@ -2205,8 +2248,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,
@@ -2557,8 +2601,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,

@@ -12,6 +12,46 @@ module.exports = function (app) {
     var infoCampaign = app.repository.collections.campaign;
     const config = app.config;
 
+    // -------------------------------------------------------------------------
+    // Fallback case-insensitive para filtros de bioma/UF (TKT-000010).
+    //
+    // Antes da correção do pipeline de ingestão, GeoJSONs com chaves em caixa
+    // alta (BIOMA, UF, Estado, etc.) deixaram o campo top-level `biome`/`uf`
+    // como null. Os helpers abaixo constroem cláusulas `$or` sobre
+    // `properties.<variante>` para atender pontos legados sem exigir
+    // reimportação. Novos uploads já gravam o valor top-level normalizado.
+    // -------------------------------------------------------------------------
+    const BIOME_PROPERTY_KEYS = ['biome', 'Biome', 'BIOME', 'bioma', 'Bioma', 'BIOMA'];
+    const UF_PROPERTY_KEYS = [
+        'uf', 'UF', 'Uf',
+        'estado', 'Estado', 'ESTADO',
+        'sigla_uf', 'SIGLA_UF', 'sigla_estado', 'SIGLA_ESTADO',
+        'unidade_federacao', 'UNIDADE_FEDERACAO',
+        'unidade_federativa', 'UNIDADE_FEDERATIVA'
+    ];
+
+    function buildResolvedFieldExpression(topLevelField, propertyKeys) {
+        // Monta um $ifNull aninhado que devolve o primeiro campo não nulo
+        // entre o top-level e cada chave em properties.*.
+        var expr = '$' + topLevelField;
+        for (var i = 0; i < propertyKeys.length; i++) {
+            expr = { $ifNull: [expr, '$properties.' + propertyKeys[i]] };
+        }
+        return expr;
+    }
+
+    function biomeOrClause(value) {
+        return BIOME_PROPERTY_KEYS
+            .map(function (k) { return { ['properties.' + k]: value }; })
+            .concat([{ biome: value }]);
+    }
+
+    function ufOrClause(value) {
+        return UF_PROPERTY_KEYS
+            .map(function (k) { return { ['properties.' + k]: value }; })
+            .concat([{ uf: value }]);
+    }
+
     var getImageDates = function (path, row, callback) {
         var filterMosaic = {'dates.path': path, 'dates.row': row};
         var projMosaic = {dates: {$elemMatch: {path: path, row: row}}};
@@ -256,12 +296,20 @@ module.exports = function (app) {
             }
         }
 
+        // TKT-000010: aceita pontos com biome/uf legados apenas em properties.*
+        // via $or. Acumula em $and quando ambos os filtros estiverem presentes
+        // para não colidirem entre si.
+        var fallbackClauses = [];
         if (uf) {
-            filter["uf"] = uf;
+            fallbackClauses.push({ $or: ufOrClause(uf) });
         }
-
         if (biome) {
-            filter["biome"] = biome;
+            fallbackClauses.push({ $or: biomeOrClause(biome) });
+        }
+        if (fallbackClauses.length === 1) {
+            filter.$or = fallbackClauses[0].$or;
+        } else if (fallbackClauses.length > 1) {
+            filter.$and = fallbackClauses;
         }
 
         if (timePoint) {
@@ -564,7 +612,6 @@ module.exports = function (app) {
     }
 
     Points.biomeFilter = function (request, response) {
-        var result = [];
         var campaign = request.session.user.campaign;
         var landUse = request.query.landUse;
         var userName = request.query.userName;
@@ -592,14 +639,28 @@ module.exports = function (app) {
         }*/
 
         if (uf) {
-            filter["uf"] = uf;
+            filter.$or = ufOrClause(uf);
         }
-        pointsCollection.distinct('biome', filter, function (err, docs) {
 
-            result = docs.filter(function (element) {
-                return element != null;
-            })
+        // TKT-000010: aggregate com fallback para properties.* quando o
+        // campo top-level biome estiver ausente (pontos legados importados
+        // antes da normalização na ingestão).
+        var pipeline = [
+            { $match: filter },
+            { $project: { biomeResolved: buildResolvedFieldExpression('biome', BIOME_PROPERTY_KEYS) } },
+            { $match: { biomeResolved: { $ne: null } } },
+            { $group: { _id: '$biomeResolved' } }
+        ];
 
+        pointsCollection.aggregate(pipeline).toArray(function (err, docs) {
+            if (err) {
+                console.error('biomeFilter aggregate error:', err);
+                response.status(500).send([]);
+                return;
+            }
+            var result = (docs || [])
+                .map(function (d) { return d._id; })
+                .filter(function (v) { return v != null && v !== ''; });
             response.send(result);
             response.end();
         });
@@ -629,19 +690,31 @@ module.exports = function (app) {
         }
 
         if (biome) {
-            filter["biome"] = biome;
+            filter.$or = biomeOrClause(biome);
         }
 
         /*if(uf) {
             filter["uf"] = uf;
         }*/
 
-        pointsCollection.distinct('uf', filter, function (err, docs) {
+        // TKT-000010: aggregate com fallback para properties.* quando o
+        // campo top-level uf estiver ausente.
+        var pipeline = [
+            { $match: filter },
+            { $project: { ufResolved: buildResolvedFieldExpression('uf', UF_PROPERTY_KEYS) } },
+            { $match: { ufResolved: { $ne: null } } },
+            { $group: { _id: '$ufResolved' } }
+        ];
 
-            result = docs.filter(function (element) {
-                return element != null;
-            })
-
+        pointsCollection.aggregate(pipeline).toArray(function (err, docs) {
+            if (err) {
+                console.error('ufFilter aggregate error:', err);
+                response.status(500).send([]);
+                return;
+            }
+            var result = (docs || [])
+                .map(function (d) { return d._id; })
+                .filter(function (v) { return v != null && v !== ''; });
             response.send(result);
             response.end();
         });
