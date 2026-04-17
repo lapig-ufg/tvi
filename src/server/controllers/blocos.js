@@ -37,6 +37,10 @@ module.exports = function(app) {
 			}
 
 			// Buscar pontos pendentes (ainda não completamente inspecionados), ordenados por index
+			// TODO [TKT-000015 — fase follow-up]: substituir $where por
+			//   `userNameCount: { $lt: numInspec }` (campo introduzido em TKT-000015).
+			//   Operação segura apenas após rodar scripts/backfill-userNameCount.js.
+			//   Mantido temporariamente para não quebrar pipelines de blocos legados.
 			var allPoints = await points.find(
 				{
 					campaign: campaignId,
