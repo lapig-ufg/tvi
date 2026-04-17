@@ -1527,7 +1527,13 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     if (!$scope.campaign.defaultVisParam) {
         $scope.campaign.defaultVisParam = null;
     }
-    
+
+    // Inicializar defaultLandUse (TKT-000005). Valor vazio mantém o comportamento atual
+    // (primeira caixa do formulário de transição nasce sem pré-seleção).
+    if (typeof $scope.campaign.defaultLandUse !== 'string') {
+        $scope.campaign.defaultLandUse = '';
+    }
+
     // Inicializar imageType se não existir
     if (!$scope.campaign.imageType) {
         $scope.campaign.imageType = 'landsat'; // Padrão para Landsat
@@ -1627,7 +1633,13 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     };
     
     $scope.removeLandUse = function(index) {
+        var removed = $scope.campaign.landUse[index];
         $scope.campaign.landUse.splice(index, 1);
+        // Se a classe removida era a classe inicial padrão, limpar a pré-seleção
+        // para evitar estado inconsistente (TKT-000005).
+        if ($scope.campaign.defaultLandUse && $scope.campaign.defaultLandUse === removed) {
+            $scope.campaign.defaultLandUse = '';
+        }
     };
     
     // Funções para gerenciar visparams

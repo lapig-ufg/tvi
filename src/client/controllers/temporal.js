@@ -207,7 +207,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             initialYear: $rootScope.user.campaign.initialYear,
             finalYear: $rootScope.user.campaign.finalYear,
             zoomLevel: 13,
-            landUse: $rootScope.user.campaign.landUse
+            landUse: $rootScope.user.campaign.landUse,
+            // Classe inicial padrão da primeira caixa (TKT-000005).
+            // Vazio mantém comportamento anterior (sem pré-seleção).
+            defaultLandUse: $rootScope.user.campaign.defaultLandUse || ''
         }
 
         $scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
@@ -236,11 +239,20 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
             generateOptionYears(initialYear, finalYear);
 
+            // Classe inicial da caixa subsequente (TKT-000005):
+            // 1) usa defaultLandUse da campanha, se definido;
+            // 2) cai para o primeiro item de landUse (antes era o índice 1, posicional/frágil);
+            // 3) por fim, string vazia para forçar o inspetor a escolher.
+            var defaultLU = ($scope.config && $scope.config.defaultLandUse) || '';
+            var nextLandUse = defaultLU
+                || ($scope.config.landUse && $scope.config.landUse[0])
+                || '';
+
             $scope.answers.push(
                 {
                     initialYear: initialYear,
                     finalYear: finalYear,
-                    landUse: $scope.config.landUse[1],
+                    landUse: nextLandUse,
                     pixelBorder: false
                 }
             )
@@ -711,11 +723,16 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const initFormViewVariables = function () {
             $scope.optionYears = [];
 
+            // Classe inicial da primeira caixa (TKT-000005).
+            // Quando a campanha define defaultLandUse, pré-preenche para reduzir
+            // cliques repetitivos; caso contrário, mantém vazio (comportamento atual).
+            var firstLandUse = ($scope.config && $scope.config.defaultLandUse) || '';
+
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
                     finalYear: $scope.config.finalYear,
-                    landUse: '', // Inicializar vazio para forçar seleção
+                    landUse: firstLandUse,
                     pixelBorder: false
                 }
             ];
@@ -729,6 +746,20 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     $scope.showPointInfo = config.showPointInfo;
                     $scope.useDynamicMaps = config.useDynamicMaps;
                     $scope.hasVisParam = config.visParam !== null;
+
+                    // Sincronizar classe inicial padrão com o backend (TKT-000005).
+                    // Só sobrescreve quando o valor retornado existir no array landUse da
+                    // campanha, evitando estado inconsistente caso a classe tenha sido
+                    // removida após a configuração inicial.
+                    if (Array.isArray(config.landUse) && config.landUse.length) {
+                        $scope.config.landUse = config.landUse;
+                    }
+                    if (typeof config.defaultLandUse === 'string'
+                        && config.defaultLandUse !== ''
+                        && Array.isArray($scope.config.landUse)
+                        && $scope.config.landUse.indexOf(config.defaultLandUse) !== -1) {
+                        $scope.config.defaultLandUse = config.defaultLandUse;
+                    }
                     
                     // Verificar se é Sentinel baseado no imageType PRIMEIRO
                     if (config.imageType) {

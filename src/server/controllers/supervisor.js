@@ -794,9 +794,13 @@ module.exports = function (app) {
                     imageType: campaign.imageType || null,
                     // Incluir configurações WMS
                     wmsConfig: campaign.wmsConfig || null,
-                    wmsPeriod: campaign.wmsPeriod || 'BOTH'
+                    wmsPeriod: campaign.wmsPeriod || 'BOTH',
+                    // Classes de uso da terra e classe inicial padrão
+                    // (TKT-000005) — permite ao inspetor ter a primeira caixa pré-preenchida
+                    landUse: Array.isArray(campaign.landUse) ? campaign.landUse : [],
+                    defaultLandUse: (typeof campaign.defaultLandUse === 'string') ? campaign.defaultLandUse : ''
                 };
-                
+
                 response.json(config);
             } else {
                 response.status(404).json({ error: 'Campanha não encontrada' });

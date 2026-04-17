@@ -1058,12 +1058,22 @@ module.exports = function(app) {
             }
             
             // Adicionar configurações padrão se não fornecidas
+            const landUseList = Array.isArray(campaignData.landUse) ? campaignData.landUse : [];
+            // Validação: defaultLandUse deve ser string não vazia e pertencer ao array landUse.
+            // Caso contrário, persiste '' para manter comportamento atual (sem pré-seleção).
+            const defaultLandUse = (typeof campaignData.defaultLandUse === 'string'
+                && campaignData.defaultLandUse.trim() !== ''
+                && landUseList.includes(campaignData.defaultLandUse))
+                ? campaignData.defaultLandUse
+                : '';
+
             const campaign = {
                 _id: campaignData._id,
                 initialYear: parseInt(campaignData.initialYear) || 1985,
                 finalYear: parseInt(campaignData.finalYear) || 2024,
                 password: campaignData.password || null,
-                landUse: campaignData.landUse || [],
+                landUse: landUseList,
+                defaultLandUse: defaultLandUse,
                 numInspec: parseInt(campaignData.numInspec) || 3,
                 // Novas propriedades
                 showTimeseries: campaignData.showTimeseries !== false,
@@ -1206,12 +1216,29 @@ module.exports = function(app) {
             if (updateData.wmsPeriod) {
                 const validPeriods = ['DRY', 'WET', 'BOTH'];
                 if (!validPeriods.includes(updateData.wmsPeriod)) {
-                    return res.status(400).json({ 
-                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}` 
+                    return res.status(400).json({
+                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}`
                     });
                 }
             }
-            
+
+            // Validar/normalizar defaultLandUse quando presente no payload de atualização.
+            // O campo deve ser string e pertencer ao array landUse (seja o enviado no update
+            // ou o persistido atualmente na campanha). Valor vazio limpa a pré-seleção.
+            if (updateData.hasOwnProperty('defaultLandUse')) {
+                const rawDefault = updateData.defaultLandUse;
+                if (typeof rawDefault !== 'string' || rawDefault.trim() === '') {
+                    updateData.defaultLandUse = '';
+                } else {
+                    let referenceLandUse = Array.isArray(updateData.landUse) ? updateData.landUse : null;
+                    if (!referenceLandUse) {
+                        const existing = await campaignCollection.findOne({ _id: campaignId });
+                        referenceLandUse = (existing && Array.isArray(existing.landUse)) ? existing.landUse : [];
+                    }
+                    updateData.defaultLandUse = referenceLandUse.includes(rawDefault) ? rawDefault : '';
+                }
+            }
+
             updateData.updatedAt = new Date();
             
             const result = await campaignCollection.updateOne(
