@@ -784,10 +784,12 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         var initFormViewVariables = function () {
             $scope.optionYears = [];
 
+            // TKT-000031: iniciar a primeira caixa no começo da série temporal,
+            // alinhando o comportamento do supervisor ao do inspector padrão.
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
-                    finalYear: $scope.config.finalYear,
+                    finalYear: $scope.config.initialYear,
                     landUse: $scope.config.landUse[1]
                 }
             ];
@@ -1059,6 +1061,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             initFormViewVariables();
             //generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
             getCampaignMatadata();
+
+            // TKT-000031: restaurar o intervalo padrão dos filtros de gráfico
+            // ao carregar um novo ponto, evitando herdar o filtro anterior.
+            $scope.chartFilterStartYear = ($scope.config && $scope.config.initialYear) || 1985;
+            $scope.chartFilterEndYear = ($scope.config && $scope.config.finalYear) || new Date().getFullYear();
 
             loadCampaignConfig(function() {
                 generateMaps();

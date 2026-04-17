@@ -723,10 +723,13 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const initFormViewVariables = function () {
             $scope.optionYears = [];
 
+            // TKT-000031: iniciar a primeira caixa no começo da série temporal,
+            // ou seja, finalYear = initialYear. Dessa forma o inspector pode
+            // avançar período a período sem precisar redefinir o ano final.
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
-                    finalYear: $scope.config.finalYear,
+                    finalYear: $scope.config.initialYear,
                     landUse: '', // Inicializar vazio para forçar seleção
                     pixelBorder: false
                 }
@@ -841,6 +844,12 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+
+            // TKT-000031: restaurar o intervalo padrão dos filtros de gráfico
+            // ao avançar para um novo ponto, evitando que o filtro do ponto
+            // anterior permaneça aplicado sem indicação visual.
+            $scope.chartFilterStartYear = $scope.config.initialYear || 1985;
+            $scope.chartFilterEndYear = $scope.config.finalYear || new Date().getFullYear();
 
             // Resetar a flag sempre que carregar um novo ponto. Quando a
             // campanha estiver com autoLoadTimeseries habilitado, a flag será
