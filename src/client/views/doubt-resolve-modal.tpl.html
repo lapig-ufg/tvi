@@ -1,0 +1,130 @@
+<!--
+    Modal de resolução/inspeção administrativa de dúvidas em pontos
+    (TKT-000011). Acionado por openDoubtResolveModal(point) em
+    AdminCampaignPointsModalController.
+-->
+<style>
+    .doubt-resolve .doubt-header { background: #fafafa; padding: 1rem; border-left: 4px solid #f0ad4e; margin-bottom: 1rem; }
+    .doubt-resolve .doubt-header.resolved { border-left-color: #5cb85c; }
+    .doubt-resolve .doubt-header small { color: #666; display: block; margin-top: 4px; }
+    .doubt-resolve .comments-list { max-height: 260px; overflow-y: auto; border: 1px solid #e0e0e0; padding: 0.75rem; background: #fff; }
+    .doubt-resolve .comment-item { border-bottom: 1px solid #f0f0f0; padding: 0.5rem 0; }
+    .doubt-resolve .comment-item:last-child { border-bottom: none; }
+    .doubt-resolve .comment-meta { font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .doubt-resolve .comment-meta .author-admin { color: #337ab7; font-weight: 600; }
+    .doubt-resolve .comment-meta .author-inspector { color: #8a6d3b; font-weight: 600; }
+    .doubt-resolve .history-list { font-size: 0.85rem; color: #555; margin-top: 0.75rem; border-top: 1px dashed #e0e0e0; padding-top: 0.5rem; }
+    .doubt-resolve .history-item { padding: 2px 0; }
+</style>
+
+<div class="modal-header doubt-resolve">
+    <h3 class="modal-title">
+        <span class="glyphicon glyphicon-question-sign"></span>
+        Dúvida do ponto {{ point._id }}
+    </h3>
+    <button type="button" class="close" ng-click="cancel()" aria-label="Fechar">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="modal-body doubt-resolve">
+    <div class="doubt-header" ng-class="{ resolved: doubt.status === 'RESOLVIDA' }">
+        <div>
+            <b>Status:</b>
+            <span class="label"
+                  ng-class="{ 'label-warning': doubt.status === 'ABERTA', 'label-success': doubt.status === 'RESOLVIDA' }">
+                {{ doubt.status }}
+            </span>
+            &nbsp;&nbsp;
+            <b>Aberta por:</b> {{ doubt.openedBy || '—' }}
+            &nbsp;&nbsp;
+            <b>Em:</b> {{ doubt.openedAt | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        <small ng-if="doubt.status === 'RESOLVIDA'">
+            Resolvida por <b>{{ doubt.resolvedBy }}</b> em {{ doubt.resolvedAt | date:'dd/MM/yyyy HH:mm' }}.
+        </small>
+    </div>
+
+    <h4 style="margin: 0 0 0.5rem; font-size: 1rem; font-weight: 600;">Comentários</h4>
+    <div class="comments-list">
+        <div ng-if="!doubt.comments || doubt.comments.length === 0" class="text-muted">
+            Nenhum comentário ainda.
+        </div>
+        <div class="comment-item" ng-repeat="c in doubt.comments">
+            <div class="comment-meta">
+                <span ng-class="{ 'author-admin': c.author.role === 'super-admin', 'author-inspector': c.author.role !== 'super-admin' }">
+                    {{ c.author.name }}
+                </span>
+                <small>({{ c.author.role }})</small>
+                &nbsp;·&nbsp;
+                {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                <span ng-if="c.year"> &nbsp;·&nbsp; Ano: {{ c.year }}</span>
+            </div>
+            <div style="white-space: pre-wrap;">{{ c.text }}</div>
+        </div>
+    </div>
+
+    <div class="history-list" ng-if="doubt.statusHistory && doubt.statusHistory.length > 0">
+        <b>Histórico de status:</b>
+        <div class="history-item" ng-repeat="h in doubt.statusHistory">
+            {{ h.changedAt | date:'dd/MM/yyyy HH:mm' }} —
+            <span ng-if="h.from">{{ h.from }} → </span>{{ h.to }}
+            por <b>{{ h.changedBy }}</b>
+            <span ng-if="h.reason"> &nbsp;·&nbsp; {{ h.reason }}</span>
+        </div>
+    </div>
+
+    <hr/>
+
+    <!-- Adicionar resposta -->
+    <div class="form-group">
+        <label>Adicionar resposta <small class="text-muted">(5 a 2000 caracteres)</small></label>
+        <textarea class="form-control" rows="3"
+                  maxlength="2000"
+                  ng-model="newComment.text"
+                  placeholder="Sua resposta ao intérprete..."></textarea>
+        <div class="help-block" style="margin-top: 4px;">
+            {{ (newComment.text || '').length }} / 2000
+            <button type="button" class="btn btn-sm btn-primary" style="float: right;"
+                    ng-disabled="submitting || !newComment.text || newComment.text.trim().length < 5"
+                    ng-click="addComment()">
+                Salvar resposta
+            </button>
+        </div>
+    </div>
+
+    <!-- Transição de status -->
+    <div class="form-group" style="margin-top: 1rem;">
+        <label>
+            {{ doubt.status === 'ABERTA' ? 'Motivo da resolução' : 'Motivo da reabertura' }}
+            <small class="text-muted">(obrigatório)</small>
+        </label>
+        <input type="text" class="form-control" maxlength="500"
+               ng-model="transition.reason"
+               placeholder="Descreva brevemente o motivo da transição.">
+    </div>
+
+    <div class="alert alert-danger" ng-if="errorMessage">
+        {{ errorMessage }}
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="submitting">
+        Fechar
+    </button>
+    <button type="button" class="btn btn-success"
+            ng-if="doubt.status === 'ABERTA'"
+            ng-disabled="submitting || !transition.reason || !transition.reason.trim()"
+            ng-click="resolve('RESOLVIDA')">
+        <span class="glyphicon glyphicon-ok"></span>
+        Marcar como resolvida
+    </button>
+    <button type="button" class="btn btn-warning"
+            ng-if="doubt.status === 'RESOLVIDA'"
+            ng-disabled="submitting || !transition.reason || !transition.reason.trim()"
+            ng-click="resolve('ABERTA')">
+        <span class="glyphicon glyphicon-repeat"></span>
+        Reabrir dúvida
+    </button>
+</div>

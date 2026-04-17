@@ -145,7 +145,12 @@ module.exports = function (app) {
                     // Índice para data de importação
                     { key: { dateImport: -1 }, name: 'dateImport_desc' },
                     // Índice para cache
-                    { key: { cached: 1, enhance_in_cache: 1 }, name: 'cached_enhance' }
+                    { key: { cached: 1, enhance_in_cache: 1 }, name: 'cached_enhance' },
+                    // Índices sparse para subestrutura `doubt` (TKT-000011).
+                    // sparse:true evita indexar a maioria dos pontos que não
+                    // possuem dúvida, mantendo o índice pequeno.
+                    { key: { campaign: 1, 'doubt.status': 1 }, name: 'campaign_doubt_status', sparse: true },
+                    { key: { campaign: 1, 'doubt.openedAt': -1 }, name: 'campaign_doubt_openedAt', sparse: true }
                 ], function(err) {
                     if (err) {
                         console.error('Erro ao criar índices para points:', err);

@@ -1,0 +1,57 @@
+<!--
+    Modal usado pelo intérprete para registrar (ou reabrir) uma dúvida
+    sobre o ponto atualmente em inspeção (TKT-000011). Acionado por
+    openDoubtModal() em controllers/temporal.js.
+-->
+<div class="modal-header">
+    <h3 class="modal-title">
+        <span class="glyphicon glyphicon-question-sign"></span>
+        Registrar dúvida
+    </h3>
+    <button type="button" class="close" ng-click="cancel()" aria-label="Fechar">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="modal-body">
+    <p style="margin-bottom: 12px;">
+        Ponto: <b>{{ pointId }}</b>
+        <span ng-if="campaignId"> &mdash; Campanha: <b>{{ campaignId }}</b></span>
+    </p>
+
+    <div class="form-group">
+        <label for="doubtText">Descreva a dúvida <small class="text-muted">(5 a 2000 caracteres)</small></label>
+        <textarea id="doubtText"
+                  class="form-control"
+                  rows="5"
+                  maxlength="2000"
+                  ng-model="form.text"
+                  placeholder="Ex.: não consigo distinguir pasto sujo de cerrado antropizado em 2014"></textarea>
+        <div class="help-block" style="margin-top: 4px;">
+            {{ (form.text || '').length }} / 2000
+        </div>
+    </div>
+
+    <div class="form-group" ng-if="years && years.length > 0">
+        <label for="doubtYear">Ano de referência <small class="text-muted">(opcional)</small></label>
+        <select id="doubtYear" class="form-control" ng-model="form.year">
+            <option value="">&mdash; Nenhum &mdash;</option>
+            <option ng-repeat="y in years" value="{{ y }}">{{ y }}</option>
+        </select>
+    </div>
+
+    <div class="alert alert-danger" ng-if="errorMessage">
+        {{ errorMessage }}
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="submitting">
+        Cancelar
+    </button>
+    <button type="button" class="btn btn-warning" ng-click="submit()"
+            ng-disabled="submitting || !form.text || form.text.trim().length < 5">
+        <span class="glyphicon glyphicon-send"></span>
+        Enviar dúvida
+    </button>
+</div>

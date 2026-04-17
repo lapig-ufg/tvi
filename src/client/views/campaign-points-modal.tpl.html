@@ -832,6 +832,11 @@
                 <div class="stat-value">{{ campaign.progress }}%</div>
                 <div class="stat-label">Progresso</div>
             </div>
+            <!-- TKT-000011: card de dúvidas abertas (agregado via /doubts/summary). -->
+            <div class="stat-card">
+                <div class="stat-value">{{ doubtSummary.open || 0 }}</div>
+                <div class="stat-label">Dúvidas abertas</div>
+            </div>
         </div>
     </div>
 
@@ -902,6 +907,17 @@
                 <select class="filter-select" ng-model="filters.county">
                     <option value="">Todos</option>
                     <option ng-repeat="county in availableCounties" value="{{ county }}">{{ county }}</option>
+                </select>
+            </div>
+
+            <!-- TKT-000011: filtro de dúvidas (true/any/false) -->
+            <div class="filter-group">
+                <label class="filter-label">Dúvidas</label>
+                <select class="filter-select" ng-model="filters.hasDoubt">
+                    <option value="">Todos</option>
+                    <option value="true">Somente com dúvida aberta</option>
+                    <option value="any">Incluir resolvidos</option>
+                    <option value="false">Somente sem dúvida</option>
                 </select>
             </div>
         </div>
@@ -1093,6 +1109,15 @@
                                         ng-click="editPoint(point)"
                                         title="Editar inspeções">
                                     <i class="glyphicon glyphicon-edit"></i>
+                                </button>
+                                <!-- TKT-000011: abrir modal de resolução de dúvida. -->
+                                <button class="btn-action"
+                                        ng-if="point.doubt"
+                                        ng-click="openDoubtResolveModal(point)"
+                                        ng-class="{'has-open-doubt': point.doubt.status === 'ABERTA'}"
+                                        title="{{ point.doubt.status === 'ABERTA' ? 'Dúvida aberta — abrir para resolver' : 'Dúvida resolvida — ver histórico' }}">
+                                    <i class="glyphicon glyphicon-question-sign"
+                                       ng-style="{ color: point.doubt.status === 'ABERTA' ? '#f0ad4e' : '#5cb85c' }"></i>
                                 </button>
                             </div>
                         </td>

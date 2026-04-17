@@ -2702,7 +2702,12 @@ module.exports = function(app) {
             const uf = req.query.uf;
             const county = req.query.county;
             const pointId = req.query.pointId;
-            
+            // Filtro para pontos com dúvida (TKT-000011).
+            // hasDoubt=true  => apenas pontos com dúvida ABERTA
+            // hasDoubt=any   => pontos com qualquer dúvida (inclui RESOLVIDA)
+            // hasDoubt=false => apenas pontos sem subestrutura doubt
+            const hasDoubt = req.query.hasDoubt;
+
             // Construir query base
             let query = { campaign: campaignId };
             
@@ -2736,7 +2741,17 @@ module.exports = function(app) {
             if (user && user.trim()) {
                 query.userName = { $in: [user.trim()] };
             }
-            
+
+            // Filtro por presença de dúvida (TKT-000011).
+            // Usa o índice sparse `campaign_doubt_status` quando hasDoubt=true.
+            if (hasDoubt === 'true') {
+                query['doubt.status'] = 'ABERTA';
+            } else if (hasDoubt === 'any') {
+                query.doubt = { $exists: true };
+            } else if (hasDoubt === 'false') {
+                query.doubt = { $exists: false };
+            }
+
             // Buscar pontos
             const points = await pointsCollection
                 .find(query)
@@ -2793,7 +2808,8 @@ module.exports = function(app) {
                     biome,
                     uf,
                     county,
-                    pointId
+                    pointId,
+                    hasDoubt: hasDoubt || null
                 }
             });
         } catch (error) {

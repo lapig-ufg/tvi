@@ -231,11 +231,28 @@
                         <input type="button" class="btn btn-success"
                                ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
                                ng-click="submitForm()" value="{{ 'COMMON.SUBMIT' | i18n }}">
+                        <!-- TKT-000011: registrar dúvida no ponto atual -->
+                        <input type="button" class="btn btn-warning"
+                               style="margin-left: 8px;"
+                               ng-show="point._id"
+                               ng-disabled="onSubmission"
+                               ng-click="openDoubtModal()"
+                               title="Registrar dúvida sobre este ponto">
+                            <span class="glyphicon glyphicon-question-sign"></span>
+                            Tenho dúvida
+                        </input>
+                        <span class="label label-warning"
+                              ng-show="pointDoubt && pointDoubt.status === 'ABERTA'"
+                              style="margin-left: 8px; vertical-align: middle;"
+                              title="Você registrou uma dúvida aberta neste ponto">
+                            <span class="glyphicon glyphicon-exclamation-sign"></span>
+                            Dúvida registrada
+                        </span>
                         <div class="right-actions">
                             <span class="counter-display"><b>{{counter}} s</b></span>
                             <input type="button" class="btn btn-danger btn-sm"
-                                   ng-click="formSubtraction()" 
-                                   ng-disabled="answers.length == 1" 
+                                   ng-click="formSubtraction()"
+                                   ng-disabled="answers.length == 1"
                                    value="-">
                         </div>
                     </div>
