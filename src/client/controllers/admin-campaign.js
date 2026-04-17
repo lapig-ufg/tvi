@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('AdminCampaignController', function ($scope, $http, $uibModal, $window, $location, NotificationDialog) {
+Application.controller('AdminCampaignController', function ($scope, $http, $uibModal, $window, $location, $timeout, NotificationDialog) {
     $scope.campaigns = [];
     $scope.loading = false;
     $scope.pagination = {
@@ -28,11 +28,14 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         sortBy: '_id'
     };
     
-    // Anos disponíveis para filtros (1985-2024)
+    // Opções dinâmicas para filtros (populadas via /api/campaigns/filter-options)
     $scope.availableYears = [];
-    for (let year = 1985; year <= 2024; year++) {
-        $scope.availableYears.push(year);
-    }
+    $scope.availableImageTypes = [];
+    $scope.availableNumInspec = [1, 2, 3, 4, 5];
+
+    // Estado do typeahead do campo "ID da Campanha"
+    $scope.typeaheadLoading = false;
+    $scope.typeaheadNoResults = false;
 
     // Estatísticas
     $scope.stats = {
@@ -60,6 +63,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
                 $scope.user = response.data.user;
                 $scope.loadCampaigns();
                 $scope.loadStats();
+                $scope.loadFilterOptions();
             }
         }, function(error) {
             $location.path('/admin/login');
@@ -86,6 +90,45 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         }, function(error) {
             console.error('Error loading stats:', error);
         });
+    };
+
+    // Popula os selects de filtros com valores realmente presentes no banco
+    $scope.loadFilterOptions = function() {
+        $http.get('/api/campaigns/filter-options').then(function(response) {
+            if (!response.data || !response.data.success) return;
+            const data = response.data.data || {};
+            const years = (data.initialYears || []).concat(data.finalYears || []);
+            $scope.availableYears = years
+                .filter(function(v, i, a) { return a.indexOf(v) === i; })
+                .sort(function(a, b) { return a - b; });
+            $scope.availableImageTypes = data.imageTypes || [];
+            if (Array.isArray(data.numInspec) && data.numInspec.length > 0) {
+                $scope.availableNumInspec = data.numInspec;
+            }
+        }, function(error) {
+            console.error('Error loading filter options:', error);
+        });
+    };
+
+    // Busca assíncrona para o uib-typeahead do campo "ID da Campanha"
+    $scope.searchCampaigns = function(query) {
+        if (!query || query.length < 2) return [];
+        return $http.get('/api/campaigns/search', { params: { q: query, limit: 10 } })
+            .then(function(response) {
+                return (response.data && response.data.results) || [];
+            }, function() {
+                return [];
+            });
+    };
+
+    // Debounce para auto-aplicação dos filtros ao alterar campos
+    $scope.onFilterChange = function() {
+        if ($scope.filterChangeTimeout) {
+            $timeout.cancel($scope.filterChangeTimeout);
+        }
+        $scope.filterChangeTimeout = $timeout(function() {
+            $scope.applyFilters();
+        }, 300);
     };
     
     $scope.loadCampaigns = function(page) {

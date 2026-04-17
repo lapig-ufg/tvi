@@ -163,7 +163,39 @@ module.exports = function (app) {
      *         description: Unauthorized - Super admin required
      */
     app.get('/api/campaigns', requireSuperAdmin, campaignCrud.list);
-    
+
+    /**
+     * @swagger
+     * /api/campaigns/search:
+     *   get:
+     *     summary: Autocomplete search for campaign IDs (super-admin)
+     *     tags: [Campaign Admin Auth]
+     *     parameters:
+     *       - in: query
+     *         name: q
+     *         required: true
+     *         schema: { type: string, minLength: 2 }
+     *       - in: query
+     *         name: limit
+     *         schema: { type: integer, minimum: 1, maximum: 20, default: 10 }
+     *     responses:
+     *       200:
+     *         description: Matching campaigns (up to limit)
+     */
+    app.get('/api/campaigns/search', requireSuperAdmin, campaignCrud.search);
+
+    /**
+     * @swagger
+     * /api/campaigns/filter-options:
+     *   get:
+     *     summary: Distinct values for populating campaign filter selects
+     *     tags: [Campaign Admin Auth]
+     *     responses:
+     *       200:
+     *         description: Lists of distinct initialYear, finalYear, imageType and numInspec
+     */
+    app.get('/api/campaigns/filter-options', requireSuperAdmin, campaignCrud.getFilterOptions);
+
     /**
      * @swagger
      * /api/campaigns/{id}:

@@ -65,15 +65,25 @@
                 <!-- ID da Campanha -->
                 <div class="filter-group">
                     <label class="filter-label">ID da Campanha</label>
-                    <input type="text" class="filter-input" 
-                           ng-model="filters.campaignId" 
-                           placeholder="Digite o ID">
+                    <input type="text" class="filter-input"
+                           ng-model="filters.campaignId"
+                           placeholder="Digite parte do ID (mín. 2 caracteres)"
+                           uib-typeahead="item.id as item.label for item in searchCampaigns($viewValue)"
+                           typeahead-min-length="2"
+                           typeahead-wait-ms="250"
+                           typeahead-loading="typeaheadLoading"
+                           typeahead-no-results="typeaheadNoResults"
+                           typeahead-on-select="onFilterChange()"
+                           ng-model-options="{ debounce: 350 }"
+                           ng-change="onFilterChange()">
+                    <div class="filter-hint" ng-show="typeaheadLoading"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>
+                    <div class="filter-hint" ng-show="typeaheadNoResults">Nenhuma campanha encontrada.</div>
                 </div>
 
                 <!-- Período -->
                 <div class="filter-group">
                     <label class="filter-label">Ano Inicial</label>
-                    <select class="filter-select" ng-model="filters.initialYear">
+                    <select class="filter-select" ng-model="filters.initialYear" ng-change="onFilterChange()">
                         <option value="">Todos</option>
                         <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
                     </select>
@@ -81,7 +91,7 @@
 
                 <div class="filter-group">
                     <label class="filter-label">Ano Final</label>
-                    <select class="filter-select" ng-model="filters.finalYear">
+                    <select class="filter-select" ng-model="filters.finalYear" ng-change="onFilterChange()">
                         <option value="">Todos</option>
                         <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
                     </select>
@@ -90,20 +100,16 @@
                 <!-- Número de Inspeções -->
                 <div class="filter-group">
                     <label class="filter-label">Nº de Inspeções</label>
-                    <select class="filter-select" ng-model="filters.numInspec">
+                    <select class="filter-select" ng-model="filters.numInspec" ng-change="onFilterChange()">
                         <option value="">Todos</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
+                        <option ng-repeat="n in availableNumInspec" value="{{n}}">{{n}}</option>
                     </select>
                 </div>
 
                 <!-- Status -->
                 <div class="filter-group">
                     <label class="filter-label">Status do Progresso</label>
-                    <select class="filter-select" ng-model="filters.progressStatus">
+                    <select class="filter-select" ng-model="filters.progressStatus" ng-change="onFilterChange()">
                         <option value="">Todos</option>
                         <option value="empty">Sem pontos (0%)</option>
                         <option value="started">Iniciada (1-99%)</option>
@@ -114,12 +120,9 @@
                 <!-- Tipo de Imagem -->
                 <div class="filter-group">
                     <label class="filter-label">Tipo de Imagem</label>
-                    <select class="filter-select" ng-model="filters.imageType">
+                    <select class="filter-select" ng-model="filters.imageType" ng-change="onFilterChange()">
                         <option value="">Todos</option>
-                        <option value="landsat">Landsat</option>
-                        <option value="sentinel">Sentinel</option>
-                        <option value="planet">Planet</option>
-                        <option value="wms">WMS</option>
+                        <option ng-repeat="type in availableImageTypes" value="{{type}}">{{type}}</option>
                     </select>
                 </div>
 
@@ -128,15 +131,15 @@
                     <label class="filter-label">Configurações</label>
                     <div class="checkbox-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.showTimeseries">
+                            <input type="checkbox" ng-model="filters.showTimeseries" ng-change="onFilterChange()">
                             <span>Timeseries</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.showPointInfo">
+                            <input type="checkbox" ng-model="filters.showPointInfo" ng-change="onFilterChange()">
                             <span>Point Info</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.useDynamicMaps">
+                            <input type="checkbox" ng-model="filters.useDynamicMaps" ng-change="onFilterChange()">
                             <span>Dynamic Maps</span>
                         </label>
                     </div>
@@ -145,7 +148,7 @@
                 <!-- Ordenação -->
                 <div class="filter-group">
                     <label class="filter-label">Ordenar por</label>
-                    <select class="filter-select" ng-model="filters.sortBy">
+                    <select class="filter-select" ng-model="filters.sortBy" ng-change="onFilterChange()">
                         <option value="_id">Data de Criação</option>
                         <option value="campaignId">ID da Campanha</option>
                         <option value="initialYear">Ano Inicial</option>
@@ -572,6 +575,17 @@
     outline: none;
     border-color: #4299e1;
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.filter-hint {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.filter-hint .fa-spinner {
+    margin-right: 0.375rem;
+    color: #4299e1;
 }
 
 .checkbox-group {

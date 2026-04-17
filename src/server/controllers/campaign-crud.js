@@ -472,8 +472,89 @@ module.exports = function(app) {
                 function: 'list'
             });
             
-            res.status(500).json({ 
+            res.status(500).json({
                 error: 'Failed to list campaigns',
+                errorCode
+            });
+        }
+    };
+
+    // Autocomplete de IDs de campanha (busca leve para typeahead)
+    CampaignCrud.search = async (req, res) => {
+        try {
+            const rawQuery = (req.query.q || '').toString().trim();
+            const limit = Math.min(parseInt(req.query.limit, 10) || 10, 20);
+
+            if (rawQuery.length < 2) {
+                return res.json({ success: true, results: [] });
+            }
+
+            const escapedQuery = rawQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const items = await campaignCollection
+                .find({ _id: { $regex: escapedQuery, $options: 'i' } })
+                .project({ _id: 1, initialYear: 1, finalYear: 1, imageType: 1 })
+                .sort({ _id: 1 })
+                .limit(limit)
+                .toArray();
+
+            const results = items.map(c => ({
+                id: c._id,
+                initialYear: c.initialYear,
+                finalYear: c.finalYear,
+                imageType: c.imageType,
+                label: `${c._id} (${c.initialYear || '?'}-${c.finalYear || '?'})`
+            }));
+
+            return res.json({ success: true, results });
+        } catch (error) {
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'search'
+            });
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to search campaigns',
+                errorCode
+            });
+        }
+    };
+
+    // Valores distintos para popular os selects dos filtros
+    CampaignCrud.getFilterOptions = async (req, res) => {
+        try {
+            const [initialYears, finalYears, imageTypes, numInspec] = await Promise.all([
+                campaignCollection.distinct('initialYear'),
+                campaignCollection.distinct('finalYear'),
+                campaignCollection.distinct('imageType'),
+                campaignCollection.distinct('numInspec')
+            ]);
+
+            const sortNumAsc = (a, b) => a - b;
+            const cleanNumbers = arr => (arr || [])
+                .filter(v => typeof v === 'number' && !isNaN(v))
+                .sort(sortNumAsc);
+            const cleanStrings = arr => (arr || [])
+                .filter(v => typeof v === 'string' && v.length > 0)
+                .sort();
+
+            return res.json({
+                success: true,
+                data: {
+                    initialYears: cleanNumbers(initialYears),
+                    finalYears: cleanNumbers(finalYears),
+                    imageTypes: cleanStrings(imageTypes),
+                    numInspec: cleanNumbers(numInspec)
+                }
+            });
+        } catch (error) {
+            const errorCode = await logger.logError(error, req, {
+                module: 'campaignCrud',
+                function: 'getFilterOptions'
+            });
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to load filter options',
                 errorCode
             });
         }
