@@ -740,6 +740,11 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     $scope.showTimeseries = config.showTimeseries;
                     $scope.showPointInfo = config.showPointInfo;
                     $scope.useDynamicMaps = config.useDynamicMaps;
+                    // TKT-000006: flag que indica se os gráficos devem ser
+                    // carregados automaticamente após abrir o ponto.
+                    // Padrão true para retrocompatibilidade com campanhas
+                    // existentes que não possuem o campo.
+                    $scope.autoLoadTimeseries = config.autoLoadTimeseries !== false;
                     $scope.hasVisParam = config.visParam !== null;
                     
                     // Verificar se é Sentinel baseado no imageType PRIMEIRO
@@ -837,14 +842,28 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
 
+            // Resetar a flag sempre que carregar um novo ponto. Quando a
+            // campanha estiver com autoLoadTimeseries habilitado, a flag será
+            // reativada dentro do callback de loadCampaignConfig.
+            $scope.showTimeseriesCharts = false;
+
             // Gerar mapas somente após config da campanha estar disponível
             loadCampaignConfig(function() {
                 generateMaps();
-            });
 
-            // Os gráficos agora só serão carregados quando o usuário clicar no botão
-            // Resetar a flag sempre que carregar um novo ponto
-            $scope.showTimeseriesCharts = false;
+                // TKT-000006: quando a campanha estiver configurada para
+                // carregar automaticamente os gráficos de série temporal,
+                // disparar as chamadas imediatamente após o ponto ser
+                // carregado, sem exigir clique do inspector.
+                if ($scope.autoLoadTimeseries && $scope.showTimeseries &&
+                    $scope.point && !$scope.isChaco) {
+                    $scope.showTimeseriesCharts = true;
+                    if (typeof createModisChart === 'function') createModisChart();
+                    if (typeof createModisNdwiChart === 'function') createModisNdwiChart();
+                    if (typeof createLandsatChart === 'function') createLandsatChart();
+                    if (typeof createLandsatNdwiChart === 'function') createLandsatNdwiChart();
+                }
+            });
 
             $scope.counter = 0;
 

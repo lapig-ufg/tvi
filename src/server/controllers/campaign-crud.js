@@ -294,6 +294,11 @@ module.exports = function(app) {
             if (req.query.useDynamicMaps !== undefined) {
                 query.useDynamicMaps = req.query.useDynamicMaps === 'true';
             }
+            // TKT-000006: permitir filtragem por campanhas com carregamento
+            // automático de gráficos habilitado/desabilitado.
+            if (req.query.autoLoadTimeseries !== undefined) {
+                query.autoLoadTimeseries = req.query.autoLoadTimeseries === 'true';
+            }
             
             // Definir ordenação
             let sortBy = { _id: -1 }; // Default: mais recente primeiro
@@ -1068,6 +1073,10 @@ module.exports = function(app) {
                 // Novas propriedades
                 showTimeseries: campaignData.showTimeseries !== false,
                 showPointInfo: campaignData.showPointInfo !== false,
+                // TKT-000006: quando habilitado, os gráficos de série temporal
+                // são carregados automaticamente ao abrir o ponto, sem exigir
+                // clique do inspector. Padrão: true (retrocompatível).
+                autoLoadTimeseries: campaignData.autoLoadTimeseries !== false,
                 visParam: campaignData.visParam || null,
                 visParams: campaignData.visParams || [], // Array de visparams disponíveis
                 defaultVisParam: campaignData.defaultVisParam || null, // Visparam padrão
@@ -1151,6 +1160,11 @@ module.exports = function(app) {
             }
             if (updateData.hasOwnProperty('useDynamicMaps')) {
                 updateData.useDynamicMaps = updateData.useDynamicMaps === true;
+            }
+            // TKT-000006: normalizar o flag de carregamento automático dos
+            // gráficos de série temporal.
+            if (updateData.hasOwnProperty('autoLoadTimeseries')) {
+                updateData.autoLoadTimeseries = updateData.autoLoadTimeseries === true;
             }
             
             // Validar configuração WMS
