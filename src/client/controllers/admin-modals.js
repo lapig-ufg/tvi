@@ -303,8 +303,15 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         uf: '',
         county: '',
         minInspections: null,
-        maxInspections: null
+        maxInspections: null,
+        // TKT-000011: '', 'true' (somente aberta), 'any' (inclui resolvidas),
+        // 'false' (somente sem dúvida).
+        hasDoubt: ''
     };
+
+    // TKT-000011: resumo agregado (open/resolved/total) das dúvidas da
+    // campanha, alimentado por GET /api/campaigns/:id/doubts/summary.
+    $scope.doubtSummary = { open: 0, resolved: 0, total: 0 };
     
     // Available filter options
     $scope.availableUsers = [];
@@ -375,6 +382,10 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             }
             if ($scope.filters.maxInspections !== null && $scope.filters.maxInspections !== undefined) {
                 url += `&maxInspections=${$scope.filters.maxInspections}`;
+            }
+            // TKT-000011: repassar filtro de dúvidas ao backend.
+            if ($scope.filters.hasDoubt) {
+                url += `&hasDoubt=${encodeURIComponent($scope.filters.hasDoubt)}`;
             }
             // Include required inspections for status filtering
             url += `&numInspec=${campaign.numInspec}`;
@@ -530,10 +541,11 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             uf: '',
             county: '',
             minInspections: null,
-            maxInspections: null
+            maxInspections: null,
+            hasDoubt: ''
         };
         $scope.filteredPoints = null;
-        
+
         // Reset pagination and reload from backend
         $scope.currentPage = 1;
         $scope.loadPoints();
@@ -548,8 +560,27 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             $scope.filters.uf ||
             $scope.filters.county ||
             $scope.filters.minInspections !== null ||
-            $scope.filters.maxInspections !== null
+            $scope.filters.maxInspections !== null ||
+            // TKT-000011
+            $scope.filters.hasDoubt
         );
+    };
+
+    // TKT-000011: carrega o resumo agregado de dúvidas da campanha.
+    // Usado para alimentar o stat-card "Dúvidas abertas" do modal.
+    $scope.loadDoubtSummary = function() {
+        $http.get(`/api/campaigns/${campaign._id}/doubts/summary`).then(function(response) {
+            if (response && response.data) {
+                $scope.doubtSummary = {
+                    open: response.data.open || 0,
+                    resolved: response.data.resolved || 0,
+                    total: response.data.total || 0
+                };
+            }
+        }, function() {
+            // Falha silenciosa: se o endpoint não estiver disponível, mantém 0.
+            $scope.doubtSummary = { open: 0, resolved: 0, total: 0 };
+        });
     };
     
     // Inspection viewer functions
@@ -935,10 +966,36 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             uf: '',
             county: '',
             minInspections: null,
-            maxInspections: null
+            maxInspections: null,
+            hasDoubt: ''
         };
         $scope.currentPage = 1;
         $scope.loadPoints();
+    };
+
+    // TKT-000011: abre modal de resolução de dúvida para um ponto.
+    $scope.openDoubtResolveModal = function(point) {
+        if (!point || !point.doubt) {
+            return;
+        }
+        $uibModal.open({
+            templateUrl: 'views/doubt-resolve-modal.tpl.html',
+            controller: 'AdminDoubtResolveModalController',
+            size: 'lg',
+            backdrop: 'static',
+            resolve: {
+                point: function() { return point; },
+                campaign: function() { return campaign; }
+            }
+        }).result.then(function(result) {
+            // Qualquer transição ou comentário pode alterar o resumo e/ou o
+            // status do ponto listado; recarregamos tudo para refletir o
+            // estado servidor-verificado.
+            if (result) {
+                $scope.loadPoints();
+                $scope.loadDoubtSummary();
+            }
+        }, function() { /* dismiss: nada a fazer */ });
     };
     
     $scope.searchPointById = function() {
@@ -1026,6 +1083,8 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     
     // Initialize
     $scope.loadPoints();
+    // TKT-000011: carregar resumo de dúvidas para o stat-card
+    $scope.loadDoubtSummary();
 });
 
 // Controller para o modal de detalhes do ponto
@@ -2153,4 +2212,104 @@ Application.controller('ImportClassificationsModalController', function ($scope,
         cleanupTimer();
         cleanupSocket();
     });
+});
+
+// ---------------------------------------------------------------------
+// TKT-000011: controller do modal administrativo de resolução de dúvidas.
+// Permite ao super-admin ler o histórico de comentários, adicionar uma
+// resposta e transicionar o status (ABERTA ↔ RESOLVIDA) com motivo
+// obrigatório. As chamadas usam os endpoints registrados em
+// routes/doubts.js.
+// ---------------------------------------------------------------------
+Application.controller('AdminDoubtResolveModalController', function ($scope, $uibModalInstance, $http, point, campaign) {
+    $scope.point = point;
+    $scope.campaign = campaign;
+    $scope.doubt = angular.copy(point.doubt || {});
+    $scope.newComment = { text: '' };
+    $scope.transition = { reason: '' };
+    $scope.submitting = false;
+    $scope.errorMessage = null;
+    $scope._modified = false;
+
+    $scope.cancel = function () {
+        // Se houve modificação, fechamos com payload para forçar refresh na
+        // lista pai; caso contrário, dismiss não dispara reload.
+        if ($scope._modified) {
+            $uibModalInstance.close({ modified: true, doubt: $scope.doubt });
+        } else {
+            $uibModalInstance.dismiss('cancel');
+        }
+    };
+
+    // Recarrega a dúvida diretamente do servidor para manter o modal
+    // sincronizado após escrita (evita stale data em sessões longas).
+    function refreshDoubt() {
+        return $http.get('/service/points/' + encodeURIComponent(point._id) + '/doubt')
+            .then(function (response) {
+                if (response && response.data && response.data.doubt) {
+                    $scope.doubt = response.data.doubt;
+                }
+            }, function () { /* silencioso: mantém estado local */ });
+    }
+
+    $scope.addComment = function () {
+        $scope.errorMessage = null;
+        var text = ($scope.newComment.text || '').trim();
+        if (text.length < 5) {
+            $scope.errorMessage = 'A resposta deve ter ao menos 5 caracteres.';
+            return;
+        }
+        if (text.length > 2000) {
+            $scope.errorMessage = 'A resposta excede 2000 caracteres.';
+            return;
+        }
+
+        $scope.submitting = true;
+        var campaignId = campaign && campaign._id ? campaign._id : point.campaign;
+        var url = '/api/campaigns/' + encodeURIComponent(campaignId) + '/points/' + encodeURIComponent(point._id) + '/doubt/comments';
+        $http.post(url, { text: text })
+            .then(function (response) {
+                $scope.submitting = false;
+                $scope._modified = true;
+                $scope.newComment.text = '';
+                if (response && response.data && response.data.doubt) {
+                    $scope.doubt = response.data.doubt;
+                } else {
+                    refreshDoubt();
+                }
+            }, function (error) {
+                $scope.submitting = false;
+                $scope.errorMessage = (error && error.data && error.data.error) ? error.data.error : 'Não foi possível adicionar o comentário.';
+            });
+    };
+
+    $scope.resolve = function (targetStatus) {
+        $scope.errorMessage = null;
+        var reason = ($scope.transition.reason || '').trim();
+        if (!reason) {
+            $scope.errorMessage = 'Informe o motivo da transição.';
+            return;
+        }
+        if (reason.length > 500) {
+            $scope.errorMessage = 'Motivo excede 500 caracteres.';
+            return;
+        }
+
+        $scope.submitting = true;
+        var url = '/api/points/' + encodeURIComponent(point._id) + '/doubt/resolve';
+        $http.put(url, { status: targetStatus, reason: reason })
+            .then(function (response) {
+                $scope.submitting = false;
+                $scope._modified = true;
+                $scope.transition.reason = '';
+                if (response && response.data && response.data.doubt) {
+                    $scope.doubt = response.data.doubt;
+                } else {
+                    refreshDoubt();
+                }
+            }, function (error) {
+                $scope.submitting = false;
+                $scope.errorMessage = (error && error.data && error.data.error) ? error.data.error : 'Não foi possível alterar o status.';
+            });
+    };
 });
