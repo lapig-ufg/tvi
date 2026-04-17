@@ -253,6 +253,48 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }
         }
 
+        // ---------------------------------------------------------------
+        // TKT-000011: registro de dúvidas pelo intérprete
+        // ---------------------------------------------------------------
+        $scope.pointDoubt = null;
+
+        // Abre o modal de registro de dúvida. Envia ao backend via
+        // POST /service/points/:id/doubt e, em caso de sucesso, atualiza
+        // `pointDoubt` para exibir o badge "Dúvida registrada".
+        $scope.openDoubtModal = function () {
+            if (!$scope.point || !$scope.point._id) {
+                return;
+            }
+
+            var years = [];
+            if ($scope.config && $scope.config.initialYear && $scope.config.finalYear) {
+                for (var y = $scope.config.initialYear; y <= $scope.config.finalYear; y++) {
+                    years.push(y);
+                }
+            }
+
+            var modalInstance = $uibModal.open({
+                templateUrl: 'views/doubt-register-modal.tpl.html',
+                controller: 'DoubtRegisterModalController',
+                size: 'md',
+                backdrop: 'static',
+                resolve: {
+                    pointId: function () { return $scope.point._id; },
+                    campaignId: function () {
+                        return $rootScope.user && $rootScope.user.campaign ? $rootScope.user.campaign._id : null;
+                    },
+                    years: function () { return years; }
+                }
+            });
+
+            modalInstance.result.then(function (result) {
+                if (result && result.doubt) {
+                    $scope.pointDoubt = result.doubt;
+                    NotificationDialog.success('Dúvida registrada com sucesso.');
+                }
+            }, function () { /* dismiss: nada a fazer */ });
+        };
+
         $scope.submitForm = function () {
             // Validar se todos os períodos têm uma classe de uso da terra selecionada
             var hasInvalidAnswer = false;
@@ -821,6 +863,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $rootScope.count = data.count;
             $rootScope.current = data.current;
             $scope.datesFromService = data.point.dates;
+            // TKT-000011: resetar estado de dúvida ao carregar novo ponto.
+            // O backend envia a subestrutura `doubt` dentro do próprio point
+            // quando existente; exibimos o badge somente para dúvidas ABERTAs.
+            $scope.pointDoubt = (data.point && data.point.doubt) ? data.point.doubt : null;
 
             initFormViewVariables();
             generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
@@ -1014,4 +1060,54 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             });
         };
     });
+});
+
+// ---------------------------------------------------------------------
+// TKT-000011: controller do modal de registro de dúvida pelo intérprete.
+// Mantido neste arquivo (co-localizado com temporalController) para
+// reduzir acoplamento cross-file e facilitar manutenção conjunta.
+// ---------------------------------------------------------------------
+Application.controller('DoubtRegisterModalController', function ($scope, $uibModalInstance, $http, pointId, campaignId, years) {
+    $scope.pointId = pointId;
+    $scope.campaignId = campaignId;
+    $scope.years = years || [];
+    $scope.form = { text: '', year: '' };
+    $scope.submitting = false;
+    $scope.errorMessage = null;
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+
+    $scope.submit = function () {
+        $scope.errorMessage = null;
+        var text = ($scope.form.text || '').trim();
+        if (text.length < 5) {
+            $scope.errorMessage = 'Descreva a dúvida com pelo menos 5 caracteres.';
+            return;
+        }
+        if (text.length > 2000) {
+            $scope.errorMessage = 'Texto excede o limite de 2000 caracteres.';
+            return;
+        }
+
+        var payload = { text: text };
+        if ($scope.form.year) {
+            payload.year = parseInt($scope.form.year, 10);
+        }
+
+        $scope.submitting = true;
+        $http.post('/service/points/' + encodeURIComponent(pointId) + '/doubt', payload)
+            .then(function (response) {
+                $scope.submitting = false;
+                $uibModalInstance.close(response.data);
+            }, function (error) {
+                $scope.submitting = false;
+                var msg = 'Não foi possível registrar a dúvida.';
+                if (error && error.data && error.data.error) {
+                    msg = error.data.error;
+                }
+                $scope.errorMessage = msg;
+            });
+    };
 });
