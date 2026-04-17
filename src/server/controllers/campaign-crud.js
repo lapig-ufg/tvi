@@ -1295,6 +1295,43 @@ module.exports = function(app) {
                 }
             }
 
+            // TKT-000008 — Validar weeklyGoalConfig (dia/hora/fuso do corte semanal).
+            if (updateData.weeklyGoalConfig !== undefined) {
+                const wg = updateData.weeklyGoalConfig;
+                if (wg === null) {
+                    delete updateData.weeklyGoalConfig; // permite "desconfigurar" sem erro
+                } else if (typeof wg !== 'object' || Array.isArray(wg)) {
+                    return res.status(400).json({ error: 'Invalid weeklyGoalConfig: must be an object' });
+                } else {
+                    const day = Number(wg.closingDayOfWeek);
+                    const hour = Number(wg.closingHour);
+                    if (!Number.isInteger(day) || day < 0 || day > 6) {
+                        return res.status(400).json({ error: 'weeklyGoalConfig.closingDayOfWeek must be an integer in [0..6]' });
+                    }
+                    if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+                        return res.status(400).json({ error: 'weeklyGoalConfig.closingHour must be an integer in [0..23]' });
+                    }
+                    if (wg.timezone) {
+                        try {
+                            // eslint-disable-next-line no-new
+                            new Intl.DateTimeFormat('en-US', { timeZone: wg.timezone });
+                        } catch (e) {
+                            return res.status(400).json({ error: 'weeklyGoalConfig.timezone is not a valid IANA timezone' });
+                        }
+                    }
+                    updateData.weeklyGoalConfig = {
+                        closingDayOfWeek: day,
+                        closingHour: hour,
+                        timezone: wg.timezone || 'America/Sao_Paulo',
+                        updatedAt: new Date(),
+                        updatedBy: (req.session && req.session.admin && req.session.admin.superAdmin && req.session.admin.superAdmin.username) || 'admin'
+                    };
+                    if (Number.isInteger(wg.maxCarryOverWeeks) && wg.maxCarryOverWeeks >= 0) {
+                        updateData.weeklyGoalConfig.maxCarryOverWeeks = wg.maxCarryOverWeeks;
+                    }
+                }
+            }
+
             updateData.updatedAt = new Date();
             
             const result = await campaignCollection.updateOne(

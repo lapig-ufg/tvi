@@ -1,5 +1,16 @@
 'use strict';
 
+// TODO [TKT-000008]: consumir /inspections-per-user-weekly e substituir o
+//   gráfico `createUserInspectionsChart` por versão stacked-bar com a semana
+//   corrente destacada. O backend já expõe o endpoint.
+// TODO [TKT-000013]: adicionar seção "Avaliação supervisor × intérprete" com
+//   heatmap de matriz de confusão, barras de taxa de concordância por
+//   intérprete, linha temporal e Sankey de top correções. Endpoints backend:
+//   /confusion-matrix, /agreement-by-inspector, /agreement-timeline,
+//   /most-corrected-classes (já expostos).
+// TODO [TKT-000009]: adicionar CRUD de metas individuais consumindo
+//   /api/admin/campaigns/:id/weekly-goals (GET/PUT/DELETE) e histórico em
+//   /api/admin/campaigns/:id/monitoring/weekly-progress.
 Application.controller('AdminCampaignMonitoringController', function($scope, $http, $routeParams, $timeout, $location, $window, NotificationDialog, mapLoadingService) {
 
 	var chartsGd = [];

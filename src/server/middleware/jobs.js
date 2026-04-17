@@ -826,6 +826,7 @@ module.exports = function(app) {
 			});
 	};
 
+
 	/**
 	 * Alerta sobre tickets sem atualização por período prolongado.
 	 */
@@ -862,6 +863,49 @@ module.exports = function(app) {
 				writeLog(logStream, 'Erro no flush silencioso: ' + err.message);
 				callback();
 			});
+	};
+
+	/**
+	 * TKT-000015 — Limpa underInspection de pontos órfãos (sem sessão Online).
+	 * Substitui o updateMany síncrono que antes rodava em toda chamada a
+	 * `getCurrentPoint`. Agora roda a cada N minutos fora do caminho crítico.
+	 */
+	Jobs.orphanPointsCleanup = function(params, logStream, callback) {
+		writeLog(logStream, 'Iniciando cleanup de pontos órfãos...');
+
+		var points = app.repository.collections.points;
+		var status = app.repository.collections.status;
+
+		if (!points || !status) {
+			writeLog(logStream, 'Repository não inicializado; pulando.');
+			return callback();
+		}
+
+		status.find({ status: 'Online' }).toArray(function (err, activeSessions) {
+			if (err) {
+				writeLog(logStream, 'Falha ao listar sessões ativas: ' + err.message);
+				return callback();
+			}
+			var activePointIds = (activeSessions || [])
+				.filter(function (s) { return s && s.atualPoint; })
+				.map(function (s) { return s.atualPoint; });
+
+			// Agrupa por campanha via $set global; é seguro porque só zera pontos
+			// não atribuídos a nenhuma sessão online.
+			var filter = {
+				underInspection: { $gt: 0 },
+				_id: { $nin: activePointIds }
+			};
+			points.updateMany(filter, { $set: { underInspection: 0 } }, function (uErr, r) {
+				if (uErr) {
+					writeLog(logStream, 'Falha no updateMany de cleanup: ' + uErr.message);
+				} else {
+					var n = r && (r.modifiedCount || (r.result && r.result.nModified)) || 0;
+					writeLog(logStream, 'Pontos liberados: ' + n);
+				}
+				callback();
+			});
+		});
 	};
 
 	Jobs.start = function() {

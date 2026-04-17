@@ -19,6 +19,22 @@
           <b>{{user.name}}</b><br>
           {{count}} {{ 'NAVBAR.INSPECTED_POINTS' | i18n }}
         </label>
+        <!-- TKT-000009 — Widget de meta semanal (apenas inspetores com meta definida) -->
+        <div class="weekly-progress-widget pull-right" ng-show="weeklyProgress && weeklyProgress.targetEffective"
+             style="margin: 6px 10px 0 0; min-width: 180px; color: #fff;">
+          <div style="font-size: 11px; line-height: 1.1;">
+            Meta: <b>{{ weeklyProgress.completed }}/{{ weeklyProgress.targetEffective }}</b> ({{ weeklyProgress.percent }}%)
+          </div>
+          <div style="height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; margin-top: 2px;">
+            <div ng-style="{ width: weeklyProgress.percent + '%' }"
+                 style="height: 100%; transition: width 0.3s ease;"
+                 ng-class="{ 'wp-complete': weeklyProgress.goalReached }"
+                 ng-attr-style="background: {{ weeklyProgress.goalReached ? '#48bb78' : '#f6ad55' }}; width: {{ weeklyProgress.percent }}%; height: 100%;"></div>
+          </div>
+          <div ng-show="weeklyProgress.carryOverIn > 0" style="font-size: 10px; opacity: 0.8;">
+            +{{ weeklyProgress.carryOverIn }} de semanas anteriores
+          </div>
+        </div>
       </div>
     </div>
   </nav>

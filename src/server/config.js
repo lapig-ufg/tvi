@@ -113,6 +113,15 @@ module.exports = function(app) {
 					"cron": '0 0 7 * * *',
 					"runOnAppStart": false,
 					"params": {}
+				},
+				{
+					// TKT-000015 — libera pontos com `underInspection > 0`
+					// que não estão atribuídos a sessões online; substitui
+					// o updateMany síncrono que rodava a cada getCurrentPoint.
+					"name": "orphanPointsCleanup",
+					"cron": '0 */5 * * * *',
+					"runOnAppStart": false,
+					"params": {}
 				}
 			]
 		},
