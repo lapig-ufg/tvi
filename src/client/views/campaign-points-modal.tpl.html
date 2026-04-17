@@ -655,11 +655,154 @@
         flex-direction: column;
         gap: 0.25rem;
     }
-    
+
     .points-modal-wide .btn-action {
         padding: 0.625rem 0.875rem;
         font-size: 1rem;
     }
+}
+
+/* ==========================================================================
+   Aba "Visualização Espacial" (directive campaignPointsMap — TKT-000032)
+   ========================================================================== */
+.cpm-root {
+    width: 100%;
+}
+
+.cpm-map-wrapper {
+    position: relative;
+    width: 100%;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+.cpm-map {
+    width: 100%;
+    height: 60vh;
+    min-height: 420px;
+}
+
+.cpm-summary {
+    padding: 0.75rem 1.25rem;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+    font-size: 1rem;
+    color: #555;
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.cpm-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+}
+
+.cpm-state .loading-spinner {
+    margin: 0 auto 1rem;
+}
+
+.cpm-state.cpm-empty i,
+.cpm-state.cpm-error i {
+    font-size: 2.5rem;
+    color: #e5e5e5;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.cpm-state.cpm-error i {
+    color: #dc2626;
+}
+
+.cpm-warning {
+    background: #fffbeb;
+    border: 1px solid #fed7aa;
+    color: #b45309;
+    padding: 0.875rem 1.25rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.cpm-warning i {
+    margin-right: 0.5rem;
+}
+
+.cpm-legend {
+    background: #fff;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.cpm-legend h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cpm-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.cpm-legend-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.cpm-popup {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    min-width: 180px;
+}
+
+.cpm-popup-title {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #111;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 0.375rem;
+    word-break: break-all;
+}
+
+.cpm-popup-coord {
+    margin-top: 0.5rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.cpm-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.cpm-tag.cpm-tag-ok {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #15803d;
 }
 </style>
 
@@ -700,6 +843,9 @@
             </button>
             <button class="tab-btn" ng-class="{active: activeTab === 'inspectors'}" ng-click="setActiveTab('inspectors')">
                 <i class="glyphicon glyphicon-user"></i> Inspeções por Usuário
+            </button>
+            <button class="tab-btn" ng-class="{active: activeTab === 'spatial'}" ng-click="setActiveTab('spatial')">
+                <i class="glyphicon glyphicon-globe"></i> Visualização Espacial
             </button>
             <button class="tab-btn" ng-class="{active: activeTab === 'remove'}" ng-click="setActiveTab('remove')">
                 <i class="glyphicon glyphicon-trash"></i> Remover Inspeções
@@ -833,6 +979,17 @@
         </div>
     </div>
 
+    <div class="tab-content" ng-show="activeTab === 'spatial'">
+        <h4 style="font-size: 1.25rem; font-weight: 300; margin: 0 0 1.5rem;">Distribuição Espacial dos Pontos</h4>
+        <p style="color: #666; margin-bottom: 1.5rem;">
+            Visualização agregada dos pontos desta campanha. A cor de cada marcador representa o status da inspeção.
+        </p>
+        <campaign-points-map
+            campaign-id="{{ campaign._id }}"
+            active="activeTab === 'spatial'">
+        </campaign-points-map>
+    </div>
+
     <div class="tab-content" ng-show="activeTab === 'remove'">
         <h4 style="font-size: 1.25rem; font-weight: 300; margin: 0 0 1.5rem;">Remover Inspeções</h4>
         
@@ -866,8 +1023,8 @@
             </div>
         </div>
     </div>
-    <!-- Tabela de Pontos -->
-    <div class="points-table-container">
+    <!-- Tabela de Pontos — oculta na aba de Visualização Espacial para ceder o espaço ao mapa -->
+    <div class="points-table-container" ng-show="activeTab !== 'spatial'">
         <!-- Loading -->
         <div ng-if="loading" class="loading-state">
             <div class="loading-spinner"></div>
@@ -951,7 +1108,8 @@
 
 <div class="modal-footer">
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"
+             ng-show="activeTab !== 'spatial'">
             <div class="pagination-info">
                     <span style="font-size: 1.125rem; color: #666;">
                         Mostrando {{ ((currentPage - 1) * pageSize) + 1 }} -
@@ -981,7 +1139,7 @@
                 </button>
             </div>
         </div>
-        <div ng-if="selectedPoints.length > 0">
+        <div ng-if="selectedPoints.length > 0 && activeTab !== 'spatial'">
             <span style="color: #666; margin-right: 1rem;">{{ selectedPoints.length }} pontos selecionados</span>
             <button class="btn btn-success" ng-click="downloadSelected()">
                 <i class="glyphicon glyphicon-download"></i> Baixar Selecionados
