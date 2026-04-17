@@ -302,6 +302,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         biome: '',
         uf: '',
         county: '',
+        edited: '', // TKT-000012: '', 'true' ou 'false'
         minInspections: null,
         maxInspections: null,
         // TKT-000011: '', 'true' (somente aberta), 'any' (inclui resolvidas),
@@ -376,6 +377,10 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             }
             if ($scope.filters.county) {
                 url += `&county=${encodeURIComponent($scope.filters.county)}`;
+            }
+            // TKT-000012: filtro por estado de edição pelo supervisor
+            if ($scope.filters.edited === 'true' || $scope.filters.edited === 'false') {
+                url += `&edited=${$scope.filters.edited}`;
             }
             if ($scope.filters.minInspections !== null && $scope.filters.minInspections !== undefined) {
                 url += `&minInspections=${$scope.filters.minInspections}`;
@@ -540,6 +545,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             biome: '',
             uf: '',
             county: '',
+            edited: '', // TKT-000012
             minInspections: null,
             maxInspections: null,
             hasDoubt: ''
@@ -550,7 +556,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         $scope.currentPage = 1;
         $scope.loadPoints();
     };
-    
+
     $scope.hasActiveFilters = function() {
         return !!(
             $scope.filters.pointId ||
@@ -559,6 +565,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             $scope.filters.biome ||
             $scope.filters.uf ||
             $scope.filters.county ||
+            $scope.filters.edited || // TKT-000012
             $scope.filters.minInspections !== null ||
             $scope.filters.maxInspections !== null ||
             // TKT-000011
@@ -965,6 +972,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             biome: '',
             uf: '',
             county: '',
+            edited: '', // TKT-000012
             minInspections: null,
             maxInspections: null,
             hasDoubt: ''
@@ -1586,7 +1594,13 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     if (!$scope.campaign.defaultVisParam) {
         $scope.campaign.defaultVisParam = null;
     }
-    
+
+    // Inicializar defaultLandUse (TKT-000005). Valor vazio mantém o comportamento atual
+    // (primeira caixa do formulário de transição nasce sem pré-seleção).
+    if (typeof $scope.campaign.defaultLandUse !== 'string') {
+        $scope.campaign.defaultLandUse = '';
+    }
+
     // Inicializar imageType se não existir
     if (!$scope.campaign.imageType) {
         $scope.campaign.imageType = 'landsat'; // Padrão para Landsat
@@ -1693,7 +1707,13 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     };
     
     $scope.removeLandUse = function(index) {
+        var removed = $scope.campaign.landUse[index];
         $scope.campaign.landUse.splice(index, 1);
+        // Se a classe removida era a classe inicial padrão, limpar a pré-seleção
+        // para evitar estado inconsistente (TKT-000005).
+        if ($scope.campaign.defaultLandUse && $scope.campaign.defaultLandUse === removed) {
+            $scope.campaign.defaultLandUse = '';
+        }
     };
     
     // Funções para gerenciar visparams

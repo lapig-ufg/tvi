@@ -67,11 +67,11 @@
                     <label class="form-label">Tipos de Uso da Terra</label>
                     <div class="land-use-container">
                         <div ng-repeat="landUse in campaign.landUse track by $index" class="land-use-item">
-                            <input type="text" 
-                                   class="form-input" 
-                                   ng-model="campaign.landUse[$index]" 
+                            <input type="text"
+                                   class="form-input"
+                                   ng-model="campaign.landUse[$index]"
                                    readonly>
-                            <button class="btn-remove" 
+                            <button class="btn-remove"
                                     ng-click="removeLandUse($index)"
                                     title="Remover">
                                 <i class="fas fa-times"></i>
@@ -81,15 +81,30 @@
                             <i class="fas fa-info-circle"></i>
                             <span>Nenhum tipo de uso da terra configurado</span>
                         </div>
-                        <button type="button" 
-                                class="btn-add" 
+                        <button type="button"
+                                class="btn-add"
                                 ng-click="addLandUse()">
                             <i class="fas fa-plus"></i>
                             Adicionar Tipo
                         </button>
                     </div>
                 </div>
-                
+
+                <!-- Classe inicial padrão da primeira caixa do formulário de transição (TKT-000005) -->
+                <div class="form-group">
+                    <label class="form-label">Classe padrão da primeira caixa</label>
+                    <select class="form-input"
+                            ng-model="campaign.defaultLandUse"
+                            ng-disabled="!campaign.landUse.length">
+                        <option value="">— sem pré-seleção (intérprete escolhe) —</option>
+                        <option ng-repeat="lu in campaign.landUse track by $index" value="{{ lu }}">{{ lu }}</option>
+                    </select>
+                    <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;">
+                        Se definida, a primeira caixa do formulário de transição inicia já nessa classe.
+                        Útil em campanhas com padrão regional previsível (por exemplo, "Não Pastagem" na Amazônia).
+                    </small>
+                </div>
+
                 <!-- Configurações de Visualização -->
                 <div class="form-section">
                     <h4 class="section-title">

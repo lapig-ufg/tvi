@@ -920,6 +920,16 @@
                     <option value="false">Somente sem dúvida</option>
                 </select>
             </div>
+
+            <!-- TKT-000012: filtro por pontos editados pelo supervisor -->
+            <div class="filter-group">
+                <label class="filter-label">Editado pelo supervisor</label>
+                <select class="filter-select" ng-model="filters.edited">
+                    <option value="">Todos</option>
+                    <option value="true">Somente editados</option>
+                    <option value="false">Somente não editados</option>
+                </select>
+            </div>
         </div>
         
         <div class="filter-actions">
@@ -1088,6 +1098,13 @@
                         <td>
                             <span class="status-badge {{ point._statusClass }}">
                                 {{ point._statusText }}
+                            </span>
+                            <!-- TKT-000012: indicador de ponto editado pelo supervisor -->
+                            <span ng-if="point.pointEdited === true"
+                                  class="edited-badge"
+                                  title="Editado pelo supervisor"
+                                  style="margin-left:0.5rem; color:#b45309;">
+                                <i class="glyphicon glyphicon-edit"></i>
                             </span>
                         </td>
                         <td>

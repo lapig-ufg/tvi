@@ -37,6 +37,48 @@ module.exports = function(app) {
 
     const CampaignCrud = {};
 
+    // -------------------------------------------------------------------------
+    // Normalização de propriedades de GeoJSON (TKT-000010)
+    //
+    // A importação de pontos exige que os campos `biome` e `uf` sejam gravados
+    // no nível top-level do documento para que os filtros existentes
+    // (Points.biomeFilter / Points.ufFilter / CampaignCrud.listPoints) continuem
+    // funcionando via índices compostos.
+    //
+    // Antes, a extração era estritamente case-sensitive, falhando em GeoJSONs
+    // cujas chaves chegavam como `BIOMA`, `Bioma`, `UF`, `Estado`, etc. O helper
+    // abaixo resolve o valor de forma case-insensitive e aceita sinônimos
+    // comuns em português. Mantemos o `properties` original intocado no
+    // subdocumento para preservar qualquer metadado adicional da campanha.
+    // -------------------------------------------------------------------------
+    const BIOME_KEYS = ['biome', 'bioma'];
+    const UF_KEYS = ['uf', 'estado', 'sigla_uf', 'sigla_estado', 'unidade_federacao', 'unidade_federativa'];
+
+    function normalizeFeatureProperty(properties, candidates) {
+        if (!properties || typeof properties !== 'object') return null;
+        const keys = Object.keys(properties);
+        if (keys.length === 0) return null;
+
+        // Indexa as chaves em caixa baixa uma única vez para custo O(n).
+        const lowerIndex = new Map();
+        for (const key of keys) {
+            const lower = key.toLowerCase();
+            if (!lowerIndex.has(lower)) {
+                lowerIndex.set(lower, key);
+            }
+        }
+
+        for (const candidate of candidates) {
+            const matchKey = lowerIndex.get(candidate.toLowerCase());
+            if (!matchKey) continue;
+            const value = properties[matchKey];
+            if (value === null || typeof value === 'undefined') continue;
+            if (typeof value === 'string' && value.trim() === '') continue;
+            return typeof value === 'string' ? value.trim() : value;
+        }
+        return null;
+    }
+
     // Autenticação de super-admin
     CampaignCrud.adminLogin = async (req, res) => {
         try {
@@ -1063,12 +1105,22 @@ module.exports = function(app) {
             }
             
             // Adicionar configurações padrão se não fornecidas
+            const landUseList = Array.isArray(campaignData.landUse) ? campaignData.landUse : [];
+            // Validação: defaultLandUse deve ser string não vazia e pertencer ao array landUse.
+            // Caso contrário, persiste '' para manter comportamento atual (sem pré-seleção).
+            const defaultLandUse = (typeof campaignData.defaultLandUse === 'string'
+                && campaignData.defaultLandUse.trim() !== ''
+                && landUseList.includes(campaignData.defaultLandUse))
+                ? campaignData.defaultLandUse
+                : '';
+
             const campaign = {
                 _id: campaignData._id,
                 initialYear: parseInt(campaignData.initialYear) || 1985,
                 finalYear: parseInt(campaignData.finalYear) || 2024,
                 password: campaignData.password || null,
-                landUse: campaignData.landUse || [],
+                landUse: landUseList,
+                defaultLandUse: defaultLandUse,
                 numInspec: parseInt(campaignData.numInspec) || 3,
                 // Novas propriedades
                 showTimeseries: campaignData.showTimeseries !== false,
@@ -1220,12 +1272,29 @@ module.exports = function(app) {
             if (updateData.wmsPeriod) {
                 const validPeriods = ['DRY', 'WET', 'BOTH'];
                 if (!validPeriods.includes(updateData.wmsPeriod)) {
-                    return res.status(400).json({ 
-                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}` 
+                    return res.status(400).json({
+                        error: `Invalid wmsPeriod. Must be one of: ${validPeriods.join(', ')}`
                     });
                 }
             }
-            
+
+            // Validar/normalizar defaultLandUse quando presente no payload de atualização.
+            // O campo deve ser string e pertencer ao array landUse (seja o enviado no update
+            // ou o persistido atualmente na campanha). Valor vazio limpa a pré-seleção.
+            if (updateData.hasOwnProperty('defaultLandUse')) {
+                const rawDefault = updateData.defaultLandUse;
+                if (typeof rawDefault !== 'string' || rawDefault.trim() === '') {
+                    updateData.defaultLandUse = '';
+                } else {
+                    let referenceLandUse = Array.isArray(updateData.landUse) ? updateData.landUse : null;
+                    if (!referenceLandUse) {
+                        const existing = await campaignCollection.findOne({ _id: campaignId });
+                        referenceLandUse = (existing && Array.isArray(existing.landUse)) ? existing.landUse : [];
+                    }
+                    updateData.defaultLandUse = referenceLandUse.includes(rawDefault) ? rawDefault : '';
+                }
+            }
+
             updateData.updatedAt = new Date();
             
             const result = await campaignCollection.updateOne(
@@ -1854,8 +1923,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,
@@ -2192,8 +2262,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,
@@ -2544,8 +2615,9 @@ module.exports = function(app) {
                             lon: coordinate.X,
                             lat: coordinate.Y,
                             dateImport: new Date(),
-                            biome: (feature.properties && feature.properties.biome) || null,
-                            uf: (feature.properties && feature.properties.uf) || null,
+                            // Leitura case-insensitive com fallback para sinônimos (TKT-000010).
+                            biome: normalizeFeatureProperty(feature.properties, BIOME_KEYS),
+                            uf: normalizeFeatureProperty(feature.properties, UF_KEYS),
                             county: (feature.properties && feature.properties.county) || null,
                             countyCode: (feature.properties && feature.properties.countyCode) || null,
                             path: (feature.properties && feature.properties.path) || null,
@@ -2721,6 +2793,7 @@ module.exports = function(app) {
             // hasDoubt=any   => pontos com qualquer dúvida (inclui RESOLVIDA)
             // hasDoubt=false => apenas pontos sem subestrutura doubt
             const hasDoubt = req.query.hasDoubt;
+            const edited = req.query.edited; // TKT-000012: 'true' | 'false' | undefined
 
             // Construir query base
             let query = { campaign: campaignId };
@@ -2764,6 +2837,17 @@ module.exports = function(app) {
                 query.doubt = { $exists: true };
             } else if (hasDoubt === 'false') {
                 query.doubt = { $exists: false };
+            }
+
+            // Filtro por estado de edição pelo supervisor (TKT-000012).
+            // - 'true'  -> somente pontos com pointEdited === true
+            // - 'false' -> somente pontos NÃO editados (cobre `false`, `null` e `undefined`)
+            if (typeof edited === 'string') {
+                if (edited === 'true') {
+                    query.pointEdited = true;
+                } else if (edited === 'false') {
+                    query.pointEdited = { $ne: true };
+                }
             }
 
             // Buscar pontos
@@ -2823,7 +2907,8 @@ module.exports = function(app) {
                     uf,
                     county,
                     pointId,
-                    hasDoubt: hasDoubt || null
+                    hasDoubt: hasDoubt || null,
+                    edited: (edited === 'true' || edited === 'false') ? edited : null
                 }
             });
         } catch (error) {
