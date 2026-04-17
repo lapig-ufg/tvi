@@ -244,6 +244,18 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     pixelBorder: false
                 }
             )
+
+            // TKT-000004: após o digest, rolar a sidebar até a última caixa
+            // adicionada para que fique visível sem exigir scroll manual.
+            $timeout(function () {
+                var forms = document.querySelectorAll('.form-lulc-panel .form-temporal');
+                if (forms && forms.length > 0) {
+                    var lastForm = forms[forms.length - 1];
+                    if (lastForm && typeof lastForm.scrollIntoView === 'function') {
+                        lastForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            }, 0);
         }
 
         $scope.formSubtraction = function () {
