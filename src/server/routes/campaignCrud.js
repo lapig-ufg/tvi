@@ -527,7 +527,64 @@ module.exports = function (app) {
      *         description: Unauthorized - Super admin required
      */
     app.get('/api/campaigns/:id/points', requireSuperAdmin, campaignCrud.listPoints);
-    
+
+    /**
+     * @swagger
+     * /api/campaigns/{id}/points/geojson:
+     *   get:
+     *     summary: Get campaign points as a GeoJSON FeatureCollection (spatial viewer)
+     *     description: |
+     *       Returns a minimal GeoJSON representation of campaign points for the
+     *       admin spatial visualization tab. Projection is intentionally limited
+     *       to: coordinates, inspection count (derived), status, pointEdited flag
+     *       and hasClassConsolidated flag. A hard limit of 50 000 features is
+     *       applied; when exceeded, the response signals `truncated: true` and
+     *       the client must warn the user.
+     *     tags: [Campaign Points]
+     *     security:
+     *       - sessionAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Campaign ID
+     *     responses:
+     *       200:
+     *         description: GeoJSON FeatureCollection with status metadata
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 type:
+     *                   type: string
+     *                   example: FeatureCollection
+     *                 features:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                 total:
+     *                   type: number
+     *                 returned:
+     *                   type: number
+     *                 truncated:
+     *                   type: boolean
+     *                 limit:
+     *                   type: number
+     *                 numInspec:
+     *                   type: number
+     *       401:
+     *         description: Unauthorized - Super admin required
+     *       404:
+     *         description: Campaign not found
+     */
+    app.get('/api/campaigns/:id/points/geojson',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(campaignCrud.getPointsGeoJSON)
+    );
+
     /**
      * @swagger
      * /api/campaigns/{id}/points:
