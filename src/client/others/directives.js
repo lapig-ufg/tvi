@@ -237,7 +237,12 @@ Application
 
             mapSyncService.register($scope.map);
 
-            $scope.map.on('click', function () {
+            // Exigir Shift+click para alternar o marcador, evitando que cliques
+            // acidentais (ex.: duplo clique para aplicar zoom) ocultem o marcador.
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -336,7 +341,12 @@ Application
               }
             });
 
-            $scope.map.on('click', function () {
+            // Exigir Shift+click para alternar o marcador, evitando que cliques
+            // acidentais (ex.: duplo clique para aplicar zoom) ocultem o marcador.
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -643,8 +653,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function () {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -670,6 +685,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateTileLayer();
                 }
@@ -960,8 +982,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function () {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function (evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -987,6 +1014,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateTileLayer();
                 }
@@ -1502,8 +1536,13 @@ Application
               zIndexOffset: 1000
             }).addTo($scope.map);
 
-            // Toggle do marcador ao clicar no mapa
-            $scope.map.on('click', function() {
+            // Toggle do marcador somente com Shift+click. Cliques simples são
+            // ignorados para não ocultar o marcador por engano durante zoom
+            // ou interação comum no mapa (TKT-000025).
+            $scope.map.on('click', function(evt) {
+              if (!evt || !evt.originalEvent || !evt.originalEvent.shiftKey) {
+                return;
+              }
               if ($scope.markerInMap) {
                 $scope.map.removeLayer($scope.marker);
                 $scope.markerInMap = false;
@@ -1539,6 +1578,13 @@ Application
                   $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
                   if ($scope.marker) {
                     $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                    // Ao trocar de ponto, restaurar marcador caso o usuário o
+                    // tenha ocultado anteriormente (TKT-000025).
+                    if (!$scope.markerInMap) {
+                      $scope.map.addLayer($scope.marker);
+                      $scope.markerInMap = true;
+                    }
+                    $scope.marker.setZIndexOffset(1000);
                   }
                   $scope.updateWmsLayer();
                 }
