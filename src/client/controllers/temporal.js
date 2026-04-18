@@ -787,9 +787,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         const initFormViewVariables = function () {
             $scope.optionYears = [];
 
-            // TKT-000031: iniciar a primeira caixa no começo da série temporal,
-            // ou seja, finalYear = initialYear. Assim o inspector avança período
-            // a período sem precisar redefinir o ano final manualmente.
+            // A primeira caixa cobre o intervalo completo da campanha
+            // (initialYear → finalYear). Quando não há transição de classe, o
+            // inspector submete direto; havendo transição, ajusta o ano final
+            // e formPlus() cria a caixa seguinte.
             // TKT-000005: quando a campanha define defaultLandUse, pré-preenche
             // a classe inicial; caso contrário, mantém vazio (obriga seleção).
             var firstLandUse = ($scope.config && $scope.config.defaultLandUse) || '';
@@ -797,7 +798,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.answers = [
                 {
                     initialYear: $scope.config.initialYear,
-                    finalYear: $scope.config.initialYear,
+                    finalYear: $scope.config.finalYear,
                     landUse: firstLandUse,
                     pixelBorder: false
                 }
