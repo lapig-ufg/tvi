@@ -21,7 +21,29 @@ module.exports = function (app) {
 
 	var Doubts = {};
 	var points = app.repository.collections.points;
+	var status = app.repository.collections.status;
 	var logger = app.services.logger;
+
+	// TKT-000011 — autoriza o registro/leitura de dúvida por dois caminhos:
+	//  (a) inspetor já avaliou o ponto (nome em `point.userName`), ou
+	//  (b) inspetor está avaliando o ponto agora — o documento da coleção
+	//      `status` (_id = username + '_' + campaignId, gravado em
+	//      `points.findPoint`) aponta `atualPoint` para este `pointId`.
+	// O check original cobria só (a), o que impedia registrar a dúvida
+	// antes do submit — justamente o momento em que ela é mais necessária
+	// (o ponto está aberto porque o inspetor não sabe classificar).
+	async function isInspectorOfPoint(point, user) {
+		var alreadyInspected = Array.isArray(point.userName) && point.userName.indexOf(user.name) !== -1;
+		if (alreadyInspected) {
+			return true;
+		}
+		if (!user.campaign || !user.campaign._id) {
+			return false;
+		}
+		var statusId = user.name + '_' + user.campaign._id;
+		var doc = await status.findOne({ _id: statusId }, { atualPoint: 1 });
+		return !!(doc && doc.atualPoint && String(doc.atualPoint) === String(point._id));
+	}
 
 	// Validações e regras de negócio
 	var VALID_STATUSES = ['ABERTA', 'RESOLVIDA'];
@@ -144,10 +166,23 @@ module.exports = function (app) {
 				return response.status(403).json({ error: 'Ponto não pertence à campanha atual' });
 			}
 
-			// Somente inspetores que avaliaram o ponto podem comentar.
-			var inspected = Array.isArray(point.userName) && point.userName.indexOf(user.name) !== -1;
-			if (!inspected) {
-				return response.status(403).json({ error: 'Apenas inspetores que avaliaram o ponto podem registrar dúvidas' });
+			// Somente inspetores do ponto (avaliando agora ou já avaliaram)
+			// podem registrar dúvida. Ver `isInspectorOfPoint` acima.
+			var allowed;
+			try {
+				allowed = await isInspectorOfPoint(point, user);
+			} catch (authErr) {
+				if (logger) {
+					await logger.error('Erro ao autorizar dúvida do inspetor', {
+						module: 'doubts',
+						function: 'addInspectorComment',
+						metadata: { pointId: pointId, error: authErr.message }
+					});
+				}
+				return response.status(500).json({ error: 'Erro ao autorizar registro da dúvida' });
+			}
+			if (!allowed) {
+				return response.status(403).json({ error: 'Apenas inspetores do ponto podem registrar dúvidas' });
 			}
 
 			var now = new Date();
@@ -254,7 +289,7 @@ module.exports = function (app) {
 	 * de um ponto. O super-admin pode ler qualquer ponto; o intérprete
 	 * apenas pontos da sua campanha e que tenha inspecionado.
 	 */
-	Doubts.getDoubt = function (request, response) {
+	Doubts.getDoubt = async function (request, response) {
 		var pointId = request.params.pointId;
 		if (!pointId || typeof pointId !== 'string') {
 			return response.status(400).json({ error: 'ID do ponto inválido' });
@@ -266,7 +301,7 @@ module.exports = function (app) {
 			return response.status(401).json({ error: 'Não autenticado' });
 		}
 
-		points.findOne({ _id: pointId }, { campaign: 1, userName: 1, doubt: 1 }, function (err, point) {
+		points.findOne({ _id: pointId }, { campaign: 1, userName: 1, doubt: 1 }, async function (err, point) {
 			if (err) {
 				return response.status(500).json({ error: 'Erro ao buscar ponto' });
 			}
@@ -278,9 +313,14 @@ module.exports = function (app) {
 				if (!user || !user.campaign || String(point.campaign) !== String(user.campaign._id)) {
 					return response.status(403).json({ error: 'Acesso negado' });
 				}
-				var inspected = Array.isArray(point.userName) && point.userName.indexOf(user.name) !== -1;
-				if (!inspected) {
-					return response.status(403).json({ error: 'Apenas inspetores que avaliaram o ponto podem ler a dúvida' });
+				var allowed;
+				try {
+					allowed = await isInspectorOfPoint(point, user);
+				} catch (authErr) {
+					return response.status(500).json({ error: 'Erro ao autorizar leitura da dúvida' });
+				}
+				if (!allowed) {
+					return response.status(403).json({ error: 'Apenas inspetores do ponto podem ler a dúvida' });
 				}
 			}
 
