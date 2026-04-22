@@ -8,6 +8,13 @@ module.exports = function (app) {
 
   var tickets = app.repository.collections.tickets;
   var ticketCounters = app.repository.collections.ticket_counters;
+  var points = app.repository.collections.points;
+
+  // Limite defensivo para a mescla ticket + dúvida em memória.
+  // Com o volume atual (dezenas de cada lado) é folgado; acima disso convém
+  // migrar para aggregate $unionWith quando o driver Mongo for atualizado.
+  var MAX_MERGED_RECORDS = 5000;
+  var points = app.repository.collections.points;
 
   // Configurações de upload
   var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -243,8 +250,9 @@ module.exports = function (app) {
 
     var query = {};
     var q = request.query;
+    var searchRegex = null;
 
-    // Filtros
+    // Filtros (tickets)
     if (q.type && VALID_TYPES.indexOf(q.type) !== -1) {
       query.type = q.type;
     }
@@ -254,7 +262,7 @@ module.exports = function (app) {
     if (q.category && VALID_CATEGORIES.indexOf(q.category) !== -1) {
       query.category = q.category;
     }
-    if (q.origin && ['TVI', 'PLUGIN_FGI'].indexOf(q.origin) !== -1) {
+    if (q.origin && ['TVI', 'PLUGIN_FGI', 'PONTO'].indexOf(q.origin) !== -1) {
       query.origin = q.origin;
     }
     if (q.mine === 'true') {
@@ -264,7 +272,7 @@ module.exports = function (app) {
       }
     }
     if (q.search && q.search.trim()) {
-      var searchRegex = new RegExp(q.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      searchRegex = new RegExp(q.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       query.$or = [
         { title: searchRegex },
         { ticketNumber: searchRegex }
@@ -275,46 +283,138 @@ module.exports = function (app) {
     var page = parseInt(q.page) || 1;
     var limit = parseInt(q.limit) || 25;
     if (limit > 200) limit = 200;
-    var skip = (page - 1) * limit;
 
     // Projeção: excluir campos pesados da listagem para performance
     var projection = { 'attachments.data': 0, 'diagnostics.consoleLogs': 0 };
 
-    tickets.count(query, function (err, total) {
+    // Se o filtro explicitamente restringe a tickets "nativos", não incluímos
+    // dúvidas; caso contrário, mescla dúvidas de `points.doubt` como tickets
+    // virtuais (origin=PONTO, type=DUVIDA) para unificar a listagem.
+    var includeDoubts =
+      (!q.type || q.type === 'DUVIDA') &&
+      (!q.category) &&
+      (!q.origin || q.origin === 'PONTO');
+
+    // Busca tickets nativos (sem paginar no Mongo — a paginação é aplicada
+    // depois, já com as dúvidas mescladas).
+    tickets.find(query, projection).sort({ createdAt: -1 }).toArray(function (err, ticketDocs) {
       if (err) {
-        return response.status(500).json({ error: 'Erro ao contar tickets' });
+        return response.status(500).json({ error: 'Erro ao listar tickets' });
       }
 
-      tickets.find(query, projection)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray(function (err, docs) {
-          if (err) {
-            return response.status(500).json({ error: 'Erro ao listar tickets' });
+      // Se não é admin, filtrar comentários internos
+      if (!isAdmin(request)) {
+        ticketDocs.forEach(function (doc) {
+          if (doc.comments) {
+            doc.comments = doc.comments.filter(function (c) { return !c.isInternal; });
+          }
+        });
+      }
+
+      // Se não precisa mesclar, responde com a paginação sobre os próprios tickets
+      if (!includeDoubts) {
+        return respondPaginated(ticketDocs, page, limit, response);
+      }
+
+      // Busca dúvidas registradas em `points.doubt` e mapeia para formato de
+      // ticket virtual. Filtros por status/search/mine/author são aplicados
+      // sobre o resultado mapeado para manter paridade de UX.
+      var doubtQuery = { doubt: { $exists: true } };
+      if (q.status) {
+        var statusMap = { 'ABERTO': 'ABERTA', 'RESOLVIDO': 'RESOLVIDA' };
+        var mongoStatus = statusMap[q.status];
+        if (mongoStatus) {
+          doubtQuery['doubt.status'] = mongoStatus;
+        } else {
+          // status que não existe em dúvidas (EM_ANALISE, EM_DESENVOLVIMENTO, FECHADO) → nenhuma
+          return respondPaginated(ticketDocs, page, limit, response);
+        }
+      }
+
+      var doubtProjection = {
+        _id: 1,
+        campaign: 1,
+        index: 1,
+        doubt: 1
+      };
+
+      points.find(doubtQuery, doubtProjection)
+        .sort({ 'doubt.openedAt': -1 })
+        .limit(MAX_MERGED_RECORDS)
+        .toArray(function (err2, doubtDocs) {
+          if (err2) {
+            return response.status(500).json({ error: 'Erro ao listar dúvidas de pontos' });
           }
 
-          // Se não é admin, filtrar comentários internos
-          if (!isAdmin(request)) {
-            docs.forEach(function (doc) {
-              if (doc.comments) {
-                doc.comments = doc.comments.filter(function (c) { return !c.isInternal; });
-              }
+          var doubtTickets = doubtDocs.map(mapDoubtToVirtualTicket);
+
+          // Filtros adicionais que não são expressáveis na query Mongo acima
+          if (q.mine === 'true') {
+            var who = getAuthorFromSession(request);
+            if (who) {
+              doubtTickets = doubtTickets.filter(function (d) {
+                return d.author && d.author.name === who.name;
+              });
+            }
+          }
+          if (searchRegex) {
+            doubtTickets = doubtTickets.filter(function (d) {
+              return searchRegex.test(d.title || '') || searchRegex.test(d.ticketNumber || '');
             });
           }
 
-          response.json({
-            data: docs,
-            pagination: {
-              total: total,
-              page: page,
-              limit: limit,
-              pages: Math.ceil(total / limit)
-            }
+          // Mescla e ordena por createdAt desc (tickets já vêm ordenados; a
+          // concatenação + sort unifica a cronologia entre as duas fontes)
+          var merged = ticketDocs.concat(doubtTickets);
+          merged.sort(function (a, b) {
+            var ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            var tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return tb - ta;
           });
+
+          respondPaginated(merged, page, limit, response);
         });
     });
   };
+
+  function mapDoubtToVirtualTicket(p) {
+    var doubt = p.doubt || {};
+    var firstComment = (doubt.comments && doubt.comments[0]) || {};
+    var idStr = String(p._id);
+    var statusMap = { 'ABERTA': 'ABERTO', 'RESOLVIDA': 'RESOLVIDO' };
+    var titleRaw = firstComment.text ? String(firstComment.text).trim() : 'Dúvida de ponto';
+    if (titleRaw.length > 120) titleRaw = titleRaw.substring(0, 117) + '...';
+    return {
+      _id: 'doubt_' + idStr,
+      ticketNumber: 'DUV-' + idStr,
+      title: titleRaw,
+      type: 'DUVIDA',
+      status: statusMap[doubt.status] || 'ABERTO',
+      origin: 'PONTO',
+      severity: null,
+      author: { name: doubt.openedBy || 'inspector', role: 'inspector' },
+      createdAt: doubt.openedAt || null,
+      _isDoubt: true,
+      _pointId: idStr,
+      _campaignId: p.campaign,
+      _doubtStatus: doubt.status || null
+    };
+  }
+
+  function respondPaginated(all, page, limit, response) {
+    var total = all.length;
+    var skip = (page - 1) * limit;
+    var slice = all.slice(skip, skip + limit);
+    response.json({
+      data: slice,
+      pagination: {
+        total: total,
+        page: page,
+        limit: limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  }
 
   /**
    * GET /service/tickets/:id — Detalhe do ticket
@@ -688,7 +788,39 @@ module.exports = function (app) {
                 stats.byType[r._id] = r.count;
               });
 
-              response.json(stats);
+              // Incorpora as dúvidas de pontos como type=DUVIDA, mapeando
+              // ABERTA→ABERTO e RESOLVIDA→RESOLVIDO para manter os cards
+              // do painel alinhados com a listagem unificada.
+              points.aggregate([
+                { $match: { doubt: { $exists: true } } },
+                { $group: { _id: '$doubt.status', count: { $sum: 1 } } }
+              ], function (err4, doubtCounts) {
+                var finalize = function (arr) {
+                  (arr || []).forEach(function (r) {
+                    var mapped = r._id === 'ABERTA' ? 'ABERTO' : (r._id === 'RESOLVIDA' ? 'RESOLVIDO' : null);
+                    if (mapped) {
+                      stats.byStatus[mapped] = (stats.byStatus[mapped] || 0) + r.count;
+                      stats.total += r.count;
+                    }
+                    stats.byType.DUVIDA = (stats.byType.DUVIDA || 0) + r.count;
+                  });
+                  response.json(stats);
+                };
+                if (err4) {
+                  // Falha na contagem de dúvidas não deve quebrar o painel
+                  return response.json(stats);
+                }
+                if (Array.isArray(doubtCounts)) {
+                  finalize(doubtCounts);
+                } else if (doubtCounts && typeof doubtCounts.toArray === 'function') {
+                  doubtCounts.toArray(function (e, arr) {
+                    if (e) return response.json(stats);
+                    finalize(arr);
+                  });
+                } else {
+                  finalize([]);
+                }
+              });
             };
 
             if (Array.isArray(typeCounts)) {

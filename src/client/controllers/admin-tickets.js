@@ -5,7 +5,7 @@
  */
 
 /* --- Gestão Admin de Tickets --- */
-Application.controller('AdminTicketsController', function ($scope, $rootScope, $location, $uibModal, requester) {
+Application.controller('AdminTicketsController', function ($scope, $rootScope, $location, $uibModal, requester, $http) {
 
   $scope.tickets = [];
   $scope.pagination = { total: 0, page: 1, limit: 50, pages: 0 };
@@ -49,7 +49,8 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
   $scope.origins = [
     { value: '', label: 'Todas as origens' },
     { value: 'TVI', label: 'TVI' },
-    { value: 'PLUGIN_FGI', label: 'Plugin FGI' }
+    { value: 'PLUGIN_FGI', label: 'Plugin FGI' },
+    { value: 'PONTO', label: 'Dúvida de ponto' }
   ];
 
   $scope.loadTickets = function () {
@@ -108,10 +109,19 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
   };
 
   $scope.viewTicket = function (ticket) {
+    if (ticket && ticket._isDoubt) {
+      $scope.openDoubtResolveModal(ticket);
+      return;
+    }
     $location.path('/tickets/' + ticket._id);
   };
 
   $scope.openStatusModal = function (ticket) {
+    if (ticket && ticket._isDoubt) {
+      // Dúvida de ponto usa fluxo próprio de resolução
+      $scope.openDoubtResolveModal(ticket);
+      return;
+    }
     var modalInstance = $uibModal.open({
       templateUrl: 'views/ticket-status-modal.tpl.html',
       controller: 'TicketStatusModalController',
@@ -124,6 +134,39 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
       $scope.loadTickets();
       $scope.loadStats();
     });
+  };
+
+  $scope.openDoubtResolveModal = function (ticket) {
+    if (!ticket || !ticket._isDoubt || !ticket._pointId) return;
+    $http.get('/service/points/' + ticket._pointId + '/doubt')
+      .success(function (result) {
+        var point = {
+          _id: result.pointId,
+          campaign: result.campaign,
+          doubt: result.doubt
+        };
+        var campaign = { _id: result.campaign };
+        var modalInstance = $uibModal.open({
+          templateUrl: 'views/doubt-resolve-modal.tpl.html',
+          controller: 'AdminDoubtResolveModalController',
+          size: 'lg',
+          backdrop: 'static',
+          resolve: {
+            point: function () { return point; },
+            campaign: function () { return campaign; }
+          }
+        });
+        modalInstance.result.then(function () {
+          $scope.loadTickets();
+          $scope.loadStats();
+        }, function () {
+          // Recarregar mesmo em dismiss: o admin pode ter comentado antes de fechar
+          $scope.loadTickets();
+        });
+      })
+      .error(function () {
+        alert('Não foi possível carregar a dúvida deste ponto.');
+      });
   };
 
   // Labels e badges (mesmo padrão dos controllers de usuário)

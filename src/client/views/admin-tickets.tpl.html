@@ -1,3 +1,7 @@
+<style>
+  .ticket-row-doubt { background-color: #fffaf0 !important; }
+  .ticket-row-doubt:hover { background-color: #fff3dc !important; }
+</style>
 <div class="container-fluid" style="padding: 20px;">
   <div class="row">
     <div class="col-md-12">
@@ -148,7 +152,7 @@
               Nenhum ticket encontrado.
             </td>
           </tr>
-          <tr ng-repeat="ticket in tickets">
+          <tr ng-repeat="ticket in tickets" ng-class="{'ticket-row-doubt': ticket._isDoubt}">
             <td><code>{{ticket.ticketNumber}}</code></td>
             <td>
               <a href="" ng-click="viewTicket(ticket)" style="color: #333; text-decoration: none;">
@@ -163,15 +167,22 @@
               <span ng-if="!ticket.severity" class="text-muted">—</span>
             </td>
             <td><span class="label" ng-class="getStatusBadgeClass(ticket.status)">{{getStatusLabel(ticket.status)}}</span></td>
-            <td><small>{{ticket.origin}}</small></td>
+            <td>
+              <span ng-if="ticket._isDoubt" class="label label-warning" title="Dúvida registrada durante inspeção do ponto">
+                <i class="fa fa-map-marker"></i> PONTO
+              </span>
+              <small ng-if="!ticket._isDoubt">{{ticket.origin}}</small>
+            </td>
             <td>{{ticket.author.name}}</td>
             <td><small>{{ticket.createdAt | date:'dd/MM/yyyy HH:mm'}}</small></td>
             <td>
-              <button class="btn btn-xs btn-info" ng-click="viewTicket(ticket)" title="Ver detalhe">
-                <i class="fa fa-eye"></i>
+              <button class="btn btn-xs btn-info" ng-click="viewTicket(ticket)"
+                      title="{{ticket._isDoubt ? 'Abrir dúvida do ponto' : 'Ver detalhe'}}">
+                <i class="fa" ng-class="ticket._isDoubt ? 'fa-comments' : 'fa-eye'"></i>
               </button>
-              <button class="btn btn-xs btn-warning" ng-click="openStatusModal(ticket)" title="Alterar status"
-                      ng-if="ticket.status !== 'FECHADO'">
+              <button class="btn btn-xs btn-warning" ng-click="openStatusModal(ticket)"
+                      ng-if="!ticket._isDoubt && ticket.status !== 'FECHADO'"
+                      title="Alterar status">
                 <i class="fa fa-exchange"></i>
               </button>
             </td>
