@@ -8,7 +8,8 @@
 Application.controller('AdminTicketsController', function ($scope, $rootScope, $location, $uibModal, requester) {
 
   $scope.tickets = [];
-  $scope.pagination = { total: 0, page: 1, limit: 15, pages: 0 };
+  $scope.pagination = { total: 0, page: 1, limit: 50, pages: 0 };
+  $scope.pageSizes = [25, 50, 100, 200];
   $scope.filters = {
     type: '',
     status: '',
@@ -89,6 +90,21 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
 
   $scope.changePage = function () {
     $scope.loadTickets();
+  };
+
+  $scope.changePageSize = function () {
+    $scope.pagination.page = 1;
+    $scope.loadTickets();
+  };
+
+  $scope.getInicio = function () {
+    if (!$scope.pagination.total) return 0;
+    return (($scope.pagination.page - 1) * $scope.pagination.limit) + 1;
+  };
+
+  $scope.getFim = function () {
+    var fim = $scope.pagination.page * $scope.pagination.limit;
+    return Math.min(fim, $scope.pagination.total);
   };
 
   $scope.viewTicket = function (ticket) {

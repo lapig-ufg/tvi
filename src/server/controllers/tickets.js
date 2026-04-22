@@ -273,8 +273,8 @@ module.exports = function (app) {
 
     // Paginação
     var page = parseInt(q.page) || 1;
-    var limit = parseInt(q.limit) || 10;
-    if (limit > 100) limit = 100;
+    var limit = parseInt(q.limit) || 25;
+    if (limit > 200) limit = 200;
     var skip = (page - 1) * limit;
 
     // Projeção: excluir campos pesados da listagem para performance
