@@ -47,7 +47,12 @@ var EVENT_PRIORITIES = {
   'TICKET_VOTE_MILESTONE': 'LOW',
   'TICKET_ATTACHMENT_ADDED': 'MEDIUM',
   'TICKET_ATTACHMENT_REMOVED': 'LOW',
-  'CONSOLIDATION_DIVERGENCE': 'CRITICAL'
+  'CONSOLIDATION_DIVERGENCE': 'CRITICAL',
+  'DOUBT_CREATED': 'HIGH',
+  'DOUBT_REOPENED': 'MEDIUM',
+  'DOUBT_COMMENTED': 'MEDIUM',
+  'DOUBT_ADMIN_COMMENT': 'MEDIUM',
+  'DOUBT_RESOLVED': 'MEDIUM'
 };
 
 // --- Regras de debounce por evento (em ms) ---
@@ -474,6 +479,68 @@ TelegramNotifier.prototype.formatMessage = async function (event, d) {
         + '\n👥 <b>Inspetores:</b> ' + self._esc(inspectors)
         + '\n⚖️ Não houve consenso na consolidação.'
         + '\n🕐 ' + ts;
+
+    case 'DOUBT_CREATED': {
+      var doubtLink = '\n🔗 <a href="' + self.baseUrl + '/#/admin/tickets">Abrir em tickets</a>';
+      var doubtPreview = d.textPreview ? d.textPreview.substring(0, 150) : '';
+      return '❓ <b>Nova dúvida registrada</b>\n'
+        + '\n📍 <b>Ponto:</b> #' + self._esc(String(d.pointId || ''))
+        + '\n📋 <b>Campanha:</b> ' + self._esc(String(d.campaignId || ''))
+        + '\n👤 <b>Por:</b> ' + self._esc(d.author || '')
+        + (d.year ? '\n📅 <b>Ano de referência:</b> ' + d.year : '')
+        + (doubtPreview ? '\n\n💬 <i>"' + self._esc(doubtPreview) + '"</i>' : '')
+        + doubtLink
+        + '\n🕐 ' + ts;
+    }
+
+    case 'DOUBT_REOPENED': {
+      var reopenLink = '\n🔗 <a href="' + self.baseUrl + '/#/admin/tickets">Abrir em tickets</a>';
+      var reopenPreview = d.textPreview ? d.textPreview.substring(0, 150) : '';
+      return '🔄 <b>Dúvida reaberta</b>\n'
+        + '\n📍 <b>Ponto:</b> #' + self._esc(String(d.pointId || ''))
+        + '\n📋 <b>Campanha:</b> ' + self._esc(String(d.campaignId || ''))
+        + '\n👤 <b>Por:</b> ' + self._esc(d.author || '')
+        + (reopenPreview ? '\n\n💬 <i>"' + self._esc(reopenPreview) + '"</i>' : '')
+        + reopenLink
+        + '\n🕐 ' + ts;
+    }
+
+    case 'DOUBT_COMMENTED': {
+      var commentLink = '\n🔗 <a href="' + self.baseUrl + '/#/admin/tickets">Abrir em tickets</a>';
+      var commentPreview = d.textPreview ? d.textPreview.substring(0, 150) : '';
+      return '💬 <b>Novo comentário em dúvida</b>\n'
+        + '\n📍 <b>Ponto:</b> #' + self._esc(String(d.pointId || ''))
+        + '\n📋 <b>Campanha:</b> ' + self._esc(String(d.campaignId || ''))
+        + '\n👤 <b>Por:</b> ' + self._esc(d.author || '')
+        + (commentPreview ? '\n\n💬 <i>"' + self._esc(commentPreview) + '"</i>' : '')
+        + commentLink
+        + '\n🕐 ' + ts;
+    }
+
+    case 'DOUBT_ADMIN_COMMENT': {
+      var adminLink = '\n🔗 <a href="' + self.baseUrl + '/#/admin/tickets">Abrir em tickets</a>';
+      var adminPreview = d.textPreview ? d.textPreview.substring(0, 150) : '';
+      return '🛡️ <b>Resposta da administração em dúvida</b>\n'
+        + '\n📍 <b>Ponto:</b> #' + self._esc(String(d.pointId || ''))
+        + '\n📋 <b>Campanha:</b> ' + self._esc(String(d.campaignId || ''))
+        + '\n👤 <b>Por:</b> ' + self._esc(d.author || '')
+        + (adminPreview ? '\n\n💬 <i>"' + self._esc(adminPreview) + '"</i>' : '')
+        + adminLink
+        + '\n🕐 ' + ts;
+    }
+
+    case 'DOUBT_RESOLVED': {
+      var resolveLink = '\n🔗 <a href="' + self.baseUrl + '/#/admin/tickets">Abrir em tickets</a>';
+      var toLabel = d.toStatus === 'RESOLVIDA' ? '✅ Resolvida' : '🔄 Reaberta';
+      return '🛡️ <b>Dúvida transicionada</b>\n'
+        + '\n📍 <b>Ponto:</b> #' + self._esc(String(d.pointId || ''))
+        + '\n📋 <b>Campanha:</b> ' + self._esc(String(d.campaignId || ''))
+        + '\n📊 <b>Status:</b> ' + toLabel
+        + '\n👤 <b>Por:</b> ' + self._esc(d.author || '')
+        + (d.reason ? '\n💬 <i>"' + self._esc(d.reason) + '"</i>' : '')
+        + resolveLink
+        + '\n🕐 ' + ts;
+    }
 
     default:
       return null;

@@ -244,6 +244,25 @@ module.exports = function (app) {
 						comment: comment,
 						doubt: result.value.doubt
 					});
+
+					// Notificação Telegram (fire-and-forget)
+					if (app.services.telegramNotifier) {
+						var notifEvent;
+						if (!hasExistingDoubt) {
+							notifEvent = 'DOUBT_CREATED';
+						} else if (currentStatus === 'RESOLVIDA') {
+							notifEvent = 'DOUBT_REOPENED';
+						} else {
+							notifEvent = 'DOUBT_COMMENTED';
+						}
+						app.services.telegramNotifier.enqueue(notifEvent, {
+							pointId: pointId,
+							campaignId: String(point.campaign || user.campaign._id),
+							author: user.name,
+							year: yearCheck.value,
+							textPreview: commentCheck.value.substring(0, 150)
+						}).catch(function () {});
+					}
 				}
 			);
 		});
@@ -458,6 +477,16 @@ module.exports = function (app) {
 					return response.status(404).json({ error: 'Ponto ou dúvida não encontrada' });
 				}
 				response.status(201).json({ success: true, comment: comment, doubt: result.value.doubt });
+
+				// Notificação Telegram (fire-and-forget)
+				if (app.services.telegramNotifier) {
+					app.services.telegramNotifier.enqueue('DOUBT_ADMIN_COMMENT', {
+						pointId: pointId,
+						campaignId: String(campaignId),
+						author: comment.author.name,
+						textPreview: commentCheck.value.substring(0, 150)
+					}).catch(function () {});
+				}
 			}
 		);
 	};
@@ -496,7 +525,7 @@ module.exports = function (app) {
 		var author = getAuthorFromSession(request);
 		var authorName = author ? author.name : 'admin';
 
-		points.findOne({ _id: pointId }, { doubt: 1 }, async function (err, point) {
+		points.findOne({ _id: pointId }, { doubt: 1, campaign: 1 }, async function (err, point) {
 			if (err) {
 				return response.status(500).json({ error: 'Erro ao buscar ponto' });
 			}
@@ -534,7 +563,7 @@ module.exports = function (app) {
 					$set: setFields,
 					$push: { 'doubt.statusHistory': historyEntry }
 				},
-				{ new: true, fields: { doubt: 1 } },
+				{ new: true, fields: { doubt: 1, campaign: 1 } },
 				async function (err, result) {
 					if (err) {
 						if (logger) {
@@ -564,6 +593,18 @@ module.exports = function (app) {
 					}
 
 					response.json({ success: true, doubt: result.value.doubt });
+
+					// Notificação Telegram (fire-and-forget)
+					if (app.services.telegramNotifier) {
+						app.services.telegramNotifier.enqueue('DOUBT_RESOLVED', {
+							pointId: pointId,
+							campaignId: String(result.value.campaign || ''),
+							author: authorName,
+							fromStatus: point.doubt.status,
+							toStatus: targetStatus,
+							reason: reason
+						}).catch(function () {});
+					}
 				}
 			);
 		});
