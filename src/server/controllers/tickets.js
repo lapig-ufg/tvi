@@ -244,9 +244,16 @@ module.exports = function (app) {
    * Retorna a campanha do supervisor logado (null se a sessão não for
    * de supervisor com campanha). Usado para isolar a listagem de tickets
    * e dúvidas ao escopo da campanha do próprio supervisor.
+   *
+   * Importante: não olhamos `session.admin` aqui. O mesmo navegador pode
+   * manter simultaneamente as sessões de /admin/login (session.admin) e
+   * /login como supervisor (session.user.type='supervisor'). Quando o
+   * usuário navega a UI do supervisor (navbar supervisor, /tickets em
+   * modo enriquecido), o backend precisa aplicar o recorte por campanha
+   * mesmo que `session.admin` exista — senão o filtro é silenciosamente
+   * desligado e vazam dúvidas de outras campanhas.
    */
   function getSupervisorCampaignId(request) {
-    if (isAdmin(request)) return null;
     var u = request.session && request.session.user;
     if (!u || u.type !== 'supervisor') return null;
     if (!u.campaign || !u.campaign._id) return null;
