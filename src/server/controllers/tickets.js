@@ -261,6 +261,25 @@ module.exports = function (app) {
   }
 
   /**
+   * Recorte de `points` para uma campanha, resiliente a documentos legados
+   * que não têm o campo `campaign` populado. O `_id` do ponto segue o
+   * padrão `<index>_<campaignId>` (ex.: `182_mapbiomas_peru_col4_region1`),
+   * então usamos o sufixo ancorado como fallback quando o campo explícito
+   * falha. O prefixo `^\d+_` evita colisões entre campanhas cujo nome é
+   * sufixo de outro (ex.: `col11` vs `col111`).
+   */
+  function buildPointCampaignScope(campaignId) {
+    if (!campaignId) return null;
+    var escaped = String(campaignId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return {
+      $or: [
+        { campaign: campaignId },
+        { _id: new RegExp('^\\d+_' + escaped + '$') }
+      ]
+    };
+  }
+
+  /**
    * GET /service/tickets — Listar tickets com filtros e paginação
    */
   Tickets.list = async function (request, response) {
@@ -349,7 +368,8 @@ module.exports = function (app) {
       // sobre o resultado mapeado para manter paridade de UX.
       var doubtQuery = { doubt: { $exists: true } };
       if (supervisorCampaignId) {
-        doubtQuery.campaign = supervisorCampaignId;
+        var doubtScope = buildPointCampaignScope(supervisorCampaignId);
+        if (doubtScope) Object.assign(doubtQuery, doubtScope);
       }
       if (q.status) {
         var statusMap = { 'ABERTO': 'ABERTA', 'RESOLVIDO': 'RESOLVIDA' };
@@ -777,10 +797,14 @@ module.exports = function (app) {
       return response.status(403).json({ error: 'Apenas administradores ou supervisores podem ver estatísticas' });
     }
 
-    // Match de campanha aplicado aos pipelines quando supervisor.
+    // Match de campanha aplicado aos pipelines quando supervisor. O escopo
+    // de dúvidas usa o helper resiliente a documentos legados.
     var ticketMatch = supervisorCampaignId ? { 'author.campaignId': supervisorCampaignId } : null;
     var doubtMatch = { doubt: { $exists: true } };
-    if (supervisorCampaignId) doubtMatch.campaign = supervisorCampaignId;
+    if (supervisorCampaignId) {
+      var doubtScope = buildPointCampaignScope(supervisorCampaignId);
+      if (doubtScope) Object.assign(doubtMatch, doubtScope);
+    }
 
     try {
       var pipeline = [];
