@@ -1,0 +1,17 @@
+<div class="modal-header" style="padding: 10px 15px; background: #f7f7f9;">
+  <button type="button" class="close" ng-click="close()" aria-label="Fechar">&times;</button>
+  <h4 class="modal-title" style="margin: 0;">
+    <i class="fa fa-map-marker"></i>
+    Visualização do ponto #{{pointIndex}}
+  </h4>
+</div>
+<div class="modal-body" style="padding: 0; height: 82vh; overflow: hidden; background: #fff;">
+  <iframe ng-src="{{iframeUrl}}"
+          style="border: 0; width: 100%; height: 100%; display: block;"
+          title="Visualização do ponto no supervisor"></iframe>
+</div>
+<div class="modal-footer" style="padding: 8px 15px;">
+  <button type="button" class="btn btn-default" ng-click="close()">
+    <i class="fa fa-times"></i> Fechar
+  </button>
+</div>

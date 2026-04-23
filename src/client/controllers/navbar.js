@@ -5,6 +5,12 @@ Application.controller('navController', function($rootScope, $scope, $location, 
 	$rootScope.showNavInsp= false;
 	$rootScope.showNavSuper= false;
 
+	// Modo "embutido": a mesma SPA pode ser carregada dentro de um iframe
+	// (p.ex. o modal de visualização de ponto acionado em /tickets). Nesse
+	// caso ocultamos a navbar para não poluir o dialog nem permitir que o
+	// usuário saia/deslogue acidentalmente dentro do iframe.
+	$scope.embedMode = $location.search().embed === '1';
+
 	$scope.logoff = function() {
 		requester._get('login/logoff', function(result) {
 			$scope.data = undefined;

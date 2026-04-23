@@ -136,13 +136,22 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   /**
-   * Abre o ponto relacionado ao ticket na tela /supervisor.
-   * Disponível sempre que a dúvida (ou ticket) referenciar um índice de
-   * ponto; o supervisor usa esse índice para posicionar a listagem.
+   * Abre o ponto relacionado ao ticket em um modal que embute /supervisor
+   * em iframe, para que o supervisor não perca o contexto da listagem de
+   * /tickets. O parâmetro `embed=1` oculta a navbar dentro do iframe.
    */
   $scope.viewPointInSupervisor = function (ticket) {
     if (!ticket || !ticket._pointIndex) return;
-    $location.path('/supervisor').search({ pointIndex: ticket._pointIndex });
+    $uibModal.open({
+      templateUrl: 'views/point-viewer-modal.tpl.html',
+      controller: 'PointViewerModalController',
+      size: 'lg',
+      windowClass: 'point-viewer-modal',
+      backdrop: 'static',
+      resolve: {
+        pointIndex: function () { return ticket._pointIndex; }
+      }
+    });
   };
 
   /**
@@ -288,6 +297,17 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
       $scope.loadStats();
     });
   }
+});
+
+/* --- Modal: visualização de ponto embutida (/supervisor) --- */
+Application.controller('PointViewerModalController', function ($scope, $sce, $uibModalInstance, pointIndex) {
+  $scope.pointIndex = pointIndex;
+  // O hash da URL é preservado como rota interna do Angular, e `embed=1`
+  // sinaliza ao navController que a navbar deve ser ocultada.
+  $scope.iframeUrl = $sce.trustAsResourceUrl(
+    '#/supervisor?embed=1&pointIndex=' + encodeURIComponent(pointIndex)
+  );
+  $scope.close = function () { $uibModalInstance.dismiss('close'); };
 });
 
 /* --- Formulário de Novo Ticket --- */

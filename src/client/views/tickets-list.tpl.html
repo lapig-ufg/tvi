@@ -1,6 +1,12 @@
 <style>
   .ticket-row-doubt { background-color: #fffaf0 !important; }
   .ticket-row-doubt:hover { background-color: #fff3dc !important; }
+  /* Dialog largo para embutir /supervisor em iframe sem cortar os mapas */
+  .point-viewer-modal .modal-dialog {
+    width: 95%;
+    max-width: 1400px;
+    margin: 20px auto;
+  }
 </style>
 
 <!-- Placeholder enquanto $rootScope.user chega do interceptor de rota:
