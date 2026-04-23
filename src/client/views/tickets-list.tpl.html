@@ -1,11 +1,21 @@
 <style>
   .ticket-row-doubt { background-color: #fffaf0 !important; }
   .ticket-row-doubt:hover { background-color: #fff3dc !important; }
-  /* Dialog largo para embutir /supervisor em iframe sem cortar os mapas */
+  /* Dialog quase full-screen para embutir /supervisor em iframe sem
+     cortar os mapas nem a tabela de inspeções. */
   .point-viewer-modal .modal-dialog {
-    width: 95%;
-    max-width: 1400px;
-    margin: 20px auto;
+    width: 98%;
+    max-width: none;
+    margin: 10px auto;
+  }
+  .point-viewer-modal .modal-content {
+    height: calc(100vh - 20px);
+    display: flex;
+    flex-direction: column;
+  }
+  .point-viewer-modal .modal-body {
+    flex: 1 1 auto;
+    height: auto !important;
   }
 </style>
 
