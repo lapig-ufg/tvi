@@ -6,17 +6,24 @@
  */
 
 /* --- Listagem de Tickets --- */
-Application.controller('TicketsListController', function ($scope, $rootScope, $location, requester, i18nService) {
+Application.controller('TicketsListController', function ($scope, $rootScope, $location, $http, $uibModal, requester, i18nService) {
+
+  // Supervisor enxerga a tela enriquecida (cards, filtros completos, ações
+  // de gestão de ticket/dúvida) da sua campanha; inspetor mantém a UI
+  // original de listagem pessoal. O backend isola os dados do supervisor
+  // à campanha da sessão — este flag controla apenas a UI.
+  // Default seguro (modo inspetor): quando o user já estiver disponível
+  // via $rootScope, a função `applyViewMode` abaixo ajusta antes do
+  // primeiro load. Caso contrário, aguarda o fetch em `login/user`.
+  $scope.isSupervisorView = false;
 
   $scope.tickets = [];
   $scope.pagination = { total: 0, page: 1, limit: 10, pages: 0 };
-  $scope.filters = {
-    type: '',
-    status: '',
-    search: '',
-    mine: true
-  };
+  $scope.pageSizes = [25, 50, 100, 200];
+  $scope.stats = null;
   $scope.loading = false;
+
+  $scope.filters = { type: '', status: '', search: '', mine: true };
 
   $scope.types = [
     { value: '', label: 'Todos os tipos' },
@@ -35,6 +42,22 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
     { value: 'FECHADO', label: 'Fechado' }
   ];
 
+  $scope.categories = [
+    { value: '', label: 'Todas as categorias' },
+    { value: 'INTERFACE', label: 'Interface' },
+    { value: 'DESEMPENHO', label: 'Desempenho' },
+    { value: 'FUNCIONALIDADE', label: 'Funcionalidade' },
+    { value: 'DADOS', label: 'Dados' },
+    { value: 'OUTRO', label: 'Outro' }
+  ];
+
+  $scope.origins = [
+    { value: '', label: 'Todas as origens' },
+    { value: 'TVI', label: 'TVI' },
+    { value: 'PLUGIN_FGI', label: 'Plugin FGI' },
+    { value: 'PONTO', label: 'Dúvida de ponto' }
+  ];
+
   $scope.loadTickets = function () {
     $scope.loading = true;
     var params = {
@@ -44,12 +67,27 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
     if ($scope.filters.type) params.type = $scope.filters.type;
     if ($scope.filters.status) params.status = $scope.filters.status;
     if ($scope.filters.search) params.search = $scope.filters.search;
-    if ($scope.filters.mine) params.mine = 'true';
+    if ($scope.isSupervisorView) {
+      if ($scope.filters.category) params.category = $scope.filters.category;
+      if ($scope.filters.origin) params.origin = $scope.filters.origin;
+    } else if ($scope.filters.mine) {
+      params.mine = 'true';
+    }
 
     requester._get('tickets', params, function (result) {
       $scope.tickets = result.data || [];
       $scope.pagination = result.pagination || $scope.pagination;
       $scope.loading = false;
+    });
+  };
+
+  $scope.loadStats = function () {
+    if (!$scope.isSupervisorView) return;
+    requester._get('tickets/stats/summary', function (result) {
+      // Endpoint retorna 403 para roles sem acesso; ignora silenciosamente.
+      if (result && !result.error) {
+        $scope.stats = result;
+      }
     });
   };
 
@@ -59,7 +97,9 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   $scope.clearFilters = function () {
-    $scope.filters = { type: '', status: '', search: '', mine: true };
+    $scope.filters = $scope.isSupervisorView
+      ? { type: '', status: '', category: '', origin: '', search: '' }
+      : { type: '', status: '', search: '', mine: true };
     $scope.pagination.page = 1;
     $scope.loadTickets();
   };
@@ -68,12 +108,101 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
     $scope.loadTickets();
   };
 
+  $scope.changePageSize = function () {
+    $scope.pagination.page = 1;
+    $scope.loadTickets();
+  };
+
+  $scope.getInicio = function () {
+    if (!$scope.pagination.total) return 0;
+    return (($scope.pagination.page - 1) * $scope.pagination.limit) + 1;
+  };
+
+  $scope.getFim = function () {
+    var fim = $scope.pagination.page * $scope.pagination.limit;
+    return Math.min(fim, $scope.pagination.total);
+  };
+
   $scope.viewTicket = function (ticket) {
+    if (ticket && ticket._isDoubt) {
+      $scope.openDoubtResolveModal(ticket);
+      return;
+    }
     $location.path('/tickets/' + ticket._id);
   };
 
   $scope.newTicket = function () {
     $location.path('/tickets/new');
+  };
+
+  /**
+   * Abre o ponto relacionado ao ticket na tela /supervisor.
+   * Disponível sempre que a dúvida (ou ticket) referenciar um índice de
+   * ponto; o supervisor usa esse índice para posicionar a listagem.
+   */
+  $scope.viewPointInSupervisor = function (ticket) {
+    if (!ticket || !ticket._pointIndex) return;
+    $location.path('/supervisor').search({ pointIndex: ticket._pointIndex });
+  };
+
+  /**
+   * Modal de transição de status para tickets nativos (reaproveita o
+   * controller TicketStatusModalController já registrado pelo módulo admin).
+   */
+  $scope.openStatusModal = function (ticket) {
+    if (!ticket || ticket._isDoubt) {
+      if (ticket && ticket._isDoubt) $scope.openDoubtResolveModal(ticket);
+      return;
+    }
+    var modalInstance = $uibModal.open({
+      templateUrl: 'views/ticket-status-modal.tpl.html',
+      controller: 'TicketStatusModalController',
+      resolve: {
+        ticket: function () { return ticket; }
+      }
+    });
+
+    modalInstance.result.then(function () {
+      $scope.loadTickets();
+      $scope.loadStats();
+    });
+  };
+
+  /**
+   * Modal de resolução de dúvida de ponto (reaproveita
+   * AdminDoubtResolveModalController já registrado pelo módulo admin).
+   */
+  $scope.openDoubtResolveModal = function (ticket) {
+    if (!ticket || !ticket._isDoubt || !ticket._pointId) return;
+    $http.get('/service/points/' + ticket._pointId + '/doubt')
+      .success(function (result) {
+        var point = {
+          _id: result.pointId,
+          campaign: result.campaign,
+          doubt: result.doubt
+        };
+        var campaign = { _id: result.campaign };
+        var modalInstance = $uibModal.open({
+          templateUrl: 'views/doubt-resolve-modal.tpl.html',
+          controller: 'AdminDoubtResolveModalController',
+          size: 'lg',
+          backdrop: 'static',
+          resolve: {
+            point: function () { return point; },
+            campaign: function () { return campaign; }
+          }
+        });
+        modalInstance.result.then(function () {
+          $scope.loadTickets();
+          $scope.loadStats();
+        }, function () {
+          // Recarregar mesmo em dismiss: o supervisor pode ter comentado antes de fechar.
+          $scope.loadTickets();
+        });
+      })
+      .error(function () {
+        alert('Não foi possível carregar a dúvida deste ponto.');
+      });
   };
 
   $scope.getTypeBadgeClass = function (type) {
@@ -118,8 +247,46 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
     return map[status] || status;
   };
 
-  // Carregar ao iniciar
-  $scope.loadTickets();
+  $scope.getSeverityBadgeClass = function (severity) {
+    var map = { 'BAIXA': 'label-info', 'MEDIA': 'label-warning', 'ALTA': 'label-danger', 'CRITICA': 'label-danger' };
+    return map[severity] || 'label-default';
+  };
+
+  $scope.getSeverityLabel = function (severity) {
+    var map = { 'BAIXA': 'Baixa', 'MEDIA': 'Média', 'ALTA': 'Alta', 'CRITICA': 'Crítica' };
+    return map[severity] || severity;
+  };
+
+  /**
+   * Ajusta defaults (paginação e filtros) conforme o tipo do usuário.
+   * Chamada após `$rootScope.user` estar disponível.
+   */
+  var applyViewMode = function () {
+    $scope.isSupervisorView = !!($rootScope.user && $rootScope.user.type === 'supervisor');
+    if ($scope.isSupervisorView) {
+      $scope.pagination = { total: 0, page: 1, limit: 50, pages: 0 };
+      $scope.filters = { type: '', status: '', category: '', origin: '', search: '' };
+    } else {
+      $scope.pagination = { total: 0, page: 1, limit: 10, pages: 0 };
+      $scope.filters = { type: '', status: '', search: '', mine: true };
+    }
+  };
+
+  // Carregar ao iniciar — o interceptor de rota em app.js popula
+  // $rootScope.user de forma assíncrona; aguardamos o fetch para decidir
+  // o modo e só então disparamos as chamadas que dependem dele.
+  if ($rootScope.user && $rootScope.user.type) {
+    applyViewMode();
+    $scope.loadTickets();
+    $scope.loadStats();
+  } else {
+    requester._get('login/user', function (user) {
+      if (user) $rootScope.user = user;
+      applyViewMode();
+      $scope.loadTickets();
+      $scope.loadStats();
+    });
+  }
 });
 
 /* --- Formulário de Novo Ticket --- */

@@ -1,4 +1,232 @@
-<div class="container-fluid" style="padding-top: 70px;">
+<style>
+  .ticket-row-doubt { background-color: #fffaf0 !important; }
+  .ticket-row-doubt:hover { background-color: #fff3dc !important; }
+</style>
+
+<!-- ============================================================== -->
+<!-- Modo supervisor: cards + filtros completos + ações de gestão   -->
+<!-- ============================================================== -->
+<div class="container-fluid" style="padding: 20px;" ng-if="isSupervisorView">
+  <div class="row">
+    <div class="col-md-12">
+      <h2><i class="fa fa-ticket"></i> Gestão de Tickets</h2>
+    </div>
+  </div>
+
+  <!-- Cards de estatísticas -->
+  <div class="row" style="margin-bottom: 20px;" ng-if="stats">
+    <div class="col-md-2">
+      <div class="panel panel-primary">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{stats.total}}</h3>
+          <small>Total</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="panel panel-info">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{stats.byStatus.ABERTO || 0}}</h3>
+          <small>Abertos</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="panel panel-warning">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{(stats.byStatus.EM_ANALISE || 0) + (stats.byStatus.EM_DESENVOLVIMENTO || 0)}}</h3>
+          <small>Em Progresso</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="panel panel-success">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{stats.byStatus.RESOLVIDO || 0}}</h3>
+          <small>Resolvidos</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="panel panel-default">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{stats.byStatus.FECHADO || 0}}</h3>
+          <small>Fechados</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="panel panel-danger">
+        <div class="panel-body text-center">
+          <h3 style="margin: 5px 0;">{{stats.byType.RECLAMACAO || 0}}</h3>
+          <small>Reclamações</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-md-2">
+          <select class="form-control input-sm" ng-model="filters.type" ng-change="applyFilters()">
+            <option ng-repeat="t in types" value="{{t.value}}">{{t.label}}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-control input-sm" ng-model="filters.status" ng-change="applyFilters()">
+            <option ng-repeat="s in statuses" value="{{s.value}}">{{s.label}}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-control input-sm" ng-model="filters.category" ng-change="applyFilters()">
+            <option ng-repeat="c in categories" value="{{c.value}}">{{c.label}}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-control input-sm" ng-model="filters.origin" ng-change="applyFilters()">
+            <option ng-repeat="o in origins" value="{{o.value}}">{{o.label}}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control" placeholder="Buscar..." ng-model="filters.search"
+                   ng-keypress="$event.keyCode === 13 && applyFilters()">
+            <span class="input-group-btn">
+              <button class="btn btn-default" ng-click="applyFilters()"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-link btn-sm" ng-click="clearFilters()">
+            <i class="fa fa-times"></i> Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="panel panel-default">
+    <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <span ng-if="!loading && pagination.total > 0">
+          Mostrando <strong>{{getInicio()}}–{{getFim()}}</strong> de
+          <strong>{{pagination.total}}</strong> ticket<span ng-if="pagination.total !== 1">s</span>
+        </span>
+        <span ng-if="!loading && pagination.total === 0" class="text-muted">
+          Nenhum ticket encontrado
+        </span>
+        <span ng-if="loading" class="text-muted">
+          <i class="fa fa-spinner fa-spin"></i> Carregando...
+        </span>
+      </div>
+      <div>
+        <label style="margin: 0 8px 0 0; font-weight: normal;">Itens por página:</label>
+        <select class="form-control input-sm" style="display: inline-block; width: auto;"
+                ng-model="pagination.limit"
+                ng-change="changePageSize()"
+                ng-options="size for size in pageSizes"></select>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover" style="margin-bottom: 0;">
+        <thead>
+          <tr>
+            <th style="width: 110px;">Nº</th>
+            <th>Título</th>
+            <th style="width: 110px;">Tipo</th>
+            <th style="width: 100px;">Severidade</th>
+            <th style="width: 140px;">Status</th>
+            <th style="width: 80px;">Origem</th>
+            <th style="width: 100px;">Autor</th>
+            <th style="width: 120px;">Criado em</th>
+            <th style="width: 130px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-if="loading">
+            <td colspan="9" class="text-center">
+              <i class="fa fa-spinner fa-spin"></i> Carregando...
+            </td>
+          </tr>
+          <tr ng-if="!loading && tickets.length === 0">
+            <td colspan="9" class="text-center text-muted">
+              Nenhum ticket encontrado.
+            </td>
+          </tr>
+          <tr ng-repeat="ticket in tickets" ng-class="{'ticket-row-doubt': ticket._isDoubt}">
+            <td><code>{{ticket.ticketNumber}}</code></td>
+            <td>
+              <a href="" ng-click="viewTicket(ticket)" style="color: #333; text-decoration: none;">
+                {{ticket.title}}
+              </a>
+            </td>
+            <td><span class="label" ng-class="getTypeBadgeClass(ticket.type)">{{getTypeLabel(ticket.type)}}</span></td>
+            <td>
+              <span class="label" ng-class="getSeverityBadgeClass(ticket.severity)" ng-if="ticket.severity">
+                {{getSeverityLabel(ticket.severity)}}
+              </span>
+              <span ng-if="!ticket.severity" class="text-muted">—</span>
+            </td>
+            <td><span class="label" ng-class="getStatusBadgeClass(ticket.status)">{{getStatusLabel(ticket.status)}}</span></td>
+            <td>
+              <span ng-if="ticket._isDoubt" class="label label-warning" title="Dúvida registrada durante inspeção do ponto">
+                <i class="fa fa-map-marker"></i> PONTO
+              </span>
+              <small ng-if="!ticket._isDoubt">{{ticket.origin}}</small>
+            </td>
+            <td>{{ticket.author.name}}</td>
+            <td><small>{{ticket.createdAt | date:'dd/MM/yyyy HH:mm'}}</small></td>
+            <td>
+              <button class="btn btn-xs btn-info" ng-click="viewTicket(ticket)"
+                      title="{{ticket._isDoubt ? 'Abrir dúvida do ponto' : 'Ver detalhe'}}">
+                <i class="fa" ng-class="ticket._isDoubt ? 'fa-comments' : 'fa-eye'"></i>
+              </button>
+              <button class="btn btn-xs btn-warning" ng-click="openStatusModal(ticket)"
+                      ng-if="!ticket._isDoubt && ticket.status !== 'FECHADO'"
+                      title="Alterar status">
+                <i class="fa fa-exchange"></i>
+              </button>
+              <button class="btn btn-xs btn-success"
+                      ng-if="ticket._pointIndex"
+                      ng-click="viewPointInSupervisor(ticket)"
+                      title="Abrir ponto no supervisor">
+                <i class="fa fa-map-marker"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginação -->
+    <div class="panel-footer text-center" ng-if="pagination.total > 0">
+      <uib-pagination ng-if="pagination.pages > 1"
+                      total-items="pagination.total"
+                      ng-model="pagination.page"
+                      items-per-page="pagination.limit"
+                      max-size="7"
+                      boundary-links="true"
+                      ng-change="changePage()"
+                      first-text="&laquo;"
+                      last-text="&raquo;"
+                      previous-text="&lsaquo;"
+                      next-text="&rsaquo;"
+                      style="margin: 0;">
+      </uib-pagination>
+      <span ng-if="pagination.pages <= 1" class="text-muted">
+        Página 1 de 1
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- Modo inspector (padrão): listagem pessoal simples              -->
+<!-- ============================================================== -->
+<div class="container-fluid" style="padding-top: 70px;" ng-if="!isSupervisorView">
   <div class="panel panel-default">
     <div class="panel-heading">
       <div class="row">

@@ -1081,7 +1081,19 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
 
         initCounter();
 
-        $scope.submit(1);
+        // Deep-link vindo de /tickets: quando a URL traz ?pointIndex=N,
+        // abrimos a tela já posicionada no ponto solicitado (valores
+        // inválidos caem silenciosamente para o índice 1).
+        var initialIndex = 1;
+        var qs = $location.search();
+        var parsed = parseInt(qs && qs.pointIndex, 10);
+        if (!isNaN(parsed) && parsed >= 1) {
+            initialIndex = parsed;
+            if (!$scope.point) $scope.point = {};
+            $scope.point.index = initialIndex;
+        }
+
+        $scope.submit(initialIndex);
 
         var correctCampain = () => {
             $scope.showloading = true;

@@ -241,6 +241,19 @@ module.exports = function (app) {
   };
 
   /**
+   * Retorna a campanha do supervisor logado (null se a sessão não for
+   * de supervisor com campanha). Usado para isolar a listagem de tickets
+   * e dúvidas ao escopo da campanha do próprio supervisor.
+   */
+  function getSupervisorCampaignId(request) {
+    if (isAdmin(request)) return null;
+    var u = request.session && request.session.user;
+    if (!u || u.type !== 'supervisor') return null;
+    if (!u.campaign || !u.campaign._id) return null;
+    return u.campaign._id;
+  }
+
+  /**
    * GET /service/tickets — Listar tickets com filtros e paginação
    */
   Tickets.list = async function (request, response) {
@@ -277,6 +290,14 @@ module.exports = function (app) {
         { title: searchRegex },
         { ticketNumber: searchRegex }
       ];
+    }
+
+    // Isolamento por campanha: supervisor só vê tickets/dúvidas da sua
+    // campanha; admin mantém visão global. Forçado no backend para não
+    // depender de parâmetro vindo do cliente.
+    var supervisorCampaignId = getSupervisorCampaignId(request);
+    if (supervisorCampaignId) {
+      query['author.campaignId'] = supervisorCampaignId;
     }
 
     // Paginação
@@ -320,6 +341,9 @@ module.exports = function (app) {
       // ticket virtual. Filtros por status/search/mine/author são aplicados
       // sobre o resultado mapeado para manter paridade de UX.
       var doubtQuery = { doubt: { $exists: true } };
+      if (supervisorCampaignId) {
+        doubtQuery.campaign = supervisorCampaignId;
+      }
       if (q.status) {
         var statusMap = { 'ABERTO': 'ABERTA', 'RESOLVIDO': 'RESOLVIDA' };
         var mongoStatus = statusMap[q.status];
@@ -396,6 +420,7 @@ module.exports = function (app) {
       createdAt: doubt.openedAt || null,
       _isDoubt: true,
       _pointId: idStr,
+      _pointIndex: (typeof p.index === 'number') ? p.index : null,
       _campaignId: p.campaign,
       _doubtStatus: doubt.status || null
     };
@@ -740,19 +765,25 @@ module.exports = function (app) {
    * GET /service/tickets/stats/summary — Estatísticas resumidas (admin)
    */
   Tickets.statsSummary = async function (request, response) {
-    if (!isAdmin(request)) {
-      return response.status(403).json({ error: 'Apenas administradores podem ver estatísticas' });
+    var supervisorCampaignId = getSupervisorCampaignId(request);
+    if (!isAdmin(request) && !supervisorCampaignId) {
+      return response.status(403).json({ error: 'Apenas administradores ou supervisores podem ver estatísticas' });
     }
 
+    // Match de campanha aplicado aos pipelines quando supervisor.
+    var ticketMatch = supervisorCampaignId ? { 'author.campaignId': supervisorCampaignId } : null;
+    var doubtMatch = { doubt: { $exists: true } };
+    if (supervisorCampaignId) doubtMatch.campaign = supervisorCampaignId;
+
     try {
-      var pipeline = [
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 }
-          }
+      var pipeline = [];
+      if (ticketMatch) pipeline.push({ $match: ticketMatch });
+      pipeline.push({
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
         }
-      ];
+      });
 
       tickets.aggregate(pipeline, function (err, statusCounts) {
         if (err) {
@@ -774,9 +805,10 @@ module.exports = function (app) {
           });
 
           // Contar por tipo
-          tickets.aggregate([
-            { $group: { _id: '$type', count: { $sum: 1 } } }
-          ], function (err2, typeCounts) {
+          var typePipeline = [];
+          if (ticketMatch) typePipeline.push({ $match: ticketMatch });
+          typePipeline.push({ $group: { _id: '$type', count: { $sum: 1 } } });
+          tickets.aggregate(typePipeline, function (err2, typeCounts) {
             if (err2) {
               return response.status(500).json({ error: 'Erro ao calcular estatísticas por tipo' });
             }
@@ -792,7 +824,7 @@ module.exports = function (app) {
               // ABERTA→ABERTO e RESOLVIDA→RESOLVIDO para manter os cards
               // do painel alinhados com a listagem unificada.
               points.aggregate([
-                { $match: { doubt: { $exists: true } } },
+                { $match: doubtMatch },
                 { $group: { _id: '$doubt.status', count: { $sum: 1 } } }
               ], function (err4, doubtCounts) {
                 var finalize = function (arr) {
