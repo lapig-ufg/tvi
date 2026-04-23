@@ -1037,15 +1037,13 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 
-            // Se não há pontos com o filtro atual, avisar o usuário mas continuar
-            if(data.totalPoints === 0){
-                // Não bloquear - apenas informar o usuário
-                console.warn('No points found with current filters');
-                // Podemos opcionalmente mostrar uma mensagem mais amigável
-                if (!data.point) {
-                    NotificationDialog.warning(i18nService.translate('ALERTS.NO_UNCONSOLIDATED_POINTS'));
-                    return;
-                }
+            // Protege contra resposta sem ponto — pode acontecer quando o índice
+            // pedido excede o total (ex.: deep-link ?pointIndex=N com N>total
+            // após remoção de pontos) ou quando a campanha está vazia.
+            if (!data || !data.point) {
+                console.warn('No point returned for requested filters/index');
+                NotificationDialog.warning(i18nService.translate('ALERTS.NO_UNCONSOLIDATED_POINTS'));
+                return;
             }
             $scope.campaign = data.campaign;
             $scope.objConsolidated = data.point.classConsolidated;

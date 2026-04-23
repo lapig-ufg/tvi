@@ -3,10 +3,18 @@
   .ticket-row-doubt:hover { background-color: #fff3dc !important; }
 </style>
 
+<!-- Placeholder enquanto $rootScope.user chega do interceptor de rota:
+     evita que a tela pisque entre o layout simples (inspetor) e o
+     layout rico (supervisor) durante o fetch de login/user. -->
+<div class="container-fluid text-center" style="padding-top: 120px;"
+     ng-if="isSupervisorView === null">
+  <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+</div>
+
 <!-- ============================================================== -->
 <!-- Modo supervisor: cards + filtros completos + ações de gestão   -->
 <!-- ============================================================== -->
-<div class="container-fluid" style="padding: 20px;" ng-if="isSupervisorView">
+<div class="container-fluid" style="padding: 20px;" ng-if="isSupervisorView === true">
   <div class="row">
     <div class="col-md-12">
       <h2><i class="fa fa-ticket"></i> Gestão de Tickets</h2>
@@ -226,7 +234,7 @@
 <!-- ============================================================== -->
 <!-- Modo inspector (padrão): listagem pessoal simples              -->
 <!-- ============================================================== -->
-<div class="container-fluid" style="padding-top: 70px;" ng-if="!isSupervisorView">
+<div class="container-fluid" style="padding-top: 70px;" ng-if="isSupervisorView === false">
   <div class="panel panel-default">
     <div class="panel-heading">
       <div class="row">

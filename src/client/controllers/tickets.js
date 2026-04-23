@@ -12,10 +12,10 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   // de gestão de ticket/dúvida) da sua campanha; inspetor mantém a UI
   // original de listagem pessoal. O backend isola os dados do supervisor
   // à campanha da sessão — este flag controla apenas a UI.
-  // Default seguro (modo inspetor): quando o user já estiver disponível
-  // via $rootScope, a função `applyViewMode` abaixo ajusta antes do
-  // primeiro load. Caso contrário, aguarda o fetch em `login/user`.
-  $scope.isSupervisorView = false;
+  // Tri-state: null enquanto aguardamos o fetch de login/user; true/false
+  // após `applyViewMode`. O template mostra um spinner enquanto é null
+  // para evitar flicker entre os dois layouts.
+  $scope.isSupervisorView = null;
 
   $scope.tickets = [];
   $scope.pagination = { total: 0, page: 1, limit: 10, pages: 0 };
@@ -150,8 +150,9 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
    * controller TicketStatusModalController já registrado pelo módulo admin).
    */
   $scope.openStatusModal = function (ticket) {
-    if (!ticket || ticket._isDoubt) {
-      if (ticket && ticket._isDoubt) $scope.openDoubtResolveModal(ticket);
+    if (!ticket) return;
+    if (ticket._isDoubt) {
+      $scope.openDoubtResolveModal(ticket);
       return;
     }
     var modalInstance = $uibModal.open({
