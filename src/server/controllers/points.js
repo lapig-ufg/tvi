@@ -388,10 +388,14 @@ module.exports = function(app) {
 			);
 			point.underInspection = (point.underInspection || 0) + 1;
 
-			// Avançar offset no bloco
+			// Tier 2.3 (2026-05-09) — comportamento ORIGINAL preservado.
+			// O avanço do offset continua acontecendo aqui (no serve do ponto)
+			// para não impactar o fluxo do inspetor que pode navegar entre
+			// pontos sem salvar. updatePoint adicionalmente faz $max(slot+1)
+			// após o save para garantir que o offset reflita pontos
+			// efetivamente persistidos — operação idempotente, no-op quando
+			// o offset já está no valor desejado.
 			var updatedBlock = await blocosController.advanceBlockOffset(block._id);
-
-			// Verificar se o bloco foi completado após este avanço
 			if (updatedBlock && updatedBlock.currentPointOffset >= updatedBlock.size) {
 				await blocosController.completeBlock(block._id);
 			}
@@ -653,6 +657,49 @@ module.exports = function(app) {
 			if (!pointsService) {
 				return response.status(500).json({ error: 'pointsService indisponível' });
 			}
+			const blocosController = app.controllers && app.controllers.blocos;
+			const blocosCol = app.repository && app.repository.collections && app.repository.collections.tvi_blocos;
+
+			// Tier 2.1 (2026-05-09) — ownership check em MODO SOMBRA.
+			// Apenas DETECTA e LOGA quando o save chega de um inspetor cujo
+			// bloco já não está mais atribuído a ele (timeout + realocação).
+			// NÃO REJEITA o save — preserva integralmente o fluxo existente
+			// do inspetor para evitar travar trabalho legítimo durante a fase
+			// de observação. Após uma sprint sem warnings indevidos em
+			// produção, esta seção pode ser endurecida para retornar 409.
+			// Procuramos ativamente blockOwning para reaproveitar no avanço
+			// de offset (Tier 2.3 também em modo sombra abaixo).
+			let blockOwning = null;
+			if (blocosCol) {
+				const hasBlocks = await blocosCol.count({ campaignId: user.campaign._id });
+				if (hasBlocks > 0) {
+					blockOwning = await blocosCol.findOne({
+						campaignId: user.campaign._id,
+						pointIds: point._id,
+						assignedTo: user.name,
+						status: 'assigned'
+					});
+					if (!blockOwning) {
+						// Tenta achar QUALQUER bloco com este ponto para descrever
+						// melhor o estado encontrado (apenas para o log).
+						const anyBlock = await blocosCol.findOne({
+							campaignId: user.campaign._id,
+							pointIds: point._id,
+							inspectionRound: 1
+						}, { sort: { inspectionRound: 1 } });
+						await logger.warn('Tier 2.1 shadow: save chega sem ownership do bloco', {
+							module: 'points', function: 'updatePoint',
+							metadata: {
+								pointId: point._id,
+								username: user.name,
+								campaignId: user.campaign._id,
+								observedBlockAssignedTo: anyBlock && anyBlock.assignedTo,
+								observedBlockStatus: anyBlock && anyBlock.status
+							}
+						});
+					}
+				}
+			}
 
 			// Carrega o documento ANTES (igual ao código legado) para
 			// (a) decidir consolidação com base em userName.length
@@ -713,9 +760,33 @@ module.exports = function(app) {
 				await pointsService.setClassConsolidated(point._id, consolidatedValue, ctx);
 			}
 
+			// Tier 2.3 (2026-05-09) — advance-on-save COMPLEMENTAR (idempotente).
+			// findPointFromBlock continua avançando o offset no momento do
+			// serve do ponto (comportamento original preservado). Aqui apenas
+			// chamamos $max(slot+1) — se o offset já estava lá ou à frente,
+			// é no-op. Garante que o offset reflita pontos efetivamente salvos
+			// e dispara completeBlock quando o último ponto for salvo, mesmo
+			// se o serve não tiver passado por aquele caminho.
+			if (blockOwning && blocosController) {
+				const slot = (blockOwning.pointIds || []).indexOf(point._id);
+				if (slot >= 0) {
+					try {
+						const updated = await blocosController.advanceBlockOffsetToAtLeast(blockOwning._id, slot + 1);
+						if (updated && updated.currentPointOffset >= updated.size) {
+							await blocosController.completeBlock(blockOwning._id);
+						}
+					} catch (offsetErr) {
+						await logger.error('updatePoint: falha em advanceBlockOffsetToAtLeast (não bloqueia)', {
+							module: 'points', function: 'updatePoint',
+							metadata: { pointId: point._id, blockId: String(blockOwning._id), error: offsetErr.message }
+						});
+					}
+				}
+			}
+
 			await logger.info('Point updated successfully', {
 				module: 'points', function: 'updatePoint',
-				metadata: { pointId: point._id, username: user.name, consolidated: !!consolidatedValue }
+				metadata: { pointId: point._id, username: user.name, consolidated: !!consolidatedValue, blockId: blockOwning && String(blockOwning._id) }
 			});
 
 			// Decrementar underInspection após inspeção salva com sucesso (mesmo do código original)
