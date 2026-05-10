@@ -167,14 +167,19 @@ module.exports = function(app) {
 			filter.blockIndex = { $nin: completedBlockIndexes };
 		}
 
+		// Tier 2.4 (2026-05-09) — claim NÃO reseta mais currentPointOffset.
+		// Antes, o claim setava currentPointOffset=0 sempre, anulando a
+		// preservação que releaseExpiredBlocksInternal faz ao liberar um bloco
+		// expirado. Agora, blocos novos (vindos de generateBlocks com
+		// currentPointOffset:0) começam em 0 naturalmente; blocos liberados
+		// retomam do offset onde o inspetor anterior parou.
 		var result = await blocos.findOneAndUpdate(
 			filter,
 			{
 				$set: {
 					status: 'assigned',
 					assignedTo: username,
-					assignedAt: new Date(),
-					currentPointOffset: 0
+					assignedAt: new Date()
 				}
 			},
 			{
