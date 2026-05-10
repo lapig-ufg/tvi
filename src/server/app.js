@@ -54,6 +54,15 @@ app.middleware.repository.init(() => {
 			}
 		}
 
+		// Tier 1 (2026-05-09) — instanciar pointsService após repository estar pronto.
+		// Wrapper único de mutação destrutiva sobre points (audit + soft-delete).
+		// Ver clever-dreaming-pudding.md §1.2.
+		if (app.services && app.services.pointsService) {
+			if (typeof app.services.pointsService === 'function') {
+				app.services.pointsService = app.services.pointsService(app);
+			}
+		}
+
 		const store = new MongoStore({ url: mongodbUrl });
 		io.adapter(mongoAdapter( mongodbUrl ));
 

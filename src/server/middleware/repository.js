@@ -62,7 +62,10 @@ module.exports = function (app) {
                     
                     // Garantir que as coleções necessárias existam
                     // weekly_progress adicionada em TKT-000009 para persistir progresso e carry-over.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress'];
+                    // points_audit e tvi_blocos_release_log adicionadas no Tier 1 (2026-05-09)
+                    // do plano de defesa contra perda de inspeções: append-only, snapshot
+                    // de toda mutação destrutiva sobre points / liberação de blocos.
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -251,6 +254,38 @@ module.exports = function (app) {
                 ], function(err) {
                     if (err && err.code !== 11000) {
                         console.error('Erro ao criar índices para weekly_progress:', err);
+                    }
+                    cb();
+                });
+            },
+            // Tier 1 (2026-05-09) — índices para points_audit (append-only de toda mutação em points)
+            function(cb) {
+                if (!Repository.collections.points_audit) return cb();
+
+                Repository.collections.points_audit.createIndexes([
+                    { key: { pointId: 1, ts: -1 }, name: 'pointId_ts' },
+                    { key: { campaignId: 1, ts: -1 }, name: 'campaignId_ts' },
+                    { key: { 'actor.username': 1, ts: -1 }, name: 'actor_ts' },
+                    { key: { operation: 1, ts: -1 }, name: 'operation_ts' },
+                    { key: { confirmationToken: 1 }, name: 'confirmationToken', sparse: true }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para points_audit:', err);
+                    }
+                    cb();
+                });
+            },
+            // Tier 1/2 (2026-05-09) — índices para tvi_blocos_release_log (snapshot de blocos liberados por timeout)
+            function(cb) {
+                if (!Repository.collections.tvi_blocos_release_log) return cb();
+
+                Repository.collections.tvi_blocos_release_log.createIndexes([
+                    { key: { blockId: 1, expiredAt: -1 }, name: 'blockId_expiredAt' },
+                    { key: { campaignId: 1, expiredAt: -1 }, name: 'campaignId_expiredAt' },
+                    { key: { previousAssignedTo: 1, expiredAt: -1 }, name: 'previousAssignedTo_expiredAt' }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para tvi_blocos_release_log:', err);
                     }
                     cb();
                 });
