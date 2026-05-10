@@ -791,35 +791,28 @@ module.exports = function (app) {
 
     }
 
+    // DESATIVADA em 2026-05-09 — Tier 0 do plano de defesa contra perda de inspeções.
+    // Implementação anterior aplicava `slice(0, -k)` em userName/inspection quando
+    // `inspection.length > numInspec`, removendo sistematicamente o trabalho do 2º
+    // inspetor (Classificação Automática ocupa o slot 0, então o 2º humano é o
+    // "excedente" cortado). Causou ~7k inspeções perdidas em mapbiomas_pastagem_col11.
+    // Substituída por dry-run que apenas reporta a invocação, sem alterar dados.
+    // Ver /tmp/tvi-investigation/DIAGNOSTICO.md §4.1 e clever-dreaming-pudding.md §0.2.
     Points.correctCampaign = async (request, response) => {
-        const campaign = request.session.user.campaign;
-        if (campaign) {
-            const points = await pointsCollection.find({ 'campaign': campaign._id }).toArray();
-            const numInspections = campaign.numInspec;
-            const msgs = [];
-            for (const [idx, point] of points.entries() ){
-                if(point.inspection.length !== numInspections) {
-                    if(point.inspection.length > numInspections) {
-                        const numExceededInspection = point.inspection.length - numInspections
-                        const inspection = point.inspection.slice(0, -1*numExceededInspection)
-                        const userName = point.userName.slice(0, -1*numExceededInspection)
-
-                        point.inspection = inspection
-                        point.userName = userName
-                    }
-
-                    point.underInspection = point.inspection.length
-                    const result = await pointsCollection.update({ _id: point._id }, { $set: point} )
-                    msgs.push(' Point '+ point._id +' final number of inspections ' + point.underInspection)
-                }
+        const campaign = request.session && request.session.user && request.session.user.campaign;
+        await logger.warn('correctCampaign invocado em modo dry-run (função desativada)', {
+            module: 'supervisor',
+            function: 'correctCampaign',
+            metadata: {
+                campaignId: campaign ? campaign._id : null,
+                username: request.session && request.session.user && request.session.user.name,
+                ip: request.ip
             }
-            msgs.join("\n")
-            response.status(200).send(msgs);
-            response.end();
-        } else {
-            response.status(400).send('Parameter campaign not found');
-            response.end();
-        }
+        });
+        response.status(200).json({
+            dryRun: true,
+            message: 'Função temporariamente desativada para evitar perda de inspeções. Contate o suporte se precisar corrigir uma campanha.'
+        });
     }
 
     Points.getBorda = async (request, response) => {
@@ -987,43 +980,29 @@ module.exports = function (app) {
         });
     }
     
+    // DESATIVADA em 2026-05-09 — Tier 0 do plano de defesa contra perda de inspeções.
+    // Implementação anterior aplicava `slice(0, -k)` em userName/inspection quando
+    // `inspection.length > numInspec`, removendo sistematicamente o trabalho do 2º
+    // inspetor. Endpoint disparado pelo atalho F10 em /admin/temporal sem confirmação.
+    // Substituída por dry-run que apenas reporta a invocação, sem alterar dados.
+    // Ver /tmp/tvi-investigation/DIAGNOSTICO.md §4.1 e clever-dreaming-pudding.md §0.2.
     Points.correctCampaignAdmin = async (request, response) => {
         const campaignId = request.query.campaignId;
-        
         if (!campaignId) {
             return response.status(400).json({ error: 'Campaign ID is required' });
         }
-        
-        // Buscar dados da campanha
-        infoCampaign.findOne({'_id': campaignId}, async function(err, campaign) {
-            if (err || !campaign) {
-                return response.status(404).json({ error: 'Campaign not found' });
+        await logger.warn('correctCampaignAdmin invocado em modo dry-run (função desativada)', {
+            module: 'supervisor',
+            function: 'correctCampaignAdmin',
+            metadata: {
+                campaignId: campaignId,
+                ip: request.ip,
+                userAgent: request.get && request.get('user-agent')
             }
-            
-            const points = await pointsCollection.find({ 'campaign': campaign._id }).toArray();
-            const numInspections = campaign.numInspec;
-            const msgs = [];
-            
-            for (const [idx, point] of points.entries() ){
-                if(point.inspection.length !== numInspections) {
-                    if(point.inspection.length > numInspections) {
-                        const numExceededInspection = point.inspection.length - numInspections
-                        const inspection = point.inspection.slice(0, -1*numExceededInspection)
-                        const userName = point.userName.slice(0, -1*numExceededInspection)
-                        const result = await pointsCollection.updateOne({ _id: point._id }, { $set: {
-                                inspection: inspection,
-                                userName: userName,
-                                updateAt: new Date()
-                            }})
-                        msgs.push(`Foi removido ${numExceededInspection} inspecoes do ponto ${idx} - ${JSON.stringify(result)}`)
-                    }
-                    if(point.inspection.length < numInspections){
-                        const result = await pointsCollection.updateOne({ _id: point._id }, { $set: { underInspection: numInspections - point.inspection.length }})
-                        msgs.push(`Foi ajustado o controle de inspections do ponto ${idx}  - ${JSON.stringify(result)}`)
-                    }
-                }
-            }
-            response.status(200).send(msgs);
+        });
+        response.status(200).json({
+            dryRun: true,
+            message: 'Função temporariamente desativada para evitar perda de inspeções. Contate o suporte se precisar corrigir uma campanha.'
         });
     }
     

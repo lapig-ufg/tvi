@@ -1132,19 +1132,15 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.submit($scope.currentIndex || 1);
         }
 
+        // DESATIVADA em 2026-05-09 — Tier 0 do plano de defesa contra perda de inspeções.
+        // O endpoint admin/campaign/correct foi convertido em dry-run no backend
+        // (supervisor.js Points.correctCampaignAdmin) porque executava slice destrutivo
+        // em userName/inspection, eliminando o trabalho do 2º inspetor em massa.
+        // O atalho F10 (binding logo abaixo) está removido. Esta função fica como
+        // stub para evitar quebra de qualquer outro caller que ainda a referencie.
         var correctCampain = () => {
-            $scope.showloading = true;
-            var campaignId = $rootScope.user && $rootScope.user.campaign ? $rootScope.user.campaign._id : localStorage.getItem('currentCampaignId');
-            requester._get(`admin/campaign/correct`, {
-                campaignId: $scope.campaign._id
-            }, function (data) {
-                $scope.showloading = false;
-                if (data) {
-                    NotificationDialog.success(i18nService.translate('ALERTS.POINTS_CORRECTED', {count: data}));
-                } else {
-                    NotificationDialog.info(i18nService.translate('ALERTS.CAMPAIGN_NO_ISSUES'));
-                }
-            });
+            console.warn('correctCampain desativada (Tier 0 - prevenção de perda de inspeções)');
+            NotificationDialog.info('Função desativada para evitar perda de inspeções. Contate o suporte se precisar corrigir uma campanha.');
         };
 
         const getCampaignMatadata = () => {
@@ -1155,14 +1151,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             });
         };
 
-        $window.addEventListener("keydown", (event) => {
-            if (event.key !== undefined) {
-                if (event.key === 'F10') {
-                    correctCampain();
-                    event.preventDefault();
-                }
-            }
-        }, true);
+        // Atalho F10 removido em 2026-05-09 — Tier 0 do plano de defesa.
+        // A tecla disparava correctCampain (acima) sem confirmação, executando o
+        // endpoint admin/campaign/correct que destruía 2ª inspeção em toda a campanha.
+        // Mantido este bloco vazio (sem listener) para deixar registro do que existia.
 
         $scope.downloadCSVBorda = function() {
             window.open('service/campaign/csv-borda', '_blank');
