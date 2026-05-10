@@ -1,0 +1,2 @@
+# Resultados de execução não devem ser versionados.
+results/*.json

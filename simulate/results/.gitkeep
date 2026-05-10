@@ -1,0 +1,4 @@
+# Resultados das execuções (ignorados pelo git).
+# Cada run da simulação grava JSON aqui:
+#   - agents-<ts>.json          (per-agent stats da Fase A)
+#   - inspection-health-<ts>.json (health endpoint pós Fase E)
