@@ -187,34 +187,16 @@ module.exports = function(app) {
 			return result.value;
 		}
 
-		// 5. Se não encontrou excluindo os já completados, tentar sem exclusão
-		// (pode ser que todos os blocos de outros blockIndexes já foram pegos)
-		if (completedBlockIndexes.length > 0) {
-			result = await blocos.findOneAndUpdate(
-				{
-					campaignId: campaignId,
-					status: 'available'
-				},
-				{
-					$set: {
-						status: 'assigned',
-						assignedTo: username,
-						assignedAt: new Date(),
-						currentPointOffset: 0
-					}
-				},
-				{
-					sort: { inspectionRound: 1, blockIndex: 1 },
-					returnOriginal: false
-				}
-			);
-
-			if (result && result.value) {
-				return result.value;
-			}
-		}
-
-		return null; // Nenhum bloco disponível
+		// Tier 0 (2026-05-09) — fallback removido.
+		// O bloco anterior aqui executava um segundo findOneAndUpdate SEM o filtro
+		// `blockIndex: $nin: completedBlockIndexes`, o que permitia entregar ao
+		// usuário um bloco round-2 cujo round-1 ele mesmo havia feito. Isso quebrava
+		// a função de revisão dupla (mesmo inspetor virando 1º e 2º) e gerava a
+		// percepção dos inspetores de que "blocos antigos voltaram para a fila".
+		// Comportamento correto: quando não há mais blocos novos para este usuário,
+		// retornar null e deixar o frontend exibir mensagem clara de fila concluída.
+		// Ver /tmp/tvi-investigation/DIAGNOSTICO.md §4.2 e clever-dreaming-pudding.md §0.5.
+		return null; // Nenhum bloco disponível para este inspetor
 	};
 
 	/**
