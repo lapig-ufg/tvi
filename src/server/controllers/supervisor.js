@@ -892,20 +892,46 @@ module.exports = function (app) {
             response.end();
         }
     }
+    // Tier 1.6 (2026-05-09) — migrada para pointsService.softWipePoint:
+    // (1) snapshot do estado anterior em points_audit (antes/depois);
+    // (2) marca o ponto como arquivado (archivedAt, archivedReason, archivedBy)
+    //     em vez de só zerar arrays — permite restore via pointsService.restore
+    //     e POST /api/admin/points/:pointId/restore.
+    // A rota GET legada (/service/campaign/removeInspections) continua viva
+    // pois UIs antigas dependem dela. A versão moderna (POST .../soft-wipe com
+    // token + reason) está em routes/pointsAdmin.js.
     Points.removeInspections = async (request, response) => {
-        const {pointId} =  request.query;
-        if (pointId) {
-            const result = await pointsCollection.update({ _id: pointId }, { $set: {
-                    inspection: [],
-                    userName: [],
-                    classConsolidated: [],
-                    underInspection: 0,
-                    updateAt: new Date()
-                }})
-            response.status(200).send(result);
-        } else {
-            response.status(404).send('O identificador: pointerId não foi encontrado.');
-            response.end();
+        const {pointId} = request.query;
+        if (!pointId) {
+            return response.status(404).send('O identificador: pointId não foi encontrado.');
+        }
+        const pointsService = app.services && app.services.pointsService;
+        if (!pointsService) {
+            return response.status(500).send('pointsService indisponível');
+        }
+        try {
+            const admin = request.session && request.session.admin;
+            const sessionUser = request.session && request.session.user;
+            const ctx = {
+                actor: {
+                    username: (admin && admin.username) || (sessionUser && sessionUser.name) || 'unknown',
+                    role: (admin && admin.superAdmin) ? 'superAdmin' : (sessionUser && sessionUser.role) || null,
+                    sessionId: request.sessionID || null,
+                    ip: request.ip || null
+                },
+                // GET legado não exige token nem reason; usamos um default identificável
+                // para que qualquer auditoria saiba que veio do endpoint legacy.
+                reason: 'legacy GET /service/campaign/removeInspections (sem token)'
+            };
+            const after = await pointsService.softWipePoint(pointId, ctx);
+            return response.status(200).json({ success: true, pointId, archivedAt: after.archivedAt });
+        } catch (err) {
+            await logger.error('Erro em removeInspections', {
+                module: 'supervisor',
+                function: 'removeInspections',
+                metadata: { error: err.message, pointId }
+            });
+            return response.status(500).json({ error: err.message });
         }
     }
 
@@ -1006,20 +1032,37 @@ module.exports = function (app) {
         });
     }
     
+    // Tier 1.6 (2026-05-09) — migrada para pointsService.softWipePoint.
+    // Mesma lógica de removeInspections, exposta por rota admin separada.
     Points.removeInspectionAdmin = async (request, response) => {
         const {pointId} = request.query;
-        
-        if (pointId) {
-            const result = await pointsCollection.update({ _id: pointId }, { $set: {
-                    inspection: [],
-                    userName: [],
-                    classConsolidated: [],
-                    underInspection: 0,
-                    updateAt: new Date()
-                }})
-            response.status(200).send(result);
-        } else {
-            response.status(400).send("PointId não encontrado.");
+        if (!pointId) {
+            return response.status(400).send('PointId não encontrado.');
+        }
+        const pointsService = app.services && app.services.pointsService;
+        if (!pointsService) {
+            return response.status(500).send('pointsService indisponível');
+        }
+        try {
+            const admin = request.session && request.session.admin;
+            const ctx = {
+                actor: {
+                    username: (admin && admin.username) || 'admin-unknown',
+                    role: (admin && admin.superAdmin) ? 'superAdmin' : 'admin',
+                    sessionId: request.sessionID || null,
+                    ip: request.ip || null
+                },
+                reason: 'legacy admin GET /service/admin/campaign/removeInspections (sem token)'
+            };
+            const after = await pointsService.softWipePoint(pointId, ctx);
+            return response.status(200).json({ success: true, pointId, archivedAt: after.archivedAt });
+        } catch (err) {
+            await logger.error('Erro em removeInspectionAdmin', {
+                module: 'supervisor',
+                function: 'removeInspectionAdmin',
+                metadata: { error: err.message, pointId }
+            });
+            return response.status(500).json({ error: err.message });
         }
     }
 

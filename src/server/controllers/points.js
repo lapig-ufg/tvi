@@ -610,215 +610,138 @@ module.exports = function(app) {
 	};
 
 	Points.updatePoint = async function(request, response) {
+		// Tier 1.6 (2026-05-09) — migrado para pointsService.appendInspection.
+		// Cada save de inspeção passa a registrar snapshot before/after em
+		// points_audit, e a tentativa de duplicar o mesmo inspetor no ponto
+		// agora retorna 409 (defesa em profundidade — Tier 2.2 ainda reforça
+		// na camada do controller com ownership check do bloco).
+		// A consolidação (classConsolidated) continua acontecendo quando
+		// pointDb.userName.length === numInspec - 1 (mesma semântica do
+		// código original), mas a escrita vai por pointsService.setClassConsolidated
+		// para também ficar auditada.
 		try {
 			var point = request.body.point;
 			var user = request.session.user;
 
 			if (!user || !user.campaign) {
 				const errorCode = await logger.warn('Update point attempted without valid user session', {
-						module: 'points',
-					function: 'updatePoint',
+					module: 'points', function: 'updatePoint',
 					metadata: { hasUser: !!user, hasCampaign: !!(user && user.campaign) }
 				});
-				
-				return response.status(401).json({ 
-					error: 'Valid user session required',
-					errorCode
-				});
+				return response.status(401).json({ error: 'Valid user session required', errorCode });
 			}
 
 			if (!point || !point._id) {
 				const errorCode = await logger.warn('Update point attempted without valid point data', {
-						module: 'points',
-					function: 'updatePoint',
-					metadata: {
-						username: user.name,
-						hasPoint: !!point,
-						hasPointId: !!(point && point._id)
-					}
+					module: 'points', function: 'updatePoint',
+					metadata: { username: user.name, hasPoint: !!point, hasPointId: !!(point && point._id) }
 				});
-				
-				return response.status(400).json({ 
-					error: 'Valid point data required',
-					errorCode
-				});
+				return response.status(400).json({ error: 'Valid point data required', errorCode });
 			}
 
 			await logger.info('Starting point update', {
-				module: 'points',
-				function: 'updatePoint',
+				module: 'points', function: 'updatePoint',
 				metadata: {
-					pointId: point._id,
-					username: user.name,
-					campaignId: user.campaign._id,
-					hasInspection: !!(point.inspection)
+					pointId: point._id, username: user.name,
+					campaignId: user.campaign._id, hasInspection: !!(point.inspection)
 				}
 			});
 
 			point.inspection.fillDate = new Date();
 
-			// TKT-000015 — `userNameCount` é contador denormalizado, mantido atômico
-			// no mesmo update que o $push em userName. Substitui o filtro $where
-			// (JavaScript server-side, não-indexado) em findPoint por uma comparação
-			// numérica indexável. MongoDB garante atomicidade por documento.
-			var updateStruct = {
-				'$push': {
-					"inspection": point.inspection,
-					"userName": user.name
+			const pointsService = app.services && app.services.pointsService;
+			if (!pointsService) {
+				return response.status(500).json({ error: 'pointsService indisponível' });
+			}
+
+			// Carrega o documento ANTES (igual ao código legado) para
+			// (a) decidir consolidação com base em userName.length
+			// (b) reaproveitar como pointDbBefore no service (evita findOne duplicado)
+			const pointDb = await points.findOne({ _id: point._id });
+			if (!pointDb) {
+				const errorCode = await logger.warn('Point not found for update', {
+					module: 'points', function: 'updatePoint',
+					metadata: { pointId: point._id, username: user.name }
+				});
+				return response.status(404).json({ error: 'Point not found', errorCode });
+			}
+
+			// Mesma condição de consolidação do código pré-Tier 1: dispara quando o
+			// próximo $push completar `numInspec` entradas em userName.
+			let consolidatedValue = null;
+			if (pointDb.userName && pointDb.userName.length === user.campaign.numInspec - 1) {
+				consolidatedValue = classConsolidate(point, pointDb, user).classConsolidated;
+				await logger.info('Point inspection complete - consolidating classification', {
+					module: 'points', function: 'updatePoint',
+					metadata: {
+						pointId: point._id, username: user.name,
+						inspectionCount: pointDb.userName.length + 1,
+						requiredInspections: user.campaign.numInspec
+					}
+				});
+			}
+
+			const ctx = {
+				actor: {
+					username: user.name,
+					role: user.role || 'inspector',
+					sessionId: request.sessionID || null,
+					ip: request.ip || null
 				},
-				'$inc': {
-					"userNameCount": 1
-				}
+				// updatePoint é fluxo natural do inspetor — não exige token; reason
+				// padrão para auditoria identificar a origem.
+				reason: 'inspector save via /service/points/update-point'
 			};
 
-			points.findOne({ '_id': point._id }, async function(err, pointDb) {
-				try {
-					if (err) {
-						const errorCode = await logger.error('Database error finding point for update', {
-										module: 'points',
-							function: 'updatePoint',
-							metadata: {
-								pointId: point._id,
-								error: err.message,
-								username: user.name
-							}
-						});
-
-						return response.status(500).json({
-							error: 'Database error finding point',
-							errorCode
-						});
-					}
-
-					if (!pointDb) {
-						const errorCode = await logger.warn('Point not found for update', {
-										module: 'points',
-							function: 'updatePoint',
-							metadata: {
-								pointId: point._id,
-								username: user.name
-							}
-						});
-
-						return response.status(404).json({
-							error: 'Point not found',
-							errorCode
-						});
-					}
-			
-					if(pointDb.userName.length === user.campaign.numInspec - 1) {
-						updateStruct['$set'] = classConsolidate(point, pointDb, user);
-
-						await logger.info('Point inspection complete - consolidating classification', {
-										module: 'points',
-							function: 'updatePoint',
-							metadata: {
-								pointId: point._id,
-								username: user.name,
-								inspectionCount: pointDb.userName.length + 1,
-								requiredInspections: user.campaign.numInspec
-							}
-						});
-
-					}
-
-					points.update({ '_id': pointDb._id }, updateStruct, async function(err, item) {
-						try {
-							if (err) {
-								const errorCode = await logger.error('Database error updating point', {
-														module: 'points',
-									function: 'updatePoint',
-									metadata: {
-										pointId: point._id,
-										error: err.message,
-										username: user.name
-									}
-								});
-
-								return response.status(500).json({
-									error: 'Database error updating point',
-									errorCode
-								});
-							}
-
-							await logger.info('Point updated successfully', {
-												module: 'points',
-								function: 'updatePoint',
-								metadata: {
-									pointId: point._id,
-									username: user.name,
-									updateResult: item
-								}
-							});
-
-							// Decrementar underInspection após inspeção salva com sucesso
-							await points.updateOne(
-								{ _id: point._id, underInspection: { $gt: 0 } },
-								{ $inc: { underInspection: -1 } }
-							);
-
-							// Emitir evento de atualização para monitoramento em tempo real
-							if (app.io) {
-								app.io.to('campaign-monitoring-' + user.campaign._id).emit('inspection-update', {
-									campaignId: user.campaign._id,
-									pointId: point._id,
-									userName: user.name,
-									timestamp: new Date()
-								});
-							}
-
-							var result = { "success": true }
-
-							response.send(result);
-							response.end();
-						} catch (error) {
-							const errorCode = await logger.error('Error processing point update result', {
-												module: 'points',
-								function: 'updatePoint',
-								metadata: {
-									pointId: point._id,
-									error: error.message,
-									stack: error.stack
-								}
-							});
-
-							response.status(500).json({
-								error: 'Error processing update result',
-								errorCode
-							});
-						}
+			try {
+				await pointsService.appendInspection(point._id, user.name, point.inspection, ctx, {
+					pointDbBefore: pointDb
+				});
+			} catch (perr) {
+				if (perr.code === 'DUPLICATE_INSPECTOR') {
+					await logger.warn('Save rejeitado: inspetor já registrado neste ponto', {
+						module: 'points', function: 'updatePoint',
+						metadata: { pointId: point._id, username: user.name }
 					});
-				} catch (error) {
-					const errorCode = await logger.error('Error in point update database operation', {
-								module: 'points',
-						function: 'updatePoint',
-						metadata: {
-							pointId: point._id,
-							error: error.message,
-							stack: error.stack
-						}
-					});
-
-					response.status(500).json({
-						error: 'Database operation error',
-						errorCode
-					});
+					return response.status(409).json({ error: 'Você já registrou inspeção para este ponto.' });
 				}
+				throw perr;
+			}
+
+			// Consolidação separada: também passa por audit para deixar rastro.
+			if (consolidatedValue) {
+				await pointsService.setClassConsolidated(point._id, consolidatedValue, ctx);
+			}
+
+			await logger.info('Point updated successfully', {
+				module: 'points', function: 'updatePoint',
+				metadata: { pointId: point._id, username: user.name, consolidated: !!consolidatedValue }
 			});
+
+			// Decrementar underInspection após inspeção salva com sucesso (mesmo do código original)
+			await points.updateOne(
+				{ _id: point._id, underInspection: { $gt: 0 } },
+				{ $inc: { underInspection: -1 } }
+			);
+
+			// Emitir evento de atualização para monitoramento em tempo real (preservado)
+			if (app.io) {
+				app.io.to('campaign-monitoring-' + user.campaign._id).emit('inspection-update', {
+					campaignId: user.campaign._id,
+					pointId: point._id,
+					userName: user.name,
+					timestamp: new Date()
+				});
+			}
+
+			response.send({ success: true });
+			response.end();
 		} catch (error) {
 			const errorCode = await logger.error('Unexpected error in updatePoint', {
-				module: 'points',
-				function: 'updatePoint',
-				metadata: {
-					error: error.message,
-					stack: error.stack
-				}
+				module: 'points', function: 'updatePoint',
+				metadata: { error: error.message, stack: error.stack }
 			});
-
-			response.status(500).json({
-				error: 'Internal server error',
-				errorCode
-			});
+			response.status(500).json({ error: 'Internal server error', errorCode });
 		}
 	};
 
@@ -1494,8 +1417,11 @@ module.exports = function(app) {
 		});
 	};
 
-	Points.updateClassConsolidatedAdmin = function(request, response) {
-		const result = request.body;
+	// Tier 1.6 (2026-05-09) — migrada para pointsService.setClassConsolidated.
+	// pointEdited continua como flag denormalizada (usada por outras queries),
+	// definida em update separado para não fugir do contrato do service.
+	Points.updateClassConsolidatedAdmin = async function(request, response) {
+		const result = request.body || {};
 		const pointId = result._id;
 		const classConsolidated = result.class;
 
@@ -1503,16 +1429,34 @@ module.exports = function(app) {
 			return response.status(400).json({ error: 'Missing required fields' });
 		}
 
-		points.updateOne(
-			{ '_id': pointId },
-			{ '$set': { 'classConsolidated': classConsolidated, 'pointEdited': true } },
-			function(err) {
-				if (err) {
-					return response.status(500).json({ error: 'Internal server error' });
-				}
-				response.json({ success: true });
-			}
-		);
+		const pointsService = app.services && app.services.pointsService;
+		if (!pointsService) {
+			return response.status(500).json({ error: 'pointsService indisponível' });
+		}
+
+		try {
+			const admin = request.session && request.session.admin;
+			const ctx = {
+				actor: {
+					username: (admin && admin.username) || 'admin-unknown',
+					role: (admin && admin.superAdmin) ? 'superAdmin' : 'admin',
+					sessionId: (request.session && request.sessionID) || null,
+					ip: request.ip || null
+				},
+				reason: 'updateClassConsolidatedAdmin via /service/admin/points/updatedClassConsolidated'
+			};
+			await pointsService.setClassConsolidated(pointId, classConsolidated, ctx);
+			// Atualiza pointEdited fora do service — é flag de UX, não inspeção.
+			await points.updateOne({ _id: pointId }, { $set: { pointEdited: true } });
+			return response.json({ success: true });
+		} catch (err) {
+			await logger.error('Erro em updateClassConsolidatedAdmin', {
+				module: 'points',
+				function: 'updateClassConsolidatedAdmin',
+				metadata: { error: err.message, pointId }
+			});
+			return response.status(500).json({ error: err.message });
+		}
 	};
 
 	return Points;

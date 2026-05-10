@@ -416,35 +416,43 @@ module.exports = function(app) {
 				}
 			);
 
-			// Remover inspeção do inspetor nos pontos do bloco
+			// Tier 1.6 (2026-05-09) — remoção do inspetor migrada para
+			// pointsService.removeInspectorByIndex: cada operação grava snapshot
+			// before/after em points_audit, permitindo restore via
+			// /api/admin/points/:pointId/restore se o discard foi por engano.
 			if (inspectorName) {
+				var pointsService = app.services && app.services.pointsService;
+				if (!pointsService) {
+					await logger.error('discardBlock: pointsService indisponível', {
+						module: 'blocos', function: 'discardBlock',
+						metadata: { campaignId, blockIndex }
+					});
+					return response.status(500).json({ error: 'pointsService indisponível' });
+				}
+
+				var ctx = {
+					actor: {
+						username: discardedBy,
+						role: 'admin',
+						sessionId: (request.session && request.sessionID) || null,
+						ip: request.ip || null
+					},
+					reason: reason && reason.trim().length >= 10 ? reason.trim() : 'discardBlock blockIndex=' + blockIndex + ' round=' + inspectionRound,
+					blockId: block._id
+				};
+
 				for (var i = 0; i < block.pointIds.length; i++) {
 					var pointId = block.pointIds[i];
-					var point = await points.findOne({ _id: pointId });
-
-					if (point && point.userName) {
-						var userIndex = point.userName.indexOf(inspectorName);
-						if (userIndex !== -1) {
-							// Remover userName e inspection correspondente
-							var newUserName = point.userName.filter(function(u, idx) { return idx !== userIndex; });
-							var newInspection = point.inspection.filter(function(insp, idx) { return idx !== userIndex; });
-
-							// Recalcular classConsolidated se necessário
-							var updateSet = {
-								userName: newUserName,
-								inspection: newInspection
-							};
-
-							// Se tinha classConsolidated, remover (será recalculado na próxima inspeção completa)
-							if (point.classConsolidated) {
-								updateSet.classConsolidated = [];
-							}
-
-							await points.updateOne(
-								{ _id: pointId },
-								{ $set: updateSet }
-							);
-						}
+					try {
+						await pointsService.removeInspectorByIndex(pointId, inspectorName, ctx);
+					} catch (perr) {
+						// Log e segue — um erro em um ponto não deve abortar o discard inteiro,
+						// pois o bloco já foi marcado como discarded acima e o estado parcial
+						// é detectável via points_audit.
+						await logger.error('discardBlock: falha ao remover inspetor de um ponto', {
+							module: 'blocos', function: 'discardBlock',
+							metadata: { pointId, inspectorName, error: perr.message }
+						});
 					}
 				}
 			}
