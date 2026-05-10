@@ -2,6 +2,17 @@ module.exports = function (app) {
 
 	var points = app.controllers.supervisor;
 
+	// Tier 0 (2026-05-09) — proteção mínima para rotas destrutivas que estavam sem auth real.
+	// Mesmo padrão usado em routes/blocosApi.js, routes/weeklyGoals.js, routes/doubts.js.
+	// Tier 1 do plano substituirá este middleware por requireDestructiveConfirmation
+	// (token + reason + audit). Por ora, exige sessão de super-admin.
+	var requireSuperAdmin = function (req, res, next) {
+		if (req.session && req.session.admin && req.session.admin.superAdmin) {
+			return next();
+		}
+		return res.status(401).json({ error: 'Super admin authentication required' });
+	};
+
 	/**
 	 * @swagger
 	 * /service/points/csv:
@@ -376,7 +387,10 @@ module.exports = function (app) {
 	 *       401:
 	 *         description: Unauthorized
 	 */
-	app.get('/service/campaign/removeInspections', points.removeInspections);
+	// Tier 0 (2026-05-09) — rota era exposta sem auth. Wipe destrutivo de userName/inspection
+	// de um ponto. Adicionado requireSuperAdmin enquanto Tier 1 implementa o token de
+	// confirmação + reason + audit. Ver clever-dreaming-pudding.md §0.4.
+	app.get('/service/campaign/removeInspections', requireSuperAdmin, points.removeInspections);
 	/**
 	 * @swagger
 	 * /service/campaign/config:
