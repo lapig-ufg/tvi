@@ -200,8 +200,9 @@ module.exports = function(app) {
 	};
 
 	/**
-	 * Avança o offset do ponto atual no bloco atomicamente.
-	 * Retorna o documento atualizado.
+	 * Avança o offset do ponto atual no bloco atomicamente (incremento +1).
+	 * Mantida para compatibilidade com qualquer caller restante; o caminho
+	 * principal de Tier 2.3 usa advanceBlockOffsetToAtLeast.
 	 */
 	Blocos.advanceBlockOffset = async function(blockId) {
 		var result = await blocos.findOneAndUpdate(
@@ -210,6 +211,35 @@ module.exports = function(app) {
 			{ returnOriginal: false }
 		);
 		return result ? result.value : null;
+	};
+
+	/**
+	 * Avança o offset para PELO MENOS o valor `target`, usando `$max`.
+	 * Tier 2.3 (2026-05-09): chamado por updatePoint após o save bem-sucedido,
+	 * informando `slot + 1` (onde slot é o índice do ponto em block.pointIds).
+	 *
+	 * Razões de usar $max em vez de $inc:
+	 *  - O save acontece após o serve, e a UI pode permitir o usuário navegar
+	 *    para frente e para trás dentro do mesmo bloco antes de salvar. $max
+	 *    garante que o offset seja monotônico crescente (jamais regride) e
+	 *    que saves repetidos do mesmo ponto sejam idempotentes em offset.
+	 *  - $inc múltiplas vezes para o mesmo ponto causaria avanço incorreto.
+	 *
+	 * Retorna o bloco atualizado.
+	 */
+	Blocos.advanceBlockOffsetToAtLeast = async function(blockId, target) {
+		if (typeof target !== 'number' || target < 0) {
+			throw new Error('advanceBlockOffsetToAtLeast: target deve ser número >= 0');
+		}
+		var result = await blocos.findOneAndUpdate(
+			{ _id: blockId },
+			{ $max: { currentPointOffset: target } },
+			{ returnOriginal: false, returnDocument: 'after' }
+		);
+		// Compat driver 2.x (legado prod) devolve { value: doc };
+		// driver 6.x (uso em testes locais com Mongo 8) devolve doc direto.
+		if (!result) return null;
+		return (result.value !== undefined) ? result.value : result;
 	};
 
 	/**
@@ -224,46 +254,90 @@ module.exports = function(app) {
 
 	/**
 	 * Libera blocos expirados (timeout) de uma campanha.
-	 * Reseta o status para 'available', liberando para outro inspetor.
+	 *
+	 * Tier 2.4 (2026-05-09): antes de liberar, grava snapshot dos blocos
+	 * em tvi_blocos_release_log (previousAssignedTo, previousOffset, expiredAt)
+	 * para permitir reconstrução do histórico de quem trabalhou em cada bloco
+	 * antes do timeout. Adicionalmente, **CONSERVA** currentPointOffset em
+	 * vez de zerá-lo: o próximo inspetor que pegar o bloco retoma do mesmo
+	 * ponto onde o anterior parou (sem ter que refazer pontos já salvos
+	 * individualmente em points). Isso evita o ciclo perverso documentado
+	 * no DIAGNOSTICO §4.5 (release → reset → re-push → F10/correctCampaign
+	 * trim → perda de inspeção).
 	 */
 	Blocos.releaseExpiredBlocksInternal = async function(campaignId) {
-		// Buscar blocos assigned com timeout expirado
 		var now = new Date();
 
-		// Usar aggregation para calcular expiração por bloco (cada bloco tem seu timeoutMinutes)
 		var expiredBlocks = await blocos.find({
 			campaignId: campaignId,
 			status: 'assigned',
 			assignedAt: { $ne: null }
 		}).toArray();
 
-		var expiredIds = [];
-		expiredBlocks.forEach(function(block) {
+		var expiredOnes = expiredBlocks.filter(function(block) {
 			var expirationTime = new Date(block.assignedAt.getTime() + (block.timeoutMinutes * 60 * 1000));
-			if (now > expirationTime) {
-				expiredIds.push(block._id);
-			}
+			return now > expirationTime;
 		});
 
-		if (expiredIds.length > 0) {
-			await blocos.updateMany(
-				{ _id: { $in: expiredIds } },
-				{
-					$set: {
-						status: 'available',
-						assignedTo: null,
-						assignedAt: null,
-						currentPointOffset: 0
-					}
-				}
-			);
+		if (expiredOnes.length === 0) {
+			return 0;
+		}
 
-			await logger.info('Blocos expirados liberados', {
-				module: 'blocos',
-				function: 'releaseExpiredBlocksInternal',
-				metadata: { campaignId: campaignId, count: expiredIds.length }
+		var releaseLog = app.repository && app.repository.collections && app.repository.collections.tvi_blocos_release_log;
+		if (releaseLog) {
+			var snapshotDocs = expiredOnes.map(function(block) {
+				return {
+					blockId: block._id,
+					campaignId: block.campaignId,
+					blockIndex: block.blockIndex,
+					inspectionRound: block.inspectionRound,
+					previousAssignedTo: block.assignedTo,
+					previousAssignedAt: block.assignedAt,
+					previousOffset: block.currentPointOffset,
+					blockSize: block.size,
+					timeoutMinutes: block.timeoutMinutes,
+					expiredAt: now,
+					releaseReason: 'timeout'
+				};
+			});
+			try {
+				await releaseLog.insertMany(snapshotDocs);
+			} catch (err) {
+				// Falhar em audit não deve impedir liberação (caso contrário, blocos
+				// ficam presos), mas o erro precisa ficar registrado.
+				await logger.error('Falha ao gravar tvi_blocos_release_log', {
+					module: 'blocos',
+					function: 'releaseExpiredBlocksInternal',
+					metadata: { campaignId: campaignId, count: snapshotDocs.length, error: err.message }
+				});
+			}
+		} else {
+			await logger.warn('tvi_blocos_release_log indisponível; liberação prosseguirá sem snapshot', {
+				module: 'blocos', function: 'releaseExpiredBlocksInternal',
+				metadata: { campaignId: campaignId }
 			});
 		}
+
+		var expiredIds = expiredOnes.map(function(b) { return b._id; });
+
+		await blocos.updateMany(
+			{ _id: { $in: expiredIds } },
+			{
+				$set: {
+					status: 'available',
+					assignedTo: null,
+					assignedAt: null
+					// currentPointOffset CONSERVADO (Tier 2.4) — não zera mais.
+					// Próximo inspetor retoma do offset onde o anterior parou.
+				}
+			}
+		);
+
+		await logger.info('Blocos expirados liberados', {
+			module: 'blocos',
+			function: 'releaseExpiredBlocksInternal',
+			metadata: { campaignId: campaignId, count: expiredIds.length, snapshotted: !!releaseLog }
+		});
 
 		return expiredIds.length;
 	};
