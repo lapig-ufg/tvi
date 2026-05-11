@@ -157,7 +157,13 @@ module.exports = function(app) {
 		// Exclui blocos cujo blockIndex o inspetor já completou na mesma rodada
 		var filter = {
 			campaignId: campaignId,
-			status: 'available'
+			status: 'available',
+			// Tier 2.8 (2026-05-10) — não reatribuir blocos que o inspetor já
+			// pulou por ownership (todos os pontIds do bloco já têm ele em
+			// userName). releaseBlockToSkipPool adiciona o username em _skippedBy
+			// quando isso acontece. Filtro idempotente: se o campo não existir,
+			// $ne passa naturalmente.
+			_skippedBy: { $ne: username }
 		};
 
 		// Se o inspetor já completou blocos, excluir para evitar que o mesmo inspetor
@@ -275,6 +281,36 @@ module.exports = function(app) {
 		);
 		// Compat driver 2.x (legado prod) devolve { value: doc };
 		// driver 6.x (uso em testes locais com Mongo 8) devolve doc direto.
+		if (!result) return null;
+		return (result.value !== undefined) ? result.value : result;
+	};
+
+	/**
+	 * Tier 2.8 (2026-05-10) — release-on-ownership-skip.
+	 *
+	 * Libera o bloco de volta para o pool de disponíveis quando o inspetor
+	 * atual não pode salvar nenhum dos pontos restantes (porque já consta
+	 * em userName de cada um — cenário típico: ele fez round 1 e o bloco
+	 * round 2 foi reentregue a ele indevidamente, ou o bloco foi liberado
+	 * por timeout e voltou ao mesmo inspetor).
+	 *
+	 * Em vez de chamar completeBlock e perder os pontos para sempre, o bloco
+	 * é devolvido com status='available' + currentPointOffset PRESERVADO + o
+	 * username adicionado em _skippedBy (set, não duplica). claimNextBlock
+	 * filtra _skippedBy:{$ne:username} e jamais reentrega o mesmo bloco ao
+	 * usuário que já o pulou. Após Tier 2.8, blocos só viram completed
+	 * quando algum save real preenche todos os pontos do bloco.
+	 */
+	Blocos.releaseBlockToSkipPool = async function(blockId, username) {
+		var result = await blocos.findOneAndUpdate(
+			{ _id: blockId },
+			{
+				$set: { status: 'available', assignedTo: null, assignedAt: null },
+				$addToSet: { _skippedBy: username }
+				// currentPointOffset PRESERVADO (mesma semântica de Tier 2.4)
+			},
+			{ returnOriginal: false, returnDocument: 'after' }
+		);
 		if (!result) return null;
 		return (result.value !== undefined) ? result.value : result;
 	};

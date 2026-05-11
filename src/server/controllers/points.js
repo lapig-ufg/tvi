@@ -404,6 +404,33 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
+			// Tier 2.8 (2026-05-10) — release-on-ownership-skip.
+			// Substitui o advance+complete que causava o BUG 4 detectado em
+			// validação real: blocos round=2 atribuídos a inspetor que tinha
+			// feito round=1 viravam completed sem nenhum save real, prendendo
+			// 7.435 pontos length=2 sem caminho de claim.
+			//
+			// Comportamento novo: ao detectar que o user já está em userName
+			// do ponto atual, NÃO avança offset. Em vez disso, libera o bloco
+			// (status='available', assignedTo=null) e marca _skippedBy com o
+			// usuário corrente. claimNextBlock filtra _skippedBy:{$ne:username}
+			// e jamais reentrega o bloco a quem já foi skipado.
+			//
+			// O currentPointOffset é PRESERVADO — outro agente que pegar o
+			// bloco continua de onde estava (mesma semântica de Tier 2.4).
+			if (Array.isArray(point.userName) && point.userName.indexOf(username) !== -1) {
+				await logger.info('findPointFromBlock: ownership-skip → releasing bloco para outro agente', {
+					module: 'points',
+					function: 'findPointFromBlock',
+					metadata: {
+						pointId: pointId, blockId: block._id, username: username,
+						currentOffset: block.currentPointOffset, size: block.size
+					}
+				});
+				await blocosController.releaseBlockToSkipPool(block._id, username);
+				return findPointFromBlock(campaign, username, callback);
+			}
+
 			// Incrementar underInspection no ponto
 			await points.updateOne(
 				{ _id: point._id },
