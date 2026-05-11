@@ -404,6 +404,35 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
+			// Tier 2.9 (2026-05-10) — round-aware skip.
+			// Bloco round R só deve servir pontos com userName.length == R
+			// (= R-1 humanos já feitos + a Classificação Automática).
+			// Se o ponto está em length < R, o round 1 ainda não foi feito
+			// neste ponto (inconsistência entre estado do ponto e round do
+			// bloco — comum quando geração de blocos cria todos os rounds
+			// de antemão e um ponto é servido em round=2 antes do round=1).
+			// Sem esse check, o save em bloco round=2 sobre ponto length=1
+			// vira length=2 (efetivamente "round 1"), consumindo o slot do
+			// bloco round=2 e deixando o ponto sem caminho para o 2º humano.
+			// Detectado na saturação de mapbiomas_pastagem_col11: 7.435 pontos
+			// length=2 ficaram presos por exatamente esse mecanismo.
+			//
+			// Ação: avança offset (não release) — outros pontos do bloco
+			// podem bater com round; se nenhum bater, advance até completar.
+			if (currentLen < block.inspectionRound) {
+				await logger.warn('findPointFromBlock: ponto length<round, pulando (Tier 2.9)', {
+					module: 'points',
+					function: 'findPointFromBlock',
+					metadata: {
+						pointId: pointId, blockId: block._id,
+						currentLength: currentLen, blockRound: block.inspectionRound,
+						username: username
+					}
+				});
+				await blocosController.advanceBlockOffset(block._id);
+				return findPointFromBlock(campaign, username, callback);
+			}
+
 			// Tier 2.8 (2026-05-10) — release-on-ownership-skip.
 			// Substitui o advance+complete que causava o BUG 4 detectado em
 			// validação real: blocos round=2 atribuídos a inspetor que tinha
