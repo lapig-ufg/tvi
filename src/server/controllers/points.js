@@ -381,6 +381,29 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
+			// Tier 2.5 (2026-05-10) — pular pontos que já atingiram numInspec.
+			// Sem este check, blocos round=2 entregavam pontos que já tinham 2
+			// humanos (porque o usuário anterior do bloco só processou alguns
+			// pontos antes do timeout), causando 3 humanos no userName e
+			// violando numInspec. Detectado em validação real contra
+			// mapbiomas_pastagem_col11. Avança o offset e re-busca; se chegar
+			// ao fim do bloco, completeBlock é chamado pela próxima iteração.
+			var maxUserNameLength = (campaign.numInspec || 0) + 1;
+			var currentLen = Array.isArray(point.userName) ? point.userName.length : 0;
+			if (currentLen >= maxUserNameLength) {
+				await logger.warn('findPointFromBlock: ponto já completo, pulando', {
+					module: 'points',
+					function: 'findPointFromBlock',
+					metadata: {
+						pointId: pointId, blockId: block._id,
+						currentLength: currentLen, limit: maxUserNameLength,
+						username: username
+					}
+				});
+				await blocosController.advanceBlockOffset(block._id);
+				return findPointFromBlock(campaign, username, callback);
+			}
+
 			// Incrementar underInspection no ponto
 			await points.updateOne(
 				{ _id: point._id },
@@ -737,7 +760,11 @@ module.exports = function(app) {
 				},
 				// updatePoint é fluxo natural do inspetor — não exige token; reason
 				// padrão para auditoria identificar a origem.
-				reason: 'inspector save via /service/points/update-point'
+				reason: 'inspector save via /service/points/update-point',
+				// Tier 2.5 (2026-05-10) — hard-limit de userName.length.
+				// numInspec é o número de humanos esperado; userName comporta
+				// `numInspec + 1` entradas (humanos + 'Classificação Automática').
+				maxUserNameLength: (user.campaign.numInspec || 0) + 1
 			};
 
 			try {
@@ -751,6 +778,17 @@ module.exports = function(app) {
 						metadata: { pointId: point._id, username: user.name }
 					});
 					return response.status(409).json({ error: 'Você já registrou inspeção para este ponto.' });
+				}
+				if (perr.code === 'POINT_ALREADY_FULL') {
+					await logger.warn('Save rejeitado: ponto já atingiu numInspec', {
+						module: 'points', function: 'updatePoint',
+						metadata: {
+							pointId: point._id, username: user.name,
+							currentLength: (pointDb.userName || []).length,
+							limit: ctx.maxUserNameLength
+						}
+					});
+					return response.status(409).json({ error: 'Este ponto já atingiu o número máximo de inspeções para esta campanha.' });
 				}
 				throw perr;
 			}
