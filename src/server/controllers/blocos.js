@@ -349,16 +349,40 @@ module.exports = function(app) {
 					releaseReason: 'timeout'
 				};
 			});
+			// Tier 2.7 (2026-05-10) — dedupe via bulkWrite ordered:false +
+			// índice único parcial em (blockId, previousAssignedAt). Sob
+			// concorrência (50 inspetores chamando claimNextBlock simultâneo),
+			// releaseExpiredBlocksInternal é executado N vezes em paralelo
+			// e cada chamada VÊ os mesmos blocos como expired antes do
+			// updateMany do passo seguinte mudá-los para 'available'. Sem
+			// dedupe, o release_log inflava com N snapshots para uma única
+			// expiração real. Aqui aceitamos erros 11000 (duplicate key) como
+			// no-op silenciosos; outros erros continuam a ser logados.
+			// O índice é criado em middleware/repository.js no bootstrap.
 			try {
-				await releaseLog.insertMany(snapshotDocs);
+				var bulkOps = snapshotDocs.map(function (d) { return { insertOne: { document: d } }; });
+				await releaseLog.bulkWrite(bulkOps, { ordered: false });
 			} catch (err) {
-				// Falhar em audit não deve impedir liberação (caso contrário, blocos
-				// ficam presos), mas o erro precisa ficar registrado.
-				await logger.error('Falha ao gravar tvi_blocos_release_log', {
-					module: 'blocos',
-					function: 'releaseExpiredBlocksInternal',
-					metadata: { campaignId: campaignId, count: snapshotDocs.length, error: err.message }
+				var writeErrors = (err.writeErrors || (err.result && err.result.writeErrors) || []);
+				var allDuplicates = writeErrors.length > 0 && writeErrors.every(function (e) {
+					var code = e.code || (e.err && e.err.code);
+					return code === 11000;
 				});
+				if (allDuplicates) {
+					// Dedupe esperado em concorrência; logar como info para auditoria.
+					await logger.info('release_log dedupe: snapshots duplicados ignorados', {
+						module: 'blocos',
+						function: 'releaseExpiredBlocksInternal',
+						metadata: { campaignId: campaignId, attempted: snapshotDocs.length, duplicatesIgnored: writeErrors.length }
+					});
+				} else {
+					// Erro real (não duplicate key) — registrar mas não impedir liberação.
+					await logger.error('Falha ao gravar tvi_blocos_release_log', {
+						module: 'blocos',
+						function: 'releaseExpiredBlocksInternal',
+						metadata: { campaignId: campaignId, count: snapshotDocs.length, error: err.message, writeErrorsCount: writeErrors.length }
+					});
+				}
 			}
 		} else {
 			await logger.warn('tvi_blocos_release_log indisponível; liberação prosseguirá sem snapshot', {

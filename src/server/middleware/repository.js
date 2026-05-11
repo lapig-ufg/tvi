@@ -282,7 +282,16 @@ module.exports = function (app) {
                 Repository.collections.tvi_blocos_release_log.createIndexes([
                     { key: { blockId: 1, expiredAt: -1 }, name: 'blockId_expiredAt' },
                     { key: { campaignId: 1, expiredAt: -1 }, name: 'campaignId_expiredAt' },
-                    { key: { previousAssignedTo: 1, expiredAt: -1 }, name: 'previousAssignedTo_expiredAt' }
+                    { key: { previousAssignedTo: 1, expiredAt: -1 }, name: 'previousAssignedTo_expiredAt' },
+                    // Tier 2.7 (2026-05-10) — índice único parcial para dedupe.
+                    // Sob concorrência, releaseExpiredBlocksInternal é executado N
+                    // vezes em paralelo (uma por claimNextBlock), e cada chamada
+                    // tenta inserir o mesmo snapshot antes do updateMany seguinte
+                    // mudar o status do bloco. A chave (blockId + previousAssignedAt)
+                    // é única para cada "atribuição que expirou": N inserts
+                    // concorrentes resultam em 1 insert + N-1 errors 11000 que o
+                    // bulkWrite({ordered:false}) absorve silenciosamente.
+                    { key: { blockId: 1, previousAssignedAt: 1 }, name: 'blockId_previousAssignedAt_unique', unique: true }
                 ], function(err) {
                     if (err && err.code !== 11000) {
                         console.error('Erro ao criar índices para tvi_blocos_release_log:', err);
