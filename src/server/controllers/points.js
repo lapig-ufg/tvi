@@ -381,14 +381,21 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
-			// Tier 2.5 (2026-05-10) — pular pontos que já atingiram numInspec.
-			// Sem este check, blocos round=2 entregavam pontos que já tinham 2
-			// humanos (porque o usuário anterior do bloco só processou alguns
-			// pontos antes do timeout), causando 3 humanos no userName e
-			// violando numInspec. Detectado em validação real contra
-			// mapbiomas_pastagem_col11. Avança o offset e re-busca; se chegar
-			// ao fim do bloco, completeBlock é chamado pela próxima iteração.
-			var maxUserNameLength = (campaign.numInspec || 0) + 1;
+			// Tier 2.5 (2026-05-10, corrigido 2026-05-11) — pular pontos
+			// que já atingiram numInspec. Sem este check, blocos round=2
+			// entregavam pontos já completos (porque o usuário anterior do
+			// bloco só processou alguns pontos antes do timeout), causando
+			// userName.length > numInspec e violando o limite da campanha.
+			//
+			// Semântica de numInspec (alinhada ao comportamento histórico do
+			// sistema e à determinação da gestão 2026-05-11): numInspec é o
+			// TOTAL de entradas em userName, incluindo a 'Classificação
+			// Automática' como uma delas. Ponto completo = userName.length
+			// === numInspec. Para numInspec=2: 1 automática + 1 humana.
+			// Detectado em validação real contra mapbiomas_pastagem_col11.
+			// Avança o offset e re-busca; se chegar ao fim do bloco,
+			// completeBlock é chamado pela próxima iteração.
+			var maxUserNameLength = (campaign.numInspec || 0);
 			var currentLen = Array.isArray(point.userName) ? point.userName.length : 0;
 			if (currentLen >= maxUserNameLength) {
 				await logger.warn('findPointFromBlock: ponto já completo, pulando', {
@@ -817,10 +824,12 @@ module.exports = function(app) {
 				// updatePoint é fluxo natural do inspetor — não exige token; reason
 				// padrão para auditoria identificar a origem.
 				reason: 'inspector save via /service/points/update-point',
-				// Tier 2.5 (2026-05-10) — hard-limit de userName.length.
-				// numInspec é o número de humanos esperado; userName comporta
-				// `numInspec + 1` entradas (humanos + 'Classificação Automática').
-				maxUserNameLength: (user.campaign.numInspec || 0) + 1
+				// Tier 2.5 (2026-05-10, corrigido 2026-05-11) — hard-limit de
+				// userName.length. Semântica de numInspec alinhada ao
+				// comportamento histórico do sistema: numInspec é o TOTAL de
+				// entradas em userName, incluindo a 'Classificação Automática'.
+				// userName.length === numInspec significa ponto completo.
+				maxUserNameLength: (user.campaign.numInspec || 0)
 			};
 
 			try {

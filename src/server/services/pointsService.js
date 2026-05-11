@@ -117,13 +117,13 @@ module.exports = function (app) {
             throw err;
         }
 
-        // Tier 2.5 (2026-05-10) — hard-limit de userName.length.
-        // Bloqueia anexação quando o ponto já atingiu o limite (numInspec humanos
-        // + 1 entrada de classificação automática). Descoberto via simulação real
-        // em mapbiomas_pastagem_col11: blocos round=2 reentregavam pontos que já
-        // tinham 2 humanos quando outros pontos do bloco ainda eram pendentes,
-        // causando 3 humanos no userName e violando numInspec.
-        // O caller passa ctx.maxUserNameLength = numInspec + 1.
+        // Tier 2.5 (2026-05-10, corrigido 2026-05-11) — hard-limit de
+        // userName.length. Bloqueia anexação quando o ponto já atingiu o
+        // limite. Semântica alinhada ao comportamento histórico do sistema
+        // e à determinação da gestão 2026-05-11: numInspec é o TOTAL de
+        // entradas em userName, incluindo a 'Classificação Automática' como
+        // uma das entradas. O caller passa ctx.maxUserNameLength = numInspec.
+        // Descoberto via simulação real em mapbiomas_pastagem_col11.
         if (typeof ctx.maxUserNameLength === 'number' && existing.length >= ctx.maxUserNameLength) {
             const err = new Error('Ponto ' + pointId + ' já atingiu o limite de inspeções (' + existing.length + '/' + ctx.maxUserNameLength + ')');
             err.code = 'POINT_ALREADY_FULL';
