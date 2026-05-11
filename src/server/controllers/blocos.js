@@ -208,14 +208,30 @@ module.exports = function(app) {
 	 * Avança o offset do ponto atual no bloco atomicamente (incremento +1).
 	 * Mantida para compatibilidade com qualquer caller restante; o caminho
 	 * principal de Tier 2.3 usa advanceBlockOffsetToAtLeast.
+	 *
+	 * Tier 2.6 (2026-05-10) — cap em size.
+	 * O filtro $expr {$lt: ['$currentPointOffset', '$size']} impede que o
+	 * offset ultrapasse o tamanho do bloco em races concorrentes. Quando
+	 * já está em currentPointOffset == size, o incremento é no-op e o
+	 * documento atual é retornado (lookup explícito porque findOneAndUpdate
+	 * com filtro que não bate retorna null). Descoberto em validação real
+	 * contra mapbiomas_pastagem_col11: 2 blocos completed com offset=6 e
+	 * size=5 após advance concorrente entre $inc (findPointFromBlock) e
+	 * $max (Tier 2.3 advance-on-save).
 	 */
 	Blocos.advanceBlockOffset = async function(blockId) {
 		var result = await blocos.findOneAndUpdate(
-			{ _id: blockId },
+			{ _id: blockId, $expr: { $lt: ['$currentPointOffset', '$size'] } },
 			{ $inc: { currentPointOffset: 1 } },
-			{ returnOriginal: false }
+			{ returnOriginal: false, returnDocument: 'after' }
 		);
-		return result ? result.value : null;
+		// Compat driver 2.x devolve { value: doc }; driver 6.x devolve doc direto.
+		if (result) {
+			return (result.value !== undefined) ? result.value : result;
+		}
+		// Filtro não bateu: já está em offset == size. Devolve estado atual
+		// para o caller decidir (ex: chamar completeBlock).
+		return await blocos.findOne({ _id: blockId });
 	};
 
 	/**
@@ -236,9 +252,25 @@ module.exports = function(app) {
 		if (typeof target !== 'number' || target < 0) {
 			throw new Error('advanceBlockOffsetToAtLeast: target deve ser número >= 0');
 		}
+		// Tier 2.6 (2026-05-10) — cap em size via pipeline aggregation.
+		// $max(currentPointOffset, target) e depois $min(resultado, size) evita
+		// que offset ultrapasse o tamanho do bloco mesmo se target for indevido
+		// (ex: pointIds duplicados levariam slot+1 a > size). Pipeline updates
+		// são suportados a partir do Mongo 4.2; o projeto usa 4.4 em prod.
 		var result = await blocos.findOneAndUpdate(
 			{ _id: blockId },
-			{ $max: { currentPointOffset: target } },
+			[
+				{
+					$set: {
+						currentPointOffset: {
+							$min: [
+								{ $max: ['$currentPointOffset', target] },
+								'$size'
+							]
+						}
+					}
+				}
+			],
 			{ returnOriginal: false, returnDocument: 'after' }
 		);
 		// Compat driver 2.x (legado prod) devolve { value: doc };
@@ -249,11 +281,23 @@ module.exports = function(app) {
 
 	/**
 	 * Marca um bloco como completado.
+	 *
+	 * Tier 2.6 (2026-05-10) — cap defensivo: força currentPointOffset = $size
+	 * via pipeline update. Garante invariante visual mesmo se algum caller
+	 * legado tiver bypassed advanceBlockOffset/advanceBlockOffsetToAtLeast.
 	 */
 	Blocos.completeBlock = async function(blockId) {
 		await blocos.updateOne(
 			{ _id: blockId },
-			{ $set: { status: 'completed', completedAt: new Date() } }
+			[
+				{
+					$set: {
+						status: 'completed',
+						completedAt: new Date(),
+						currentPointOffset: { $min: ['$currentPointOffset', '$size'] }
+					}
+				}
+			]
 		);
 	};
 
