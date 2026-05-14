@@ -474,17 +474,25 @@ module.exports = function(app) {
 			);
 			point.underInspection = (point.underInspection || 0) + 1;
 
-			// Tier 2.3 (2026-05-09) — comportamento ORIGINAL preservado.
-			// O avanço do offset continua acontecendo aqui (no serve do ponto)
-			// para não impactar o fluxo do inspetor que pode navegar entre
-			// pontos sem salvar. updatePoint adicionalmente faz $max(slot+1)
-			// após o save para garantir que o offset reflita pontos
-			// efetivamente persistidos — operação idempotente, no-op quando
-			// o offset já está no valor desejado.
-			var updatedBlock = await blocosController.advanceBlockOffset(block._id);
-			if (updatedBlock && updatedBlock.currentPointOffset >= updatedBlock.size) {
-				await blocosController.completeBlock(block._id);
-			}
+			// Tier 2.10 (2026-05-14) — avanço-no-serve REMOVIDO.
+			// O avanço do offset agora ocorre EXCLUSIVAMENTE no save bem-sucedido
+			// via advanceBlockOffsetToAtLeast (em updatePoint, linhas 873-888).
+			//
+			// Razão: o avanço-no-serve anterior (Tier 2.3) permitia que pontos
+			// servidos mas nunca salvos ficassem pulados no bloco, criando
+			// "pontos zumbi" — pontos com userName.length < numInspec sem
+			// caminho de inspeção em rounds posteriores, dado o guard Tier 2.9.
+			// Auditoria em mapbiomas_pastagem_col11 (2026-05-14) identificou
+			// 304 zumbis seguindo esse padrão, 58% dos quais nasceram nos
+			// quatro dias anteriores à investigação.
+			//
+			// Consequência intencional: se um inspetor recebe o ponto P e não
+			// salva (fecha aba, queda de rede, recarga de página), uma próxima
+			// chamada a findPointFromBlock (mesma sessão ou outra) serve o
+			// mesmo P novamente. Os guards Tier 2.5 (length>=numInspec → skip)
+			// e Tier 2.8 (ownership → release) continuam protegendo contra
+			// entregas indevidas. completeBlock continua disparando após o
+			// save via advanceBlockOffsetToAtLeast quando offset >= size.
 
 			// Enriquecer ponto com dados de imagem e janela
 			getImageDates(point.path, point.row, async function(dates) {
