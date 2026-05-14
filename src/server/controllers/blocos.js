@@ -985,5 +985,52 @@ module.exports = function(app) {
 		}
 	};
 
+	/**
+	 * Tier 2.10 (2026-05-14) — retorna o histórico de contagens de zumbis
+	 * persistido pelo job zombieMonitor em tvi_zombie_counts.
+	 *
+	 * GET /api/admin/campaigns/:id/zombies/history
+	 * Query: page, limit, from, to
+	 */
+	Blocos.getZombiesHistory = async function(request, response) {
+		try {
+			var campaignId = request.params.id;
+			var page = Math.max(1, parseInt(request.query.page, 10) || 1);
+			var limit = Math.min(200, Math.max(1, parseInt(request.query.limit, 10) || 50));
+			var counts = app.repository && app.repository.collections && app.repository.collections.tvi_zombie_counts;
+			if (!counts) {
+				return response.json({ campaignId: campaignId, page: page, limit: limit, total: 0, items: [] });
+			}
+
+			var match = { campaignId: campaignId };
+			if (request.query.from || request.query.to) {
+				match.checkedAt = {};
+				if (request.query.from) match.checkedAt.$gte = new Date(request.query.from);
+				if (request.query.to) match.checkedAt.$lte = new Date(request.query.to);
+			}
+
+			var total = await counts.count(match);
+			var items = await counts.find(match, {
+				sort: { checkedAt: -1 },
+				skip: (page - 1) * limit,
+				limit: limit
+			}).toArray();
+
+			response.json({
+				campaignId: campaignId,
+				page: page,
+				limit: limit,
+				total: total,
+				items: items
+			});
+		} catch (err) {
+			await logger.error('Erro em getZombiesHistory', {
+				module: 'blocos', function: 'getZombiesHistory',
+				metadata: { error: err.message, stack: err.stack }
+			});
+			response.status(500).json({ error: 'Erro interno ao consultar histórico de zumbis' });
+		}
+	};
+
 	return Blocos;
 };

@@ -61,4 +61,10 @@ module.exports = function (app) {
         requireSuperAdmin,
         errorHandler.asyncHandler(blocos.generateRecoveryBlocks)
     );
+
+    // Tier 2.10 (2026-05-14) — histórico de contagens de zumbis (tvi_zombie_counts)
+    app.get('/api/admin/campaigns/:id/zombies/history',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(blocos.getZombiesHistory)
+    );
 };

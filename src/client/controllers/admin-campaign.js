@@ -494,6 +494,19 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         });
     };
 
+    // Tier 2.10 (2026-05-14) — abre modal de monitoramento e recuperação de pontos zumbi
+    $scope.manageZombies = function(campaign) {
+        $uibModal.open({
+            templateUrl: 'views/admin-zombies-modal.tpl.html',
+            controller: 'AdminZombiesModalController',
+            size: 'lg',
+            backdrop: 'static',
+            resolve: {
+                campaign: function () { return campaign; }
+            }
+        });
+    };
+
     $scope.getProgressClass = function(progress) {
         if (progress < 33) return 'progress-bar-danger';
         if (progress < 66) return 'progress-bar-warning';

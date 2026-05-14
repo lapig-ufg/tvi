@@ -282,6 +282,10 @@
                                         title="Inspeções excedentes" ng-show="campaign.numInspec > 0">
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </button>
+                                <button class="action-btn zombies" ng-click="manageZombies(campaign)"
+                                        title="Pontos zumbi" ng-show="campaign.numInspec > 0">
+                                    <i class="fas fa-recycle"></i>
+                                </button>
                                 <button class="action-btn delete" ng-click="deleteCampaign(campaign)"
                                         title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
                                     <i class="fas fa-times"></i>
@@ -954,6 +958,15 @@
 
 .action-btn.excess:hover {
     background: #b45309;
+}
+
+.action-btn.zombies {
+    background: #7c3aed;
+    color: white;
+}
+
+.action-btn.zombies:hover {
+    background: #6d28d9;
 }
 
 .action-btn.delete {

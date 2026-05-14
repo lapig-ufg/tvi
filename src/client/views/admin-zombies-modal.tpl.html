@@ -1,0 +1,334 @@
+<style>
+.zombies-modal .modal-dialog {
+    width: 90vw;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+.zombies-modal .modal-content {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.zombies-modal .modal-header {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1.5rem 2rem;
+    position: relative;
+}
+.zombies-modal .modal-title {
+    font-size: 1.75rem;
+    font-weight: 300;
+    color: #333;
+    margin: 0;
+}
+.zombies-modal .modal-header .close {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    font-weight: 300;
+    opacity: 0.6;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.zombies-modal .modal-header .close:hover { opacity: 1; }
+.zombies-modal .modal-body {
+    padding: 0;
+    background: #fafafa;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+}
+.zombies-modal .summary-bar {
+    background: #fff;
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.zombies-modal .summary-bar .label { color: #666; font-size: 0.85rem; }
+.zombies-modal .summary-bar .value { font-weight: 600; font-size: 1.4rem; color: #333; }
+.zombies-modal .summary-bar .value.warn { color: #7c3aed; }
+.zombies-modal .summary-bar .value.zero { color: #10b981; }
+.zombies-modal .tabs-nav {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 2rem;
+    display: flex;
+    gap: 0;
+}
+.zombies-modal .tabs-nav button {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+    color: #666;
+    cursor: pointer;
+}
+.zombies-modal .tabs-nav button.active {
+    color: #1f2937;
+    border-bottom-color: #7c3aed;
+    font-weight: 600;
+}
+.zombies-modal .tab-content { padding: 2rem; }
+.zombies-modal table.zombies-table {
+    width: 100%;
+    background: #fff;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.zombies-modal table.zombies-table th,
+.zombies-modal table.zombies-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: left;
+}
+.zombies-modal table.zombies-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #555;
+}
+.zombies-modal .delta-positive { color: #b91c1c; font-weight: 600; }
+.zombies-modal .delta-negative { color: #047857; font-weight: 600; }
+.zombies-modal .delta-zero { color: #6b7280; }
+.zombies-modal .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+}
+.zombies-modal .empty-state .glyphicon {
+    font-size: 3rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+}
+.zombies-modal .info-panel {
+    background: #ede9fe;
+    border-left: 4px solid #7c3aed;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    color: #4c1d95;
+    font-size: 0.95rem;
+}
+.zombies-modal .info-panel code {
+    background: rgba(124, 58, 237, 0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #4c1d95;
+}
+.zombies-modal .by-length-list {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 1.5rem;
+}
+.zombies-modal .by-length-item {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    padding: 0.8rem 1.3rem;
+    border-radius: 4px;
+}
+.zombies-modal .by-length-item .k { color: #666; font-size: 0.8rem; }
+.zombies-modal .by-length-item .v { font-weight: 600; font-size: 1.2rem; color: #7c3aed; }
+.zombies-modal .btn-action {
+    padding: 0.6rem 1.4rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.zombies-modal .btn-primary { background: #7c3aed; color: #fff; }
+.zombies-modal .btn-primary:hover { background: #6d28d9; }
+.zombies-modal .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.zombies-modal .btn-secondary { background: #e5e7eb; color: #1f2937; }
+.zombies-modal .pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+.zombies-modal .pagination-bar button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.zombies-modal .pagination-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+.zombies-modal .result-panel {
+    background: #ecfdf5;
+    border-left: 4px solid #10b981;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin-top: 1.5rem;
+    color: #064e3b;
+}
+.zombies-modal .result-panel.has-errors {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+    color: #7f1d1d;
+}
+.zombies-modal .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+</style>
+
+<div class="zombies-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">Pontos zumbi — {{campaign._id}}</h3>
+        <button type="button" class="close" ng-click="$dismiss('close')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+        <div class="summary-bar">
+            <div>
+                <div class="label">Total zumbis (agora)</div>
+                <div class="value" ng-class="{warn: report.total > 0, zero: report.total === 0}">
+                    {{report.total !== undefined ? report.total : '—'}}
+                </div>
+            </div>
+            <div ng-show="report.byUserNameLength">
+                <div class="label">Por userName.length</div>
+                <div class="by-length-list">
+                    <div class="by-length-item" ng-repeat="(len, cnt) in report.byUserNameLength">
+                        <div class="k">length = {{len}}</div>
+                        <div class="v">{{cnt}}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-left:auto;">
+                <button class="btn-action btn-secondary" ng-click="loadZombies()" ng-disabled="loadingReport">
+                    {{loadingReport ? 'Recarregando...' : 'Recarregar'}}
+                </button>
+            </div>
+        </div>
+
+        <div class="tabs-nav">
+            <button ng-class="{active: activeTab === 'list'}" ng-click="setTab('list')">
+                Pontos zumbi
+            </button>
+            <button ng-class="{active: activeTab === 'history'}" ng-click="setTab('history')">
+                Histórico de monitoramento
+            </button>
+        </div>
+
+        <!-- TAB 1: Lista + recovery -->
+        <div class="tab-content" ng-show="activeTab === 'list'">
+            <div class="info-panel">
+                <strong>O que são pontos zumbi?</strong> Pontos que foram servidos a um intérprete mas
+                nunca inspecionados — geralmente porque a aba foi fechada antes do envio. Eles ficam
+                fora do fluxo normal de inspeção. A recuperação cria <strong>blocos novos</strong> com
+                esses pontos para devolvê-los à fila do <code>claimNextBlock</code>.
+            </div>
+
+            <div class="loading" ng-show="loadingReport">Carregando relatório...</div>
+
+            <div class="empty-state" ng-show="!loadingReport && report.total === 0">
+                <div class="glyphicon glyphicon-ok-circle"></div>
+                <h4>Nenhum ponto zumbi encontrado nesta campanha.</h4>
+            </div>
+
+            <div ng-show="!loadingReport && report.total > 0">
+                <h4 style="margin-top: 0;">Amostra ({{report.sample.length}} de {{report.total}})</h4>
+                <table class="zombies-table">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>ID do ponto</th>
+                            <th>userName.length</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="p in report.sample">
+                            <td>{{p.index}}</td>
+                            <td>{{p._id}}</td>
+                            <td>{{p.userNameLen}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+                    <button class="btn-action btn-primary"
+                            ng-click="recoverZombies()"
+                            ng-disabled="recovering">
+                        {{recovering ? 'Criando blocos de recovery...' : 'Recuperar todos (' + report.total + ' pontos)'}}
+                    </button>
+                    <span style="color: #6b7280; font-size: 0.9rem;">
+                        Cria blocos de inspeção novos com esses pontos. Operação idempotente — pode rodar várias vezes.
+                    </span>
+                </div>
+            </div>
+
+            <div ng-show="recoveryResult" class="result-panel"
+                 ng-class="{'has-errors': recoveryResult.created === 0 && report.total > 0}">
+                <strong>Resultado:</strong>
+                {{recoveryResult.created}} blocos de recovery criados,
+                {{recoveryResult.pointsRecovered}} pontos devolvidos à fila.
+                <span ng-show="recoveryResult.blockIndexRange">
+                    (blockIndex {{recoveryResult.blockIndexRange.from}}–{{recoveryResult.blockIndexRange.to}})
+                </span>
+                <span ng-show="recoveryResult.message">— {{recoveryResult.message}}</span>
+            </div>
+        </div>
+
+        <!-- TAB 2: Histórico -->
+        <div class="tab-content" ng-show="activeTab === 'history'">
+            <div class="info-panel">
+                Contagens registradas pelo job <code>zombieMonitor</code> (a cada 6 h por padrão).
+                A coluna <strong>Δ</strong> indica o crescimento desde a checagem anterior.
+            </div>
+
+            <div class="loading" ng-show="loadingHistory">Carregando histórico...</div>
+
+            <div class="empty-state" ng-show="!loadingHistory && (!historyItems || historyItems.length === 0)">
+                <div class="glyphicon glyphicon-folder-open"></div>
+                <h4>Sem checagens registradas ainda.</h4>
+                <p>O job <code>zombieMonitor</code> roda a cada 6 horas. Aguarde a próxima execução.</p>
+            </div>
+
+            <table class="zombies-table" ng-show="!loadingHistory && historyItems && historyItems.length">
+                <thead>
+                    <tr>
+                        <th>Data/hora</th>
+                        <th>Total</th>
+                        <th>Anterior</th>
+                        <th>Δ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="h in historyItems">
+                        <td>{{h.checkedAt | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                        <td>{{h.count}}</td>
+                        <td>{{h.previousCount}}</td>
+                        <td>
+                            <span ng-class="{
+                                'delta-positive': h.delta > 0,
+                                'delta-negative': h.delta < 0,
+                                'delta-zero': h.delta === 0
+                            }">
+                                {{h.delta > 0 ? '+' + h.delta : h.delta}}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-bar" ng-show="historyItems && historyItems.length">
+                <div>Página {{historyPage}} — exibindo {{historyItems.length}} de {{historyTotal}}</div>
+                <div>
+                    <button ng-disabled="historyPage <= 1" ng-click="goHistoryPage(historyPage - 1)">Anterior</button>
+                    <button ng-disabled="historyPage * historyLimit >= historyTotal" ng-click="goHistoryPage(historyPage + 1)">Próxima</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn-action btn-secondary" ng-click="$dismiss('close')">Fechar</button>
+    </div>
+</div>

@@ -65,7 +65,7 @@ module.exports = function (app) {
                     // points_audit e tvi_blocos_release_log adicionadas no Tier 1 (2026-05-09)
                     // do plano de defesa contra perda de inspeções: append-only, snapshot
                     // de toda mutação destrutiva sobre points / liberação de blocos.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log'];
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
