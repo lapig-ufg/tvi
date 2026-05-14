@@ -1,0 +1,35 @@
+<div class="modal-header" style="background-color: #f0ad4e; color: white;">
+	<button type="button" class="close" ng-click="continueAsIs()" style="color: white; opacity: 0.85;">
+		<span aria-hidden="true">&times;</span>
+	</button>
+	<h4 class="modal-title">
+		<i class="glyphicon glyphicon-warning-sign"></i>
+		{{ 'LOGIN.SIMILAR_USERNAME_TITLE' | i18n }}
+	</h4>
+</div>
+<div class="modal-body">
+	<p>
+		{{ 'LOGIN.SIMILAR_USERNAME_INTRO' | i18n }}
+		<strong style="word-break: break-all;">"{{ typedName }}"</strong>
+	</p>
+	<p>{{ 'LOGIN.SIMILAR_USERNAME_QUESTION' | i18n }}</p>
+	<ul class="list-group" style="margin-bottom: 0;">
+		<li class="list-group-item"
+			ng-repeat="suggestion in suggestions track by $index"
+			style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+			<span style="word-break: break-all; flex: 1 1 auto;">{{ suggestion }}</span>
+			<button type="button"
+				class="btn btn-sm btn-primary"
+				ng-click="useSuggestion(suggestion)">
+				<i class="glyphicon glyphicon-pencil"></i>
+				{{ 'LOGIN.SIMILAR_USERNAME_USE_THIS' | i18n }}
+			</button>
+		</li>
+	</ul>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn btn-default" ng-click="continueAsIs()">
+		<i class="glyphicon glyphicon-arrow-right"></i>
+		{{ 'LOGIN.SIMILAR_USERNAME_CONTINUE_PREFIX' | i18n }} "{{ typedName }}"
+	</button>
+</div>

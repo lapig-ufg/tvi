@@ -53,7 +53,58 @@ module.exports = function (app) {
 	 *         description: Server error
 	 */
 	app.post('/service/login', login.enterTvi);
-	
+
+	/**
+	 * @swagger
+	 * /service/login/check-username:
+	 *   post:
+	 *     summary: Check if a typed username has similar variants already registered in the campaign
+	 *     description: |
+	 *       Pre-login validation endpoint. Compares the typed name against distinct
+	 *       userName values present in points of the given campaign and reports
+	 *       whether the name matches exactly, has similar variants (case, separator,
+	 *       accent or typo differences), or is new. Public route (used before auth).
+	 *     tags: [Authentication]
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             required:
+	 *               - campaign
+	 *               - name
+	 *             properties:
+	 *               campaign:
+	 *                 type: string
+	 *                 description: Campaign identifier
+	 *               name:
+	 *                 type: string
+	 *                 description: Username typed in the login form
+	 *     responses:
+	 *       200:
+	 *         description: Comparison result
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 status:
+	 *                   type: string
+	 *                   enum: [exact, similar, new]
+	 *                 suggestions:
+	 *                   type: array
+	 *                   items:
+	 *                     type: string
+	 *       400:
+	 *         description: Missing campaign or name
+	 *       404:
+	 *         description: Campaign not found
+	 *       500:
+	 *         description: Server error
+	 */
+	app.post('/service/login/check-username', login.checkUsername);
+
 	/**
 	 * @swagger
 	 * /service/login/user:

@@ -1,11 +1,12 @@
 var ejs = require('ejs');
 var fs = require('fs')
+var usernameMatcher = require('../services/usernameMatcher');
 
 module.exports = function(app) {
-	
+
 	var Login = {};
 	const logger = app.services.logger;
-	
+
 	var users = app.repository.collections.users;
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
@@ -130,6 +131,58 @@ module.exports = function(app) {
 			}
 
 		});
+	}
+
+	Login.checkUsername = async function(request, response) {
+		var campaignId = request.body && request.body.campaign;
+		var name = request.body && request.body.name;
+
+		if (!campaignId || typeof name !== 'string' || name.trim() === '') {
+			return response.status(400).json({ error: 'campaign and name are required' });
+		}
+
+		try {
+			var campaign = await campaigns.findOne({ _id: campaignId });
+			if (!campaign) {
+				return response.status(404).json({ error: 'campaign not found' });
+			}
+
+			var rawUsernames = await points.distinct('userName', { campaign: campaignId });
+
+			var flat = [];
+			for (var i = 0; i < rawUsernames.length; i++) {
+				var entry = rawUsernames[i];
+				if (Array.isArray(entry)) {
+					for (var j = 0; j < entry.length; j++) flat.push(entry[j]);
+				} else {
+					flat.push(entry);
+				}
+			}
+
+			var result = usernameMatcher.findSimilarUsernames(name, flat);
+
+			await logger.info('Username similarity check', {
+				module: 'login',
+				function: 'checkUsername',
+				metadata: {
+					campaignId: campaignId,
+					name: name,
+					status: result.status,
+					suggestionsCount: result.suggestions.length
+				},
+				req: request
+			});
+
+			return response.json(result);
+		} catch (err) {
+			const logId = await logger.error('Error during username similarity check', {
+				module: 'login',
+				function: 'checkUsername',
+				metadata: { error: err.message, campaignId: campaignId, name: name },
+				req: request
+			});
+			return response.status(500).json({ error: 'Internal error', logId: logId });
+		}
 	}
 
 	Login.logoff = async function(request, response) {

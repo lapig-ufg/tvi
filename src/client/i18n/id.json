@@ -32,7 +32,12 @@
     "CAMPAIGN_PLACEHOLDER": "Sub-Region",
     "LOGIN_BUTTON": "Masuk",
     "LOGIN_FAILED": "Gagal saat mencoba masuk",
-    "REGION_BADGE": "INDONESIA"
+    "REGION_BADGE": "INDONESIA",
+    "SIMILAR_USERNAME_TITLE": "Nama pengguna serupa ditemukan",
+    "SIMILAR_USERNAME_INTRO": "Sudah ada pengguna dalam kampanye ini dengan nama yang mirip dengan yang Anda masukkan:",
+    "SIMILAR_USERNAME_QUESTION": "Periksa apakah salah satu nama di bawah ini benar-benar milik Anda. Jika ya, klik \"Gunakan nama ini\" untuk memperbaiki kolom. Jika tidak ada yang cocok, lanjutkan dengan nama yang Anda ketik.",
+    "SIMILAR_USERNAME_USE_THIS": "Gunakan nama ini",
+    "SIMILAR_USERNAME_CONTINUE_PREFIX": "Lanjutkan dengan"
   },
   "SUPERVISOR": {
     "TITLE": "Supervisor",

@@ -32,7 +32,12 @@
     "CAMPAIGN_PLACEHOLDER": "Campanha",
     "LOGIN_BUTTON": "Entrar",
     "LOGIN_FAILED": "Falha ao efetuar o login",
-    "REGION_BADGE": ""
+    "REGION_BADGE": "",
+    "SIMILAR_USERNAME_TITLE": "Nome de usuário similar encontrado",
+    "SIMILAR_USERNAME_INTRO": "Já existem usuários nesta campanha com nome parecido com o que você digitou:",
+    "SIMILAR_USERNAME_QUESTION": "Confirme se algum nome abaixo é realmente o seu. Caso seja, clique em \"Usar este nome\" para corrigir o campo. Se nenhum corresponde, continue com o nome digitado.",
+    "SIMILAR_USERNAME_USE_THIS": "Usar este nome",
+    "SIMILAR_USERNAME_CONTINUE_PREFIX": "Continuar com"
   },
   "SUPERVISOR": {
     "TITLE": "Supervisor",
