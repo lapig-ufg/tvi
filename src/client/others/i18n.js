@@ -110,14 +110,16 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
     service.detectBrowserLanguage = function() {
         var browserLang = navigator.language || navigator.userLanguage || 'pt-BR';
         // Browser language detected
-        
+
         // Map browser language codes to our supported languages
         if (browserLang.toLowerCase().startsWith('pt')) {
             return 'pt-BR';
+        } else if (browserLang.toLowerCase().startsWith('id')) {
+            return 'id';
         } else if (browserLang.toLowerCase().startsWith('en')) {
             return 'en';
         }
-        
+
         // Default to Portuguese if not supported
         return 'pt-BR';
     };

@@ -56,16 +56,20 @@ Application
 	    return input;
 	  }
 	})
-	.filter('landsatVisparamLabel', function() {
-		return function(input) {
+	.filter('landsatVisparamLabel', function(i18nService) {
+		var filter = function(input) {
 			if (!input) return "";
-			
-			const labels = {
-				'landsat-tvi-true': 'Cor Natural',
-				'landsat-tvi-agri': 'Agricultura',
-				'landsat-tvi-false': 'Falsa Cor'
+
+			var keyMap = {
+				'landsat-tvi-true': 'SUPERVISOR.MAP.NATURAL_COLOR',
+				'landsat-tvi-agri': 'SUPERVISOR.MAP.AGRICULTURE',
+				'landsat-tvi-false': 'SUPERVISOR.MAP.FALSE_COLOR'
 			};
-			
-			return labels[input] || input;
+
+			var i18nKey = keyMap[input];
+			return i18nKey ? i18nService.translate(i18nKey) : input;
 		};
+
+		filter.$stateful = true;
+		return filter;
 	});

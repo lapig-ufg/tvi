@@ -5,6 +5,9 @@
 			<language-selector class="pull-right" style="margin-top: 10px; margin-bottom: 10px;"></language-selector>
 			<img class="img-responsive" src="assets/lapig.png" />
 			<div class="form-signin-heading" >{{ 'LOGIN.TITLE' | i18n }}</div>
+			<div class="form-signin-region" ng-if="('LOGIN.REGION_BADGE' | i18n) && ('LOGIN.REGION_BADGE' | i18n) !== 'LOGIN.REGION_BADGE'" style="text-align: center; margin-bottom: 12px;">
+				<span class="label label-success" style="font-size: 14px; padding: 4px 12px; letter-spacing: 1px;">{{ 'LOGIN.REGION_BADGE' | i18n }}</span>
+			</div>
 		  	<input class="form-control field-login" type="text" placeholder="{{ 'LOGIN.NAME_PLACEHOLDER' | i18n }}" ng-model="name">
 			<input class="form-control field-login" type="password" placeholder="{{ 'LOGIN.PASSWORD_PLACEHOLDER' | i18n }}" ng-model="senha">
 		  	<input style="margin-bottom: 5px" class="form-control field-login" type="text" placeholder="{{ 'LOGIN.CAMPAIGN_PLACEHOLDER' | i18n }}" ng-model="campaign" >

@@ -18,6 +18,12 @@ Application.directive('languageSelector', function(i18nService, $rootScope, $tim
                             'title="English">' +
                         'EN' +
                     '</button>' +
+                    '<button class="btn btn-default btn-sm" ' +
+                            'ng-class="{\'active\': currentLanguage === \'id\'}" ' +
+                            'ng-click="selectLanguage(\'id\')" ' +
+                            'title="Bahasa Indonesia">' +
+                        'ID' +
+                    '</button>' +
                   '</div>',
         link: function(scope, element, attrs) {
             // Initializing language selector component

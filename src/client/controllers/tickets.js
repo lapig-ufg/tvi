@@ -25,38 +25,56 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
 
   $scope.filters = { type: '', status: '', search: '', mine: true };
 
-  $scope.types = [
-    { value: '', label: 'Todos os tipos' },
-    { value: 'RECLAMACAO', label: 'Reclamação' },
-    { value: 'SUGESTAO', label: 'Sugestão' },
-    { value: 'DUVIDA', label: 'Dúvida' },
-    { value: 'ELOGIO', label: 'Elogio' }
-  ];
+  var t = function (key) { return i18nService.translate(key); };
 
-  $scope.statuses = [
-    { value: '', label: 'Todos os status' },
-    { value: 'ABERTO', label: 'Aberto' },
-    { value: 'EM_ANALISE', label: 'Em Análise' },
-    { value: 'EM_DESENVOLVIMENTO', label: 'Em Desenvolvimento' },
-    { value: 'RESOLVIDO', label: 'Resolvido' },
-    { value: 'FECHADO', label: 'Fechado' }
-  ];
+  function rebuildI18nState() {
+    $scope.types = [
+      { value: '', label: t('ADMIN_TICKETS.FILTERS.ALL_TYPES') },
+      { value: 'RECLAMACAO', label: t('ADMIN_TICKETS.TYPES.RECLAMACAO') },
+      { value: 'SUGESTAO', label: t('ADMIN_TICKETS.TYPES.SUGESTAO') },
+      { value: 'DUVIDA', label: t('ADMIN_TICKETS.TYPES.DUVIDA') },
+      { value: 'ELOGIO', label: t('ADMIN_TICKETS.TYPES.ELOGIO') }
+    ];
 
-  $scope.categories = [
-    { value: '', label: 'Todas as categorias' },
-    { value: 'INTERFACE', label: 'Interface' },
-    { value: 'DESEMPENHO', label: 'Desempenho' },
-    { value: 'FUNCIONALIDADE', label: 'Funcionalidade' },
-    { value: 'DADOS', label: 'Dados' },
-    { value: 'OUTRO', label: 'Outro' }
-  ];
+    $scope.statuses = [
+      { value: '', label: t('ADMIN_TICKETS.FILTERS.ALL_STATUSES') },
+      { value: 'ABERTO', label: t('ADMIN_TICKETS.STATUSES.ABERTO') },
+      { value: 'EM_ANALISE', label: t('ADMIN_TICKETS.STATUSES.EM_ANALISE') },
+      { value: 'EM_DESENVOLVIMENTO', label: t('ADMIN_TICKETS.STATUSES.EM_DESENVOLVIMENTO') },
+      { value: 'RESOLVIDO', label: t('ADMIN_TICKETS.STATUSES.RESOLVIDO') },
+      { value: 'FECHADO', label: t('ADMIN_TICKETS.STATUSES.FECHADO') }
+    ];
 
-  $scope.origins = [
-    { value: '', label: 'Todas as origens' },
-    { value: 'TVI', label: 'TVI' },
-    { value: 'PLUGIN_FGI', label: 'Plugin FGI' },
-    { value: 'PONTO', label: 'Dúvida de ponto' }
-  ];
+    $scope.categories = [
+      { value: '', label: t('ADMIN_TICKETS.FILTERS.ALL_CATEGORIES') },
+      { value: 'INTERFACE', label: t('ADMIN_TICKETS.CATEGORIES.INTERFACE') },
+      { value: 'DESEMPENHO', label: t('ADMIN_TICKETS.CATEGORIES.DESEMPENHO') },
+      { value: 'FUNCIONALIDADE', label: t('ADMIN_TICKETS.CATEGORIES.FUNCIONALIDADE') },
+      { value: 'DADOS', label: t('ADMIN_TICKETS.CATEGORIES.DADOS') },
+      { value: 'OUTRO', label: t('ADMIN_TICKETS.CATEGORIES.OUTRO') }
+    ];
+
+    $scope.origins = [
+      { value: '', label: t('ADMIN_TICKETS.FILTERS.ALL_ORIGINS') },
+      { value: 'TVI', label: t('ADMIN_TICKETS.ORIGINS.TVI') },
+      { value: 'PLUGIN_FGI', label: t('ADMIN_TICKETS.ORIGINS.PLUGIN_FGI') },
+      { value: 'PONTO', label: t('ADMIN_TICKETS.ORIGINS.PONTO') }
+    ];
+
+    var totalPages = $scope.pagination.pages || 1;
+    $scope.singlePageLabel = t('ADMIN_TICKETS.MESSAGES.PAGE_OF')
+      .replace('{{current}}', 1).replace('{{total}}', totalPages);
+  }
+
+  i18nService.ensureLoaded().then(function () {
+    rebuildI18nState();
+    if (!$scope.$$phase) { $scope.$apply(); }
+  });
+  rebuildI18nState();
+
+  $rootScope.$on('languageChanged', function () {
+    rebuildI18nState();
+  });
 
   $scope.loadTickets = function () {
     $scope.loading = true;
@@ -226,13 +244,8 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   $scope.getTypeLabel = function (type) {
-    var map = {
-      'RECLAMACAO': 'Reclamação',
-      'SUGESTAO': 'Sugestão',
-      'DUVIDA': 'Dúvida',
-      'ELOGIO': 'Elogio'
-    };
-    return map[type] || type;
+    if (!type) return '';
+    return t('ADMIN_TICKETS.TYPES.' + type);
   };
 
   $scope.getStatusBadgeClass = function (status) {
@@ -247,14 +260,8 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   $scope.getStatusLabel = function (status) {
-    var map = {
-      'ABERTO': 'Aberto',
-      'EM_ANALISE': 'Em Análise',
-      'EM_DESENVOLVIMENTO': 'Em Desenvolvimento',
-      'RESOLVIDO': 'Resolvido',
-      'FECHADO': 'Fechado'
-    };
-    return map[status] || status;
+    if (!status) return '';
+    return t('ADMIN_TICKETS.STATUSES.' + status);
   };
 
   $scope.getSeverityBadgeClass = function (severity) {
@@ -263,8 +270,10 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
   };
 
   $scope.getSeverityLabel = function (severity) {
-    var map = { 'BAIXA': 'Baixa', 'MEDIA': 'Média', 'ALTA': 'Alta', 'CRITICA': 'Crítica' };
-    return map[severity] || severity;
+    if (!severity) return '';
+    // Severidades sem chave i18n dedicada — mantém o código cru (BAIXA/MEDIA/ALTA/CRITICA)
+    // como fallback consistente.
+    return severity;
   };
 
   /**

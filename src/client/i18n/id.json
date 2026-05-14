@@ -1,0 +1,379 @@
+{
+  "COMMON": {
+    "SEARCH": "Cari",
+    "SAVE": "Simpan",
+    "CANCEL": "Batal",
+    "EDIT": "Sunting",
+    "REMOVE": "Hapus",
+    "DOWNLOAD": "Unduh",
+    "CLOSE": "Tutup",
+    "SUBMIT": "Kirim",
+    "BETWEEN": "Antara",
+    "AND": "dan",
+    "LOADING": "Memuat...",
+    "LOGOUT": "Keluar",
+    "SECONDS": "detik",
+    "CHOOSE": "Pilih",
+    "ALL": "Semua",
+    "NOT_CONSOLIDATED": "Tidak Terkonsolidasi",
+    "USER": "Pengguna",
+    "APPLY": "Terapkan"
+  },
+  "NAVBAR": {
+    "POINTS": "Titik",
+    "DASHBOARD": "Dashboard",
+    "INSPECTION_REPORT": "Laporan Inspeksi",
+    "INSPECTED_POINTS": "poin yang telah diperiksa"
+  },
+  "LOGIN": {
+    "TITLE": "Pemeriksaan Visual Temporal",
+    "NAME_PLACEHOLDER": "Nama",
+    "PASSWORD_PLACEHOLDER": "Kata Sandi",
+    "CAMPAIGN_PLACEHOLDER": "Sub-Region",
+    "LOGIN_BUTTON": "Masuk",
+    "LOGIN_FAILED": "Gagal saat mencoba masuk",
+    "REGION_BADGE": "INDONESIA"
+  },
+  "SUPERVISOR": {
+    "TITLE": "Supervisor",
+    "FILTERS": {
+      "INDEX": "Indeks",
+      "TIME": "Waktu",
+      "CONSOLIDATED": "Dikonfirmasi",
+      "CLASSES": "Kelas",
+      "USERS": "Pengguna",
+      "BIOME": "Bioma",
+      "REGION": "Wilayah",
+      "STATE": "Provinsi",
+      "PERIOD": "Periode"
+    },
+    "POINT_INFO": {
+      "POINT_NUMBER": "Titik #",
+      "LOCATION": "Lokasi",
+      "BIOME": "Bioma",
+      "REGION": "Wilayah",
+      "COUNTRY": "Negara",
+      "MUNICIPALITY": "Kabupaten/Kota",
+      "MAP": "Peta",
+      "COORDINATES": "Koordinat",
+      "STATISTICS": "Statistik",
+      "INSPECTION_TIME": "Durasi Inspeksi",
+      "CONSOLIDATED_CLASS": "Kelas Konsolidasi"
+    },
+    "ACTIONS": {
+      "CHANGE_PERIOD": "Periode Musim",
+      "GOOGLE_EARTH": "Google Earth",
+      "DOWNLOAD_CSV": "Ekspor CSV"
+    },
+    "MAP": {
+      "LANDSAT_IMAGES": "Citra Landsat",
+      "SENTINEL_IMAGES": "Citra Sentinel-2 L2A",
+      "NATURAL_COLOR": "Warna Alami",
+      "AGRICULTURE": "Pertanian",
+      "FALSE_COLOR": "Warna Palsu",
+      "VISUALIZATION": "Visualisasi"
+    },
+    "CHARTS": {
+      "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",
+      "MODIS_SERIES": "Seri waktu NDVI MODIS",
+      "LANDSAT_NDWI_SERIES": "Seri waktu NDWI LANDSAT",
+      "MODIS_NDWI_SERIES": "Seri waktu NDWI MODIS",
+      "SHOW_TIMESERIES": "Tampilkan Grafik Seri Waktu",
+      "FILTER_PERIOD": "Saring Periode"
+    }
+  },
+  "TEMPORAL": {
+    "TITLE": "Temporal",
+    "NAVIGATION_FILTERS": "Navigasi dan Saringan",
+    "POINT_INFO_TABLE": "Informasi Titik dan Tabel",
+    "TIMESERIES": "Seri Waktu",
+    "LOCATION_INFO": {
+      "TITLE": "Informasi titik",
+      "BIOME": "Bioma",
+      "REGION": "Wilayah",
+      "COUNTRY": "Negara",
+      "MUNICIPALITY": "Kabupaten/Kota",
+      "MAP": "Peta",
+      "COORDINATES": "Koordinat"
+    },
+    "TOOLS": {
+      "TITLE": "Alat Visualisasi",
+      "CHANGE_PERIOD": "Periode Musim",
+      "GOOGLE_EARTH": "Google Earth"
+    },
+    "FORM": {
+      "CLASS": "Kelas",
+      "BORDER_PIXEL": "Pixel Tepi",
+      "SUBMIT": "Kirim",
+      "VALIDATION_ERROR": "Mohon pilih kelas penggunaan lahan untuk semua periode sebelum mengirim."
+    },
+    "MAP": {
+      "LANDSAT_IMAGES": "Citra Landsat",
+      "SENTINEL_IMAGES": "Citra Sentinel-2 L2A",
+      "NATURAL_COLOR": "Warna Alami",
+      "AGRICULTURE": "Pertanian",
+      "FALSE_COLOR": "Warna Palsu"
+    },
+    "CHARTS": {
+      "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",
+      "MODIS_SERIES": "Seri waktu NDVI MODIS",
+      "LANDSAT_NDWI_SERIES": "Seri waktu NDWI LANDSAT",
+      "MODIS_NDWI_SERIES": "Seri waktu NDWI MODIS",
+      "PRECIPITATION": "Curah hujan",
+      "SHOW_TIMESERIES": "Tampilkan Grafik Seri Waktu",
+      "FILTER_PERIOD": "Saring Periode"
+    }
+  },
+  "LANGUAGES": {
+    "PT_BR": "Portugis",
+    "EN": "Inggris",
+    "ID": "Bahasa Indonesia"
+  },
+  "ALERTS": {
+    "CAMPAIGN_NOT_FINISHED": "Kampanye belum selesai. Masih ada titik yang perlu diperiksa.",
+    "CAMPAIGN_CREATED": "Kampanye berhasil dibuat!",
+    "CAMPAIGN_UPDATED": "Kampanye berhasil diperbarui!",
+    "CAMPAIGN_DELETED": "Kampanye berhasil dihapus!",
+    "CAMPAIGN_DELETE_CONFIRM": "Apakah Anda yakin ingin menghapus kampanye \"{{campaignId}}\"?",
+    "CAMPAIGN_DELETE_ALL_POINTS_CONFIRM": "Apakah Anda yakin ingin menghapus SEMUA titik dari kampanye \"{{campaignId}}\"? Tindakan ini tidak dapat dibatalkan!",
+    "ERROR_LOADING_CAMPAIGNS": "Galat saat memuat kampanye",
+    "ERROR_CREATING_CAMPAIGN": "Galat saat membuat kampanye",
+    "ERROR_UPDATING_CAMPAIGN": "Galat saat memperbarui kampanye",
+    "ERROR_DELETING_CAMPAIGN": "Galat saat menghapus kampanye",
+    "ERROR_DELETING_POINTS": "Galat saat menghapus titik",
+    "SELECT_GEOJSON_FILE": "Pilih berkas GeoJSON",
+    "UPLOAD_SUCCESS": "Unggah berhasil!",
+    "UPLOAD_COMPLETE": "Unggah selesai: {{count}} titik diproses",
+    "CAMPAIGN_ID_REQUIRED": "ID kampanye wajib diisi",
+    "CAMPAIGN_NOT_FOUND": "Kampanye tidak ditemukan",
+    "CANNOT_DELETE_CAMPAIGN_WITH_POINTS": "Tidak dapat menghapus kampanye yang memiliki titik terkait",
+    "DELETE_CAMPAIGN_CONFIRM": "Apakah Anda yakin ingin menghapus kampanye ini? Tindakan ini tidak dapat dibatalkan!",
+    "FEATURE_COMING_SOON": "Fitur pengelolaan kelas akan segera diterapkan",
+    "FILL_ALL_FIELDS": "Gagal dalam operasi, lengkapi semua bidang",
+    "NO_UNCONSOLIDATED_POINTS": "Tidak ditemukan titik yang belum dikonsolidasi.",
+    "POINTS_CORRECTED": "Titik yang diperbaiki: {{count}}",
+    "CAMPAIGN_NO_ISSUES": "Kampanye tanpa masalah pada inspeksi.",
+    "CONFIRM_REMOVE_INSPECTIONS": "Apakah Anda yakin ingin menghapus inspeksi dari titik dengan ID {{pointId}}?\nPerlu diketahui bahwa setelah penghapusan selesai, tindakan ini tidak dapat dibatalkan.",
+    "INSPECTIONS_REMOVED": "Inspeksi dari titik {{pointId}} berhasil dihapus.",
+    "INVALID_DATE_RANGE": "Rentang tanggal tidak valid. Tahun awal harus lebih kecil atau sama dengan tahun akhir."
+  },
+  "DASHBOARD": {
+    "INSPECTED_POINTS": "Jumlah titik yang diperiksa",
+    "INSPECTIONS_NUMBER": "Jumlah inspeksi",
+    "COMPLETE_INSPECTIONS": "Inspeksi lengkap",
+    "INCOMPLETE_INSPECTIONS": "Inspeksi belum lengkap",
+    "NO_INSPECTIONS": "Belum Inspeksi",
+    "AVG_TIME_PER_POINT": "Rerata waktu per titik yang diperiksa",
+    "TOTAL_STORED_POINTS": "Total titik disimpan",
+    "POINTS_WITH_CACHE": "Titik dengan cache",
+    "POINTS_WITHOUT_CACHE": "Titik tanpa cache",
+    "POINTS_WITH_AGREEMENT": "Jumlah titik dengan kesepakatan",
+    "POINTS_CHANGED": "Titik yang diubah",
+    "POINTS_WITHOUT_AGREEMENT": "Titik tanpa kesepakatan",
+    "AVG_VOTES_BY_COVERAGE": "Rata-rata suara per cakupan dalam %",
+    "NO_DATA_AVAILABLE": "Tidak ada data tersedia",
+    "TABLE": {
+      "NAME": "Nama",
+      "STATUS": "Status",
+      "CURRENT_POINT": "Titik Saat Ini",
+      "DATE": "Tanggal"
+    }
+  },
+  "CACHE": {
+    "PROCESSING_STARTED": "Memulai pemrosesan {{totalPoints}} titik dalam {{totalBatches}} batch",
+    "BATCH_COMPLETED": "Batch {{batchNumber}}/{{totalBatches}} selesai - {{processedCount}} diproses, {{errorCount}} galat ({{progress}}%)",
+    "PROCESSING_POINT": "Memproses titik {{pointId}} - {{campaign}} ({{period}}/{{year}})",
+    "POINT_COMPLETED": "Titik {{pointId}} selesai - {{processedTiles}}/{{totalTiles}} tile diproses",
+    "TILE_ERROR": "Galat pada tile: {{url}} - {{error}}",
+    "PROCESSING_COMPLETED": "Pemrosesan selesai! {{totalProcessed}} berhasil, {{totalErrors}} galat",
+    "ERROR_LOADING_STATUS": "Galat saat memuat status cache",
+    "ERROR_LOADING_UNCACHED": "Galat saat memuat titik tanpa cache",
+    "PROCESSING_IN_PROGRESS": "Sudah ada pemrosesan yang sedang berjalan",
+    "SIMULATE_CACHE_CONFIRM": "Simulasikan cache untuk {{count}} titik?",
+    "REAL_CACHE_CONFIRM": "PERHATIAN: Lakukan cache NYATA untuk {{count}} titik?\nIni akan menggunakan sumber daya server!",
+    "PRIORITY_UPDATED": "Prioritas berhasil diperbarui!",
+    "ERROR_UPDATING_PRIORITY": "Galat saat memperbarui prioritas",
+    "PRIORITY_HIGH": "Tinggi",
+    "PRIORITY_MEDIUM": "Sedang",
+    "PRIORITY_LOW": "Rendah",
+    "PRIORITY_NORMAL": "Normal",
+    "ERROR_LOADING_JOB_STATUS": "Galat saat memuat status job",
+    "FILL_REQUIRED_FIELDS": "Mohon isi semua bidang wajib",
+    "BATCH_SIZE_RANGE": "Ukuran Batch harus antara 1 dan 10",
+    "MAX_POINTS_RANGE": "Maksimum titik harus antara 5 dan 100",
+    "UPDATE_JOB_CONFIG_SIMULATION": "Perbarui konfigurasi job ke mode SIMULASI?",
+    "UPDATE_JOB_CONFIG_REAL": "PERHATIAN: Perbarui konfigurasi job ke mode NYATA?\nIni akan membuat job menjalankan cache nyata secara otomatis!",
+    "JOB_CONFIG_UPDATED": "Konfigurasi job berhasil diperbarui!",
+    "ERROR_UPDATING_CONFIG": "Galat saat memperbarui konfigurasi",
+    "RUN_JOB_MANUALLY_SIMULATION": "Jalankan job secara manual dalam mode SIMULASI?",
+    "RUN_JOB_MANUALLY_REAL": "PERHATIAN: Jalankan job secara manual dalam mode NYATA?\nIni akan menggunakan sumber daya server!",
+    "JOB_EXECUTED_MANUALLY": "Job berhasil dijalankan secara manual!\nPeriksa log untuk memantau perkembangan.",
+    "ERROR_EXECUTING_JOB": "Galat saat menjalankan job",
+    "REMOVE_CACHE_WARNING": "PERHATIAN: Operasi ini akan menghapus tile dari cache secara permanen!\n\n",
+    "REMOVE_ALL_CACHE_CONFIRM": "Ini adalah operasi yang SANGAT berbahaya! Apakah Anda benar-benar yakin ingin menghapus SELURUH cache?",
+    "CACHE_REMOVED": "Cache berhasil dihapus!\n{{removed}} item dihapus.",
+    "ERROR_REMOVING_CACHE": "Galat saat menghapus cache"
+  },
+  "PERIODS": {
+    "DRY": "KERING",
+    "WET": "BASAH"
+  },
+  "TABS": {
+    "USERS": "Pengguna",
+    "POINTS": "Titik"
+  },
+  "CHARTS": {
+    "POINT_INSPECTION_TIME": "Waktu inspeksi titik (s)",
+    "AVG_TIME_ALL_POINTS": "Rata-rata waktu semua titik (s)",
+    "NDVI_SAVGOL": "NDVI (Savgol)",
+    "NDVI_ORIGINAL": "NDVI (Asli)",
+    "PRECIPITATION": "Curah hujan",
+    "PRECIPITATION_MM": "Curah hujan (mm)"
+  },
+  "VIS_PARAMS": {
+    "NATURAL_COLOR": "Warna Alami",
+    "AGRICULTURE": "Pertanian",
+    "FALSE_COLOR": "Warna Palsu",
+    "TVI_RED": "TVI Red"
+  },
+  "PROMPTS": {
+    "ENTER_NEW_LAND_USE": "Masukkan jenis penggunaan lahan baru:"
+  },
+  "AUTH": {
+    "NOT_AUTHENTICATED": "Tidak terautentikasi atau galat verifikasi",
+    "USERNAME_PASSWORD_REQUIRED": "Nama pengguna dan kata sandi wajib diisi",
+    "LOGIN_SUCCESS": "Berhasil masuk, mengarahkan ke admin/campaigns",
+    "LOGIN_ERROR": "Galat saat masuk"
+  },
+  "CAMPAIGN": {
+    "CAMPAIGN": "Kampanye"
+  },
+  "ADMIN_TICKETS": {
+    "TITLE": "Pengelolaan Tiket",
+    "STATS": {
+      "TOTAL": "Total",
+      "OPEN": "Terbuka",
+      "IN_PROGRESS": "Sedang Diproses",
+      "RESOLVED": "Terselesaikan",
+      "CLOSED": "Ditutup",
+      "COMPLAINTS": "Keluhan"
+    },
+    "FILTERS": {
+      "ALL_TYPES": "Semua jenis",
+      "ALL_STATUSES": "Semua status",
+      "ALL_CATEGORIES": "Semua kategori",
+      "ALL_ORIGINS": "Semua sumber",
+      "SEARCH_PLACEHOLDER": "Cari...",
+      "CLEAR": "Hapus"
+    },
+    "TYPES": {
+      "RECLAMACAO": "Keluhan",
+      "SUGESTAO": "Saran",
+      "DUVIDA": "Pertanyaan",
+      "ELOGIO": "Pujian"
+    },
+    "STATUSES": {
+      "ABERTO": "Terbuka",
+      "EM_ANALISE": "Sedang Ditinjau",
+      "EM_DESENVOLVIMENTO": "Sedang Dikembangkan",
+      "RESOLVIDO": "Terselesaikan",
+      "FECHADO": "Ditutup"
+    },
+    "CATEGORIES": {
+      "INTERFACE": "Antarmuka",
+      "DESEMPENHO": "Kinerja",
+      "FUNCIONALIDADE": "Fungsionalitas",
+      "DADOS": "Data",
+      "OUTRO": "Lainnya"
+    },
+    "ORIGINS": {
+      "TVI": "TVI",
+      "PLUGIN_FGI": "Plugin FGI",
+      "PONTO": "Pertanyaan titik"
+    },
+    "TABLE": {
+      "NUMBER": "No.",
+      "TITLE": "Judul",
+      "TYPE": "Jenis",
+      "SEVERITY": "Tingkat keparahan",
+      "STATUS": "Status",
+      "ORIGIN": "Sumber",
+      "AUTHOR": "Penulis",
+      "CREATED_AT": "Dibuat pada",
+      "ACTIONS": "Tindakan"
+    },
+    "MESSAGES": {
+      "LOADING": "Memuat...",
+      "NO_TICKETS_FOUND": "Tidak ada tiket ditemukan.",
+      "NO_TICKETS_FOUND_SHORT": "Tidak ada tiket ditemukan",
+      "SHOWING_RANGE": "Menampilkan",
+      "OF": "dari",
+      "TICKET_SINGULAR": "tiket",
+      "TICKET_PLURAL": "tiket",
+      "ITEMS_PER_PAGE": "Item per halaman:",
+      "PAGE_OF": "Halaman {{current}} dari {{total}}"
+    },
+    "ACTIONS": {
+      "VIEW_DETAIL": "Lihat detail",
+      "OPEN_POINT_DOUBT": "Buka pertanyaan titik",
+      "CHANGE_STATUS": "Ubah status",
+      "POINT_BADGE": "TITIK",
+      "POINT_DOUBT_TOOLTIP": "Pertanyaan yang tercatat selama inspeksi titik",
+      "OPEN_POINT_IN_SUPERVISOR": "Buka titik di supervisor"
+    }
+  },
+  "TICKETS": {
+    "TITLE": "Tiket",
+    "NEW_TICKET": "Tiket Baru",
+    "MY_TICKETS": "Tiket Saya",
+    "SEARCH_PLACEHOLDER": "Cari berdasarkan judul atau nomor...",
+    "CLEAR_FILTERS": "Hapus saringan",
+    "NO_TICKETS": "Tidak ada tiket ditemukan.",
+    "NOT_FOUND": "Tiket tidak ditemukan.",
+    "BACK_TO_LIST": "Kembali ke daftar",
+    "TABLE": {
+      "NUMBER": "No.",
+      "TITLE": "Judul",
+      "TYPE": "Jenis",
+      "STATUS": "Status",
+      "CREATED_AT": "Dibuat pada",
+      "AUTHOR": "Penulis",
+      "VOTES": "Suara"
+    },
+    "FORM": {
+      "TYPE": "Jenis",
+      "SELECT_TYPE": "Pilih jenis...",
+      "CATEGORY": "Kategori",
+      "SELECT_CATEGORY": "Pilih kategori...",
+      "SEVERITY": "Tingkat keparahan",
+      "SELECT_SEVERITY": "Pilih tingkat keparahan...",
+      "TITLE_LABEL": "Judul",
+      "TITLE_PLACEHOLDER": "Jelaskan subjek secara singkat (maks. 200 karakter)",
+      "DESCRIPTION": "Deskripsi",
+      "DESCRIPTION_PLACEHOLDER": "Jelaskan permintaan Anda secara rinci..."
+    },
+    "DETAIL": {
+      "AUTHOR": "Penulis",
+      "CATEGORY": "Kategori",
+      "CREATED_AT": "Dibuat pada",
+      "CAMPAIGN": "Kampanye",
+      "DESCRIPTION": "Deskripsi",
+      "STATUS_HISTORY": "Riwayat Status",
+      "FROM": "Dari",
+      "TO": "Ke",
+      "CHANGED_BY": "Diubah oleh",
+      "REASON": "Alasan",
+      "DATE": "Tanggal",
+      "COMMENTS": "Komentar",
+      "NO_COMMENTS": "Belum ada komentar.",
+      "NEW_COMMENT": "Komentar baru",
+      "COMMENT_PLACEHOLDER": "Tulis komentar Anda...",
+      "SEND_COMMENT": "Kirim komentar",
+      "VOTES": "Suara",
+      "YOU_VOTED": "Anda telah memilih",
+      "ATTACHMENTS": "Lampiran",
+      "NO_ATTACHMENTS": "Tidak ada lampiran.",
+      "UPLOAD_IMAGE": "Unggah gambar"
+    }
+  }
+}

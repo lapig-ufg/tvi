@@ -31,7 +31,8 @@
     "PASSWORD_PLACEHOLDER": "Senha",
     "CAMPAIGN_PLACEHOLDER": "Campanha",
     "LOGIN_BUTTON": "Entrar",
-    "LOGIN_FAILED": "Falha ao efetuar o login"
+    "LOGIN_FAILED": "Falha ao efetuar o login",
+    "REGION_BADGE": ""
   },
   "SUPERVISOR": {
     "TITLE": "Supervisor",
@@ -125,7 +126,8 @@
   },
   "LANGUAGES": {
     "PT_BR": "Português",
-    "EN": "English"
+    "EN": "English",
+    "ID": "Indonésio"
   },
   "ALERTS": {
     "CAMPAIGN_NOT_FINISHED": "A campanha não foi finalizada. Ainda há pontos para finalizarem as inspeções.",
@@ -245,6 +247,80 @@
   },
   "CAMPAIGN": {
     "CAMPAIGN": "Campanha"
+  },
+  "ADMIN_TICKETS": {
+    "TITLE": "Gestão de Tickets",
+    "STATS": {
+      "TOTAL": "Total",
+      "OPEN": "Abertos",
+      "IN_PROGRESS": "Em Progresso",
+      "RESOLVED": "Resolvidos",
+      "CLOSED": "Fechados",
+      "COMPLAINTS": "Reclamações"
+    },
+    "FILTERS": {
+      "ALL_TYPES": "Todos os tipos",
+      "ALL_STATUSES": "Todos os status",
+      "ALL_CATEGORIES": "Todas as categorias",
+      "ALL_ORIGINS": "Todas as origens",
+      "SEARCH_PLACEHOLDER": "Buscar...",
+      "CLEAR": "Limpar"
+    },
+    "TYPES": {
+      "RECLAMACAO": "Reclamação",
+      "SUGESTAO": "Sugestão",
+      "DUVIDA": "Dúvida",
+      "ELOGIO": "Elogio"
+    },
+    "STATUSES": {
+      "ABERTO": "Aberto",
+      "EM_ANALISE": "Em Análise",
+      "EM_DESENVOLVIMENTO": "Em Desenvolvimento",
+      "RESOLVIDO": "Resolvido",
+      "FECHADO": "Fechado"
+    },
+    "CATEGORIES": {
+      "INTERFACE": "Interface",
+      "DESEMPENHO": "Desempenho",
+      "FUNCIONALIDADE": "Funcionalidade",
+      "DADOS": "Dados",
+      "OUTRO": "Outro"
+    },
+    "ORIGINS": {
+      "TVI": "TVI",
+      "PLUGIN_FGI": "Plugin FGI",
+      "PONTO": "Dúvida de ponto"
+    },
+    "TABLE": {
+      "NUMBER": "Nº",
+      "TITLE": "Título",
+      "TYPE": "Tipo",
+      "SEVERITY": "Severidade",
+      "STATUS": "Status",
+      "ORIGIN": "Origem",
+      "AUTHOR": "Autor",
+      "CREATED_AT": "Criado em",
+      "ACTIONS": "Ações"
+    },
+    "MESSAGES": {
+      "LOADING": "Carregando...",
+      "NO_TICKETS_FOUND": "Nenhum ticket encontrado.",
+      "NO_TICKETS_FOUND_SHORT": "Nenhum ticket encontrado",
+      "SHOWING_RANGE": "Mostrando",
+      "OF": "de",
+      "TICKET_SINGULAR": "ticket",
+      "TICKET_PLURAL": "tickets",
+      "ITEMS_PER_PAGE": "Itens por página:",
+      "PAGE_OF": "Página {{current}} de {{total}}"
+    },
+    "ACTIONS": {
+      "VIEW_DETAIL": "Ver detalhe",
+      "OPEN_POINT_DOUBT": "Abrir dúvida do ponto",
+      "CHANGE_STATUS": "Alterar status",
+      "POINT_BADGE": "PONTO",
+      "POINT_DOUBT_TOOLTIP": "Dúvida registrada durante inspeção do ponto",
+      "OPEN_POINT_IN_SUPERVISOR": "Abrir ponto no supervisor"
+    }
   },
   "TICKETS": {
     "TITLE": "Tickets",

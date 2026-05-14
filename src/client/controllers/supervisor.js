@@ -118,10 +118,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         return $scope.campaignVisParams.map(function(vp) {
             // Mapeamento manual dos nomes conhecidos
             var displayNames = {
-                'landsat-tvi-true': 'Cor Natural',
-                'landsat-tvi-false': 'Falsa Cor',
-                'landsat-tvi-agri': 'Agricultura',
-                'landsat-tvi-red': 'TVI Red'
+                'landsat-tvi-true': i18nService.translate('SUPERVISOR.MAP.NATURAL_COLOR'),
+                'landsat-tvi-false': i18nService.translate('SUPERVISOR.MAP.FALSE_COLOR'),
+                'landsat-tvi-agri': i18nService.translate('SUPERVISOR.MAP.AGRICULTURE'),
+                'landsat-tvi-red': i18nService.translate('VIS_PARAMS.TVI_RED')
             };
             
             return {
@@ -165,9 +165,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             // Fallback: criar objetos básicos com nomes amigáveis
             var displayNames = {
                 'tvi-green': 'TVI Green',
-                'tvi-red': 'TVI Red',
-                'rgb': 'Cor Natural',
-                'false-color': 'Falsa Cor'
+                'tvi-red': i18nService.translate('VIS_PARAMS.TVI_RED'),
+                'rgb': i18nService.translate('SUPERVISOR.MAP.NATURAL_COLOR'),
+                'false-color': i18nService.translate('SUPERVISOR.MAP.FALSE_COLOR')
             };
             
             result = $scope.campaignSentinelVisParams.map(function(vp) {

@@ -31,7 +31,8 @@
     "PASSWORD_PLACEHOLDER": "Password",
     "CAMPAIGN_PLACEHOLDER": "Campaign",
     "LOGIN_BUTTON": "Login",
-    "LOGIN_FAILED": "Login failed"
+    "LOGIN_FAILED": "Login failed",
+    "REGION_BADGE": ""
   },
   "SUPERVISOR": {
     "TITLE": "Supervisor",
@@ -125,7 +126,8 @@
   },
   "LANGUAGES": {
     "PT_BR": "Português",
-    "EN": "English"
+    "EN": "English",
+    "ID": "Indonesian"
   },
   "ALERTS": {
     "CAMPAIGN_NOT_FINISHED": "The campaign has not been completed. There are still points to be inspected.",
@@ -245,6 +247,80 @@
   },
   "CAMPAIGN": {
     "CAMPAIGN": "Campaign"
+  },
+  "ADMIN_TICKETS": {
+    "TITLE": "Tickets Management",
+    "STATS": {
+      "TOTAL": "Total",
+      "OPEN": "Open",
+      "IN_PROGRESS": "In Progress",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed",
+      "COMPLAINTS": "Complaints"
+    },
+    "FILTERS": {
+      "ALL_TYPES": "All types",
+      "ALL_STATUSES": "All statuses",
+      "ALL_CATEGORIES": "All categories",
+      "ALL_ORIGINS": "All origins",
+      "SEARCH_PLACEHOLDER": "Search...",
+      "CLEAR": "Clear"
+    },
+    "TYPES": {
+      "RECLAMACAO": "Complaint",
+      "SUGESTAO": "Suggestion",
+      "DUVIDA": "Question",
+      "ELOGIO": "Compliment"
+    },
+    "STATUSES": {
+      "ABERTO": "Open",
+      "EM_ANALISE": "Under Review",
+      "EM_DESENVOLVIMENTO": "In Development",
+      "RESOLVIDO": "Resolved",
+      "FECHADO": "Closed"
+    },
+    "CATEGORIES": {
+      "INTERFACE": "Interface",
+      "DESEMPENHO": "Performance",
+      "FUNCIONALIDADE": "Functionality",
+      "DADOS": "Data",
+      "OUTRO": "Other"
+    },
+    "ORIGINS": {
+      "TVI": "TVI",
+      "PLUGIN_FGI": "FGI Plugin",
+      "PONTO": "Point doubt"
+    },
+    "TABLE": {
+      "NUMBER": "#",
+      "TITLE": "Title",
+      "TYPE": "Type",
+      "SEVERITY": "Severity",
+      "STATUS": "Status",
+      "ORIGIN": "Origin",
+      "AUTHOR": "Author",
+      "CREATED_AT": "Created at",
+      "ACTIONS": "Actions"
+    },
+    "MESSAGES": {
+      "LOADING": "Loading...",
+      "NO_TICKETS_FOUND": "No tickets found.",
+      "NO_TICKETS_FOUND_SHORT": "No tickets found",
+      "SHOWING_RANGE": "Showing",
+      "OF": "of",
+      "TICKET_SINGULAR": "ticket",
+      "TICKET_PLURAL": "tickets",
+      "ITEMS_PER_PAGE": "Items per page:",
+      "PAGE_OF": "Page {{current}} of {{total}}"
+    },
+    "ACTIONS": {
+      "VIEW_DETAIL": "View detail",
+      "OPEN_POINT_DOUBT": "Open point doubt",
+      "CHANGE_STATUS": "Change status",
+      "POINT_BADGE": "POINT",
+      "POINT_DOUBT_TOOLTIP": "Doubt registered during point inspection",
+      "OPEN_POINT_IN_SUPERVISOR": "Open point in supervisor"
+    }
   },
   "TICKETS": {
     "TITLE": "Tickets",
