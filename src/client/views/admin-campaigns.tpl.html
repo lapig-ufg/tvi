@@ -278,6 +278,10 @@
                                         title="Deletar pontos" ng-disabled="!campaign.totalPoints">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
+                                <button class="action-btn excess" ng-click="manageExcessInspections(campaign)"
+                                        title="Inspeções excedentes" ng-show="campaign.numInspec > 0">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
                                 <button class="action-btn delete" ng-click="deleteCampaign(campaign)"
                                         title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
                                     <i class="fas fa-times"></i>
@@ -941,6 +945,15 @@
 
 .action-btn.delete-points:hover {
     background: #dd6b20;
+}
+
+.action-btn.excess {
+    background: #d97706;
+    color: white;
+}
+
+.action-btn.excess:hover {
+    background: #b45309;
 }
 
 .action-btn.delete {

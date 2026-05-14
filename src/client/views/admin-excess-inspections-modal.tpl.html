@@ -1,0 +1,514 @@
+<style>
+.excess-modal .modal-dialog {
+    width: 90vw;
+    max-width: 1400px;
+    margin: 20px auto;
+}
+.excess-modal .modal-content {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.excess-modal .modal-header {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1.5rem 2rem;
+    position: relative;
+}
+.excess-modal .modal-title {
+    font-size: 1.75rem;
+    font-weight: 300;
+    color: #333;
+    margin: 0;
+}
+.excess-modal .modal-header .close {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    font-weight: 300;
+    opacity: 0.6;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.excess-modal .modal-header .close:hover { opacity: 1; }
+.excess-modal .modal-body {
+    padding: 0;
+    background: #fafafa;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+}
+.excess-modal .summary-bar {
+    background: #fff;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.excess-modal .summary-bar .label { color: #666; font-size: 0.85rem; }
+.excess-modal .summary-bar .value { font-weight: 600; font-size: 1.1rem; color: #333; }
+.excess-modal .summary-bar .value.warn { color: #d97706; }
+.excess-modal .tabs-nav {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 2rem;
+    display: flex;
+    gap: 0;
+}
+.excess-modal .tabs-nav button {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.excess-modal .tabs-nav button.active {
+    color: #1f2937;
+    border-bottom-color: #d97706;
+    font-weight: 600;
+}
+.excess-modal .tab-content { padding: 2rem; }
+.excess-modal .filter-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+.excess-modal .filter-row .form-group { margin-bottom: 0; }
+.excess-modal .filter-row label { font-size: 0.85rem; color: #666; }
+.excess-modal table.excess-table {
+    width: 100%;
+    background: #fff;
+    border-collapse: collapse;
+}
+.excess-modal table.excess-table th,
+.excess-modal table.excess-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: left;
+    vertical-align: top;
+    font-size: 0.9rem;
+}
+.excess-modal table.excess-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #555;
+}
+.excess-modal .badge-excess {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.excess-modal .inspector-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+.excess-modal .inspector-list li {
+    padding: 0.25rem 0;
+}
+.excess-modal .inspector-list .remove-tag {
+    display: inline-block;
+    margin-left: 0.5rem;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.excess-modal .pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+.excess-modal .pagination-bar button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.excess-modal .pagination-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+.excess-modal .config-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.excess-modal .config-card h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+.excess-modal .rule-options label {
+    display: block;
+    padding: 0.5rem 0;
+    cursor: pointer;
+}
+.excess-modal .rule-options input[type=radio] { margin-right: 0.5rem; }
+.excess-modal .preview-summary {
+    background: #fef3c7;
+    border-left: 4px solid #d97706;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+.excess-modal .preview-summary strong { color: #92400e; }
+.excess-modal .btn-action {
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.excess-modal .btn-primary { background: #2563eb; color: #fff; }
+.excess-modal .btn-primary:hover { background: #1d4ed8; }
+.excess-modal .btn-danger { background: #dc2626; color: #fff; }
+.excess-modal .btn-danger:hover { background: #b91c1c; }
+.excess-modal .btn-secondary { background: #e5e7eb; color: #1f2937; }
+.excess-modal .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+}
+.excess-modal .empty-state .glyphicon {
+    font-size: 3rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+}
+.excess-modal .skipped-row { background: #fef9c3; }
+.excess-modal .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+.excess-modal .result-panel {
+    background: #ecfdf5;
+    border-left: 4px solid #10b981;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+.excess-modal .result-panel.has-errors {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+}
+</style>
+
+<div class="excess-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">Inspeções excedentes — {{campaign._id}}</h3>
+        <button type="button" class="close" ng-click="$dismiss('close')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+        <div class="summary-bar">
+            <div>
+                <div class="label">numInspec configurado</div>
+                <div class="value">{{campaign.numInspec}}</div>
+            </div>
+            <div>
+                <div class="label">Pontos com excesso</div>
+                <div class="value warn">{{summary.total || 0}}</div>
+            </div>
+            <div ng-show="campaign.numPoint">
+                <div class="label">Total de pontos</div>
+                <div class="value">{{campaign.numPoint | number}}</div>
+            </div>
+        </div>
+
+        <div class="tabs-nav">
+            <button ng-class="{active: activeTab === 'list'}" ng-click="setTab('list')">
+                Pontos com excesso
+            </button>
+            <button ng-class="{active: activeTab === 'config'}" ng-click="setTab('config')">
+                Configurar remoção
+            </button>
+            <button ng-class="{active: activeTab === 'history'}" ng-click="setTab('history')">
+                Histórico
+            </button>
+        </div>
+
+        <!-- TAB 1: lista -->
+        <div class="tab-content" ng-show="activeTab === 'list'">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label>Bioma</label>
+                    <input type="text" class="form-control" ng-model="filters.biome" ng-change="onFilterChange()">
+                </div>
+                <div class="form-group">
+                    <label>UF</label>
+                    <input type="text" class="form-control" ng-model="filters.uf" ng-change="onFilterChange()">
+                </div>
+                <div class="form-group">
+                    <label>Inspetor (contém)</label>
+                    <input type="text" class="form-control" ng-model="filters.inspector" ng-change="onFilterChange()">
+                </div>
+                <div class="form-group">
+                    <label>Excedente mínimo</label>
+                    <input type="number" min="1" class="form-control" ng-model="filters.minExcess" ng-change="onFilterChange()">
+                </div>
+                <button class="btn-action btn-secondary" ng-click="loadList()">Recarregar</button>
+            </div>
+
+            <div class="loading" ng-show="loadingList">Carregando...</div>
+
+            <div class="empty-state" ng-show="!loadingList && (!listItems || listItems.length === 0)">
+                <div class="glyphicon glyphicon-ok-circle"></div>
+                <h4>Nenhum ponto com excesso encontrado.</h4>
+            </div>
+
+            <table class="excess-table" ng-show="!loadingList && listItems && listItems.length">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>ID</th>
+                        <th>Bioma</th>
+                        <th>UF</th>
+                        <th>Município</th>
+                        <th>Inspeções (length)</th>
+                        <th>Excesso</th>
+                        <th>Inspetores</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="item in listItems">
+                        <td>{{item.index}}</td>
+                        <td>{{item._id}}</td>
+                        <td>{{item.biome}}</td>
+                        <td>{{item.uf}}</td>
+                        <td>{{item.municipio}}</td>
+                        <td>{{item.userName.length}}</td>
+                        <td><span class="badge-excess">+{{item.excess}}</span></td>
+                        <td>
+                            <ul class="inspector-list">
+                                <li ng-repeat="ins in item.inspection">
+                                    <strong>{{ins.inspectorName}}</strong>
+                                    <span ng-show="ins.fillDate">({{ins.fillDate | date:'yyyy-MM-dd HH:mm'}})</span>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-bar" ng-show="listItems && listItems.length">
+                <div>Página {{listPage}} — exibindo {{listItems.length}} de {{listTotal}}</div>
+                <div>
+                    <button ng-disabled="listPage <= 1" ng-click="goPage(listPage - 1)">Anterior</button>
+                    <button ng-disabled="listPage * listLimit >= listTotal" ng-click="goPage(listPage + 1)">Próxima</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: configurar -->
+        <div class="tab-content" ng-show="activeTab === 'config'">
+            <div class="config-card">
+                <h4>Regra de remoção</h4>
+                <div class="rule-options">
+                    <label>
+                        <input type="radio" ng-model="config.rule" value="keepOldest">
+                        <strong>Manter os mais antigos</strong> — preserva os {{campaign.numInspec}} inspetores que registraram primeiro (por <code>fillDate</code>); remove o restante.
+                    </label>
+                    <label>
+                        <input type="radio" ng-model="config.rule" value="keepNewest">
+                        <strong>Manter os mais recentes</strong> — preserva as {{campaign.numInspec}} inspeções mais recentes; remove as antigas.
+                    </label>
+                    <label>
+                        <input type="radio" ng-model="config.rule" value="keepInspectors">
+                        <strong>Manter inspetores específicos</strong> — escolha quais inspetores devem permanecer (até {{campaign.numInspec}}).
+                    </label>
+                </div>
+                <div ng-show="config.rule === 'keepInspectors'" style="margin-top: 1rem;">
+                    <label>Usernames a manter (separados por vírgula):</label>
+                    <input type="text" class="form-control" ng-model="config.keepInspectorsRaw"
+                           placeholder="ex: Valentina, Juan, DIANA">
+                </div>
+            </div>
+
+            <div class="config-card">
+                <h4>Filtros (opcional)</h4>
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>Bioma</label>
+                        <input type="text" class="form-control" ng-model="config.filters.biome">
+                    </div>
+                    <div class="form-group">
+                        <label>UF</label>
+                        <input type="text" class="form-control" ng-model="config.filters.uf">
+                    </div>
+                    <div class="form-group">
+                        <label>Inspetor</label>
+                        <input type="text" class="form-control" ng-model="config.filters.inspector">
+                    </div>
+                    <div class="form-group">
+                        <label>Limite (maxPoints, ≤ 2000)</label>
+                        <input type="number" min="1" max="2000" class="form-control" ng-model="config.maxPoints">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button class="btn-action btn-primary"
+                        ng-click="runPreview()"
+                        ng-disabled="!config.rule || previewing">
+                    {{previewing ? 'Gerando preview...' : 'Gerar Preview (dry-run)'}}
+                </button>
+            </div>
+
+            <!-- Preview panel -->
+            <div ng-show="preview" style="margin-top: 2rem;">
+                <div class="preview-summary">
+                    <strong>{{preview.totalAffected}} pontos</strong> serão afetados —
+                    <strong>{{preview.totalRemovals}} inspeções</strong> seriam removidas.
+                    <span ng-show="preview.skipped && preview.skipped.length">
+                        <br><em>{{preview.skipped.length}} pontos foram ignorados (sessão ativa ou regra inválida).</em>
+                    </span>
+                </div>
+
+                <table class="excess-table">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Ponto</th>
+                            <th>Manter</th>
+                            <th>Remover</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="a in preview.actions | limitTo: previewLimit">
+                            <td>{{a.index}}</td>
+                            <td>{{a.pointId}}</td>
+                            <td>
+                                <ul class="inspector-list">
+                                    <li ng-repeat="k in a.toKeep">
+                                        <strong>{{k.inspectorName}}</strong>
+                                        <span ng-show="k.fillDate">({{k.fillDate | date:'yyyy-MM-dd HH:mm'}})</span>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td>
+                                <ul class="inspector-list">
+                                    <li ng-repeat="r in a.toRemove">
+                                        <strong>{{r.inspectorName}}</strong>
+                                        <span ng-show="r.fillDate">({{r.fillDate | date:'yyyy-MM-dd HH:mm'}})</span>
+                                        <span class="remove-tag">REMOVER</span>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr ng-repeat="s in preview.skipped" class="skipped-row">
+                            <td>{{s.index}}</td>
+                            <td>{{s.pointId}}</td>
+                            <td colspan="2"><em>Ignorado: {{s.reason}}{{s.detail ? ' — ' + s.detail : ''}}</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div ng-show="preview.actions.length > previewLimit" style="margin: 1rem 0;">
+                    <em>Exibindo {{previewLimit}} de {{preview.actions.length}}.</em>
+                    <button class="btn-action btn-secondary" ng-click="showAllPreview()">Mostrar todos</button>
+                </div>
+
+                <div class="config-card" style="margin-top: 1.5rem;">
+                    <h4>Confirmação destrutiva</h4>
+                    <p style="color: #6b7280; font-size: 0.9rem;">
+                        Esta operação remove inspeções definitivamente do registro do ponto.
+                        Cada remoção é registrada em <code>points_audit</code> e pode ser
+                        restaurada via <code>POST /api/admin/points/:id/restore</code> a partir do snapshot.
+                    </p>
+                    <label>Justificativa (mínimo 10 caracteres):</label>
+                    <textarea class="form-control" rows="3" ng-model="applyReason"
+                              placeholder="ex: Race condition pré-Tier 2.5 — 06-07/05/2026 — remover inspeções mais recentes preservando ordem cronológica original"></textarea>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn-action btn-danger"
+                                ng-click="applyChanges()"
+                                ng-disabled="!applyReason || applyReason.length < 10 || applying">
+                            {{applying ? 'Aplicando...' : 'Aplicar remoções'}}
+                        </button>
+                        <button class="btn-action btn-secondary" ng-click="clearPreview()">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultado pós-apply -->
+            <div ng-show="applyResult" class="result-panel" ng-class="{'has-errors': applyResult.failed > 0}">
+                <strong>Resultado:</strong>
+                {{applyResult.applied}} removidas com sucesso,
+                {{applyResult.idempotent}} já estavam ausentes,
+                <span ng-class="{'value warn': applyResult.failed > 0}">{{applyResult.failed}} falharam</span>.
+                <div ng-show="applyResult.errors && applyResult.errors.length" style="margin-top: 0.5rem;">
+                    <strong>Erros:</strong>
+                    <ul class="inspector-list">
+                        <li ng-repeat="e in applyResult.errors">
+                            <code>{{e.pointId}}</code> / {{e.inspectorName}}: {{e.error}}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: histórico -->
+        <div class="tab-content" ng-show="activeTab === 'history'">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label>Actor (username)</label>
+                    <input type="text" class="form-control" ng-model="historyFilters.actor" ng-change="loadHistory()">
+                </div>
+                <button class="btn-action btn-secondary" ng-click="loadHistory()">Recarregar</button>
+            </div>
+
+            <div class="loading" ng-show="loadingHistory">Carregando...</div>
+
+            <div class="empty-state" ng-show="!loadingHistory && (!historyItems || historyItems.length === 0)">
+                <div class="glyphicon glyphicon-folder-open"></div>
+                <h4>Nenhuma remoção registrada para esta campanha.</h4>
+            </div>
+
+            <table class="excess-table" ng-show="!loadingHistory && historyItems && historyItems.length">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Ponto</th>
+                        <th>Inspetor removido</th>
+                        <th>Actor</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="h in historyItems">
+                        <td>{{h.ts | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                        <td>{{h.pointId}}</td>
+                        <td>{{h.metadata.inspector}}</td>
+                        <td>{{h.actor.username}}</td>
+                        <td>{{h.reason}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-bar" ng-show="historyItems && historyItems.length">
+                <div>Página {{historyPage}} — exibindo {{historyItems.length}} de {{historyTotal}}</div>
+                <div>
+                    <button ng-disabled="historyPage <= 1" ng-click="goHistoryPage(historyPage - 1)">Anterior</button>
+                    <button ng-disabled="historyPage * historyLimit >= historyTotal" ng-click="goHistoryPage(historyPage + 1)">Próxima</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn-action btn-secondary" ng-click="$dismiss('close')">Fechar</button>
+    </div>
+</div>
