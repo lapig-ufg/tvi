@@ -757,5 +757,233 @@ module.exports = function(app) {
 		return count > 0;
 	};
 
+	/**
+	 * Tier 2.10 (2026-05-14) — detecção de "pontos zumbi".
+	 *
+	 * Ponto zumbi: ponto cuja posição em TODOS os blocos da campanha
+	 * (em todos os rounds) já foi ultrapassada — currentPointOffset > pos
+	 * OU bloco status='completed'/'discarded' — E cujo userName.length
+	 * ainda é menor que numInspec. Resultado: o ponto não tem mais caminho
+	 * de inspeção dentro da estrutura atual de blocos.
+	 *
+	 * Causa raiz (antes do Tier 2.10): o avanço-no-serve em findPointFromBlock
+	 * permitia que pontos servidos mas não salvos ficassem pulados. Após
+	 * o Tier 2.10 isso não ocorre mais, mas zumbis pré-existentes precisam
+	 * de recuperação via generateRecoveryBlocks.
+	 */
+	Blocos.findZombiePointIds = async function(campaignId) {
+		var campaign = await campaigns.findOne({ _id: campaignId });
+		if (!campaign) return [];
+		var numInspec = campaign.numInspec || 1;
+
+		var rows = await blocos.aggregate([
+			{ $match: { campaignId: campaignId } },
+			{ $project: { _id: 0, inspectionRound: 1, status: 1, currentPointOffset: 1, pointIds: 1 } },
+			{ $unwind: { path: '$pointIds', includeArrayIndex: 'pos' } },
+			{ $project: {
+				pointId: '$pointIds',
+				round: '$inspectionRound',
+				servedPast: { $cond: [{ $or: [
+					{ $eq: ['$status', 'completed'] },
+					{ $eq: ['$status', 'discarded'] },
+					{ $gt: ['$currentPointOffset', '$pos'] }
+				]}, 1, 0] }
+			}},
+			{ $group: {
+				_id: { pointId: '$pointId', round: '$round' },
+				roundServedPast: { $min: '$servedPast' }
+			}},
+			{ $group: {
+				_id: '$_id.pointId',
+				roundsAllPast: { $sum: '$roundServedPast' },
+				roundsTotal: { $sum: 1 }
+			}},
+			{ $match: { $expr: { $and: [
+				{ $eq: ['$roundsAllPast', '$roundsTotal'] },
+				{ $eq: ['$roundsTotal', numInspec] }
+			]}}},
+			{ $lookup: { from: 'points', localField: '_id', foreignField: '_id', as: 'pt' } },
+			{ $unwind: '$pt' },
+			{ $match: { $expr: { $lt: [ { $size: { $ifNull: ['$pt.userName', []] } }, numInspec ] } } },
+			{ $project: {
+				_id: 1,
+				userNameLen: { $size: { $ifNull: ['$pt.userName', []] } },
+				index: '$pt.index'
+			}},
+			{ $sort: { userNameLen: 1, index: 1 } }
+		], { allowDiskUse: true }).toArray();
+
+		return rows;
+	};
+
+	/**
+	 * Tier 2.10 (2026-05-14) — relatório de zumbis para endpoint admin.
+	 *
+	 * Retorna { total, byUserNameLength: {<len>: count}, sample: [...] }.
+	 * Amostra limitada a `sampleSize` pontos (default 50).
+	 */
+	Blocos.getZombiesReport = async function(request, response) {
+		try {
+			var campaignId = request.params.id;
+			var sampleSize = parseInt((request.query && request.query.sampleSize) || '50', 10);
+			if (isNaN(sampleSize) || sampleSize < 1) sampleSize = 50;
+			if (sampleSize > 500) sampleSize = 500;
+
+			var zombies = await Blocos.findZombiePointIds(campaignId);
+
+			var byLen = {};
+			zombies.forEach(function(z) {
+				var k = String(z.userNameLen);
+				byLen[k] = (byLen[k] || 0) + 1;
+			});
+
+			response.json({
+				campaignId: campaignId,
+				total: zombies.length,
+				byUserNameLength: byLen,
+				sample: zombies.slice(0, sampleSize).map(function(z) {
+					return { _id: z._id, index: z.index, userNameLen: z.userNameLen };
+				})
+			});
+		} catch (err) {
+			await logger.error('Erro ao gerar relatório de zumbis', {
+				module: 'blocos', function: 'getZombiesReport',
+				metadata: { error: err.message }
+			});
+			response.status(500).json({ error: 'Erro interno ao gerar relatório de zumbis' });
+		}
+	};
+
+	/**
+	 * Tier 2.10 (2026-05-14) — gera blocos de recovery para pontos zumbi.
+	 *
+	 * Para cada valor de userName.length L < numInspec entre os zumbis,
+	 * cria blocos novos com inspectionRound = L (guard Tier 2.9 exige
+	 * length == round para servir). Os blocos têm blockIndex maior que o
+	 * máximo atual e flag isRecovery=true para auditoria.
+	 *
+	 * Guard de idempotência: descarta pointIds já presentes em algum bloco
+	 * available/assigned antes de criar.
+	 */
+	Blocos.generateRecoveryBlocks = async function(request, response) {
+		try {
+			var campaignId = request.params.id;
+			var blockSize = parseInt((request.body && request.body.blockSize) || '5', 10);
+			if (blockSize < 1 || blockSize > 1000) blockSize = 5;
+
+			var zombies = await Blocos.findZombiePointIds(campaignId);
+			if (zombies.length === 0) {
+				return response.json({ success: true, created: 0, message: 'Nenhum zumbi encontrado.' });
+			}
+
+			// Idempotência: excluir pointIds que já estão em bloco available/assigned
+			var zombieIds = zombies.map(function(z) { return z._id; });
+			var stillActive = await blocos.find({
+				campaignId: campaignId,
+				status: { $in: ['available', 'assigned'] },
+				pointIds: { $in: zombieIds }
+			}, { pointIds: 1 }).toArray();
+			var activeIds = {};
+			stillActive.forEach(function(b) {
+				(b.pointIds || []).forEach(function(pid) { activeIds[pid] = true; });
+			});
+			var eligible = zombies.filter(function(z) { return !activeIds[z._id]; });
+			if (eligible.length === 0) {
+				return response.json({
+					success: true, created: 0,
+					message: 'Todos os zumbis já constam em blocos available/assigned.'
+				});
+			}
+
+			// Próximo blockIndex (continua a sequência existente)
+			var maxBlockAgg = await blocos.aggregate([
+				{ $match: { campaignId: campaignId } },
+				{ $group: { _id: null, maxIdx: { $max: '$blockIndex' } } }
+			]).toArray();
+			var nextBlockIndex = (maxBlockAgg[0] && maxBlockAgg[0].maxIdx ? maxBlockAgg[0].maxIdx : 0) + 1;
+
+			// Herdar timeoutMinutes do bloco mais recente
+			var latestBlock = await blocos.findOne(
+				{ campaignId: campaignId },
+				{ sort: { createdAt: -1 } }
+			);
+			var timeoutMinutes = (latestBlock && latestBlock.timeoutMinutes) || 480;
+
+			// Agrupar zumbis por userNameLen → inspectionRound
+			var byLen = {};
+			eligible.forEach(function(z) {
+				var L = z.userNameLen;
+				if (!byLen[L]) byLen[L] = [];
+				byLen[L].push(z._id);
+			});
+
+			var now = new Date();
+			var blocksToInsert = [];
+
+			Object.keys(byLen).forEach(function(LStr) {
+				var inspectionRound = parseInt(LStr, 10); // Tier 2.9: length == round
+				var ids = byLen[LStr];
+				for (var i = 0; i < ids.length; i += blockSize) {
+					var chunk = ids.slice(i, i + blockSize);
+					blocksToInsert.push({
+						campaignId: campaignId,
+						blockIndex: nextBlockIndex++,
+						inspectionRound: inspectionRound,
+						pointIndexStart: null,
+						pointIndexEnd: null,
+						pointIds: chunk,
+						size: chunk.length,
+						status: 'available',
+						assignedTo: null,
+						assignedAt: null,
+						completedAt: null,
+						currentPointOffset: 0,
+						timeoutMinutes: timeoutMinutes,
+						discardedBy: null,
+						discardedAt: null,
+						discardReason: null,
+						_skippedBy: [],
+						isRecovery: true,
+						recoveryCreatedAt: now,
+						createdAt: now
+					});
+				}
+			});
+
+			if (blocksToInsert.length === 0) {
+				return response.json({ success: true, created: 0, message: 'Nada a criar.' });
+			}
+
+			await blocos.insertMany(blocksToInsert);
+
+			await logger.info('Blocos de recovery criados', {
+				module: 'blocos', function: 'generateRecoveryBlocks',
+				metadata: {
+					campaignId: campaignId,
+					blocksCreated: blocksToInsert.length,
+					pointsRecovered: eligible.length,
+					blockSize: blockSize
+				}
+			});
+
+			response.json({
+				success: true,
+				created: blocksToInsert.length,
+				pointsRecovered: eligible.length,
+				blockSize: blockSize,
+				blockIndexRange: {
+					from: blocksToInsert[0].blockIndex,
+					to: blocksToInsert[blocksToInsert.length - 1].blockIndex
+				}
+			});
+		} catch (err) {
+			await logger.error('Erro ao gerar blocos de recovery', {
+				module: 'blocos', function: 'generateRecoveryBlocks',
+				metadata: { error: err.message, stack: err.stack }
+			});
+			response.status(500).json({ error: 'Erro interno ao gerar blocos de recovery' });
+		}
+	};
+
 	return Blocos;
 };

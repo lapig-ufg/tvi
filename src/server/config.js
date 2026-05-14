@@ -116,6 +116,15 @@ module.exports = function(app) {
 					"cron": '0 */5 * * * *',
 					"runOnAppStart": false,
 					"params": {}
+				},
+				{
+					// Tier 2.10 (2026-05-14) — monitora pontos zumbi por campanha
+					// e dispara alerta Telegram quando ultrapassar threshold com
+					// crescimento significativo desde a última checagem.
+					"name": "zombieMonitor",
+					"cron": '0 0 */6 * * *',
+					"runOnAppStart": false,
+					"params": { "threshold": 50, "deltaThreshold": 10 }
 				}
 			]
 		},

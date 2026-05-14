@@ -49,4 +49,16 @@ module.exports = function (app) {
         requireSuperAdmin,
         errorHandler.asyncHandler(blocos.deleteAllBlocks)
     );
+
+    // Tier 2.10 (2026-05-14) — relatório de pontos zumbi
+    app.get('/api/admin/campaigns/:id/zombies',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(blocos.getZombiesReport)
+    );
+
+    // Tier 2.10 (2026-05-14) — gera blocos de recovery para zumbis
+    app.post('/api/admin/campaigns/:id/recover-zombies',
+        requireSuperAdmin,
+        errorHandler.asyncHandler(blocos.generateRecoveryBlocks)
+    );
 };

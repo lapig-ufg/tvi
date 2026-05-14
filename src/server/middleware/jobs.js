@@ -889,6 +889,87 @@ module.exports = function(app) {
 		});
 	};
 
+	/**
+	 * Tier 2.10 (2026-05-14) — monitora "pontos zumbi" em campanhas com blocos.
+	 *
+	 * A cada execução: lista campanhas com blocos, conta zumbis em cada uma
+	 * (via Blocos.findZombiePointIds), persiste em tvi_zombie_counts para
+	 * histórico, e envia alerta Telegram se ultrapassar threshold E houver
+	 * crescimento significativo desde a última checagem.
+	 *
+	 * params:
+	 *   - threshold: contagem mínima para considerar alerta (default 50)
+	 *   - deltaThreshold: aumento mínimo desde última checagem (default 10)
+	 */
+	Jobs.zombieMonitor = async function(params, logStream, callback) {
+		writeLog(logStream, 'Iniciando zombieMonitor...');
+		var threshold = (params && typeof params.threshold === 'number') ? params.threshold : 50;
+		var deltaThreshold = (params && typeof params.deltaThreshold === 'number') ? params.deltaThreshold : 10;
+
+		var blocos = app.repository && app.repository.collections && app.repository.collections.tvi_blocos;
+		var counts = app.repository && app.repository.collections && app.repository.collections.tvi_zombie_counts;
+		var blocosController = app.controllers && app.controllers.blocos;
+		var telegram = app.services && app.services.telegramNotifier;
+
+		if (!blocos || !counts || !blocosController) {
+			writeLog(logStream, 'Dependências indisponíveis; pulando.');
+			return callback();
+		}
+
+		try {
+			var campaignIds = await blocos.distinct('campaignId');
+			writeLog(logStream, 'Campanhas com blocos: ' + campaignIds.length);
+
+			for (var i = 0; i < campaignIds.length; i++) {
+				var campaignId = campaignIds[i];
+				try {
+					var zombies = await blocosController.findZombiePointIds(campaignId);
+					var count = zombies.length;
+
+					var last = await counts.findOne(
+						{ campaignId: campaignId },
+						{ sort: { checkedAt: -1 } }
+					);
+					var lastCount = (last && typeof last.count === 'number') ? last.count : 0;
+					var delta = count - lastCount;
+
+					await counts.insertOne({
+						campaignId: campaignId,
+						count: count,
+						previousCount: lastCount,
+						delta: delta,
+						checkedAt: new Date()
+					});
+
+					writeLog(logStream, 'Campanha ' + campaignId + ': zumbis=' + count + ' (delta=' + delta + ')');
+
+					if (count > threshold && delta > deltaThreshold) {
+						if (telegram && telegram.chatId && typeof telegram.sendMessage === 'function') {
+							var msg = '<b>[TVI] Pontos zumbi acima do limite</b>\n' +
+								'Campanha: <code>' + campaignId + '</code>\n' +
+								'Total: <b>' + count + '</b>\n' +
+								'Δ desde última checagem: <b>+' + delta + '</b>\n' +
+								'Threshold: ' + threshold + ' | Δ-threshold: ' + deltaThreshold;
+							try {
+								await telegram.sendMessage(telegram.chatId, msg);
+								writeLog(logStream, '  Alerta Telegram enviado.');
+							} catch (te) {
+								writeLog(logStream, '  Falha ao enviar Telegram: ' + te.message);
+							}
+						} else {
+							writeLog(logStream, '  ALERTA (Telegram indisponível): ' + campaignId + ' count=' + count + ' delta=+' + delta);
+						}
+					}
+				} catch (ce) {
+					writeLog(logStream, 'Falha em ' + campaignId + ': ' + ce.message);
+				}
+			}
+		} catch (err) {
+			writeLog(logStream, 'Falha geral: ' + err.message);
+		}
+		callback();
+	};
+
 	Jobs.start = function() {
 		// Ensure log directory exists at startup
 		ensureLogDirectory();
