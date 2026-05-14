@@ -110,6 +110,7 @@
       "CLASS": "Class",
       "BORDER_PIXEL": "Border Pixel",
       "SUBMIT": "Submit",
+      "SUBMIT_AND_EXIT": "Submit and Exit",
       "VALIDATION_ERROR": "Please select a land use class for all periods before submitting."
     },
     "MAP": {

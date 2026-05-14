@@ -110,6 +110,7 @@
       "CLASS": "Classe",
       "BORDER_PIXEL": "Pixel de Borda",
       "SUBMIT": "Enviar",
+      "SUBMIT_AND_EXIT": "Enviar e Sair",
       "VALIDATION_ERROR": "Por favor, selecione uma classe de uso da terra para todos os períodos antes de submeter."
     },
     "MAP": {

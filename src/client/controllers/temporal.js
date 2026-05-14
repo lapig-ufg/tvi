@@ -319,41 +319,57 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }, function () { /* dismiss: nada a fazer */ });
         };
 
-        $scope.submitForm = function () {
-            // Validar se todos os períodos têm uma classe de uso da terra selecionada
-            var hasInvalidAnswer = false;
+        function buildFormPoint() {
             for (var i = 0; i < $scope.answers.length; i++) {
                 if (!$scope.answers[i].landUse || $scope.answers[i].landUse === '') {
-                    hasInvalidAnswer = true;
-                    break;
+                    NotificationDialog.error(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
+                    return null;
                 }
             }
-            
-            if (hasInvalidAnswer) {
-                NotificationDialog.error(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
-                return;
-            }
-            
-            var formPoint = {
+            return {
                 _id: $scope.point._id,
                 inspection: {
                     counter: $scope.counter,
                     form: $scope.answers
                 }
-            }
+            };
+        }
 
+        function postPoint(formPoint, onSuccess) {
             $scope.onSubmission = true;
             $scope.showloading = true;
-
             requester._post('points/update-point', {"point": formPoint}, function (data) {
                 if (data.success) {
-                    requester._get('points/next-point', loadPoint);
+                    onSuccess();
                 } else {
                     $scope.showloading = false;
                     $scope.onSubmission = false;
                 }
             });
         }
+
+        $scope.submitForm = function () {
+            var formPoint = buildFormPoint();
+            if (!formPoint) return;
+            postPoint(formPoint, function () {
+                requester._get('points/next-point', loadPoint);
+            });
+        };
+
+        // TKT: botão "Enviar e Sair" — salva o ponto atual e faz logoff direto,
+        // sem chamar next-point. Evita que o intérprete que quer encerrar a
+        // sessão deixe um ponto novo com underInspection > 0 órfão.
+        $scope.submitFormAndExit = function () {
+            var formPoint = buildFormPoint();
+            if (!formPoint) return;
+            postPoint(formPoint, function () {
+                requester._get('login/logoff', function () {
+                    $scope.data = undefined;
+                    $rootScope.user = undefined;
+                    $location.path('login');
+                });
+            });
+        };
 
         // Debounce de changePeriod para evitar que cliques rápidos encadeados
         // disparem o ciclo destroy/create das diretivas wms-map dentro da

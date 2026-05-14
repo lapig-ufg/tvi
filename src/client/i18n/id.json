@@ -110,6 +110,7 @@
       "CLASS": "Kelas",
       "BORDER_PIXEL": "Pixel Tepi",
       "SUBMIT": "Kirim",
+      "SUBMIT_AND_EXIT": "Kirim dan Keluar",
       "VALIDATION_ERROR": "Mohon pilih kelas penggunaan lahan untuk semua periode sebelum mengirim."
     },
     "MAP": {
