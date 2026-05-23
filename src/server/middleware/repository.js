@@ -65,7 +65,11 @@ module.exports = function (app) {
                     // points_audit e tvi_blocos_release_log adicionadas no Tier 1 (2026-05-09)
                     // do plano de defesa contra perda de inspeções: append-only, snapshot
                     // de toda mutação destrutiva sobre points / liberação de blocos.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts'];
+                    // destructive_tokens (2026-05-23): store persistente de tokens de
+                    // confirmação destrutiva. Substitui Map em memória, que não funcionava
+                    // em cluster Node + multi-pod (token emitido num worker/pod era invisível
+                    // ao receptor do apply). TTL index purga após expiresAt.
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -295,6 +299,23 @@ module.exports = function (app) {
                 ], function(err) {
                     if (err && err.code !== 11000) {
                         console.error('Erro ao criar índices para tvi_blocos_release_log:', err);
+                    }
+                    cb();
+                });
+            },
+            // 2026-05-23 — índices para destructive_tokens.
+            // expiresAt_ttl: o reaper do TTL do MongoDB roda a cada ~60s, então um doc
+            // expirado pode sobreviver até ~120s; segurança é garantida pela query de
+            // claim ({ expiresAt: { $gt: new Date() } }) no middleware.
+            function(cb) {
+                if (!Repository.collections.destructive_tokens) return cb();
+
+                Repository.collections.destructive_tokens.createIndexes([
+                    { key: { expiresAt: 1 }, name: 'expiresAt_ttl', expireAfterSeconds: 0 },
+                    { key: { intent: 1, issuedAt: -1 }, name: 'intent_issuedAt' }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para destructive_tokens:', err);
                     }
                     cb();
                 });
