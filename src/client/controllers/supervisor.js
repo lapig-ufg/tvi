@@ -1,6 +1,19 @@
 'uses trict';
 
+// Sentinel que sinaliza ao servidor "apenas pontos não consolidados", sem
+// depender de strings traduzidas. Espelha
+// src/server/controllers/supervisor.js (NOT_CONSOLIDATED_TOKEN). Após o
+// checkbox dedicado, o token é enviado em filter.notConsolidatedOnly em
+// vez de em filter.landUse; o fallback no servidor cobre o cliente legado.
+var NOT_CONSOLIDATED_TOKEN = '__NOT_CONSOLIDATED__';
+
 Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog) {
+    // Sequência monotônica de submits — usada por isCurrent() em $scope.submit
+    // para descartar respostas obsoletas de chamadas que perderam a corrida
+    // (cliques rápidos Anterior/Próximo, troca rápida de filtro etc.).
+    var submitSeq = 0;
+    $scope.onlyNotConsolidated = false;
+
     $scope.showCharts = false
     $scope.showChartsLandsat = false;
     $scope.showChartsLandsatNdwi = false;
@@ -796,6 +809,13 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
 
         $scope.submit = function (index) {
+            // Cada submit recebe um ID novo. As callbacks descartam suas
+            // respostas se outro submit já foi disparado depois — evita que
+            // uma resposta lenta sobrescreva o estado da última seleção do
+            // usuário (causa raiz do "filtro afrouxa após clicar rápido").
+            var myId = ++submitSeq;
+            var isCurrent = function () { return myId === submitSeq; };
+
             $scope.showloading = true;
             var filter = {
                 "index": index
@@ -808,7 +828,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             }
 
             var allText = i18nService.translate('COMMON.ALL');
-            
+
             if ($scope.selectedLandUse && $scope.selectedLandUse != allText)
                 filter["landUse"] = $scope.selectedLandUse;
 
@@ -829,14 +849,25 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 filter["agreementPoint"] = true;
             }
 
-            updatedClassConsolidated(filter)
-            getClassLandUse(filter);
-            landUseFilter(filter);
-            usersFilter(filter);
-            biomeFilter(filter);
-            ufFilter(filter);
+            // Dimensão "apenas não consolidados" — independente de classe.
+            if ($scope.onlyNotConsolidated) {
+                filter["notConsolidatedOnly"] = true;
+            }
 
-            requester._post('points/get-point', filter, loadPoint);
+            updatedClassConsolidated(filter);
+            getClassLandUse(filter);
+            // Cada *Filter recebe SEU PRÓPRIO clone — assim, as gravações
+            // defensivas (if (filter.X == undefined) filter.X = allText) que
+            // cada callback faz não vazam entre as chamadas paralelas.
+            landUseFilter(Object.assign({}, filter), isCurrent);
+            usersFilter(Object.assign({}, filter), isCurrent);
+            biomeFilter(Object.assign({}, filter), isCurrent);
+            ufFilter(Object.assign({}, filter), isCurrent);
+
+            requester._post('points/get-point', filter, function (data) {
+                if (!isCurrent()) return;
+                loadPoint(data);
+            });
             $scope.showloading = false;
         }
 
@@ -892,10 +923,18 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
-        var landUseFilter = function (filter) {
+        // O segundo parâmetro `isCurrent` é a sentinela de versão do submit:
+        // quando outra chamada $scope.submit() acontece depois, isCurrent()
+        // retorna false e a resposta é descartada. Isso evita que respostas
+        // fora de ordem sobrescrevam $scope.selectX com valores antigos.
+        var landUseFilter = function (filter, isCurrent) {
             requester._get('points/landUses', filter, function (landUses) {
+                if (typeof isCurrent === 'function' && !isCurrent()) return;
                 landUses.unshift(i18nService.translate('COMMON.ALL'));
-                landUses.push(i18nService.translate('COMMON.NOT_CONSOLIDATED'));
+                // Removido: o item "Não Consolidados" agora é um checkbox
+                // separado ($scope.onlyNotConsolidated) — combina livremente
+                // com classe/bioma/UF e o contador na header reflete o filtro
+                // composto. Veja supervisor.tpl.html.
 
                 if (filter.landUse == undefined)
                     filter.landUse = i18nService.translate('COMMON.ALL');
@@ -905,8 +944,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
-        var usersFilter = function (filter) {
+        var usersFilter = function (filter, isCurrent) {
             requester._get('points/users', filter, function (userNames) {
+                if (typeof isCurrent === 'function' && !isCurrent()) return;
                 userNames.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.userName == undefined)
@@ -917,8 +957,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
-        var biomeFilter = function (filter) {
+        var biomeFilter = function (filter, isCurrent) {
             requester._get('points/biome', filter, function (biomes) {
+                if (typeof isCurrent === 'function' && !isCurrent()) return;
                 biomes.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.biome == undefined)
@@ -929,8 +970,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             });
         }
 
-        var ufFilter = function (filter) {
+        var ufFilter = function (filter, isCurrent) {
             requester._get('points/uf', filter, function (stateUF) {
+                if (typeof isCurrent === 'function' && !isCurrent()) return;
                 stateUF.unshift(i18nService.translate('COMMON.ALL'));
 
                 if (filter.uf == undefined)

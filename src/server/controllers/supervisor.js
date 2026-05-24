@@ -1,6 +1,16 @@
 const csv = require('fast-csv');
 const proj4 = require('proj4');
 const {exec} = require("child_process");
+const supervisorFilters = require('../util/supervisorFilters');
+
+const {
+    BIOME_PROPERTY_KEYS,
+    UF_PROPERTY_KEYS,
+    buildResolvedFieldExpression,
+    biomeOrClause,
+    ufOrClause,
+    resolveFilterFlags
+} = supervisorFilters;
 
 module.exports = function (app) {
     // Usar o logger do app
@@ -11,46 +21,6 @@ module.exports = function (app) {
     var mosaics = app.repository.collections.mosaics;
     var infoCampaign = app.repository.collections.campaign;
     const config = app.config;
-
-    // -------------------------------------------------------------------------
-    // Fallback case-insensitive para filtros de bioma/UF (TKT-000010).
-    //
-    // Antes da correção do pipeline de ingestão, GeoJSONs com chaves em caixa
-    // alta (BIOMA, UF, Estado, etc.) deixaram o campo top-level `biome`/`uf`
-    // como null. Os helpers abaixo constroem cláusulas `$or` sobre
-    // `properties.<variante>` para atender pontos legados sem exigir
-    // reimportação. Novos uploads já gravam o valor top-level normalizado.
-    // -------------------------------------------------------------------------
-    const BIOME_PROPERTY_KEYS = ['biome', 'Biome', 'BIOME', 'bioma', 'Bioma', 'BIOMA'];
-    const UF_PROPERTY_KEYS = [
-        'uf', 'UF', 'Uf',
-        'estado', 'Estado', 'ESTADO',
-        'sigla_uf', 'SIGLA_UF', 'sigla_estado', 'SIGLA_ESTADO',
-        'unidade_federacao', 'UNIDADE_FEDERACAO',
-        'unidade_federativa', 'UNIDADE_FEDERATIVA'
-    ];
-
-    function buildResolvedFieldExpression(topLevelField, propertyKeys) {
-        // Monta um $ifNull aninhado que devolve o primeiro campo não nulo
-        // entre o top-level e cada chave em properties.*.
-        var expr = '$' + topLevelField;
-        for (var i = 0; i < propertyKeys.length; i++) {
-            expr = { $ifNull: [expr, '$properties.' + propertyKeys[i]] };
-        }
-        return expr;
-    }
-
-    function biomeOrClause(value) {
-        return BIOME_PROPERTY_KEYS
-            .map(function (k) { return { ['properties.' + k]: value }; })
-            .concat([{ biome: value }]);
-    }
-
-    function ufOrClause(value) {
-        return UF_PROPERTY_KEYS
-            .map(function (k) { return { ['properties.' + k]: value }; })
-            .concat([{ uf: value }]);
-    }
 
     var getImageDates = function (path, row, callback) {
         var filterMosaic = {'dates.path': path, 'dates.row': row};
@@ -288,12 +258,13 @@ module.exports = function (app) {
             filter["userName"] = userName;
         }
 
-        if (landUse) {
-            if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] = "Não consolidado";
-            } else {
-                filter["inspection.form.landUse"] = landUse;
-            }
+        // Filtro composto (classe + status): ver resolveFilterFlags.
+        var resolved = resolveFilterFlags(landUse, request.body.notConsolidatedOnly);
+        if (resolved.landUse) {
+            filter["inspection.form.landUse"] = resolved.landUse;
+        }
+        if (resolved.notConsolidatedOnly) {
+            filter["classConsolidated"] = "Não consolidado";
         }
 
         // TKT-000010: aceita pontos com biome/uf legados apenas em properties.*
@@ -323,7 +294,7 @@ module.exports = function (app) {
         }
 
         if (agreementPoint) {
-            if (userName || !landUse) {
+            if (userName || !resolved.landUse) {
                 var pipeline = [
                     {$match: filter},
                     {
@@ -365,7 +336,7 @@ module.exports = function (app) {
                                                 as: "consolidated",
                                                 cond: {
                                                     $and: [
-                                                        {$eq: ['$$consolidated', landUse]}
+                                                        {$eq: ['$$consolidated', resolved.landUse]}
                                                     ]
                                                 }
                                             }
@@ -614,30 +585,41 @@ module.exports = function (app) {
 
     Points.landUseFilter = function (request, response) {
         var campaign = request.session.user.campaign;
-        //var landUse = request.query.landUse;
         var userName = request.query.userName;
         var biome = request.query.biome;
         var uf = request.query.uf;
+        // notConsolidatedOnly chega como string 'true' em query string.
+        var notConsolidatedOnly = request.query.notConsolidatedOnly === 'true' || request.query.notConsolidatedOnly === true;
 
         var filter = {
             "campaign": campaign._id
         }
 
-        /*if(landUse) {
-            filter["inspection.form.landUse"] = landUse;
-        }*/
-
         if (userName) {
             filter["userName"] = userName;
         }
 
-        if (biome) {
-            filter["biome"] = biome;
+        if (notConsolidatedOnly) {
+            filter["classConsolidated"] = "Não consolidado";
         }
 
+        // TKT-000010: pontos legados de Mata Atlântica/Caatinga têm biome/uf
+        // só em properties.* — sem o $or aqui, o distinct retornaria vazio
+        // para esses biomas, removendo classes como "Pastagem Natural" da
+        // dropdown. Mesmo padrão composto do getPoint.
+        var fallbackClauses = [];
         if (uf) {
-            filter["uf"] = uf;
+            fallbackClauses.push({ $or: ufOrClause(uf) });
         }
+        if (biome) {
+            fallbackClauses.push({ $or: biomeOrClause(biome) });
+        }
+        if (fallbackClauses.length === 1) {
+            filter.$or = fallbackClauses[0].$or;
+        } else if (fallbackClauses.length > 1) {
+            filter.$and = fallbackClauses;
+        }
+
         pointsCollection.distinct('inspection.form.landUse', filter, function (err, landUses) {
             response.send(landUses);
             response.end();
@@ -647,33 +629,36 @@ module.exports = function (app) {
     Points.usersFilter = function (request, response) {
         var campaign = request.session.user.campaign;
         var landUse = request.query.landUse;
-        //var userName = request.query.userName;
         var biome = request.query.biome;
         var uf = request.query.uf;
+        var notConsolidatedOnly = request.query.notConsolidatedOnly === 'true' || request.query.notConsolidatedOnly === true;
 
         var filter = {
             "campaign": campaign._id
         }
 
-        if (landUse) {
-            if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] = "Não consolidado";
-            } else {
-                filter["inspection.form.landUse"] = landUse;
-            }
+        var resolved = resolveFilterFlags(landUse, notConsolidatedOnly);
+        if (resolved.landUse) {
+            filter["inspection.form.landUse"] = resolved.landUse;
+        }
+        if (resolved.notConsolidatedOnly) {
+            filter["classConsolidated"] = "Não consolidado";
         }
 
-        /*if(userName) {
-            filter["userName"] = userName;
-        }*/
-
-        if (biome) {
-            filter["biome"] = biome;
-        }
-
+        // TKT-000010: mesmo motivo de landUseFilter — pontos legados.
+        var fallbackClauses = [];
         if (uf) {
-            filter["uf"] = uf;
+            fallbackClauses.push({ $or: ufOrClause(uf) });
         }
+        if (biome) {
+            fallbackClauses.push({ $or: biomeOrClause(biome) });
+        }
+        if (fallbackClauses.length === 1) {
+            filter.$or = fallbackClauses[0].$or;
+        } else if (fallbackClauses.length > 1) {
+            filter.$and = fallbackClauses;
+        }
+
         pointsCollection.distinct('userName', filter, function (err, docs) {
             response.send(docs);
             response.end();
@@ -685,28 +670,24 @@ module.exports = function (app) {
         var campaign = request.session.user.campaign;
         var landUse = request.query.landUse;
         var userName = request.query.userName;
-        //var biome = request.query.biome;
         var uf = request.query.uf;
+        var notConsolidatedOnly = request.query.notConsolidatedOnly === 'true' || request.query.notConsolidatedOnly === true;
 
         var filter = {
             "campaign": campaign._id
         }
 
-        if (landUse) {
-            if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] = "Não consolidado";
-            } else {
-                filter["inspection.form.landUse"] = landUse;
-            }
+        var resolved = resolveFilterFlags(landUse, notConsolidatedOnly);
+        if (resolved.landUse) {
+            filter["inspection.form.landUse"] = resolved.landUse;
+        }
+        if (resolved.notConsolidatedOnly) {
+            filter["classConsolidated"] = "Não consolidado";
         }
 
         if (userName) {
             filter["userName"] = userName;
         }
-
-        /*if(biome) {
-            filter["biome"] = biome;
-        }*/
 
         if (uf) {
             filter.$or = ufOrClause(uf);
@@ -741,18 +722,18 @@ module.exports = function (app) {
         var landUse = request.query.landUse;
         var userName = request.query.userName;
         var biome = request.query.biome;
-        //var uf = request.query.uf;
+        var notConsolidatedOnly = request.query.notConsolidatedOnly === 'true' || request.query.notConsolidatedOnly === true;
 
         var filter = {
             "campaign": campaign._id
         };
 
-        if (landUse) {
-            if (landUse === 'Não Consolidados') {
-                filter["classConsolidated"] = "Não consolidado";
-            } else {
-                filter["inspection.form.landUse"] = landUse;
-            }
+        var resolved = resolveFilterFlags(landUse, notConsolidatedOnly);
+        if (resolved.landUse) {
+            filter["inspection.form.landUse"] = resolved.landUse;
+        }
+        if (resolved.notConsolidatedOnly) {
+            filter["classConsolidated"] = "Não consolidado";
         }
 
         if (userName) {

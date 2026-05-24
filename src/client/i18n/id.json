@@ -50,7 +50,8 @@
       "BIOME": "Bioma",
       "REGION": "Wilayah",
       "STATE": "Provinsi",
-      "PERIOD": "Periode"
+      "PERIOD": "Periode",
+      "ONLY_NOT_CONSOLIDATED": "Hanya tidak terkonsolidasi"
     },
     "POINT_INFO": {
       "POINT_NUMBER": "Titik #",

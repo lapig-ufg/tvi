@@ -93,6 +93,15 @@
                                         ng-model="selectUf" ng-options="uf for uf in stateUF"></select>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label class="col-sm-1 col-form-label"
+                                   style="font-size: 15px; width: auto;">
+                                <input type="checkbox" ng-disabled="modeEdit"
+                                       ng-change="submit(1)" ng-model="onlyNotConsolidated"
+                                       style="margin-right: 6px; vertical-align: middle;">
+                                {{ 'SUPERVISOR.FILTERS.ONLY_NOT_CONSOLIDATED' | i18n }}
+                            </label>
+                        </div>
                     </form>
                 </div>
 

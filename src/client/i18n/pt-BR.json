@@ -43,14 +43,15 @@
     "TITLE": "Supervisor",
     "FILTERS": {
       "INDEX": "Índice",
-      "TIME": "Tempo", 
+      "TIME": "Tempo",
       "CONSOLIDATED": "Consolidado",
       "CLASSES": "Classes",
       "USERS": "Usuários",
       "BIOME": "Bioma",
       "REGION": "Região",
       "STATE": "Estado(UF)",
-      "PERIOD": "Período"
+      "PERIOD": "Período",
+      "ONLY_NOT_CONSOLIDATED": "Apenas não consolidados"
     },
     "POINT_INFO": {
       "POINT_NUMBER": "Ponto #",

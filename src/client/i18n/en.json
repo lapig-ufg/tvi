@@ -50,7 +50,8 @@
       "BIOME": "Biome",
       "REGION": "Region",
       "STATE": "State",
-      "PERIOD": "Period"
+      "PERIOD": "Period",
+      "ONLY_NOT_CONSOLIDATED": "Only not consolidated"
     },
     "POINT_INFO": {
       "POINT_NUMBER": "Point #",
