@@ -69,7 +69,11 @@ module.exports = function (app) {
                     // confirmação destrutiva. Substitui Map em memória, que não funcionava
                     // em cluster Node + multi-pod (token emitido num worker/pod era invisível
                     // ao receptor do apply). TTL index purga após expiresAt.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens'];
+                    // excess_inspection_previews (2026-05-24): mesma motivação aplicada ao
+                    // dry-run de remoção de inspeções excedentes — previewId era gerado num
+                    // worker e o apply caía em outro, resultando em 410 "Preview expirado
+                    // ou desconhecido" no fluxo normal.
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -316,6 +320,22 @@ module.exports = function (app) {
                 ], function(err) {
                     if (err && err.code !== 11000) {
                         console.error('Erro ao criar índices para destructive_tokens:', err);
+                    }
+                    cb();
+                });
+            },
+            // 2026-05-24 — índices para excess_inspection_previews.
+            // Mesma semântica do destructive_tokens: TTL purga após expiresAt, claim
+            // atômico garante single-use entre workers e réplicas.
+            function(cb) {
+                if (!Repository.collections.excess_inspection_previews) return cb();
+
+                Repository.collections.excess_inspection_previews.createIndexes([
+                    { key: { expiresAt: 1 }, name: 'expiresAt_ttl', expireAfterSeconds: 0 },
+                    { key: { campaignId: 1, createdAt: -1 }, name: 'campaignId_createdAt' }
+                ], function(err) {
+                    if (err && err.code !== 11000) {
+                        console.error('Erro ao criar índices para excess_inspection_previews:', err);
                     }
                     cb();
                 });

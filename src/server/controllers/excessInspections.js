@@ -26,31 +26,38 @@ module.exports = function (app) {
     var logger = app.services && app.services.logger;
 
     // ----------------------------------------------------------------------
-    // Cache de previews
+    // Store de previews — coleção MongoDB `excess_inspection_previews`
     // ----------------------------------------------------------------------
-    // Mantém o resultado do dry-run em memória para que o apply use exatamente
-    // a mesma lista de ações calculada no preview. Expira em 5 min e é
-    // single-use (consumido no apply). Limpeza periódica via setInterval.
+    // Persiste o resultado do dry-run para que o apply use exatamente a mesma
+    // lista de ações calculada no preview. Single-use, TTL de 5 min.
+    //
+    // Persistência (2026-05-24): migrado de Map em memória para Mongo pelo
+    // mesmo motivo do destructive_tokens (middleware/destructiveConfirmation.js
+    // §"Persistência (2026-05-23)"): o Map em memória não funciona em deploy
+    // multi-instância — cluster Node (app-tvi-cluster.js, 2-10 workers) e
+    // múltiplas réplicas Swarm/k8s podem rotear o /preview e o /apply para
+    // processos distintos, resultando em "Preview expirado ou desconhecido"
+    // no fluxo normal. O TTL index sobre `expiresAt` substitui o setInterval
+    // reaper (ver repository.js, bloco excess_inspection_previews).
 
     var PREVIEW_TTL_MS = 5 * 60 * 1000;
-    var REAP_INTERVAL_MS = 60 * 1000;
     var DEFAULT_MAX_POINTS = 500;
     var HARD_CAP_MAX_POINTS = 2000;
+    var COLLECTION_NAME = 'excess_inspection_previews';
 
-    // Map<previewId, { campaignId, actions, createdAt, expiresAt, used, createdBy }>
-    var previewStore = new Map();
-
-    function reapPreviews() {
-        var now = Date.now();
-        previewStore.forEach(function (entry, key) {
-            if (entry.expiresAt < now) {
-                previewStore.delete(key);
-            }
-        });
-    }
-    var reapTimer = setInterval(reapPreviews, REAP_INTERVAL_MS);
-    if (typeof reapTimer.unref === 'function') {
-        reapTimer.unref();
+    // Acesso lazy à coleção — necessário porque controllers são instanciados
+    // antes de Repository.init() rodar (mesmo padrão usado em
+    // middleware/destructiveConfirmation.js).
+    function getPreviewCollection() {
+        var repo = app.repository;
+        if (!repo) return null;
+        if (repo.collections && repo.collections[COLLECTION_NAME]) {
+            return repo.collections[COLLECTION_NAME];
+        }
+        if (repo.db && typeof repo.db.collection === 'function') {
+            return repo.db.collection(COLLECTION_NAME);
+        }
+        return null;
     }
 
     function generatePreviewId() {
@@ -272,16 +279,36 @@ module.exports = function (app) {
                 });
             });
 
+            var coll = getPreviewCollection();
+            if (!coll) {
+                if (logger) {
+                    await logger.error('Store de previews indisponível em previewRemoval', {
+                        module: 'excessInspections', function: 'previewRemoval',
+                        metadata: { campaignId: campaignId }
+                    });
+                }
+                return res.status(503).json({ error: 'Store de previews indisponível. Tente novamente em instantes.' });
+            }
+
             var previewId = generatePreviewId();
-            var now = Date.now();
-            previewStore.set(previewId, {
+            var now = new Date();
+            var previewDoc = {
+                _id: previewId,
                 campaignId: campaignId,
                 actions: actions,
                 rule: rule,
-                createdAt: new Date(now),
-                expiresAt: now + PREVIEW_TTL_MS,
+                createdAt: now,
+                expiresAt: new Date(now.getTime() + PREVIEW_TTL_MS),
                 used: false,
+                usedAt: null,
                 createdBy: buildActor(req).username
+            };
+
+            await new Promise(function (resolve, reject) {
+                coll.insertOne(previewDoc, function (err) {
+                    if (err) return reject(err);
+                    resolve();
+                });
             });
 
             res.json({
@@ -332,30 +359,107 @@ module.exports = function (app) {
                 return badRequest(res, 'expectedCount é obrigatório (numérico).');
             }
 
-            var entry = previewStore.get(previewId);
+            var coll = getPreviewCollection();
+            if (!coll) {
+                return res.status(503).json({ error: 'Store de previews indisponível. Tente novamente em instantes.' });
+            }
+
+            // Claim atômico — única operação que decide o vencedor sob
+            // concorrência entre workers/réplicas. Filtro garante:
+            //   - preview existe (_id matched)
+            //   - ainda não consumido (used: false)
+            //   - dentro da janela de validade (expiresAt > now)
+            // O ganhador da corrida recebe o doc; demais recebem null.
+            var nowDate = new Date();
+            var entry = await new Promise(function (resolve, reject) {
+                coll.findAndModify(
+                    { _id: previewId, used: false, expiresAt: { $gt: nowDate } },
+                    [],
+                    { $set: { used: true, usedAt: nowDate } },
+                    { new: true },
+                    function (err, result) {
+                        if (err) return reject(err);
+                        resolve(result && result.value);
+                    }
+                );
+            });
+
             if (!entry) {
-                return res.status(410).json({ error: 'Preview expirado ou desconhecido. Gere um novo.' });
+                // Claim falhou — fazer follow-up para discriminar a mensagem.
+                // O custo extra (1 findOne) só ocorre no caminho de erro.
+                var existing = await new Promise(function (resolve, reject) {
+                    coll.findOne({ _id: previewId }, function (err, doc) {
+                        if (err) return reject(err);
+                        resolve(doc);
+                    });
+                });
+
+                var failureReason;
+                var msg;
+                if (!existing) {
+                    failureReason = 'not_found';
+                    msg = 'Preview expirado ou desconhecido. Gere um novo.';
+                } else if (existing.used) {
+                    failureReason = 'already_used';
+                    msg = 'Preview já consumido. Gere um novo.';
+                } else {
+                    failureReason = 'expired';
+                    msg = 'Preview expirado. Gere um novo (TTL ' + (PREVIEW_TTL_MS / 1000) + 's).';
+                }
+
+                if (logger) {
+                    await logger.warn('Validação de preview de excedentes falhou', {
+                        module: 'excessInspections', function: 'applyRemoval',
+                        metadata: {
+                            reason: failureReason,
+                            previewId: previewId,
+                            campaignId: campaignId,
+                            createdBy: existing && existing.createdBy,
+                            actor: buildActor(req).username,
+                            ip: req.ip
+                        }
+                    });
+                }
+
+                return res.status(410).json({ error: msg });
             }
-            if (entry.used) {
-                return res.status(410).json({ error: 'Preview já consumido. Gere um novo.' });
-            }
-            if (entry.expiresAt < Date.now()) {
-                previewStore.delete(previewId);
-                return res.status(410).json({ error: 'Preview expirado. Gere um novo.' });
-            }
+
+            // Claim bem-sucedido — preview agora está consumido. Validações
+            // adicionais (campaignId/expectedCount) abaixo: se falharem, o
+            // preview já foi gasto (intencional — usuário precisa regerar
+            // porque o estado do cliente está inconsistente com o servidor).
             if (entry.campaignId !== campaignId) {
+                if (logger) {
+                    await logger.warn('previewId não corresponde à campanha', {
+                        module: 'excessInspections', function: 'applyRemoval',
+                        metadata: {
+                            previewId: previewId,
+                            expectedCampaignId: campaignId,
+                            previewCampaignId: entry.campaignId,
+                            actor: buildActor(req).username
+                        }
+                    });
+                }
                 return res.status(400).json({ error: 'previewId não corresponde à campanha.' });
             }
             if (entry.actions.length !== expectedCount) {
+                if (logger) {
+                    await logger.warn('expectedCount divergente do preview', {
+                        module: 'excessInspections', function: 'applyRemoval',
+                        metadata: {
+                            previewId: previewId,
+                            previewActions: entry.actions.length,
+                            expectedCount: expectedCount,
+                            actor: buildActor(req).username
+                        }
+                    });
+                }
                 return res.status(409).json({
                     error: 'expectedCount divergente do preview.',
                     previewActions: entry.actions.length,
                     expectedCount: expectedCount
                 });
             }
-
-            // Marca como consumido ANTES da execução para evitar re-entrada
-            entry.used = true;
 
             var ctxBase = {
                 actor: buildActor(req),
@@ -479,6 +583,20 @@ module.exports = function (app) {
             res.status(500).json({ error: err.message });
         }
     };
+
+    // Expostos para teste/monitoramento (não devem ser usados em produção).
+    Excess._clearStore = function (callback) {
+        var coll = getPreviewCollection();
+        if (!coll) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+        coll.deleteMany({}, function () {
+            if (typeof callback === 'function') callback();
+        });
+    };
+    Excess._collectionName = COLLECTION_NAME;
+    Excess.PREVIEW_TTL_MS = PREVIEW_TTL_MS;
 
     return Excess;
 };
