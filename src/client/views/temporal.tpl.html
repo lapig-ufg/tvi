@@ -229,11 +229,11 @@
                     </form>
                     <div class="form-actions">
                         <input type="button" class="btn btn-success"
-                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
+                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission || alreadyInspected"
                                ng-click="submitForm()" value="{{ 'COMMON.SUBMIT' | i18n }}">
                         <input type="button" class="btn btn-primary"
                                style="margin-left: 8px;"
-                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission"
+                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission || alreadyInspected"
                                ng-click="submitFormAndExit()"
                                value="{{ 'TEMPORAL.FORM.SUBMIT_AND_EXIT' | i18n }}">
                         <!-- TKT-000011: registrar dúvida no ponto atual -->

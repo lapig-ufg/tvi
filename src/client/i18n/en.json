@@ -112,7 +112,9 @@
       "BORDER_PIXEL": "Border Pixel",
       "SUBMIT": "Submit",
       "SUBMIT_AND_EXIT": "Submit and Exit",
-      "VALIDATION_ERROR": "Please select a land use class for all periods before submitting."
+      "VALIDATION_ERROR": "Please select a land use class for all periods before submitting.",
+      "SUBMIT_ERROR": "Could not save the inspection. Please retry in a moment.",
+      "ALREADY_INSPECTED": "You have already inspected this point. Please load the next one."
     },
     "MAP": {
       "LANDSAT_IMAGES": "Landsat Images",

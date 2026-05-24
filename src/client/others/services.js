@@ -67,7 +67,11 @@ Application
             
             $http.post(url, params, config).success(function (response) {
                 callback(response);
-            }.bind(this));
+            }.bind(this)).error(function(error) {
+                if (callback.error) {
+                    callback.error(error);
+                }
+            });
         }
 
         this._get = function (url, params, callback) {
@@ -144,7 +148,11 @@ Application
             
             $http.delete(url, config).success(function (response) {
                 callback(response);
-            }.bind(this));
+            }.bind(this)).error(function(error) {
+                if (callback.error) {
+                    callback.error(error);
+                }
+            });
         }
         
         // Task Management API methods

@@ -338,14 +338,28 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         function postPoint(formPoint, onSuccess) {
             $scope.onSubmission = true;
             $scope.showloading = true;
-            requester._post('points/update-point', {"point": formPoint}, function (data) {
-                if (data.success) {
+
+            var cb = function (data) {
+                if (data && data.success) {
                     onSuccess();
                 } else {
+                    // Backend respondeu 2xx mas indicou falha lógica.
                     $scope.showloading = false;
                     $scope.onSubmission = false;
                 }
-            });
+            };
+            // Sem este handler, qualquer 4xx/5xx do backend (e.g. 409
+            // DUPLICATE_INSPECTOR / POINT_ALREADY_FULL vindos de
+            // pointsService.appendInspection) seria silenciosamente engolido
+            // e o botão ficaria eternamente travado em onSubmission=true.
+            cb.error = function (err) {
+                $scope.showloading = false;
+                $scope.onSubmission = false;
+                var msg = (err && err.error) ||
+                          i18nService.translate('TEMPORAL.FORM.SUBMIT_ERROR');
+                NotificationDialog.error(msg);
+            };
+            requester._post('points/update-point', {"point": formPoint}, cb);
         }
 
         $scope.submitForm = function () {
@@ -940,6 +954,21 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $rootScope.count = data.count;
             $rootScope.current = data.current;
             $scope.datesFromService = data.point.dates;
+
+            // Detecção preventiva: o backend rejeita com 409 DUPLICATE_INSPECTOR
+            // (pointsService.js:114) se o usuário atual já consta em
+            // point.userName. Avisamos antes do intérprete preencher tudo
+            // e bater no erro só no fim. A comparação é exatamente a mesma
+            // que o backend faz (indexOf por nome exato).
+            var meName = $rootScope.user && $rootScope.user.name;
+            $scope.alreadyInspected = !!(meName &&
+                Array.isArray($scope.point && $scope.point.userName) &&
+                $scope.point.userName.indexOf(meName) !== -1);
+            if ($scope.alreadyInspected) {
+                NotificationDialog.warning(
+                    i18nService.translate('TEMPORAL.FORM.ALREADY_INSPECTED')
+                );
+            }
             // TKT-000011: resetar estado de dúvida ao carregar novo ponto.
             // O backend envia a subestrutura `doubt` dentro do próprio point
             // quando existente; exibimos o badge somente para dúvidas ABERTAs.

@@ -112,7 +112,9 @@
       "BORDER_PIXEL": "Pixel de Borda",
       "SUBMIT": "Enviar",
       "SUBMIT_AND_EXIT": "Enviar e Sair",
-      "VALIDATION_ERROR": "Por favor, selecione uma classe de uso da terra para todos os períodos antes de submeter."
+      "VALIDATION_ERROR": "Por favor, selecione uma classe de uso da terra para todos os períodos antes de submeter.",
+      "SUBMIT_ERROR": "Não foi possível registrar a inspeção. Tente novamente em instantes.",
+      "ALREADY_INSPECTED": "Você já registrou inspeção neste ponto. Carregue o próximo."
     },
     "MAP": {
       "LANDSAT_IMAGES": "Imagens Landsat",
