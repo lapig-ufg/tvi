@@ -134,6 +134,17 @@ module.exports = function(app) {
 			});
 		}
 
+		// Corrige a corrida de over-serve (2026-06-12, incidente Peru region4):
+		// as cláusulas indexadas acima/abaixo avaliam `underInspection` e
+		// `userNameCount` ISOLADAMENTE, então um ponto com 2 de 3 inspeções
+		// (1 vaga) podia ser servido a até numInspec usuários simultâneos —
+		// os perdedores recebiam 409 POINT_ALREADY_FULL no save (Tier 2.5) e
+		// perdiam o formulário preenchido. O `$expr` abaixo exige que
+		// inspeções existentes + serves em andamento caibam em numInspec.
+		// `$max` com 0 protege contra `underInspection` negativo (documentos
+		// com ui=-1 observados em produção). Requer MongoDB >= 3.6 ($expr em
+		// find); produção roda 4.4.29. Atua como filtro residual após o
+		// índice `campaign_inspection_index`.
 		var findOneFilter = {
 			"$and": [
 				{ "campaign": { "$eq": campaign._id } },
@@ -143,6 +154,17 @@ module.exports = function(app) {
 					"$or": [
 						{ "userNameCount": { "$exists": true, "$lt": campaign.numInspec } }
 					].concat(legacyBranches)
+				},
+				{
+					"$expr": {
+						"$lt": [
+							{ "$add": [
+								{ "$ifNull": [ "$userNameCount", { "$size": { "$ifNull": [ "$userName", [] ] } } ] },
+								{ "$max": [ { "$ifNull": [ "$underInspection", 0 ] }, 0 ] }
+							]},
+							campaign.numInspec
+						]
+					}
 				}
 			]
 		};
@@ -866,7 +888,10 @@ module.exports = function(app) {
 						module: 'points', function: 'updatePoint',
 						metadata: { pointId: point._id, username: user.name }
 					});
-					return response.status(409).json({ error: 'Você já registrou inspeção para este ponto.' });
+					// `code` permite ao cliente distinguir conflito de ponto
+					// (buscar próximo ponto) de erros genéricos; `error`
+					// preservado para retrocompatibilidade de exibição.
+					return response.status(409).json({ code: 'DUPLICATE_INSPECTOR', error: 'Você já registrou inspeção para este ponto.' });
 				}
 				if (perr.code === 'POINT_ALREADY_FULL') {
 					await logger.warn('Save rejeitado: ponto já atingiu numInspec', {
@@ -877,7 +902,7 @@ module.exports = function(app) {
 							limit: ctx.maxUserNameLength
 						}
 					});
-					return response.status(409).json({ error: 'Este ponto já atingiu o número máximo de inspeções para esta campanha.' });
+					return response.status(409).json({ code: 'POINT_ALREADY_FULL', error: 'Este ponto já atingiu o número máximo de inspeções para esta campanha.' });
 				}
 				throw perr;
 			}

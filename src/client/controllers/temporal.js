@@ -335,7 +335,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             };
         }
 
-        function postPoint(formPoint, onSuccess) {
+        function postPoint(formPoint, onSuccess, onPointConflict) {
             $scope.onSubmission = true;
             $scope.showloading = true;
 
@@ -358,6 +358,17 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 var msg = (err && err.error) ||
                           i18nService.translate('TEMPORAL.FORM.SUBMIT_ERROR');
                 NotificationDialog.error(msg);
+                // 409 de conflito de ponto (outro inspetor completou a última
+                // vaga, ou inspeção duplicada): o ponto atual está perdido
+                // para este usuário — segui-lo preso aqui exigia recarregar a
+                // página (incidente Peru region4, 2026-06). Após o aviso, o
+                // chamador decide o destino (próximo ponto ou logoff).
+                // Demais erros (validação, 5xx) preservam o formulário
+                // preenchido e permanecem no ponto.
+                var code = err && err.code;
+                if ((code === 'POINT_ALREADY_FULL' || code === 'DUPLICATE_INSPECTOR') && onPointConflict) {
+                    onPointConflict();
+                }
             };
             requester._post('points/update-point', {"point": formPoint}, cb);
         }
@@ -365,9 +376,10 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.submitForm = function () {
             var formPoint = buildFormPoint();
             if (!formPoint) return;
-            postPoint(formPoint, function () {
+            var goToNextPoint = function () {
                 requester._get('points/next-point', loadPoint);
-            });
+            };
+            postPoint(formPoint, goToNextPoint, goToNextPoint);
         };
 
         // TKT: botão "Enviar e Sair" — salva o ponto atual e faz logoff direto,
@@ -376,13 +388,16 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.submitFormAndExit = function () {
             var formPoint = buildFormPoint();
             if (!formPoint) return;
-            postPoint(formPoint, function () {
+            var doLogoff = function () {
                 requester._get('login/logoff', function () {
                     $scope.data = undefined;
                     $rootScope.user = undefined;
                     $location.path('login');
                 });
-            });
+            };
+            // Em conflito 409 a intenção do usuário era sair — o ponto já foi
+            // completado por outro inspetor; encerra a sessão mesmo assim.
+            postPoint(formPoint, doLogoff, doLogoff);
         };
 
         // Debounce de changePeriod para evitar que cliques rápidos encadeados
