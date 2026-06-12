@@ -29,6 +29,22 @@ const SYSTEM_USERS = new Set([
 const COMBINING_MARKS_REGEX = /[̀-ͯ]/g;
 const SEPARATORS_REGEX = /[\s._\-,]/g;
 
+/**
+ * Conta as inspeções HUMANAS de um ponto, ignorando entradas de sistema
+ * (`SYSTEM_USERS`, e.g. 'Classificação Automática').
+ *
+ * Usado pela semântica de rounds do sistema de blocos (Tier 2.9): campanhas
+ * com seed automático nascem com userName.length 1, campanhas sem seed
+ * (e.g. mapbiomas_peru_col4_region*) nascem com length 0 — contar apenas
+ * humanos torna o round independente do seed (incidente Peru, 2026-06).
+ */
+function countHumanInspections(userName) {
+	if (!Array.isArray(userName)) {
+		return 0;
+	}
+	return userName.filter(function (u) { return !SYSTEM_USERS.has(u); }).length;
+}
+
 function normalize(value) {
 	if (value === null || value === undefined) {
 		return '';
@@ -157,5 +173,6 @@ module.exports = {
 	normalize: normalize,
 	levenshtein: levenshtein,
 	findSimilarUsernames: findSimilarUsernames,
+	countHumanInspections: countHumanInspections,
 	SYSTEM_USERS: SYSTEM_USERS
 };

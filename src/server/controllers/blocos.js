@@ -5,11 +5,14 @@ module.exports = function(app) {
 	var points = app.repository.collections.points;
 	var campaigns = app.repository.collections.campaign;
 	var logger = app.services.logger;
+	var usernameMatcher = require('../services/usernameMatcher');
 
 	/**
 	 * Gera blocos de inspeção para uma campanha.
 	 * Particiona os pontos pendentes em blocos de tamanho fixo,
-	 * criando um conjunto de blocos para cada rodada de inspeção (1 a numInspec).
+	 * criando um conjunto de blocos para cada rodada de inspeção HUMANA
+	 * pendente (1 a numInspec - entradas de sistema, e.g. 'Classificação
+	 * Automática'). Ver semântica do Tier 2.9 em points.js.
 	 */
 	Blocos.generateBlocks = async function(request, response) {
 		try {
@@ -46,7 +49,7 @@ module.exports = function(app) {
 					campaign: campaignId,
 					$where: 'this.userName.length < ' + numInspec
 				},
-				{ _id: 1, index: 1 }
+				{ _id: 1, index: 1, userName: 1 }
 			).sort({ index: 1 }).toArray();
 
 			if (allPoints.length === 0) {
@@ -57,14 +60,33 @@ module.exports = function(app) {
 			var blocksToInsert = [];
 			var blockIndex = 1;
 
+			var maxRoundsGenerated = 0;
+
 			for (var i = 0; i < allPoints.length; i += blockSize) {
 				var chunk = allPoints.slice(i, i + blockSize);
 				var pointIds = chunk.map(function(p) { return p._id; });
 				var pointIndexStart = chunk[0].index;
 				var pointIndexEnd = chunk[chunk.length - 1].index;
 
-				// Criar um bloco para cada rodada de inspeção
-				for (var round = 1; round <= numInspec; round++) {
+				// Rounds relativos às inspeções HUMANAS pendentes (2026-06-12,
+				// incidente Peru): round R serve a R-ésima inspeção humana
+				// (Tier 2.9 em points.js). Entradas de sistema ('Classificação
+				// Automática' etc.) ocupam slot de numInspec mas não geram
+				// round — campanhas com seed precisam de numInspec-1 rounds,
+				// campanhas sem seed (Peru) de numInspec. Em chunk misto,
+				// prevalece o ponto que precisa de mais rounds; os demais são
+				// protegidos pelo Tier 2.5 (skip de ponto completo).
+				var roundsNeeded = 0;
+				chunk.forEach(function(p) {
+					var systemCount = (Array.isArray(p.userName) ? p.userName.length : 0)
+						- usernameMatcher.countHumanInspections(p.userName);
+					var needed = numInspec - systemCount;
+					if (needed > roundsNeeded) roundsNeeded = needed;
+				});
+				if (roundsNeeded > maxRoundsGenerated) maxRoundsGenerated = roundsNeeded;
+
+				// Criar um bloco para cada rodada de inspeção humana pendente
+				for (var round = 1; round <= roundsNeeded; round++) {
 					blocksToInsert.push({
 						campaignId: campaignId,
 						blockIndex: blockIndex,
@@ -100,6 +122,7 @@ module.exports = function(app) {
 					totalBlocks: blocksToInsert.length,
 					blockSize: blockSize,
 					numInspec: numInspec,
+					roundsGenerated: maxRoundsGenerated,
 					totalPoints: allPoints.length
 				}
 			});
@@ -108,7 +131,7 @@ module.exports = function(app) {
 				success: true,
 				totalBlocks: blocksToInsert.length,
 				blocksPerRound: blockIndex - 1,
-				rounds: numInspec,
+				rounds: maxRoundsGenerated,
 				blockSize: blockSize,
 				totalPoints: allPoints.length
 			});
@@ -775,6 +798,7 @@ module.exports = function(app) {
 		var campaign = await campaigns.findOne({ _id: campaignId });
 		if (!campaign) return [];
 		var numInspec = campaign.numInspec || 1;
+		var systemUsersList = Array.from(usernameMatcher.SYSTEM_USERS);
 
 		var rows = await blocos.aggregate([
 			{ $match: { campaignId: campaignId } },
@@ -798,16 +822,27 @@ module.exports = function(app) {
 				roundsAllPast: { $sum: '$roundServedPast' },
 				roundsTotal: { $sum: 1 }
 			}},
-			{ $match: { $expr: { $and: [
-				{ $eq: ['$roundsAllPast', '$roundsTotal'] },
-				{ $eq: ['$roundsTotal', numInspec] }
-			]}}},
+			// 2026-06-12 — a exigência `roundsTotal == numInspec` foi removida:
+			// generateBlocks agora cria apenas os rounds de inspeção HUMANA
+			// pendentes (numInspec - seed), então um ponto pode legitimamente
+			// existir em menos de numInspec rounds. `roundsAllPast ==
+			// roundsTotal` já expressa a condição de zumbi: nenhum bloco vivo
+			// contém o ponto.
+			{ $match: { $expr: { $eq: ['$roundsAllPast', '$roundsTotal'] } } },
 			{ $lookup: { from: 'points', localField: '_id', foreignField: '_id', as: 'pt' } },
 			{ $unwind: '$pt' },
 			{ $match: { $expr: { $lt: [ { $size: { $ifNull: ['$pt.userName', []] } }, numInspec ] } } },
+			// `humanLen` ignora entradas de sistema (SYSTEM_USERS) — usado
+			// para calcular o round de recovery (Tier 2.9 relativo, requer
+			// MongoDB >= 3.4 para $filter/$in; produção roda 4.4.29).
 			{ $project: {
 				_id: 1,
 				userNameLen: { $size: { $ifNull: ['$pt.userName', []] } },
+				humanLen: { $size: { $filter: {
+					input: { $ifNull: ['$pt.userName', []] },
+					as: 'u',
+					cond: { $not: [ { $in: ['$$u', systemUsersList] } ] }
+				}}},
 				index: '$pt.index'
 			}},
 			{ $sort: { userNameLen: 1, index: 1 } }
@@ -842,7 +877,7 @@ module.exports = function(app) {
 				total: zombies.length,
 				byUserNameLength: byLen,
 				sample: zombies.slice(0, sampleSize).map(function(z) {
-					return { _id: z._id, index: z.index, userNameLen: z.userNameLen };
+					return { _id: z._id, index: z.index, userNameLen: z.userNameLen, humanLen: z.humanLen };
 				})
 			});
 		} catch (err) {
@@ -855,12 +890,14 @@ module.exports = function(app) {
 	};
 
 	/**
-	 * Tier 2.10 (2026-05-14) — gera blocos de recovery para pontos zumbi.
+	 * Tier 2.10 (2026-05-14; revisado 2026-06-12) — gera blocos de recovery
+	 * para pontos zumbi.
 	 *
-	 * Para cada valor de userName.length L < numInspec entre os zumbis,
-	 * cria blocos novos com inspectionRound = L (guard Tier 2.9 exige
-	 * length == round para servir). Os blocos têm blockIndex maior que o
-	 * máximo atual e flag isRecovery=true para auditoria.
+	 * Para cada valor de inspeções HUMANAS H entre os zumbis, cria blocos
+	 * novos com inspectionRound = H + 1 (guard Tier 2.9 relativo: round R
+	 * serve a R-ésima inspeção humana; entradas de sistema como
+	 * 'Classificação Automática' não contam). Os blocos têm blockIndex
+	 * maior que o máximo atual e flag isRecovery=true para auditoria.
 	 *
 	 * Guard de idempotência: descarta pointIds já presentes em algum bloco
 	 * available/assigned antes de criar.
@@ -909,10 +946,15 @@ module.exports = function(app) {
 			);
 			var timeoutMinutes = (latestBlock && latestBlock.timeoutMinutes) || 480;
 
-			// Agrupar zumbis por userNameLen → inspectionRound
+			// Agrupar zumbis por humanLen → inspectionRound = humanLen + 1
+			// (2026-06-12, Tier 2.9 relativo: round R serve a R-ésima inspeção
+			// HUMANA; entradas de sistema não contam). Para campanhas com seed
+			// automático coincide com o antigo round = userNameLen; para
+			// campanhas sem seed (Peru) corrige o round 0 inválido que era
+			// gerado para pontos virgens.
 			var byLen = {};
 			eligible.forEach(function(z) {
-				var L = z.userNameLen;
+				var L = z.humanLen;
 				if (!byLen[L]) byLen[L] = [];
 				byLen[L].push(z._id);
 			});
@@ -921,7 +963,7 @@ module.exports = function(app) {
 			var blocksToInsert = [];
 
 			Object.keys(byLen).forEach(function(LStr) {
-				var inspectionRound = parseInt(LStr, 10); // Tier 2.9: length == round
+				var inspectionRound = parseInt(LStr, 10) + 1;
 				var ids = byLen[LStr];
 				for (var i = 0; i < ids.length; i += blockSize) {
 					var chunk = ids.slice(i, i + blockSize);

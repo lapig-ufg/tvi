@@ -1,4 +1,5 @@
 const proj4 = require('proj4');
+const usernameMatcher = require('../services/usernameMatcher');
 
 module.exports = function(app) {
 	// Usar o logger do app
@@ -411,28 +412,43 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
-			// Tier 2.9 (2026-05-10) — round-aware skip.
-			// Bloco round R só deve servir pontos com userName.length == R
-			// (= R-1 humanos já feitos + a Classificação Automática).
-			// Se o ponto está em length < R, o round 1 ainda não foi feito
-			// neste ponto (inconsistência entre estado do ponto e round do
-			// bloco — comum quando geração de blocos cria todos os rounds
-			// de antemão e um ponto é servido em round=2 antes do round=1).
-			// Sem esse check, o save em bloco round=2 sobre ponto length=1
-			// vira length=2 (efetivamente "round 1"), consumindo o slot do
-			// bloco round=2 e deixando o ponto sem caminho para o 2º humano.
-			// Detectado na saturação de mapbiomas_pastagem_col11: 7.435 pontos
-			// length=2 ficaram presos por exatamente esse mecanismo.
+			// Tier 2.9 (2026-05-10; revisado 2026-06-12 — incidente Peru) —
+			// round-aware skip RELATIVO às inspeções humanas.
+			//
+			// Round R serve pontos que aguardam a R-ésima inspeção HUMANA,
+			// i.e. com humanLen == R-1, onde humanLen ignora entradas de
+			// sistema (SYSTEM_USERS, e.g. 'Classificação Automática').
+			//
+			// Histórico: a versão original exigia userName.length == R,
+			// calibrada em mapbiomas_pastagem_col11, cujos pontos nascem com
+			// ['Classificação Automática'] (length 1). Campanhas sem seed
+			// automático (mapbiomas_peru_col4_region*) nascem com userName=[]
+			// (length 0): TODOS os rounds pulavam TODOS os pontos e o primeiro
+			// login consumia todos os blocos via skip recursivo, derrubando a
+			// campanha na tela finish (14.911 logs Tier 2.9 com length 0,
+			// 2026-05/06). Contar apenas humanos torna a regra equivalente à
+			// anterior quando há seed (len-1 < R-1 ⇔ len < R) e correta sem.
+			//
+			// Se o ponto está atrás do round (humanLen < R-1), o round
+			// anterior ainda não foi feito neste ponto (inconsistência entre
+			// estado do ponto e round do bloco). Sem esse check, o save em
+			// bloco round=2 consumiria o slot do round=2 fazendo o trabalho
+			// do round=1, deixando o ponto sem caminho para o 2º humano
+			// (7.435 pontos presos assim na saturação da pastagem col11).
 			//
 			// Ação: avança offset (não release) — outros pontos do bloco
 			// podem bater com round; se nenhum bater, advance até completar.
-			if (currentLen < block.inspectionRound) {
-				await logger.warn('findPointFromBlock: ponto length<round, pulando (Tier 2.9)', {
+			var humanLen = usernameMatcher.countHumanInspections(point.userName);
+			if (humanLen < block.inspectionRound - 1) {
+				await logger.warn('findPointFromBlock: ponto atrás do round, pulando (Tier 2.9)', {
 					module: 'points',
 					function: 'findPointFromBlock',
 					metadata: {
 						pointId: pointId, blockId: block._id,
-						currentLength: currentLen, blockRound: block.inspectionRound,
+						currentLength: currentLen,
+						humanLength: humanLen,
+						systemCount: currentLen - humanLen,
+						blockRound: block.inspectionRound,
 						username: username
 					}
 				});
