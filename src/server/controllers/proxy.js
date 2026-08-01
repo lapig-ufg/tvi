@@ -40,7 +40,8 @@ module.exports = function(app) {
 		// Segurança: aceitar apenas domínios conhecidos de tiles
 		var allowedPatterns = [
 			/^https?:\/\/tm\d+\.lapig\.iesa\.ufg\.br\//,
-			/^https?:\/\/earthengine\.googleapis\.com\//
+			/^https?:\/\/earthengine\.googleapis\.com\//,
+			/^https:\/\/wayback\.maptiles\.arcgis\.com\//
 		];
 
 		var isAllowed = allowedPatterns.some(function(pattern) {
