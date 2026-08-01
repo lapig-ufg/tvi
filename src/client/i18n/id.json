@@ -121,7 +121,11 @@
       "SENTINEL_IMAGES": "Citra Sentinel-2 L2A",
       "NATURAL_COLOR": "Warna Alami",
       "AGRICULTURE": "Pertanian",
-      "FALSE_COLOR": "Warna Palsu"
+      "FALSE_COLOR": "Warna Palsu",
+      "WAYBACK_IMAGES": "Citra Esri Wayback",
+      "WAYBACK_NO_IMAGES": "Titik ini belum memiliki citra Wayback yang diproses. Inspeksi diblokir sampai sinkronisasi selesai.",
+      "WAYBACK_TILE_ERROR": "Citra tidak tersedia untuk rilis ini.",
+      "WAYBACK_APPROXIMATE_DATE": "Tanggal perkiraan (tanggal rilis)"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",

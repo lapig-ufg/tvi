@@ -164,7 +164,7 @@
 
                     <!-- Botões de Ferramentas -->
                     <div class="ferramentas col-xs-12 col-sm-12 col-md-12 col-lg-12" style="padding: 5px 10px;">
-                        <button ng-click="changePeriod()" class="btn btn-warning btn-sm" style="margin-right: 5px;">
+                        <button ng-if="!isWayback" ng-click="changePeriod()" class="btn btn-warning btn-sm" style="margin-right: 5px;">
                             <i class="glyphicon glyphicon-calendar"></i> {{ 'SUPERVISOR.ACTIONS.CHANGE_PERIOD' | i18n }}
                         </button>
                         <button ng-click="getKml()" class="btn btn-success btn-sm" style="margin-right: 5px;">
@@ -266,10 +266,10 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 380px;">
             <div class="row">
-                <span ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                <span ng-hide="isSentinel || isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                     {{ 'SUPERVISOR.MAP.LANDSAT_IMAGES' | i18n }}
                 </span>
-                
+
                 <!-- Seletor de visparam Landsat baseado nos visparams da campanha -->
                 <div ng-show="!isSentinel && availableVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
                     <visparam-selector visparams="availableVisParams"
@@ -280,7 +280,11 @@
                 <span ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                     {{ 'SUPERVISOR.MAP.SENTINEL_IMAGES' | i18n }}
                 </span>
-                
+
+                <span ng-show="isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    {{ 'TEMPORAL.MAP.WAYBACK_IMAGES' | i18n }}
+                </span>
+
                 <!-- Seletor de visparam Sentinel baseado nos visparams da campanha -->
                 <div ng-show="isSentinel && availableSentinelVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
                     <visparam-selector visparams="availableSentinelVisParams"
@@ -288,7 +292,12 @@
                                       on-change="updateSentinelVisparam()">
                     </visparam-selector>
                 </div>
-                
+
+                <div ng-if="isWayback && pointLoaded && !waybackGridLoading && maps.length === 0"
+                     class="alert alert-warning" style="margin: 10px;">
+                    {{ 'TEMPORAL.MAP.WAYBACK_NO_IMAGES' | i18n }}
+                </div>
+
                 <!-- Container com Bootstrap Grid -->
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
@@ -297,7 +306,7 @@
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
                                 <span>{{formatMapDate(map.date)}}</span>
-                                <span>{{periodo}}</span>
+                                <span ng-hide="isWayback">{{periodo}}</span>
                             </div>
                             
                             <span class="planet-button" ng-if="hasMosaicForYear(map.year)" >
@@ -307,7 +316,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod"
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
@@ -317,7 +326,7 @@
                             </landsat-map>
 
                             <!-- Usar sentinel-map para mapas dinâmicos Sentinel -->
-                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod"
+                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                           lon="point.lon"
                                           lat="point.lat"
                                           zoom="config.zoomLevel"
@@ -327,7 +336,7 @@
                             </sentinel-map>
 
                             <!-- Usar wms-map quando WMS está habilitado para o período atual -->
-                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod"
+                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod && !isWayback"
                                      lon="point.lon"
                                      lat="point.lat"
                                      zoom="config.zoomLevel"
@@ -335,6 +344,18 @@
                                      year="map.year"
                                      wms-config="wmsConfig">
                             </wms-map>
+
+                            <!-- Célula Wayback: URL de tiles já resolvida por release -->
+                            <wayback-map ng-if="useDynamicMaps === true && isWayback"
+                                         lon="point.lon"
+                                         lat="point.lat"
+                                         zoom="config.zoomLevel"
+                                         tile-url="map.url"
+                                         map-date="map.date">
+                            </wayback-map>
+                            <div ng-if="isWayback && map.approximateDate" class="text-muted" style="font-size: 10px; text-align: center;">
+                                {{ 'TEMPORAL.MAP.WAYBACK_APPROXIMATE_DATE' | i18n }}
+                            </div>
 
                             <!-- Usar inspection-map apenas quando não for mapa dinâmico -->
                             <inspection-map ng-if="useDynamicMaps !== true"
