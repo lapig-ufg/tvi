@@ -73,7 +73,9 @@ module.exports = function (app) {
                     // dry-run de remoção de inspeções excedentes — previewId era gerado num
                     // worker e o apply caía em outro, resultando em 410 "Preview expirado
                     // ou desconhecido" no fluxo normal.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews'];
+                    // waybackSync (2026-08-01): lock + progresso do job de pré-computação
+                    // de imagens Wayback por ponto (1 doc por campanha).
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync'];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
