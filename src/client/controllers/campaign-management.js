@@ -668,6 +668,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     // trocar de aba, ao término do job e no $destroy do scope.
     $scope.wayback = { status: null, notFound: false, loading: false, error: null, starting: false };
     var waybackPoll = null;
+    var waybackDestroyed = false;
 
     function stopWaybackPolling() {
         if (waybackPoll) {
@@ -677,7 +678,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     }
 
     function ensureWaybackPolling() {
-        if (waybackPoll) return;
+        if (waybackDestroyed || waybackPoll) return;
         waybackPoll = $interval(function () {
             if ($scope.activeTab !== 'wayback') {
                 stopWaybackPolling();
@@ -689,6 +690,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
 
     $scope.loadWaybackStatus = function () {
         $scope.wayback.loading = true;
+        $scope.wayback.error = null;
         $http.get('/api/wayback/sync/' + $scope.campaignId + '/status').then(function (response) {
             $scope.wayback.loading = false;
             $scope.wayback.error = null;
@@ -744,8 +746,8 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         };
         if (force) {
             NotificationDialog.confirm(
-                'A re-sincronização forçada reprocessa TODOS os pontos da campanha, inclusive os já sincronizados. Para campanhas grandes, isso pode levar horas. Deseja continuar?',
-                'Forçar re-sincronização'
+                'A ressincronização forçada reprocessa TODOS os pontos da campanha, inclusive os já sincronizados. Para campanhas grandes, isso pode levar horas. Deseja continuar?',
+                'Forçar ressincronização'
             ).then(function (confirmed) {
                 if (confirmed) doStart();
             });
@@ -754,7 +756,10 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         }
     };
 
-    $scope.$on('$destroy', stopWaybackPolling);
+    $scope.$on('$destroy', function () {
+        waybackDestroyed = true;
+        stopWaybackPolling();
+    });
 
     // Verificar autenticação ao carregar
     $scope.checkAuth();

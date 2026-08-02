@@ -693,7 +693,7 @@
                                     <span class="progress-label">
                                         Status:
                                         <span class="info-badge"
-                                              ng-class="{'active': wayback.status.status === 'completed', 'inactive': wayback.status.status === 'completed_with_errors'}">
+                                              ng-class="{'active': wayback.status.status === 'completed', 'inactive': wayback.status.status === 'completed_with_errors', 'running': wayback.status.status === 'running'}">
                                             {{ wayback.status.status === 'running' ? 'Em execução'
                                                : (wayback.status.status === 'completed' ? 'Concluída' : 'Concluída com erros') }}
                                         </span>
@@ -704,7 +704,7 @@
                                 </div>
                                 <div class="progress-bar-container">
                                     <div class="progress-bar-fill"
-                                         ng-class="{'success': wayback.status.status === 'completed', 'warning': wayback.status.status === 'completed_with_errors'}"
+                                         ng-class="{'success': wayback.status.status === 'completed', 'warning': wayback.status.status === 'completed_with_errors', 'info': wayback.status.status === 'running'}"
                                          ng-style="{'width': waybackPercent() + '%'}"></div>
                                 </div>
                             </div>
@@ -752,7 +752,7 @@
                                     ng-click="startWaybackSync(true)"
                                     ng-disabled="wayback.starting || wayback.status.status === 'running'">
                                 <i class="fas fa-redo"></i>
-                                Forçar re-sincronização
+                                Forçar ressincronização
                             </button>
                         </div>
                     </div>
@@ -1119,6 +1119,11 @@
     color: #c53030;
 }
 
+.info-badge.running {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
 /* Progress Section */
 .progress-section {
     margin-top: 1rem;
@@ -1168,6 +1173,10 @@
 
 .progress-bar-fill.danger {
     background: linear-gradient(90deg, #e53e3e, #c53030);
+}
+
+.progress-bar-fill.info {
+    background: linear-gradient(90deg, #4299e1, #3182ce);
 }
 
 /* Analytics Section */
