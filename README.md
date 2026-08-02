@@ -4,7 +4,7 @@ The increasing number of sensors orbiting the earth is systematically producing 
 
 [See the conference paper for more info](http://www.cartografia.org.br/cbc/2017/trabalhos/4/378.html)
 
-![alt tag](https://raw.githubusercontent.com/lapig-ufg/tvi/master/docs/admin.png)
+![alt tag](https://raw.githubusercontent.com/lapig-ufg/tvi/master/docs/admin.png) 
 
 ## Running:
  1. Start MongoDB
@@ -15,9 +15,5 @@ The increasing number of sensors orbiting the earth is systematically producing 
  ```
  ./prod-start.sh
  ```
-
-
-
-
 
 
