@@ -149,6 +149,65 @@ test('waybackSyncJob (integração)', async (t) => {
         assert.equal(body.error, 'Campanha não é do tipo wayback.');
     });
 
+    await t.test('consulta metadados das releases de um ponto em paralelo', async () => {
+        const releases = [100, 200, 300, 400].map(n => (
+            { releaseNum: n, releaseDate: `20${n / 100 + 10}-01-01`, metadataLayerUrl: 'https://m/0' }));
+        const inFlight = { cur: 0, max: 0 };
+        const svc = {
+            getReleases: async () => releases,
+            getLocalChanges: async () => releases,
+            getMetadata: async () => {
+                inFlight.cur++;
+                inFlight.max = Math.max(inFlight.max, inFlight.cur);
+                await new Promise(r => setImmediate(r));
+                inFlight.cur--;
+                return { captureDate: null, source: null, resolution: null };
+            }
+        };
+        await db.collection('campaign').insertOne({ _id: 'camp_par', imageType: 'wayback' });
+        await db.collection('points').insertOne({ _id: '1_camp_par', campaign: 'camp_par', lon: 1, lat: 1 });
+        const wayback = controllerFactory(buildApp(db, svc));
+        const result = await wayback.runSyncJob('camp_par', {});
+        assert.equal(result.processed, 1);
+        assert.ok(inFlight.max >= 2,
+            `metadados devem ser consultados em paralelo (máximo em voo: ${inFlight.max})`);
+        const p = await db.collection('points').findOne({ _id: '1_camp_par' });
+        assert.equal(p.waybackImages.length, 4, 'todas as releases presentes');
+        const dates = p.waybackImages.map(i => i.captureDate || i.releaseDate);
+        assert.deepEqual(dates, dates.slice().sort(), 'ordenação preservada com consultas paralelas');
+    });
+
+    await t.test('WAYBACK_SYNC_CONCURRENCY controla o paralelismo de pontos', async () => {
+        const inFlight = { cur: 0, max: 0 };
+        const svc = {
+            getReleases: async () => [],
+            getLocalChanges: async () => {
+                inFlight.cur++;
+                inFlight.max = Math.max(inFlight.max, inFlight.cur);
+                await new Promise(r => setImmediate(r));
+                inFlight.cur--;
+                return [];
+            },
+            getMetadata: async () => ({ captureDate: null, source: null, resolution: null })
+        };
+        await db.collection('campaign').insertOne({ _id: 'camp_conc', imageType: 'wayback' });
+        await db.collection('points').insertMany([
+            { _id: '1_camp_conc', campaign: 'camp_conc', lon: 1, lat: 1 },
+            { _id: '2_camp_conc', campaign: 'camp_conc', lon: 2, lat: 2 },
+            { _id: '3_camp_conc', campaign: 'camp_conc', lon: 3, lat: 3 }
+        ]);
+        process.env.WAYBACK_SYNC_CONCURRENCY = '1';
+        try {
+            const wayback = controllerFactory(buildApp(db, svc));
+            const result = await wayback.runSyncJob('camp_conc', {});
+            assert.equal(result.processed, 3);
+            assert.equal(inFlight.max, 1,
+                'com WAYBACK_SYNC_CONCURRENCY=1 os pontos devem ser processados em série');
+        } finally {
+            delete process.env.WAYBACK_SYNC_CONCURRENCY;
+        }
+    });
+
     await t.test('triggerSyncIfWayback ignora campanha de outro tipo', async () => {
         await db.collection('campaign').insertOne({ _id: 'camp_landsat', imageType: 'landsat' });
         await db.collection('points').insertOne({ _id: '1_camp_landsat', campaign: 'camp_landsat', lon: 1, lat: 1 });

@@ -13,7 +13,15 @@ module.exports = function (app) {
     const logger = app.services.logger;
     const waybackService = app.services.waybackService;
 
-    const SYNC_CONCURRENCY = 5;
+    // Paralelismo de pontos do job, configurável por ambiente. O trabalho é
+    // I/O puro contra a Esri; com METADATA_CONCURRENCY, o teto de requisições
+    // em voo é SYNC_CONCURRENCY × METADATA_CONCURRENCY (padrão 20 × 5 = 100),
+    // dentro do que o retry/backoff do waybackService absorve em throttling.
+    const envConcurrency = parseInt(process.env.WAYBACK_SYNC_CONCURRENCY, 10);
+    const SYNC_CONCURRENCY = envConcurrency > 0 ? envConcurrency : 20;
+    // Consultas de metadados das releases de UM ponto, em paralelo entre si
+    // (são independentes; a ordem final vem do sort por data de exibição).
+    const METADATA_CONCURRENCY = 5;
     const MAX_ERRORS_LISTED = 50;
 
     const cols = function () { return app.repository.collections; };
@@ -36,17 +44,21 @@ module.exports = function (app) {
 
     async function syncOnePoint(point) {
         const local = await waybackService.getLocalChanges(point.lon, point.lat);
-        const images = [];
-        for (const rel of local) {
-            const meta = await waybackService.getMetadata(rel, point.lon, point.lat);
-            images.push({
-                releaseNum: rel.releaseNum,
-                releaseDate: rel.releaseDate,
-                captureDate: meta.captureDate,
-                source: meta.source,
-                resolution: meta.resolution
-            });
-        }
+        const images = new Array(local.length);
+        await mapWithConcurrency(
+            local.map(function (rel, idx) { return { rel: rel, idx: idx }; }),
+            METADATA_CONCURRENCY,
+            async function (item) {
+                const meta = await waybackService.getMetadata(item.rel, point.lon, point.lat);
+                images[item.idx] = {
+                    releaseNum: item.rel.releaseNum,
+                    releaseDate: item.rel.releaseDate,
+                    captureDate: meta.captureDate,
+                    source: meta.source,
+                    resolution: meta.resolution
+                };
+            }
+        );
         images.sort(function (a, b) { return displayDate(a).localeCompare(displayDate(b)); });
         // Escrita única e atômica por ponto: nunca persiste estado parcial.
         await cols().points.updateOne(

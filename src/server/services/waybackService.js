@@ -85,11 +85,25 @@ function defaultFetchJson(logger) {
     };
 }
 
+// Limite de segurança do cache de tiles: cada entrada é um array pequeno de
+// referências a releases (~1 KB); 100 mil entradas ≈ dezenas de MB no pior
+// caso. Ao atingir o limite, o cache é zerado por inteiro (estratégia simples
+// e suficiente: o consumidor típico é o job de sync, que processa uma
+// campanha por vez e se beneficia da localidade espacial dos pontos).
+const TILE_CACHE_MAX = 100000;
+
 function createWaybackService(deps) {
     const logger = deps.logger;
     const fetchJson = deps.fetchJson || defaultFetchJson(logger);
     let configCache = null; // { fetchedAt: epoch-ms, releases: [] }
     let pendingFetch = null; // memoização de promise para evitar cache stampede
+    // Cache do dedupe por tile z14: pontos no mesmo tile têm resultado
+    // IDÊNTICO (o tile é a chave da consulta ao tilemap), então campanhas
+    // densas reaproveitam a cascata inteira. Guarda a promise (chamadas
+    // concorrentes no mesmo tile compartilham a mesma cascata em voo) e é
+    // invalidado quando o catálogo de releases é renovado.
+    let tileCache = new Map();
+    let tileCacheCatalog = null; // snapshot de releases a que o cache pertence
 
     async function getReleases(force) {
         if (!force && configCache && (Date.now() - configCache.fetchedAt) < CONFIG_TTL_MS) {
@@ -125,9 +139,7 @@ function createWaybackService(deps) {
         return pendingFetch;
     }
 
-    async function getLocalChanges(lon, lat) {
-        const releases = await getReleases();
-        const tile = lonLatToTile(lon, lat, DEDUPE_ZOOM);
+    async function runTilemapCascade(releases, tile) {
         const result = [];
         let i = 0;
         while (i < releases.length) {
@@ -149,6 +161,30 @@ function createWaybackService(deps) {
             i = (actualIdx >= 0 ? actualIdx : i) + 1;
         }
         return result;
+    }
+
+    async function getLocalChanges(lon, lat) {
+        const releases = await getReleases();
+        // Catálogo renovado (TTL ou force) → o dedupe pode mudar; zera o cache.
+        if (tileCacheCatalog !== releases) {
+            tileCache.clear();
+            tileCacheCatalog = releases;
+        }
+        const tile = lonLatToTile(lon, lat, DEDUPE_ZOOM);
+        const key = tile.z + '/' + tile.x + '/' + tile.y;
+        if (tileCache.has(key)) {
+            return tileCache.get(key);
+        }
+        if (tileCache.size >= TILE_CACHE_MAX) {
+            tileCache.clear();
+        }
+        const cascade = runTilemapCascade(releases, tile).catch(function (err) {
+            // Falha não fica no cache: o próximo ponto no tile tenta de novo.
+            tileCache.delete(key);
+            throw err;
+        });
+        tileCache.set(key, cascade);
+        return cascade;
     }
 
     async function getMetadata(release, lon, lat) {

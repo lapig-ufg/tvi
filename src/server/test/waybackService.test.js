@@ -104,6 +104,88 @@ test('getLocalChanges: deduplica via tilemap seguindo select[] e para quando nã
     assert.deepEqual(changes.map(r => r.releaseNum), [35098, 47963]);
 });
 
+test('getLocalChanges: reutiliza o resultado por tile z14 entre pontos no mesmo tile', async () => {
+    const fetchJson = fetchJsonStub([
+        ['waybackconfig.json', FAKE_CONFIG],
+        ['/tilemap/64776/', { data: [1], select: [64776] }],
+        ['/tilemap/35098/', { data: [1] }],
+        ['/tilemap/47963/', { data: [0] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    const first = await svc.getLocalChanges(-49.25, -16.68);
+    const callsAfterFirst = fetchJson.calls.length;
+    // Deslocamento de 0,0001° (~11 m) — mesmo tile z14 (resolução ~0,022°).
+    const second = await svc.getLocalChanges(-49.2501, -16.6801);
+    assert.deepEqual(second.map(r => r.releaseNum), first.map(r => r.releaseNum));
+    assert.equal(fetchJson.calls.length, callsAfterFirst,
+        'segundo ponto no mesmo tile não pode gerar novas chamadas de tilemap');
+});
+
+test('getLocalChanges: chamadas concorrentes no mesmo tile compartilham a mesma cascata', async () => {
+    const fetchJson = fetchJsonStub([
+        ['waybackconfig.json', FAKE_CONFIG],
+        ['/tilemap/64776/', async function () {
+            await new Promise(r => setImmediate(r));
+            return { data: [1] };
+        }],
+        ['/tilemap/35098/', { data: [0] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    const [r1, r2] = await Promise.all([
+        svc.getLocalChanges(-49.25, -16.68),
+        svc.getLocalChanges(-49.25, -16.68)
+    ]);
+    assert.deepEqual(r1.map(r => r.releaseNum), [64776]);
+    assert.deepEqual(r2.map(r => r.releaseNum), [64776]);
+    const tilemapCalls = fetchJson.calls.filter(u => u.includes('/tilemap/')).length;
+    assert.equal(tilemapCalls, 2, 'uma única cascata (2 consultas) para as duas chamadas');
+});
+
+test('getLocalChanges: tiles distintos não compartilham cache', async () => {
+    const fetchJson = fetchJsonStub([
+        ['waybackconfig.json', FAKE_CONFIG],
+        ['/tilemap/64776/', { data: [1] }],
+        ['/tilemap/35098/', { data: [0] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    await svc.getLocalChanges(-49.25, -16.68);
+    const callsAfterFirst = fetchJson.calls.length;
+    await svc.getLocalChanges(-47.0, -15.0); // outro tile z14
+    assert.ok(fetchJson.calls.length > callsAfterFirst,
+        'tile diferente exige nova cascata de tilemap');
+});
+
+test('getLocalChanges: cascata com erro não fica no cache (retry possível)', async () => {
+    let failFirst = true;
+    const fetchJson = fetchJsonStub([
+        ['waybackconfig.json', FAKE_CONFIG],
+        ['/tilemap/64776/', function () {
+            if (failFirst) { failFirst = false; throw new Error('tilemap fora do ar'); }
+            return { data: [1] };
+        }],
+        ['/tilemap/35098/', { data: [0] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    await assert.rejects(() => svc.getLocalChanges(-49.25, -16.68));
+    const retried = await svc.getLocalChanges(-49.25, -16.68);
+    assert.deepEqual(retried.map(r => r.releaseNum), [64776]);
+});
+
+test('getLocalChanges: renovação do catálogo (force) invalida o cache de tiles', async () => {
+    const fetchJson = fetchJsonStub([
+        ['waybackconfig.json', FAKE_CONFIG],
+        ['/tilemap/64776/', { data: [1] }],
+        ['/tilemap/35098/', { data: [0] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    await svc.getLocalChanges(-49.25, -16.68);
+    await svc.getReleases(true); // novo snapshot do catálogo
+    const callsAfterForce = fetchJson.calls.length;
+    await svc.getLocalChanges(-49.25, -16.68);
+    const newTilemapCalls = fetchJson.calls.slice(callsAfterForce).filter(u => u.includes('/tilemap/')).length;
+    assert.ok(newTilemapCalls > 0, 'catálogo novo exige nova cascata (releases podem ter mudado)');
+});
+
 test('getMetadata: extrai captureDate/source/resolution e nunca rejeita', async () => {
     // URL real: {metadataLayerUrl}/{layerId}/query — cascata de sub-layers
     // [4, 6, 8, 10] (zooms 19..13); layer 4 é a primeira consultada.

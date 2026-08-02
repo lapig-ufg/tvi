@@ -119,7 +119,11 @@ Esri:
   (`DEDUPE_ZOOM`, ~2,4 m/px no Brasil) e deduplica as releases via `tilemap`,
   varrendo da mais recente para a mais antiga e seguindo `select[0]` para
   pular blocos de releases idênticas; encerra quando `data[0]` indica ausência
-  de tile.
+  de tile. **Cache por tile z14:** pontos no mesmo tile têm resultado
+  idêntico (o tile é a chave da consulta), então a cascata é computada uma
+  única vez por tile e compartilhada — inclusive entre chamadas concorrentes
+  (memoização de promise). O cache é invalidado quando o catálogo é renovado,
+  falhas não são cacheadas e há limite de segurança de 100 mil entradas.
 - `getMetadata(release, lon, lat)` — consulta o MapServer de metadados da
   release. Cada MapServer tem 14 sub-layers por faixa de resolução
   (`layerId = 23 − zoom`, com *clamp* em 13). A consulta é feita **em
@@ -148,10 +152,16 @@ GeoJSON quando `imageType === 'wayback'` (`triggerSyncIfWayback`, chamado por
 
 - **Idempotente:** pula pontos com `waybackSyncedAt`, salvo `force` (que
   reprocessa todos).
+- **Paralelismo em dois níveis:** `SYNC_CONCURRENCY` pontos simultâneos
+  (padrão 20, configurável pela variável de ambiente
+  `WAYBACK_SYNC_CONCURRENCY`) e, dentro de cada ponto, os metadados das
+  releases consultados com `METADATA_CONCURRENCY = 5` em paralelo (são
+  independentes entre si; a ordem final vem do sort por data de exibição).
+  Teto de requisições em voo: `20 × 5 = 100`, absorvível pelo retry/backoff
+  em caso de throttling da Esri.
 - **Lock:** `findOneAndUpdate` com `status: {$ne: 'running'}` + upsert; o
   conflito 11000 do driver 2.x é tratado como "já em execução".
-- **Concorrência:** 5 pontos em paralelo; pontos arquivados (`archivedAt`)
-  são excluídos.
+- Pontos arquivados (`archivedAt`) são excluídos.
 - **Atomicidade por ponto:** `waybackImages[]` nunca é gravado parcial — um
   único `$set` por ponto ao final do processamento.
 - **Progresso:** operadores comutativos (`$inc` para `processed`, `$push` com
@@ -161,9 +171,10 @@ GeoJSON quando `imageType === 'wayback'` (`triggerSyncIfWayback`, chamado por
   o estado final é gravado com `$set` autoritativo
   (`completed`/`completed_with_errors`).
 
-Estimativa de carga: campanha de 1.000 pontos ≈ 25–50 mil requisições leves;
-dezenas de minutos com a concorrência configurada. Para campanhas com dezenas
-de milhares de pontos, o job leva horas (ver §7).
+Estimativa de carga: o custo dominante é a cascata de tilemap por **tile**
+(não por ponto — campanhas densas reaproveitam o cache) e as consultas de
+metadados por release. Com o paralelismo em dois níveis e o cache de tiles,
+campanhas de dezenas de milhares de pontos caem de dias para horas (ver §7).
 
 ### 3.4 Guarda de inspeção (`services/waybackInspectionGuard.js`)
 
@@ -287,9 +298,14 @@ campanha) estavam latentemente quebrados; a correção beneficia a tela inteira.
 - **Liberar inspetores somente após o sync:** aguardar
   `GET /api/wayback/sync/:id/status` = `completed` antes de abrir a campanha —
   ponto sem `waybackImages` bloqueia a inspeção sem opção de pular.
-- **Campanhas grandes:** o job de dezenas de milhares de pontos leva horas
-  (várias chamadas à Esri por ponto). `force=1` nessa escala é impraticável
-  como rotina; preferir campanhas de teste pequenas para validação.
+- **Campanhas grandes:** com o cache de tiles e o paralelismo em dois níveis,
+  o job de dezenas de milhares de pontos é questão de horas (dependendo da
+  dispersão espacial — pontos concentrados reaproveitam muito mais o cache).
+  `WAYBACK_SYNC_CONCURRENCY` permite ajustar o ritmo ao ambiente. `force=1`
+  reprocessa tudo e deve ser usado com parcimônia; para validação, preferir
+  campanhas de teste pequenas.
+- **Retomada após otimização/interrupção:** o job é idempotente — reiniciar o
+  sync aproveita os pontos já processados (`waybackSyncedAt`).
 - O acompanhamento é feito pelo painel admin (§5), pelo endpoint de status ou
   pela coleção `waybackSync`.
 
