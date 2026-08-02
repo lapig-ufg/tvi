@@ -31,7 +31,15 @@ const MAX_RETRIES = 3;
 // compatível com a imagem mostrada ao inspetor.
 const METADATA_MAX_ZOOM = 23;
 const METADATA_MIN_ZOOM = 10;
-const METADATA_QUERY_ZOOM = 19;
+// Cascata de zooms para a consulta de metadados: cada sub-layer do MapServer
+// de metadados cobre uma faixa de resolução da imagem-fonte, e a faixa certa
+// varia por região (áreas urbanas têm cobertura na camada mais detalhada;
+// áreas rurais/Amazônia só a partir de camadas mais grossas — verificado
+// empiricamente em 2026-08-01: ponto em -60.24,-7.69 sem features na layer 4
+// e com WV03/1.2m na layer 6). Consulta da mais detalhada para a mais grossa
+// e para na primeira com resultado; camadas 12-13 (TerraColor, mosaico global
+// de 15 m sem data de captura) ficam de fora por não agregarem informação.
+const METADATA_QUERY_ZOOMS = [19, 17, 15, 13];
 
 function lonLatToTile(lon, lat, zoom) {
     const n = Math.pow(2, zoom);
@@ -146,23 +154,26 @@ function createWaybackService(deps) {
     async function getMetadata(release, lon, lat) {
         const empty = { captureDate: null, source: null, resolution: null };
         try {
-            const layerId = getMetadataLayerId(METADATA_QUERY_ZOOM);
             const geometry = JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } });
-            const url = release.metadataLayerUrl + '/' + layerId + '/query'
-                + '?f=json&geometryType=esriGeometryPoint&inSR=4326'
-                + '&spatialRel=esriSpatialRelIntersects&returnGeometry=false'
-                + '&outFields=SRC_DATE2,SRC_DESC,SAMP_RES'
-                + '&geometry=' + encodeURIComponent(geometry);
-            const data = await fetchJson(url);
-            const attrs = data && data.features && data.features[0] && data.features[0].attributes;
-            if (!attrs) return empty;
-            return {
-                captureDate: attrs.SRC_DATE2
-                    ? new Date(attrs.SRC_DATE2).toISOString().slice(0, 10)
-                    : null,
-                source: attrs.SRC_DESC || null,
-                resolution: (typeof attrs.SAMP_RES === 'number') ? attrs.SAMP_RES : null
-            };
+            for (const zoom of METADATA_QUERY_ZOOMS) {
+                const layerId = getMetadataLayerId(zoom);
+                const url = release.metadataLayerUrl + '/' + layerId + '/query'
+                    + '?f=json&geometryType=esriGeometryPoint&inSR=4326'
+                    + '&spatialRel=esriSpatialRelIntersects&returnGeometry=false'
+                    + '&outFields=SRC_DATE2,SRC_DESC,SAMP_RES'
+                    + '&geometry=' + encodeURIComponent(geometry);
+                const data = await fetchJson(url);
+                const attrs = data && data.features && data.features[0] && data.features[0].attributes;
+                if (!attrs) continue;
+                return {
+                    captureDate: attrs.SRC_DATE2
+                        ? new Date(attrs.SRC_DATE2).toISOString().slice(0, 10)
+                        : null,
+                    source: attrs.SRC_DESC || null,
+                    resolution: (typeof attrs.SAMP_RES === 'number') ? attrs.SAMP_RES : null
+                };
+            }
+            return empty;
         } catch (err) {
             await logger.warn('Wayback: metadados indisponíveis para release', {
                 module: 'waybackService', function: 'getMetadata',
@@ -188,4 +199,4 @@ module.exports.lonLatToTile = lonLatToTile;
 module.exports.parseReleaseDate = parseReleaseDate;
 module.exports.getMetadataLayerId = getMetadataLayerId;
 module.exports.DEDUPE_ZOOM = DEDUPE_ZOOM;
-module.exports.METADATA_QUERY_ZOOM = METADATA_QUERY_ZOOM;
+module.exports.METADATA_QUERY_ZOOMS = METADATA_QUERY_ZOOMS;

@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 const waybackModule = require(path.join(__dirname, '..', 'services', 'waybackService'));
-const { createWaybackService, lonLatToTile, getMetadataLayerId, METADATA_QUERY_ZOOM } = waybackModule;
+const { createWaybackService, lonLatToTile, getMetadataLayerId } = waybackModule;
 
 const silentLogger = {
     info: async () => {}, warn: async () => {}, error: async () => {}
@@ -51,10 +51,10 @@ test('lonLatToTile: converte lon/lat em tile XYZ correto', () => {
 test('getMetadataLayerId: deriva o sub-layer de metadados a partir do zoom, com clamp no piso', () => {
     // MAX_ZOOM(23) - zoom, clamp em MAX_ZOOM - MIN_ZOOM(10) = 13
     assert.equal(getMetadataLayerId(23), 0);
-    assert.equal(getMetadataLayerId(19), 4); // METADATA_QUERY_ZOOM usado pelo getMetadata
+    assert.equal(getMetadataLayerId(19), 4); // primeiro zoom da cascata do getMetadata
     assert.equal(getMetadataLayerId(10), 13);
     assert.equal(getMetadataLayerId(5), 13); // abaixo do MIN_ZOOM: clamp no sub-layer mais raso
-    assert.equal(METADATA_QUERY_ZOOM, 19);
+    assert.deepEqual(waybackModule.METADATA_QUERY_ZOOMS, [19, 17, 15, 13]);
 });
 
 test('getReleases: ordena por data decrescente, extrai releaseDate do itemTitle e usa cache', async () => {
@@ -105,7 +105,8 @@ test('getLocalChanges: deduplica via tilemap seguindo select[] e para quando nã
 });
 
 test('getMetadata: extrai captureDate/source/resolution e nunca rejeita', async () => {
-    // URL real: {metadataLayerUrl}/{layerId}/query — layerId = MAX_ZOOM(23) - METADATA_QUERY_ZOOM(19) = 4
+    // URL real: {metadataLayerUrl}/{layerId}/query — cascata de sub-layers
+    // [4, 6, 8, 10] (zooms 19..13); layer 4 é a primeira consultada.
     // (confirmado contra o serviço real da Esri: MapServer/0/query e MapServer/query
     // retornam vazio/schema, não features; o campo de resolução é SAMP_RES, não SRC_RES).
     const epoch2018 = Date.UTC(2018, 3, 12); // 2018-04-12
@@ -124,4 +125,36 @@ test('getMetadata: extrai captureDate/source/resolution e nunca rejeita', async 
     const fail = await svc.getMetadata(
         { releaseNum: 10, metadataLayerUrl: FAKE_CONFIG['10'].metadataLayerUrl }, -49.25, -16.68);
     assert.deepEqual(fail, { captureDate: null, source: null, resolution: null });
+});
+
+test('getMetadata: cai em cascata para sub-layers mais grossas quando a detalhada não tem features', async () => {
+    // Cenário real (Amazônia, 2026-08-01): layer 4 sem features; cobertura
+    // WV03/1.2m aparece a partir da layer 6. A cascata deve parar na primeira
+    // camada com resultado.
+    const epoch2021 = Date.UTC(2021, 6, 10); // 2021-07-10
+    const fetchJson = fetchJsonStub([
+        ['Wayback_2018_r10/MapServer/4/query', { features: [] }],
+        ['Wayback_2018_r10/MapServer/6/query', {
+            features: [{ attributes: { SRC_DATE2: epoch2021, SRC_DESC: 'WV03', SAMP_RES: 1.2 } }]
+        }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    const meta = await svc.getMetadata(
+        { releaseNum: 47963, metadataLayerUrl: FAKE_CONFIG['47963'].metadataLayerUrl }, -60.24, -7.69);
+    assert.deepEqual(meta, { captureDate: '2021-07-10', source: 'WV03', resolution: 1.2 });
+    assert.equal(fetchJson.calls.length, 2, 'para na primeira camada com features');
+});
+
+test('getMetadata: retorna nulls quando todas as sub-layers da cascata vêm vazias', async () => {
+    const fetchJson = fetchJsonStub([
+        ['Wayback_2018_r10/MapServer/4/query', { features: [] }],
+        ['Wayback_2018_r10/MapServer/6/query', { features: [] }],
+        ['Wayback_2018_r10/MapServer/8/query', { features: [] }],
+        ['Wayback_2018_r10/MapServer/10/query', { features: [] }]
+    ]);
+    const svc = createWaybackService({ logger: silentLogger, fetchJson });
+    const meta = await svc.getMetadata(
+        { releaseNum: 47963, metadataLayerUrl: FAKE_CONFIG['47963'].metadataLayerUrl }, 0, 0);
+    assert.deepEqual(meta, { captureDate: null, source: null, resolution: null });
+    assert.equal(fetchJson.calls.length, 4, 'esgota a cascata [4,6,8,10]');
 });
