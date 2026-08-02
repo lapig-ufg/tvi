@@ -1,7 +1,7 @@
 'use strict';
 
 // Controller para Gestão de Campanha Individual
-Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $interval, $uibModal) {
+Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $interval, $uibModal, NotificationDialog) {
     $scope.campaignId = $routeParams.id;
     $scope.loading = true;
     $scope.details = null;
