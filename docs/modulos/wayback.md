@@ -190,6 +190,17 @@ Além disso, `points.js` **pula a consolidação** (`classConsolidate`) quando
 `imageType === 'wayback'` — a rotina itera `initialYear..finalYear` e não se
 aplica a formulários por release.
 
+**Distribuição de pontos:** em campanhas Wayback, a seleção do próximo ponto
+do inspetor (`buildFindPointFilter`, usada por `findPoint`) exige
+`waybackImages` não vazio. Isso permite liberar inspetores **com o job de
+sincronização ainda em andamento** — a frente de sync corre à frente da
+distribuição — e exclui pontos sem cobertura, cuja inspeção seria bloqueada
+pelo visualizador de qualquer forma. A cláusula é aditiva às guardas
+existentes (over-serve/`$expr`, retrocompatibilidade de `userNameCount`) e
+não se aplica a campanhas legadas. Observação: o caminho de distribuição por
+blocos (`findPointFromBlock`) não possui esse filtro — a combinação
+blocos + Wayback não é suportada.
+
 ### 3.5 Demais alterações em arquivos existentes
 
 - `controllers/campaign-crud.js` — força `useDynamicMaps` e dispara o sync
@@ -289,15 +300,17 @@ campanha) estavam latentemente quebrados; a correção beneficia a tela inteira.
 | Release removida/renumerada pela Esri | Célula mostra aviso de imagem indisponível; demais células seguem funcionais. Classificações permanecem válidas (referenciam `releaseNum` + `captureDate` persistidos). |
 | Ponto na fronteira de tiles | Dedupe usa o tile z14 que contém o ponto; a área visível pode incluir tiles vizinhos com histórico diferente. Limitação aceita (idêntica ao app oficial da Esri). |
 | `captureDate` ausente | Job grava `captureDate: null`; o cliente usa `releaseDate` marcada como data aproximada. Pontos sincronizados antes da cascata de metadados exigem `force=1` para repopular. |
-| Ponto sem `waybackImages` (sem cobertura ou job pendente) | Aviso no lugar da grade e inspeção bloqueada; o ponto continua na fila de distribuição normal. |
+| Ponto sem `waybackImages` (sem cobertura ou job pendente) | Não é servido pela distribuição (filtro em `buildFindPointFilter`); se acessado diretamente (busca por índice no supervisor), exibe aviso no lugar da grade e a inspeção fica bloqueada. |
 | Job interrompido (restart do servidor) | Idempotente e retomável via `waybackSyncedAt` — basta reexecutar o sync. **Porém** o documento `waybackSync` fica com `status: 'running'` órfão: o painel mostra execução estagnada e os botões ficam desabilitados; não há cancel/reset no backend (dívida conhecida — exige intervenção manual na coleção). |
 | Campanha não-Wayback | Nenhuma linha do módulo executa (early-return e `ng-if` são os únicos pontos de contato). |
 
 ## 7. Operação
 
-- **Liberar inspetores somente após o sync:** aguardar
-  `GET /api/wayback/sync/:id/status` = `completed` antes de abrir a campanha —
-  ponto sem `waybackImages` bloqueia a inspeção sem opção de pular.
+- **Inspetores podem ser liberados com o sync em andamento:** a distribuição
+  serve apenas pontos com grade pronta, então os inspetores nunca recebem
+  ponto pendente. Se o ritmo de inspeção alcançar a frente de sincronização,
+  o inspetor vê temporariamente o estado "sem pontos disponíveis" até novos
+  pontos serem processados.
 - **Campanhas grandes:** com o cache de tiles e o paralelismo em dois níveis,
   o job de dezenas de milhares de pontos é questão de horas (dependendo da
   dispersão espacial — pontos concentrados reaproveitam muito mais o cache).

@@ -2,6 +2,72 @@ const proj4 = require('proj4');
 const usernameMatcher = require('../services/usernameMatcher');
 const waybackGuard = require('../services/waybackInspectionGuard');
 
+// Filtro de seleção do próximo ponto do inspetor (findPoint). Função pura,
+// extraída para ser testável isoladamente (test/waybackDistributionFilter.test.js).
+//
+// TKT-000015 — `$where` removido por ser não-indexável (JavaScript server-side
+// avaliado linha a linha). Substituído pelo campo denormalizado `userNameCount`,
+// incrementado atomicamente em `updatePoint`. O índice composto
+// `campaign_inspection_index` (campaign, underInspection, userNameCount, index)
+// cobre essa consulta. Documentos legados sem `userNameCount` caem no ramo
+// de retrocompatibilidade (usando $size enumerado), até que o script
+// `scripts/backfill-userNameCount.js` popule o campo.
+//
+// Corrige a corrida de over-serve (2026-06-12, incidente Peru region4):
+// as cláusulas indexadas acima/abaixo avaliam `underInspection` e
+// `userNameCount` ISOLADAMENTE, então um ponto com 2 de 3 inspeções
+// (1 vaga) podia ser servido a até numInspec usuários simultâneos —
+// os perdedores recebiam 409 POINT_ALREADY_FULL no save (Tier 2.5) e
+// perdiam o formulário preenchido. O `$expr` abaixo exige que
+// inspeções existentes + serves em andamento caibam em numInspec.
+// `$max` com 0 protege contra `underInspection` negativo (documentos
+// com ui=-1 observados em produção). Requer MongoDB >= 3.6 ($expr em
+// find); produção roda 4.4.29. Atua como filtro residual após o
+// índice `campaign_inspection_index`.
+function buildFindPointFilter(campaign, username) {
+	var legacyBranches = [];
+	for (var __s = 0; __s < campaign.numInspec; __s++) {
+		legacyBranches.push({
+			"userNameCount": { "$exists": false },
+			"userName": { "$size": __s }
+		});
+	}
+
+	var andClauses = [
+		{ "campaign": { "$eq": campaign._id } },
+		{ "userName": { "$nin": [ username ] } },
+		{ "underInspection": { $lt: campaign.numInspec } },
+		{
+			"$or": [
+				{ "userNameCount": { "$exists": true, "$lt": campaign.numInspec } }
+			].concat(legacyBranches)
+		},
+		{
+			"$expr": {
+				"$lt": [
+					{ "$add": [
+						{ "$ifNull": [ "$userNameCount", { "$size": { "$ifNull": [ "$userName", [] ] } } ] },
+						{ "$max": [ { "$ifNull": [ "$underInspection", 0 ] }, 0 ] }
+					]},
+					campaign.numInspec
+				]
+			}
+		}
+	];
+
+	// Campanhas Wayback: só serve pontos com a grade de imagens pronta
+	// (waybackImages não vazio). Permite liberar inspetores com o job de
+	// sincronização ainda em andamento — a frente de sync corre à frente da
+	// distribuição — e exclui pontos sem cobertura Wayback, cuja inspeção é
+	// bloqueada pelo visualizador de qualquer forma. Cláusula residual após
+	// o índice `campaign_inspection_index` (mesma categoria do $expr acima).
+	if (campaign.imageType === 'wayback') {
+		andClauses.push({ "waybackImages.0": { "$exists": true } });
+	}
+
+	return { "$and": andClauses };
+}
+
 module.exports = function(app) {
 	// Usar o logger do app
 	const logger = app.services.logger;
@@ -120,55 +186,10 @@ module.exports = function(app) {
 			// não bloqueia o fluxo; cleanup completo ocorrerá no job.
 		}
 
-		// TKT-000015 — `$where` removido por ser não-indexável (JavaScript server-side
-		// avaliado linha a linha). Substituído pelo campo denormalizado `userNameCount`,
-		// incrementado atomicamente em `updatePoint`. O índice composto
-		// `campaign_inspection_index` (campaign, underInspection, userNameCount, index)
-		// cobre essa consulta. Documentos legados sem `userNameCount` caem no ramo
-		// de retrocompatibilidade (usando $size enumerado), até que o script
-		// `scripts/backfill-userNameCount.js` popule o campo.
-		var legacyBranches = [];
-		for (var __s = 0; __s < campaign.numInspec; __s++) {
-			legacyBranches.push({
-				"userNameCount": { "$exists": false },
-				"userName": { "$size": __s }
-			});
-		}
-
-		// Corrige a corrida de over-serve (2026-06-12, incidente Peru region4):
-		// as cláusulas indexadas acima/abaixo avaliam `underInspection` e
-		// `userNameCount` ISOLADAMENTE, então um ponto com 2 de 3 inspeções
-		// (1 vaga) podia ser servido a até numInspec usuários simultâneos —
-		// os perdedores recebiam 409 POINT_ALREADY_FULL no save (Tier 2.5) e
-		// perdiam o formulário preenchido. O `$expr` abaixo exige que
-		// inspeções existentes + serves em andamento caibam em numInspec.
-		// `$max` com 0 protege contra `underInspection` negativo (documentos
-		// com ui=-1 observados em produção). Requer MongoDB >= 3.6 ($expr em
-		// find); produção roda 4.4.29. Atua como filtro residual após o
-		// índice `campaign_inspection_index`.
-		var findOneFilter = {
-			"$and": [
-				{ "campaign": { "$eq": campaign._id } },
-				{ "userName": { "$nin": [ username ] } },
-				{ "underInspection": { $lt: campaign.numInspec } },
-				{
-					"$or": [
-						{ "userNameCount": { "$exists": true, "$lt": campaign.numInspec } }
-					].concat(legacyBranches)
-				},
-				{
-					"$expr": {
-						"$lt": [
-							{ "$add": [
-								{ "$ifNull": [ "$userNameCount", { "$size": { "$ifNull": [ "$userName", [] ] } } ] },
-								{ "$max": [ { "$ifNull": [ "$underInspection", 0 ] }, 0 ] }
-							]},
-							campaign.numInspec
-						]
-					}
-				}
-			]
-		};
+		// Construção extraída para buildFindPointFilter (topo do arquivo):
+		// mantém as guardas TKT-000015/over-serve e, em campanhas Wayback,
+		// restringe a distribuição a pontos com a grade de imagens pronta.
+		var findOneFilter = buildFindPointFilter(campaign, username);
 
 		// O filtro "currentFilter" era usado antigamente para busca por índice ordinal.
 		// Mantido como simples filtro por campanha para não quebrar chamadores existentes.
@@ -1700,3 +1721,5 @@ module.exports = function(app) {
 
 	return Points;
 }
+
+module.exports.buildFindPointFilter = buildFindPointFilter;
