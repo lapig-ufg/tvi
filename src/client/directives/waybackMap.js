@@ -39,6 +39,33 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
             $scope.tileError = false;
             $scope.markerInMap = true;
 
+            // Cria (ou recria) a tile layer da release corrente. Chamada no
+            // setup e sempre que tileUrl/mapDate mudarem via watcher.
+            function updateTileLayer() {
+                if (!$scope.map) return;
+                $scope.tileError = false;
+                if ($scope.tileLayer) {
+                    $scope.tileLayer.off();
+                    $scope.map.removeLayer($scope.tileLayer);
+                    $scope.tileLayer = null;
+                }
+                if (!$scope.tileUrl) {
+                    $scope.tileError = true;
+                    return;
+                }
+                $scope.tileLayer = L.tileLayer($scope.tileUrl, {
+                    attribution: 'Esri Wayback — ' + ($scope.mapDate || ''),
+                    maxZoom: $scope.zoom + 6
+                });
+                $scope.tileLayer.on('tileerror', function () {
+                    $timeout(function () { $scope.tileError = true; });
+                });
+                $scope.tileLayer.addTo($scope.map);
+                if ($scope.marker) {
+                    $scope.marker.setZIndexOffset(1000);
+                }
+            }
+
             $timeout(function () {
                 var mapElement = $element[0].querySelector('#wayback-map-' + $scope.$id);
                 if (!mapElement || $scope._destroyed) return;
@@ -56,18 +83,7 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
 
                 mapSyncService.register($scope.map);
 
-                if ($scope.tileUrl) {
-                    $scope.tileLayer = L.tileLayer($scope.tileUrl, {
-                        attribution: 'Esri Wayback — ' + ($scope.mapDate || ''),
-                        maxZoom: $scope.zoom + 6
-                    });
-                    $scope.tileLayer.on('tileerror', function () {
-                        $timeout(function () { $scope.tileError = true; });
-                    });
-                    $scope.tileLayer.addTo($scope.map);
-                } else {
-                    $scope.tileError = true;
-                }
+                updateTileLayer();
 
                 $scope.marker = L.marker([$scope.lat, $scope.lon], {
                     icon: L.icon({
@@ -76,6 +92,25 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                     }),
                     zIndexOffset: 1000
                 }).addTo($scope.map);
+
+                // O ng-repeat da grade usa `track by map.index`: ao trocar de
+                // ponto, as células (e estas diretivas) são RECICLADAS, não
+                // recriadas — sem watcher a célula ficaria congelada no ponto
+                // anterior. Mesmo padrão do landsatMap
+                // (others/directives.js:1032-1051), estendido a tileUrl/mapDate
+                // porque aqui cada célula também troca de release.
+                $scope.$watchGroup(['lon', 'lat', 'tileUrl', 'mapDate'], function (newValues, oldValues) {
+                    if ($scope._destroyed || !$scope.map) return;
+                    var changed = newValues.some(function (v, i) { return v !== oldValues[i]; });
+                    if (!changed) return;
+                    if ($scope.lon !== undefined && $scope.lat !== undefined) {
+                        $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
+                        if ($scope.marker) {
+                            $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                        }
+                    }
+                    updateTileLayer();
+                });
             });
 
             $scope.$on('$destroy', function () {
