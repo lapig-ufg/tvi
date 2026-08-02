@@ -38,7 +38,7 @@
                 <!-- Ferramentas - sempre visíveis -->
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 15px;">
                         <legend>{{ 'TEMPORAL.TOOLS.TITLE' | i18n }}:</legend>
-                        <input style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
+                        <input ng-if="!isWayback" style="margin-top: 0px;" ng-click="changePeriod()" type="button" class="btn btn-warning"
                                value="{{ 'TEMPORAL.TOOLS.CHANGE_PERIOD' | i18n }}">
                         <input ng-show="showPointInfo && !isObjectEmpty(point)" style="margin-top: 0px;" ng-click="getKml()" type="button" class="btn btn-success"
                                value="{{ 'TEMPORAL.TOOLS.GOOGLE_EARTH' | i18n }}">
@@ -189,12 +189,12 @@
                             }
                         }
                     </style>
-                    <form class="form-temporal" ng-repeat="answer in answers">
+                    <form class="form-temporal" ng-if="!isWayback" ng-repeat="answer in answers">
                         <div class="form-row-dates">
                             <div class="form-group-inline">
                                 <label class="form-label">{{ 'COMMON.BETWEEN' | i18n }}</label>
                                 <select ng-disabled='answers.length >= ($index + 1)'
-                                        class="form-control form-year-select" 
+                                        class="form-control form-year-select"
                                         ng-model="answer.initialYear"
                                         ng-options="x for x in optionYears[$index]">
                                 </select>
@@ -227,13 +227,55 @@
                             </div>
                         </div>
                     </form>
+                    <!-- Formulário Wayback: consolidação por data de captura.
+                         Gate extra em waybackOptionDates (além de isWayback):
+                         no 1º ponto da sessão isWayback já pode estar true
+                         antes de generateWaybackMaps() resolver, e answers
+                         ainda pode conter o formato legado por uma volta de
+                         digest — evita ng-options sobre array inexistente. -->
+                    <form class="form-temporal" ng-if="isWayback && waybackOptionDates" ng-repeat="answer in answers">
+                        <div class="form-row-dates">
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'COMMON.BETWEEN' | i18n }}</label>
+                                <select ng-disabled="answers.length >= ($index + 1)"
+                                        class="form-control form-year-select"
+                                        ng-model="answer.initialDate"
+                                        ng-options="x for x in waybackOptionDates[$index]">
+                                </select>
+                            </div>
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'COMMON.AND' | i18n }}</label>
+                                <select ng-disabled="answers.length != ($index + 1)"
+                                        class="form-control form-year-select"
+                                        ng-model="answer.finalDate"
+                                        ng-change="waybackFormPlus()"
+                                        ng-options="y for y in waybackOptionDates[$index]">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group-inline">
+                                <label class="form-label">{{ 'TEMPORAL.FORM.CLASS' | i18n }}:</label>
+                                <select class="form-control form-landuse-select" ng-model="answer.landUse">
+                                    <option value="" disabled selected>{{ 'COMMON.CHOOSE' | i18n }}</option>
+                                    <option ng-repeat="z in config.landUse" value="{{z}}">{{z}}</option>
+                                </select>
+                            </div>
+                            <div class="form-group-inline">
+                                <label class="form-label checkbox-label">
+                                    <input type="checkbox" ng-model="answer.pixelBorder">
+                                    {{ 'TEMPORAL.FORM.BORDER_PIXEL' | i18n }}
+                                </label>
+                            </div>
+                        </div>
+                    </form>
                     <div class="form-actions">
                         <input type="button" class="btn btn-success"
-                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission || alreadyInspected"
+                               ng-disabled="(isWayback ? (answers.length === 0 || maps.length === 0 || answers[answers.length - 1].finalDate !== maps[maps.length - 1].date) : answers[answers.length - 1].finalYear != config.finalYear) || onSubmission || alreadyInspected"
                                ng-click="submitForm()" value="{{ 'COMMON.SUBMIT' | i18n }}">
                         <input type="button" class="btn btn-primary"
                                style="margin-left: 8px;"
-                               ng-disabled="answers[answers.length - 1].finalYear != config.finalYear || onSubmission || alreadyInspected"
+                               ng-disabled="(isWayback ? (answers.length === 0 || maps.length === 0 || answers[answers.length - 1].finalDate !== maps[maps.length - 1].date) : answers[answers.length - 1].finalYear != config.finalYear) || onSubmission || alreadyInspected"
                                ng-click="submitFormAndExit()"
                                value="{{ 'TEMPORAL.FORM.SUBMIT_AND_EXIT' | i18n }}">
                         <!-- TKT-000011: registrar dúvida no ponto atual -->
@@ -256,7 +298,7 @@
                         <div class="right-actions">
                             <span class="counter-display"><b>{{counter}} s</b></span>
                             <input type="button" class="btn btn-danger btn-sm"
-                                   ng-click="formSubtraction()"
+                                   ng-click="isWayback ? waybackFormSubtraction() : formSubtraction()"
                                    ng-disabled="answers.length == 1"
                                    value="-">
                         </div>
@@ -266,7 +308,7 @@
         </div>
         <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-10 col-lg-10 main-content">
             <div class="row">
-                <span  ng-show="pointLoaded" ng-hide="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:9px 5px 5px 5px;">
+                <span  ng-show="pointLoaded" ng-hide="isSentinel || isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:9px 5px 5px 5px;">
                     {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
                 </span>
 
@@ -282,6 +324,10 @@
                     {{ 'TEMPORAL.MAP.SENTINEL_IMAGES' | i18n }}
                 </span>
 
+                <span ng-show="isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                    {{ 'TEMPORAL.MAP.WAYBACK_IMAGES' | i18n }}
+                </span>
+
                 <!-- Seletor de visparam Sentinel baseado nos visparams da campanha -->
                 <div ng-show="isSentinel && availableSentinelVisParams.length > 0 && pointLoaded" class="pull-left" style="margin: 5px 0 5px 20px;">
                     <visparam-selector visparams="availableSentinelVisParams"
@@ -293,6 +339,10 @@
             </div>
 
             <div>
+                <div ng-if="isWayback && pointLoaded && !waybackGridLoading && maps.length === 0"
+                     class="alert alert-warning" style="margin: 10px;">
+                    {{ 'TEMPORAL.MAP.WAYBACK_NO_IMAGES' | i18n }}
+                </div>
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
                          ng-class="getMapBoxClass(maps.length)">
@@ -300,7 +350,7 @@
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
                                 <span>{{formatMapDate(map.date)}}</span>
-                                <span>{{periodo}}</span>
+                                <span ng-hide="isWayback">{{periodo}}</span>
                             </div>
 
                             <!-- Botão do Planet Mosaics -->
@@ -311,7 +361,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod"
+                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
@@ -321,7 +371,7 @@
                             </landsat-map>
 
                             <!-- Usar sentinel-map para mapas dinâmicos Sentinel -->
-                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod"
+                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                           lon="point.lon"
                                           lat="point.lat"
                                           zoom="config.zoomLevel"
@@ -331,7 +381,7 @@
                             </sentinel-map>
 
                             <!-- Usar wms-map quando WMS está habilitado para o período atual -->
-                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod"
+                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod && !isWayback"
                                      lon="point.lon"
                                      lat="point.lat"
                                      zoom="config.zoomLevel"
@@ -339,6 +389,18 @@
                                      year="map.year"
                                      wms-config="wmsConfig">
                             </wms-map>
+
+                            <!-- Célula Wayback: URL de tiles já resolvida por release -->
+                            <wayback-map ng-if="useDynamicMaps === true && isWayback"
+                                         lon="point.lon"
+                                         lat="point.lat"
+                                         zoom="config.zoomLevel"
+                                         tile-url="map.url"
+                                         map-date="map.date">
+                            </wayback-map>
+                            <div ng-if="isWayback && map.approximateDate" class="text-muted" style="font-size: 10px; text-align: center;">
+                                {{ 'TEMPORAL.MAP.WAYBACK_APPROXIMATE_DATE' | i18n }}
+                            </div>
 
 <!--                            &lt;!&ndash; Usar inspection-map apenas quando não for mapa dinâmico &ndash;&gt;-->
 <!--                            <inspection-map ng-if="useDynamicMaps !== true"-->

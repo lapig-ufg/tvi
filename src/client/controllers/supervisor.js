@@ -7,7 +7,7 @@
 // vez de em filter.landUse; o fallback no servidor cobre o cliente legado.
 var NOT_CONSOLIDATED_TOKEN = '__NOT_CONSOLIDATED__';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog) {
+Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, waybackGridService) {
     // Sequência monotônica de submits — usada por isCurrent() em $scope.submit
     // para descartar respostas obsoletas de chamadas que perderam a corrida
     // (cliques rápidos Anterior/Próximo, troca rápida de filtro etc.).
@@ -38,6 +38,8 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
     $scope.showTimeseries = true;
     $scope.showPointInfo = true;
     $scope.useDynamicMaps = false; // Default to inspection-map
+    $scope.isWayback = false;
+    $scope.waybackGridLoading = false;
     $scope.wmsEnabled = false;
     $scope.wmsConfig = null;
     $scope.wmsPeriod = 'BOTH';
@@ -309,6 +311,15 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
         $scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
         $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
+        // F1 (mesma correção do temporal.js): isWayback precisa estar correto
+        // ANTES do primeiro submit() -> loadPoint -> generateMaps (síncrono).
+        // loadCampaignConfig só resolve depois, via callback assíncrono —
+        // setar a flag apenas lá deixaria a grade do 1º ponto renderizar em
+        // modo legado por uma volta de digest. $rootScope.user.campaign já é
+        // o documento completo da campanha nesta altura, análogo a isSentinel
+        // acima. loadCampaignConfig mantém a atribuição como refresh
+        // autoritativo (campanha pode ter sido reconfigurada).
+        $scope.isWayback = !!($rootScope.user && $rootScope.user.campaign && $rootScope.user.campaign.imageType === 'wayback');
 
         $scope.dataTab = [
             {"name": i18nService.translate('TABS.USERS'), "checked": true},
@@ -712,7 +723,42 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             return 'L7';
         };
 
+        // Grade Wayback: substitui o laço fixo por ano pela série de releases
+        // pré-computada no ponto (point.waybackImages, gravado pelo sync job).
+        // Mesma lógica de temporal.js (generateWaybackMaps), incluindo o
+        // guard "preserve" e o .catch de rede.
+        var generateWaybackMaps = function () {
+            $scope.maps = [];
+            $scope.waybackGridLoading = true;
+            waybackGridService.getReleasesIndex().then(function (releasesIndex) {
+                $scope.maps = waybackGridService.core.buildGrid($scope.point, $scope.config, releasesIndex);
+
+                // "Recarregar mapas" (reloadMaps -> generateMaps) chama esta
+                // função para o MESMO ponto. O grid não muda entre reloads,
+                // então só reconstrói answers/waybackOptionDates quando não
+                // há respostas wayback válidas em andamento — evita apagar o
+                // que já foi preenchido.
+                var preserve = $scope.answers.length > 0 && $scope.answers[0].hasOwnProperty('initialDate');
+                if (!preserve) {
+                    $scope.answers = waybackGridService.core.buildInitialAnswers(
+                        $scope.maps, ($scope.config && $scope.config.defaultLandUse) || '');
+                    $scope.waybackOptionDates = [waybackGridService.core.optionDates($scope.maps, null)];
+                }
+                $scope.waybackGridLoading = false;
+            }).catch(function () {
+                // Falha de rede ao buscar o índice de releases: zera o
+                // loading para o aviso WAYBACK_NO_IMAGES aparecer (maps
+                // permanece [] do reset acima) em vez de travar em
+                // "carregando" para sempre.
+                $scope.waybackGridLoading = false;
+            });
+        };
+
         var generateMaps = function () {
+            if ($scope.isWayback) {
+                generateWaybackMaps();
+                return;
+            }
             $scope.maps = [];
 
             var tmsIdList = [];
@@ -795,6 +841,14 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         }
 
         var initFormViewVariables = function () {
+            if ($scope.isWayback) {
+                // Wayback: answers é (re)montado por generateWaybackMaps
+                // (depende da grade, que é assíncrona). Aqui apenas zera o
+                // estado, mesmo padrão de temporal.js.
+                $scope.answers = [];
+                $scope.waybackOptionDates = [];
+                return;
+            }
             $scope.optionYears = [];
 
             // TKT-000031: iniciar a primeira caixa no começo da série temporal,
@@ -1000,8 +1054,10 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                         
                         // Verificar se é WMS
                         $scope.isWms = config.imageType === 'wms';
+
+                        $scope.isWayback = config.imageType === 'wayback';
                     }
-                    
+
                     // Processar configuração WMS
                     if (config.wmsConfig && config.wmsConfig.enabled) {
                         $scope.wmsEnabled = true;

@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog, waybackGridService) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false;
@@ -23,6 +23,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     $scope.showTimeseries = true;
     $scope.showPointInfo = true;
     $scope.useDynamicMaps = false; // Default to inspection-map
+    $scope.isWayback = false;
+    $scope.waybackGridLoading = false;
     $scope.wmsEnabled = false;
     $scope.wmsConfig = null;
     $scope.wmsPeriod = 'BOTH';
@@ -216,6 +218,17 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.isChaco = ($rootScope.user.campaign._id.indexOf('chaco') != -1);
         $scope.isRaisg = ($rootScope.user.campaign._id.indexOf('samples') != -1 || $rootScope.user.campaign._id.indexOf('raisg') != -1);
         $scope.isSentinel = $rootScope.user.campaign.hasOwnProperty('image') && $rootScope.user.campaign['image'] === 'sentinel-2-l2a'
+        // F1: isWayback precisa estar correto ANTES do primeiro loadPoint ->
+        // initFormViewVariables (síncrono). loadCampaignConfig só resolve
+        // depois, via callback assíncrono — setar a flag apenas lá deixava o
+        // form/grade do 1º ponto da sessão renderizar em modo legado por uma
+        // volta de digest, produzindo TypeError em waybackOptionDates[$index]
+        // e em maps[maps.length-1].date. $rootScope.user.campaign já é o
+        // documento completo da campanha nesta altura (login.js sobrescreve
+        // com o doc do banco), então dá para decidir de forma síncrona aqui,
+        // análogo a isSentinel acima. loadCampaignConfig mantém a atribuição
+        // como refresh autoritativo (campanha pode ter sido reconfigurada).
+        $scope.isWayback = !!($rootScope.user && $rootScope.user.campaign && $rootScope.user.campaign.imageType === 'wayback');
         $scope.isDisabled = true;
 
         $scope.isObjectEmpty = function (obj) {
@@ -277,6 +290,38 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }
         }
 
+        // Consolidação por data (equivalente Wayback de formPlus/formSubtraction):
+        // ajustar a data final da caixa corrente cria a caixa seguinte cobrindo o
+        // restante da série.
+        $scope.waybackFormPlus = function () {
+            var prevIndex = $scope.answers.length - 1;
+            var prev = $scope.answers[prevIndex];
+            var lastDate = $scope.maps.length ? $scope.maps[$scope.maps.length - 1].date : null;
+            if (!lastDate || prev.finalDate === lastDate) return;
+
+            var nextDates = waybackGridService.core.optionDates($scope.maps, prev.finalDate)
+                .filter(function (d) { return d > prev.finalDate; });
+            if (!nextDates.length) return;
+
+            $scope.waybackOptionDates.push(nextDates);
+            var defaultLU = ($scope.config && $scope.config.defaultLandUse) || '';
+            $scope.answers.push({
+                initialDate: nextDates[0],
+                finalDate: lastDate,
+                landUse: defaultLU || ($scope.config.landUse && $scope.config.landUse[0]) || '',
+                pixelBorder: false
+            });
+        };
+
+        $scope.waybackFormSubtraction = function () {
+            if ($scope.answers.length > 1) {
+                $scope.answers.splice(-1, 1);
+                $scope.waybackOptionDates.splice(-1, 1);
+                var last = $scope.answers[$scope.answers.length - 1];
+                last.finalDate = $scope.maps[$scope.maps.length - 1].date;
+            }
+        };
+
         // ---------------------------------------------------------------
         // TKT-000011: registro de dúvidas pelo intérprete
         // ---------------------------------------------------------------
@@ -320,6 +365,20 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         };
 
         function buildFormPoint() {
+            if ($scope.isWayback) {
+                var entries = waybackGridService.core.expandAnswersToForm($scope.answers, $scope.maps);
+                for (var w = 0; w < entries.length; w++) {
+                    if (!entries[w].landUse) {
+                        NotificationDialog.error(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
+                        return null;
+                    }
+                }
+                if (!entries.length) return null;
+                return {
+                    _id: $scope.point._id,
+                    inspection: { counter: $scope.counter, form: entries }
+                };
+            }
             for (var i = 0; i < $scope.answers.length; i++) {
                 if (!$scope.answers[i].landUse || $scope.answers[i].landUse === '') {
                     NotificationDialog.error(i18nService.translate('TEMPORAL.FORM.VALIDATION_ERROR'));
@@ -749,7 +808,43 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             return 'L7';
         };
 
+        // Grade Wayback: substitui o laço fixo por ano pela série de releases
+        // pré-computada no ponto (point.waybackImages, gravado pelo sync job).
+        const generateWaybackMaps = function () {
+            $scope.maps = [];
+            $scope.waybackGridLoading = true;
+            waybackGridService.getReleasesIndex().then(function (releasesIndex) {
+                $scope.maps = waybackGridService.core.buildGrid($scope.point, $scope.config, releasesIndex);
+
+                // F2: "Recarregar mapas" (reloadMaps -> generateMaps) chama
+                // esta função para o MESMO ponto. O grid não muda entre
+                // reloads (waybackImages é estático no ponto e o índice de
+                // releases é cacheado pelo serviço), então reconstruir
+                // answers/waybackOptionDates aqui apagaria silenciosamente o
+                // que o inspetor já preencheu. Só reconstrói quando não há
+                // respostas wayback válidas em andamento; ponto novo sempre
+                // zera answers antes, em initFormViewVariables (ramo wayback).
+                var preserve = $scope.answers.length > 0 && $scope.answers[0].hasOwnProperty('initialDate');
+                if (!preserve) {
+                    $scope.answers = waybackGridService.core.buildInitialAnswers(
+                        $scope.maps, ($scope.config && $scope.config.defaultLandUse) || '');
+                    $scope.waybackOptionDates = [waybackGridService.core.optionDates($scope.maps, null)];
+                }
+                $scope.waybackGridLoading = false;
+            }).catch(function () {
+                // Falha de rede ao buscar o índice de releases: zera o
+                // loading para o aviso TEMPORAL.MAP.WAYBACK_NO_IMAGES
+                // aparecer (maps permanece [] do reset acima) em vez de
+                // deixar a grade travada em "carregando" para sempre.
+                $scope.waybackGridLoading = false;
+            });
+        };
+
         const generateMaps = function () {
+            if ($scope.isWayback) {
+                generateWaybackMaps();
+                return;
+            }
             $scope.maps = [];
 
             var tmsIdList = [];
@@ -830,6 +925,13 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         const initFormViewVariables = function () {
+            if ($scope.isWayback) {
+                // Wayback: answers é montado por generateWaybackMaps (depende da
+                // grade, que é assíncrona). Aqui apenas zera o estado.
+                $scope.answers = [];
+                $scope.waybackOptionDates = [];
+                return;
+            }
             $scope.optionYears = [];
 
             // A primeira caixa cobre o intervalo completo da campanha
@@ -886,6 +988,8 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                         
                         // Verificar se é WMS
                         $scope.isWms = config.imageType === 'wms';
+
+                        $scope.isWayback = config.imageType === 'wayback';
                     }
                     
                     // Processar configuração WMS

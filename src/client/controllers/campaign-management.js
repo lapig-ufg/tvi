@@ -1,7 +1,7 @@
 'use strict';
 
 // Controller para Gestão de Campanha Individual
-Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $uibModal) {
+Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $interval, $uibModal, NotificationDialog) {
     $scope.campaignId = $routeParams.id;
     $scope.loading = true;
     $scope.details = null;
@@ -52,7 +52,13 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     // Definir aba ativa
     $scope.setActiveTab = function(tab) {
         $scope.activeTab = tab;
-        
+
+        if (tab === 'wayback') {
+            $scope.loadWaybackStatus();
+        } else {
+            stopWaybackPolling();
+        }
+
         // Renderizar gráficos quando a aba é selecionada
         $timeout(function() {
             $scope.renderChartsForTab(tab);
@@ -655,6 +661,105 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         };
         return types[type] || type;
     };
+
+    // ── Sincronização Wayback ────────────────────────────────────────────
+    // Painel da aba 'wayback' (só campanhas imageType === 'wayback').
+    // Polling só roda com a aba aberta E status 'running' — cancelado ao
+    // trocar de aba, ao término do job e no $destroy do scope.
+    $scope.wayback = { status: null, notFound: false, loading: false, error: null, starting: false };
+    var waybackPoll = null;
+    var waybackDestroyed = false;
+
+    function stopWaybackPolling() {
+        if (waybackPoll) {
+            $interval.cancel(waybackPoll);
+            waybackPoll = null;
+        }
+    }
+
+    function ensureWaybackPolling() {
+        if (waybackDestroyed || waybackPoll) return;
+        waybackPoll = $interval(function () {
+            if ($scope.activeTab !== 'wayback') {
+                stopWaybackPolling();
+                return;
+            }
+            $scope.loadWaybackStatus();
+        }, 5000);
+    }
+
+    $scope.loadWaybackStatus = function () {
+        $scope.wayback.loading = true;
+        $scope.wayback.error = null;
+        $http.get('/api/wayback/sync/' + $scope.campaignId + '/status').then(function (response) {
+            $scope.wayback.loading = false;
+            $scope.wayback.error = null;
+            $scope.wayback.notFound = false;
+            $scope.wayback.status = response.data;
+            if (response.data.status === 'running' && $scope.activeTab === 'wayback') {
+                ensureWaybackPolling();
+            } else {
+                stopWaybackPolling();
+            }
+        }, function (error) {
+            $scope.wayback.loading = false;
+            if (error.status === 404) {
+                // Nunca sincronizada: estado normal, não é erro.
+                $scope.wayback.notFound = true;
+                $scope.wayback.status = null;
+                $scope.wayback.error = null;
+                stopWaybackPolling();
+            } else if (error.status === 401) {
+                $location.path('/admin/login');
+            } else {
+                // Falha transiente: mantém o último status exibido e o polling
+                // (se ativo) para a próxima tentativa.
+                $scope.wayback.error = 'Erro ao consultar o status da sincronização.';
+            }
+        });
+    };
+
+    $scope.waybackPercent = function () {
+        var s = $scope.wayback.status;
+        if (!s || !s.total) return 0;
+        return Math.min(100, Math.round((s.processed / s.total) * 100));
+    };
+
+    $scope.startWaybackSync = function (force) {
+        if ($scope.wayback.starting) return;
+        var doStart = function () {
+            $scope.wayback.starting = true;
+            var url = '/api/wayback/sync/' + $scope.campaignId + (force ? '?force=1' : '');
+            $http.post(url).then(function () {
+                $scope.wayback.starting = false;
+                NotificationDialog.success('Sincronização iniciada.');
+                $scope.loadWaybackStatus();
+            }, function (error) {
+                $scope.wayback.starting = false;
+                if (error.status === 401) {
+                    $location.path('/admin/login');
+                    return;
+                }
+                var msg = (error.data && error.data.error) || 'Erro ao iniciar a sincronização.';
+                NotificationDialog.error(msg);
+            });
+        };
+        if (force) {
+            NotificationDialog.confirm(
+                'A ressincronização forçada reprocessa TODOS os pontos da campanha, inclusive os já sincronizados. Para campanhas grandes, isso pode levar horas. Deseja continuar?',
+                'Forçar ressincronização'
+            ).then(function (confirmed) {
+                if (confirmed) doStart();
+            });
+        } else {
+            doStart();
+        }
+    };
+
+    $scope.$on('$destroy', function () {
+        waybackDestroyed = true;
+        stopWaybackPolling();
+    });
 
     // Verificar autenticação ao carregar
     $scope.checkAuth();

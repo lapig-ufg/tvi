@@ -121,7 +121,11 @@
       "SENTINEL_IMAGES": "Sentinel-2 L2A Images",
       "NATURAL_COLOR": "Natural Color",
       "AGRICULTURE": "Agriculture",
-      "FALSE_COLOR": "False Color"
+      "FALSE_COLOR": "False Color",
+      "WAYBACK_IMAGES": "Esri Wayback Imagery",
+      "WAYBACK_NO_IMAGES": "This point has no processed Wayback imagery yet. Inspection is blocked until synchronization completes.",
+      "WAYBACK_TILE_ERROR": "Imagery unavailable for this release.",
+      "WAYBACK_APPROXIMATE_DATE": "Approximate date (release date)"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "NDVI LANDSAT time series",

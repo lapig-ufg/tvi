@@ -1132,7 +1132,8 @@ module.exports = function(app) {
                 visParam: campaignData.visParam || null,
                 visParams: campaignData.visParams || [], // Array de visparams disponíveis
                 defaultVisParam: campaignData.defaultVisParam || null, // Visparam padrão
-                useDynamicMaps: campaignData.useDynamicMaps || false,
+                // Wayback só funciona com tiles dinâmicos — força a flag no tipo wayback.
+                useDynamicMaps: campaignData.imageType === 'wayback' ? true : (campaignData.useDynamicMaps || false),
                 imageType: campaignData.imageType || 'landsat',
                 // Configurações WMS
                 wmsPeriod: campaignData.wmsPeriod || 'BOTH', // DRY, WET ou BOTH
@@ -1202,7 +1203,12 @@ module.exports = function(app) {
             if (updateData.initialYear) updateData.initialYear = parseInt(updateData.initialYear);
             if (updateData.finalYear) updateData.finalYear = parseInt(updateData.finalYear);
             if (updateData.numInspec) updateData.numInspec = parseInt(updateData.numInspec);
-            
+
+            // Wayback só funciona com tiles dinâmicos — força a flag no tipo wayback.
+            if (updateData.imageType === 'wayback') {
+                updateData.useDynamicMaps = true;
+            }
+
             // Atualizar configurações booleanas
             if (updateData.hasOwnProperty('showTimeseries')) {
                 updateData.showTimeseries = updateData.showTimeseries === true;
@@ -2107,9 +2113,15 @@ module.exports = function(app) {
             
             // Emitir evento de conclusão
             emitToUser('upload-completed', result);
-            
+
+            // Wayback: dispara a pré-computação de releases por ponto (fire-and-forget;
+            // não bloqueia a resposta do upload). No-op para campanhas de outros tipos.
+            if (app.controllers && app.controllers.wayback) {
+                app.controllers.wayback.triggerSyncIfWayback(campaignId);
+            }
+
             // GeoJSON processamento direto concluído
-            
+
             return result;
             
         } catch (error) {
@@ -2446,9 +2458,15 @@ module.exports = function(app) {
             
             // Emitir evento de conclusão
             emitToUser('upload-completed', result);
-            
+
+            // Wayback: dispara a pré-computação de releases por ponto (fire-and-forget;
+            // não bloqueia a resposta do upload). No-op para campanhas de outros tipos.
+            if (app.controllers && app.controllers.wayback) {
+                app.controllers.wayback.triggerSyncIfWayback(campaignId);
+            }
+
             // GeoJSON upload foreground completed
-            
+
             return result;
             
         } catch (error) {

@@ -1,5 +1,6 @@
 const proj4 = require('proj4');
 const usernameMatcher = require('../services/usernameMatcher');
+const waybackGuard = require('../services/waybackInspectionGuard');
 
 module.exports = function(app) {
 	// Usar o logger do app
@@ -775,6 +776,17 @@ module.exports = function(app) {
 				return response.status(400).json({ error: 'Valid point data required', errorCode });
 			}
 
+			// Wayback (2026-08): impede o cruzamento de formatos de inspeção —
+			// campanha wayback exige payload por release; as demais o rejeitam.
+			const guardResult = waybackGuard.validate(user.campaign, point.inspection);
+			if (!guardResult.ok) {
+				const errorCode = await logger.warn('Inspeção rejeitada pelo waybackInspectionGuard', {
+					module: 'points', function: 'updatePoint',
+					metadata: { pointId: point._id, username: user.name, reason: guardResult.error }
+				});
+				return response.status(400).json({ error: guardResult.error, errorCode });
+			}
+
 			await logger.info('Starting point update', {
 				module: 'points', function: 'updatePoint',
 				metadata: {
@@ -847,8 +859,12 @@ module.exports = function(app) {
 
 			// Mesma condição de consolidação do código pré-Tier 1: dispara quando o
 			// próximo $push completar `numInspec` entradas em userName.
+			// Wayback (2026-08): classConsolidate itera form.initialYear/finalYear,
+			// campos que não existem no payload por release — consolidação
+			// específica do Wayback fica para decisão futura; por ora o ponto
+			// completa normalmente, apenas sem classConsolidated.
 			let consolidatedValue = null;
-			if (pointDb.userName && pointDb.userName.length === user.campaign.numInspec - 1) {
+			if (user.campaign.imageType !== 'wayback' && pointDb.userName && pointDb.userName.length === user.campaign.numInspec - 1) {
 				consolidatedValue = classConsolidate(point, pointDb, user).classConsolidated;
 				await logger.info('Point inspection complete - consolidating classification', {
 					module: 'points', function: 'updatePoint',
