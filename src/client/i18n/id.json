@@ -86,6 +86,16 @@
       "MODIS_NDWI_SERIES": "Seri waktu NDWI MODIS",
       "SHOW_TIMESERIES": "Tampilkan Grafik Seri Waktu",
       "FILTER_PERIOD": "Saring Periode"
+    },
+    "DOUBT": {
+      "TITLE": "Keraguan Titik",
+      "MARK_AS": "Tandai sebagai",
+      "NOT_SEEN": "Belum ditinjau",
+      "RESOLVED": "Selesai",
+      "EXAMPLE": "Contoh",
+      "EXAMPLE_STILL_OPEN": "Menandai sebagai contoh tidak menutup keraguan: statusnya tetap tertunda.",
+      "MARK_SAVED": "Penandaan keraguan diperbarui.",
+      "MARK_FAILED": "Tidak dapat memperbarui penandaan keraguan."
     }
   },
   "TEMPORAL": {

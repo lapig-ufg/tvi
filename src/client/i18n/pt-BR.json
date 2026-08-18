@@ -86,6 +86,16 @@
       "MODIS_NDWI_SERIES": "Série temporal NDWI MODIS",
       "SHOW_TIMESERIES": "Exibir Gráficos de Séries Temporais",
       "FILTER_PERIOD": "Filtrar Período"
+    },
+    "DOUBT": {
+      "TITLE": "Dúvida do Ponto",
+      "MARK_AS": "Marcar como",
+      "NOT_SEEN": "Não visto",
+      "RESOLVED": "Resolvido",
+      "EXAMPLE": "Exemplo",
+      "EXAMPLE_STILL_OPEN": "A marcação de exemplo não encerra a dúvida: ela continua pendente.",
+      "MARK_SAVED": "Marcação da dúvida atualizada.",
+      "MARK_FAILED": "Não foi possível atualizar a marcação da dúvida."
     }
   },
   "TEMPORAL": {
@@ -246,7 +256,7 @@
   },
   "VIS_PARAMS": {
     "NATURAL_COLOR": "Cor Natural",
-    "AGRICULTURE": "Agricultura", 
+    "AGRICULTURE": "Agricultura",
     "FALSE_COLOR": "Falsa Cor",
     "TVI_RED": "TVI Red"
   },

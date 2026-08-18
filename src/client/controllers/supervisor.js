@@ -1148,6 +1148,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.onSubmission = false;
             $scope.pointLoaded = true;
             $scope.point = data.point;
+            loadPointDoubt(data.point._id);
             $rootScope.total = data.total;
             $rootScope.count = data.count;
             $rootScope.current = data.current;
@@ -1225,6 +1226,76 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         $scope.downloadCSVBorda = function() {
             window.open('service/campaign/csv-borda', '_blank')
         };
+        // ------------------------------------------------------------------
+        // Dúvidas do ponto (2026-08-18)
+        //
+        // A tela exibe o rótulo da dúvida — "não visto", "resolvido" ou
+        // "exemplo" — e permite ao supervisor alterá-lo. O rótulo é derivado
+        // no servidor a partir do estado da dúvida, e não guardado em um
+        // segundo campo de status: assim, uma dúvida resolvida pelo painel
+        // administrativo já aparece como resolvida aqui, sem sincronização.
+        // ------------------------------------------------------------------
+        $scope.doubt = null;
+        $scope.doubtMark = null;
+        $scope.doubtSaving = false;
+
+        var deriveDoubtMark = function (doubt) {
+            if (!doubt) return null;
+            if (doubt.example === true) return 'EXEMPLO';
+            if (doubt.status === 'RESOLVIDA') return 'RESOLVIDO';
+            return 'NAO_VISTO';
+        };
+
+        var loadPointDoubt = function (pointId) {
+            $scope.doubt = null;
+            $scope.doubtMark = null;
+            if (!pointId) {
+                return;
+            }
+            // Ponto sem dúvida devolve doubt: null — o bloco simplesmente não
+            // aparece. Falhas de leitura também deixam o bloco oculto, sem
+            // interromper o carregamento do ponto.
+            var onLoaded = function (result) {
+                var doubt = result && result.doubt;
+                $scope.doubt = doubt || null;
+                $scope.doubtMark = deriveDoubtMark(doubt);
+            };
+            onLoaded.error = function () {
+                $scope.doubt = null;
+                $scope.doubtMark = null;
+            };
+            requester._get('points/' + encodeURIComponent(pointId) + '/doubt', onLoaded);
+        };
+
+        $scope.setDoubtMark = function (mark) {
+            if (!$scope.point || !$scope.doubt || $scope.doubtSaving) {
+                return;
+            }
+            if (mark === $scope.doubtMark) {
+                return;
+            }
+
+            $scope.doubtSaving = true;
+            var onSaved = function (result) {
+                $scope.doubtSaving = false;
+                $scope.doubt = (result && result.doubt) || $scope.doubt;
+                $scope.doubtMark = (result && result.mark) || deriveDoubtMark($scope.doubt);
+                NotificationDialog.success(i18nService.translate('SUPERVISOR.DOUBT.MARK_SAVED'));
+            };
+            // `requester` só propaga falhas de HTTP quando o callback expõe
+            // `.error` (ver others/services.js); sem isso, uma recusa de
+            // permissão sumiria sem aviso.
+            onSaved.error = function (error) {
+                $scope.doubtSaving = false;
+                NotificationDialog.error(
+                    (error && error.error) || i18nService.translate('SUPERVISOR.DOUBT.MARK_FAILED')
+                );
+            };
+            requester._put('points/' + encodeURIComponent($scope.point._id) + '/doubt/supervisor-mark', {
+                mark: mark
+            }, onSaved);
+        };
+
         $scope.removeInspections = () => {
             NotificationDialog.confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: $scope.point._id})).then(function(confirmed) {
                 if (!confirmed) {

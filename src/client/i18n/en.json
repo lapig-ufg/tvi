@@ -86,6 +86,16 @@
       "MODIS_NDWI_SERIES": "NDWI MODIS time series",
       "SHOW_TIMESERIES": "Show Time Series Charts",
       "FILTER_PERIOD": "Filter Period"
+    },
+    "DOUBT": {
+      "TITLE": "Point Doubt",
+      "MARK_AS": "Mark as",
+      "NOT_SEEN": "Not reviewed",
+      "RESOLVED": "Resolved",
+      "EXAMPLE": "Example",
+      "EXAMPLE_STILL_OPEN": "Marking as an example does not close the doubt: it remains pending.",
+      "MARK_SAVED": "Doubt marking updated.",
+      "MARK_FAILED": "Could not update the doubt marking."
     }
   },
   "TEMPORAL": {
@@ -246,7 +256,7 @@
   },
   "VIS_PARAMS": {
     "NATURAL_COLOR": "Natural Color",
-    "AGRICULTURE": "Agriculture", 
+    "AGRICULTURE": "Agriculture",
     "FALSE_COLOR": "False Color",
     "TVI_RED": "TVI Red"
   },

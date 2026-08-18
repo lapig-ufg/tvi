@@ -14,8 +14,10 @@
  *   GET  /api/campaigns/:id/doubts/summary            (super-admin)
  *   POST /api/campaigns/:id/points/:pointId/doubt/comments  (super-admin)
  *   PUT  /api/points/:pointId/doubt/resolve           (super-admin)
+ *   PUT  /service/points/:pointId/doubt/supervisor-mark    (supervisor)
  */
 var mongodb = require('mongodb');
+var supervisorMark = require('../util/doubtSupervisorMark');
 
 module.exports = function (app) {
 
@@ -603,6 +605,127 @@ module.exports = function (app) {
 							fromStatus: point.doubt.status,
 							toStatus: targetStatus,
 							reason: reason
+						}).catch(function () {});
+					}
+				}
+			);
+		});
+	};
+
+	/**
+	 * PUT /service/points/:pointId/doubt/supervisor-mark
+	 *
+	 * O supervisor marca a dúvida de um ponto da sua campanha como
+	 * "não visto", "resolvido" ou "exemplo" (2026-08-18).
+	 *
+	 * Endpoint próprio, em vez de liberar a rota administrativa
+	 * /api/points/:pointId/doubt/resolve para supervisores, por três razões:
+	 * a tela faz uma chamada só para qualquer um dos três rótulos; o escopo
+	 * por campanha fica concentrado aqui; e o fluxo do super-admin permanece
+	 * intocado.
+	 *
+	 * Body: { mark: 'NAO_VISTO' | 'RESOLVIDO' | 'EXEMPLO' }
+	 */
+	Doubts.setSupervisorMark = async function (request, response) {
+		var pointId = request.params.pointId;
+		if (!pointId || typeof pointId !== 'string') {
+			return response.status(400).json({ error: 'ID do ponto inválido' });
+		}
+
+		var admin = isSuperAdmin(request);
+		var user = request.session && request.session.user;
+		var author = getAuthorFromSession(request);
+		var authorName = author ? author.name : 'supervisor';
+
+		var mark = (request.body || {}).mark;
+
+		points.findOne({ _id: pointId }, { doubt: 1, campaign: 1 }, async function (err, point) {
+			if (err) {
+				return response.status(500).json({ error: 'Erro ao buscar ponto' });
+			}
+			if (!point) {
+				return response.status(404).json({ error: 'Ponto não encontrado' });
+			}
+
+			// Escopo por campanha: a guarda de rota autoriza qualquer supervisor,
+			// então é aqui que se impede a marcação de ponto de outra campanha.
+			// O super-admin não tem campanha em sessão e não sofre a restrição.
+			if (!admin) {
+				if (!user || !user.campaign || String(point.campaign) !== String(user.campaign._id)) {
+					return response.status(403).json({ error: 'Acesso negado' });
+				}
+			}
+
+			var plano;
+			try {
+				plano = supervisorMark.buildMarkUpdate(point.doubt, mark, authorName, new Date());
+			} catch (validationError) {
+				return response.status(validationError.status || 400).json({ error: validationError.message });
+			}
+
+			if (plano.noop) {
+				return response.json({
+					success: true,
+					unchanged: true,
+					mark: supervisorMark.deriveMark(point.doubt),
+					doubt: point.doubt
+				});
+			}
+
+			points.findAndModify(
+				{ _id: pointId },
+				[],
+				{
+					$set: plano.setFields,
+					$push: { 'doubt.statusHistory': plano.historyEntry }
+				},
+				{ new: true, fields: { doubt: 1, campaign: 1 } },
+				async function (err, result) {
+					if (err) {
+						if (logger) {
+							await logger.error('Erro ao marcar dúvida pelo supervisor', {
+								module: 'doubts',
+								function: 'setSupervisorMark',
+								metadata: { pointId: pointId, mark: mark, error: err.message }
+							});
+						}
+						return response.status(500).json({ error: 'Erro ao marcar a dúvida' });
+					}
+					if (!result || !result.value) {
+						return response.status(404).json({ error: 'Ponto não encontrado' });
+					}
+
+					if (logger) {
+						await logger.info('Dúvida marcada pelo supervisor', {
+							module: 'doubts',
+							function: 'setSupervisorMark',
+							metadata: {
+								pointId: pointId,
+								mark: mark,
+								from: plano.historyEntry.from,
+								to: plano.historyEntry.to,
+								changedBy: authorName
+							}
+						});
+					}
+
+					response.json({
+						success: true,
+						mark: supervisorMark.deriveMark(result.value.doubt),
+						doubt: result.value.doubt
+					});
+
+					// Só o encerramento notifica, e pelo mesmo evento emitido
+					// quando um super-admin resolve pelo painel administrativo.
+					// Marcar como exemplo não notifica: é rótulo, não transição.
+					if (plano.resolved && app.services.telegramNotifier) {
+						app.services.telegramNotifier.enqueue('DOUBT_RESOLVED', {
+							pointId: pointId,
+							campaignId: String(result.value.campaign || ''),
+							author: authorName,
+							fromStatus: plano.historyEntry.from,
+							toStatus: plano.historyEntry.to,
+							reason: plano.historyEntry.reason
 						}).catch(function () {});
 					}
 				}

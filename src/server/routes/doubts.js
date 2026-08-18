@@ -29,6 +29,23 @@ module.exports = function (app) {
 		return res.status(401).json({ error: 'Super admin authentication required' });
 	};
 
+	// Marcação de dúvida pelo supervisor (2026-08-18). Mesmo critério aplicado
+	// em routes/supervisor.js: a sessão do painel administrativo
+	// (`session.admin.superAdmin`) e a sessão de supervisor do próprio TVI
+	// (`session.user.type === 'supervisor'`) são caminhos distintos de login, e
+	// só a segunda existe para quem trabalha na tela /supervisor. Inspetores
+	// seguem bloqueados. O escopo por campanha é aplicado no controller.
+	var requireSupervisorOrSuperAdmin = function (req, res, next) {
+		var session = req.session || {};
+		if (session.admin && session.admin.superAdmin) {
+			return next();
+		}
+		if (session.user && session.user.type === 'supervisor') {
+			return next();
+		}
+		return res.status(401).json({ error: 'Supervisor or super admin authentication required' });
+	};
+
 	// -------------------------
 	// Rotas do intérprete
 	// -------------------------
@@ -74,6 +91,43 @@ module.exports = function (app) {
 	 *       - sessionAuth: []
 	 */
 	app.get('/service/points/:pointId/doubt', doubts.getDoubt);
+
+	/**
+	 * @swagger
+	 * /service/points/{pointId}/doubt/supervisor-mark:
+	 *   put:
+	 *     summary: Marca a dúvida do ponto como não vista, resolvida ou exemplo
+	 *     description: >
+	 *       Rótulo exibido na tela do supervisor. "resolvido" encerra a dúvida
+	 *       pelo ciclo normal (ABERTA → RESOLVIDA); "não visto" a reabre;
+	 *       "exemplo" apenas registra a marca, sem alterar o status.
+	 *     tags: [Points - Doubts]
+	 *     security:
+	 *       - sessionAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: pointId
+	 *         required: true
+	 *         schema: { type: string }
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             required: [mark]
+	 *             properties:
+	 *               mark:
+	 *                 type: string
+	 *                 enum: [NAO_VISTO, RESOLVIDO, EXEMPLO]
+	 *     responses:
+	 *       200: { description: Marcação aplicada }
+	 *       400: { description: Marcação inválida }
+	 *       401: { description: Não autenticado como supervisor }
+	 *       403: { description: Ponto fora da campanha da sessão }
+	 *       404: { description: Ponto ou dúvida não encontrada }
+	 */
+	app.put('/service/points/:pointId/doubt/supervisor-mark', requireSupervisorOrSuperAdmin, doubts.setSupervisorMark);
 
 	// -------------------------
 	// Rotas do super-admin
