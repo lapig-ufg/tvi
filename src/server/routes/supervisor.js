@@ -13,6 +13,28 @@ module.exports = function (app) {
 		return res.status(401).json({ error: 'Super admin authentication required' });
 	};
 
+	// 2026-08-18 — corrige o botão "Remover" da tela /supervisor, inoperante
+	// desde 7345373. Aquele commit fechou a rota com `requireSuperAdmin`, que
+	// exige `session.admin.superAdmin`, flag criada apenas pelo login do painel
+	// administrativo (controllers/campaign-crud.js). Quem acessa /supervisor
+	// entra pelo login do TVI (controllers/login.js), que grava somente
+	// `session.user` com `type === 'supervisor'` — logo, recebia 401.
+	//
+	// A proteção original permanece quanto ao essencial: inspetores e
+	// requisições sem sessão continuam bloqueados. O escopo por campanha é
+	// aplicado no handler (controllers/supervisor.js), que impede um supervisor
+	// de agir sobre pontos de campanha alheia.
+	var requireSupervisorOrSuperAdmin = function (req, res, next) {
+		var session = req.session || {};
+		if (session.admin && session.admin.superAdmin) {
+			return next();
+		}
+		if (session.user && session.user.type === 'supervisor') {
+			return next();
+		}
+		return res.status(401).json({ error: 'Supervisor or super admin authentication required' });
+	};
+
 	/**
 	 * @swagger
 	 * /service/points/csv:
@@ -387,10 +409,12 @@ module.exports = function (app) {
 	 *       401:
 	 *         description: Unauthorized
 	 */
-	// Tier 0 (2026-05-09) — rota era exposta sem auth. Wipe destrutivo de userName/inspection
-	// de um ponto. Adicionado requireSuperAdmin enquanto Tier 1 implementa o token de
-	// confirmação + reason + audit. Ver clever-dreaming-pudding.md §0.4.
-	app.get('/service/campaign/removeInspections', requireSuperAdmin, points.removeInspections);
+	// Tier 0 (2026-05-09) — rota era exposta sem auth. Remoção destrutiva de
+	// userName/inspection de um ponto. Ver clever-dreaming-pudding.md §0.4.
+	// 2026-08-18 — guarda ampliada para a sessão de supervisor (ver
+	// requireSupervisorOrSuperAdmin acima); a operação passou a ser auditada
+	// via pointsService.clearInspections, sem arquivar o ponto.
+	app.get('/service/campaign/removeInspections', requireSupervisorOrSuperAdmin, points.removeInspections);
 	/**
 	 * @swagger
 	 * /service/campaign/config:

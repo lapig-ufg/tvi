@@ -873,14 +873,17 @@ module.exports = function (app) {
             response.end();
         }
     }
-    // Tier 1.6 (2026-05-09) — migrada para pointsService.softWipePoint:
-    // (1) snapshot do estado anterior em points_audit (antes/depois);
-    // (2) marca o ponto como arquivado (archivedAt, archivedReason, archivedBy)
-    //     em vez de só zerar arrays — permite restore via pointsService.restore
-    //     e POST /api/admin/points/:pointId/restore.
-    // A rota GET legada (/service/campaign/removeInspections) continua viva
-    // pois UIs antigas dependem dela. A versão moderna (POST .../soft-wipe com
-    // token + reason) está em routes/pointsAdmin.js.
+    // Tier 1.6 (2026-05-09) — migrada para o pointsService, que grava snapshot
+    // antes/depois em points_audit e permite restore via
+    // POST /api/admin/points/:pointId/restore.
+    //
+    // 2026-08-18 — passou a usar `clearInspections` no lugar de `softWipePoint`.
+    // O soft-wipe marcava o ponto como arquivado (archivedAt), o que o excluía
+    // do job de sincronização Wayback e o contabilizava como arquivado nos
+    // relatórios de saúde de inspeção. A intenção do botão "Remover" da tela do
+    // supervisor é devolver o ponto à fila para nova inspeção, não retirá-lo do
+    // acervo. O arquivamento continua disponível em
+    // POST /api/admin/points/:pointId/soft-wipe (routes/pointsAdmin.js).
     Points.removeInspections = async (request, response) => {
         const {pointId} = request.query;
         if (!pointId) {
@@ -893,19 +896,51 @@ module.exports = function (app) {
         try {
             const admin = request.session && request.session.admin;
             const sessionUser = request.session && request.session.user;
+            const isSuperAdmin = !!(admin && admin.superAdmin);
+
+            // Escopo por campanha: a guarda de rota autoriza qualquer supervisor,
+            // então é aqui que se impede um supervisor de apagar inspeções de
+            // ponto pertencente a outra campanha (o pointId vem da query string).
+            // O super-admin do painel administrativo não tem campanha em sessão
+            // e permanece sem essa restrição.
+            if (!isSuperAdmin) {
+                const sessionCampaignId = sessionUser && sessionUser.campaign && sessionUser.campaign._id;
+                const point = await pointsCollection.findOne({_id: pointId}, {fields: {campaign: 1}});
+                if (!point) {
+                    return response.status(404).json({ error: 'Ponto não encontrado: ' + pointId });
+                }
+                if (!sessionCampaignId || String(point.campaign) !== String(sessionCampaignId)) {
+                    await logger.warn('Tentativa de remover inspeções de ponto fora da campanha da sessão', {
+                        module: 'supervisor',
+                        function: 'removeInspections',
+                        metadata: {
+                            pointId,
+                            pointCampaign: point.campaign,
+                            sessionCampaign: sessionCampaignId,
+                            user: sessionUser && sessionUser.name
+                        }
+                    });
+                    return response.status(403).json({ error: 'Ponto não pertence à campanha da sessão.' });
+                }
+            }
+
+            const actorName = (admin && admin.superAdmin && admin.superAdmin.username)
+                || (sessionUser && sessionUser.name)
+                || 'unknown';
             const ctx = {
                 actor: {
-                    username: (admin && admin.username) || (sessionUser && sessionUser.name) || 'unknown',
-                    role: (admin && admin.superAdmin) ? 'superAdmin' : (sessionUser && sessionUser.role) || null,
+                    username: actorName,
+                    role: isSuperAdmin ? 'superAdmin' : ((sessionUser && sessionUser.type) || null),
                     sessionId: request.sessionID || null,
                     ip: request.ip || null
                 },
-                // GET legado não exige token nem reason; usamos um default identificável
-                // para que qualquer auditoria saiba que veio do endpoint legacy.
-                reason: 'legacy GET /service/campaign/removeInspections (sem token)'
+                // A rota GET não carrega motivo digitado; usamos um texto
+                // identificável (≥10 chars, exigência do pointsService) para que
+                // a auditoria registre a origem da operação.
+                reason: 'Remocao de inspecoes pela tela do supervisor por ' + actorName
             };
-            const after = await pointsService.softWipePoint(pointId, ctx);
-            return response.status(200).json({ success: true, pointId, archivedAt: after.archivedAt });
+            const after = await pointsService.clearInspections(pointId, ctx);
+            return response.status(200).json({ success: true, pointId, updateAt: after.updateAt });
         } catch (err) {
             await logger.error('Erro em removeInspections', {
                 module: 'supervisor',
@@ -1013,8 +1048,11 @@ module.exports = function (app) {
         });
     }
     
-    // Tier 1.6 (2026-05-09) — migrada para pointsService.softWipePoint.
+    // Tier 1.6 (2026-05-09) — migrada para o pointsService.
     // Mesma lógica de removeInspections, exposta por rota admin separada.
+    // 2026-08-18 — igualmente migrada de softWipePoint para clearInspections:
+    // o botão da tela /admin/temporal tem a mesma intenção (liberar o ponto
+    // para nova inspeção), e não a de arquivá-lo.
     Points.removeInspectionAdmin = async (request, response) => {
         const {pointId} = request.query;
         if (!pointId) {
@@ -1026,17 +1064,18 @@ module.exports = function (app) {
         }
         try {
             const admin = request.session && request.session.admin;
+            const actorName = (admin && admin.superAdmin && admin.superAdmin.username) || 'admin-unknown';
             const ctx = {
                 actor: {
-                    username: (admin && admin.username) || 'admin-unknown',
+                    username: actorName,
                     role: (admin && admin.superAdmin) ? 'superAdmin' : 'admin',
                     sessionId: request.sessionID || null,
                     ip: request.ip || null
                 },
-                reason: 'legacy admin GET /service/admin/campaign/removeInspections (sem token)'
+                reason: 'Remocao de inspecoes pela tela admin/temporal por ' + actorName
             };
-            const after = await pointsService.softWipePoint(pointId, ctx);
-            return response.status(200).json({ success: true, pointId, archivedAt: after.archivedAt });
+            const after = await pointsService.clearInspections(pointId, ctx);
+            return response.status(200).json({ success: true, pointId, updateAt: after.updateAt });
         } catch (err) {
             await logger.error('Erro em removeInspectionAdmin', {
                 module: 'supervisor',

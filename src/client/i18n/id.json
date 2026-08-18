@@ -168,6 +168,7 @@
     "CAMPAIGN_NO_ISSUES": "Kampanye tanpa masalah pada inspeksi.",
     "CONFIRM_REMOVE_INSPECTIONS": "Apakah Anda yakin ingin menghapus inspeksi dari titik dengan ID {{pointId}}?\nPerlu diketahui bahwa setelah penghapusan selesai, tindakan ini tidak dapat dibatalkan.",
     "INSPECTIONS_REMOVED": "Inspeksi dari titik {{pointId}} berhasil dihapus.",
+    "INSPECTIONS_REMOVE_FAILED": "Tidak dapat menghapus inspeksi dari titik {{pointId}}. Periksa izin Anda dan coba lagi.",
     "INVALID_DATE_RANGE": "Rentang tanggal tidak valid. Tahun awal harus lebih kecil atau sama dengan tahun akhir."
   },
   "DASHBOARD": {

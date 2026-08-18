@@ -1227,14 +1227,28 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         };
         $scope.removeInspections = () => {
             NotificationDialog.confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: $scope.point._id})).then(function(confirmed) {
-                if (confirmed) {
-                    requester._get(`campaign/removeInspections?pointId=${$scope.point._id}`, function (data) {
-                        if(data) {
-                            NotificationDialog.success(i18nService.translate('ALERTS.INSPECTIONS_REMOVED', {pointId: $scope.point._id}));
-                            $scope.submit($scope.point.index);
-                        }
-                    });
+                if (!confirmed) {
+                    return;
                 }
+
+                const pointId = $scope.point._id;
+                // `requester._get` só propaga falhas de HTTP quando o callback
+                // expõe a propriedade `.error` (ver others/services.js). Sem
+                // ela, respostas 401/403/500 eram descartadas em silêncio e o
+                // botão parecia simplesmente não funcionar.
+                const onSuccess = function (data) {
+                    if (data) {
+                        NotificationDialog.success(i18nService.translate('ALERTS.INSPECTIONS_REMOVED', {pointId: pointId}));
+                        $scope.submit($scope.point.index);
+                    }
+                };
+                onSuccess.error = function (error) {
+                    NotificationDialog.error(
+                        (error && error.error) || i18nService.translate('ALERTS.INSPECTIONS_REMOVE_FAILED', {pointId: pointId})
+                    );
+                };
+
+                requester._get(`campaign/removeInspections?pointId=${pointId}`, onSuccess);
             });
         };
 

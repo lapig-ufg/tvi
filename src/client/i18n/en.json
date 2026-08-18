@@ -168,6 +168,7 @@
     "CAMPAIGN_NO_ISSUES": "Campaign has no issues with inspections.",
     "CONFIRM_REMOVE_INSPECTIONS": "Are you sure you want to remove the inspections from the point identified as {{pointId}}?\nBe aware that once the removal is completed, it will no longer be possible to reverse this action.",
     "INSPECTIONS_REMOVED": "The inspections from point {{pointId}} were successfully removed.",
+    "INSPECTIONS_REMOVE_FAILED": "Could not remove the inspections from point {{pointId}}. Check your permissions and try again.",
     "INVALID_DATE_RANGE": "Invalid date range. The start year must be less than or equal to the end year."
   },
   "DASHBOARD": {

@@ -228,6 +228,96 @@ module.exports = function (app) {
     }
 
     /**
+     * Monta o update de `clearInspections`. Extraído como função pura para ser
+     * testável sem Mongo (test/pointsServiceClearInspections.test.js).
+     *
+     * Diferença essencial para `softWipePoint`: NÃO grava `archivedAt`. Ao
+     * contrário, remove as marcas de arquivamento, porque a semântica desta
+     * operação é "devolver o ponto à fila de inspeção", não "retirá-lo do
+     * acervo". Um ponto com `archivedAt` é ignorado pelo job de sincronização
+     * Wayback (controllers/wayback.js) e contabilizado como arquivado nos
+     * relatórios de saúde de inspeção (controllers/inspectionHealth.js).
+     */
+    function buildClearInspectionsUpdate(now) {
+        return {
+            $set: {
+                inspection: [],
+                userName: [],
+                classConsolidated: [],
+                userNameCount: 0,
+                underInspection: 0,
+                updateAt: now
+            },
+            $unset: {
+                archivedAt: '',
+                archivedReason: '',
+                archivedBy: ''
+            }
+        };
+    }
+
+    /**
+     * Limpa todas as inspeções de um ponto mantendo-o ativo na campanha.
+     *
+     * Introduzido em 2026-08-18 para o botão "Remover" da tela /supervisor e
+     * para as ações de remoção do gerenciador de campanhas. Antes, ambos os
+     * caminhos usavam `softWipePoint`, que arquiva o ponto — efeito colateral
+     * indesejado, já que o objetivo do supervisor é liberar o ponto para nova
+     * inspeção.
+     *
+     * Continua sendo uma mutação destrutiva: exige `ctx.reason` e grava
+     * snapshot before/after em `points_audit`, permitindo `restore()`.
+     */
+    async function clearInspections(pointId, ctx) {
+        validateCtx(ctx, { requireReason: true });
+        if (!pointId) throw new Error('pointsService.clearInspections: pointId obrigatório');
+
+        const points = getPointsCollection();
+        const before = await loadPoint(pointId);
+        if (!before) {
+            throw new Error('pointsService.clearInspections: ponto não encontrado: ' + pointId);
+        }
+
+        const now = new Date();
+        const result = await points.updateOne({ _id: pointId }, buildClearInspectionsUpdate(now));
+        const after = await loadPoint(pointId);
+
+        await writeAudit({
+            ts: now,
+            pointId: pointId,
+            campaignId: before.campaign,
+            operation: 'clear_inspections',
+            actor: ctx.actor,
+            reason: ctx.reason,
+            blockId: ctx.blockId || null,
+            confirmationToken: ctx.confirmationToken || null,
+            before: snapshot(before),
+            after: snapshot(after),
+            metadata: {
+                removedInspections: Array.isArray(before.inspection) ? before.inspection.length : 0,
+                resultModified: result && (result.modifiedCount || result.nModified) || 0
+            }
+        });
+
+        const logger = getLogger();
+        if (logger) {
+            await logger.warn('clearInspections executado', {
+                module: 'pointsService',
+                function: 'clearInspections',
+                metadata: {
+                    pointId: pointId,
+                    campaignId: before.campaign,
+                    actor: ctx.actor.username,
+                    reason: ctx.reason,
+                    removedInspections: Array.isArray(before.inspection) ? before.inspection.length : 0
+                }
+            });
+        }
+
+        return after;
+    }
+
+    /**
      * Remove um inspetor específico do ponto (operação usada por discardBlock).
      * Mantém os demais inspetores intactos. Ao contrário do hard-remove anterior,
      * grava snapshot em points_audit antes e depois.
@@ -411,13 +501,15 @@ module.exports = function (app) {
     return {
         appendInspection: appendInspection,
         softWipePoint: softWipePoint,
+        clearInspections: clearInspections,
         removeInspectorByIndex: removeInspectorByIndex,
         setClassConsolidated: setClassConsolidated,
         restore: restore,
         // Exposto para testes
         _internal: {
             snapshot: snapshot,
-            validateCtx: validateCtx
+            validateCtx: validateCtx,
+            buildClearInspectionsUpdate: buildClearInspectionsUpdate
         }
     };
 };
