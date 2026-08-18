@@ -208,8 +208,12 @@
                       title="{{ticket._isDoubt ? ('ADMIN_TICKETS.ACTIONS.OPEN_POINT_DOUBT' | i18n) : ('ADMIN_TICKETS.ACTIONS.VIEW_DETAIL' | i18n)}}">
                 <i class="fa" ng-class="ticket._isDoubt ? 'fa-comments' : 'fa-eye'"></i>
               </button>
+              <!-- Dúvidas nunca chegam a FECHADO (só ABERTO/RESOLVIDO) e o
+                   openStatusModal já as redireciona ao modal de resolução,
+                   que também permite reabrir — por isso o botão fica sempre
+                   visível para elas. -->
               <button class="btn btn-xs btn-warning" ng-click="openStatusModal(ticket)"
-                      ng-if="!ticket._isDoubt && ticket.status !== 'FECHADO'"
+                      ng-if="ticket._isDoubt || ticket.status !== 'FECHADO'"
                       title="{{ 'ADMIN_TICKETS.ACTIONS.CHANGE_STATUS' | i18n }}">
                 <i class="fa fa-exchange"></i>
               </button>

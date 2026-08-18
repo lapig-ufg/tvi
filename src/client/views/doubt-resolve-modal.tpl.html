@@ -74,10 +74,10 @@
         </div>
     </div>
 
-    <hr/>
+    <hr ng-if="isAdminMode || isSupervisorMode"/>
 
-    <!-- Adicionar resposta -->
-    <div class="form-group">
+    <!-- Adicionar resposta — rota exclusiva de super-admin -->
+    <div class="form-group" ng-if="isAdminMode">
         <label>Adicionar resposta <small class="text-muted">(5 a 2000 caracteres)</small></label>
         <textarea class="form-control" rows="3"
                   maxlength="2000"
@@ -93,8 +93,8 @@
         </div>
     </div>
 
-    <!-- Transição de status -->
-    <div class="form-group" style="margin-top: 1rem;">
+    <!-- Transição de status — rota exclusiva de super-admin -->
+    <div class="form-group" style="margin-top: 1rem;" ng-if="isAdminMode">
         <label>
             {{ doubt.status === 'ABERTA' ? 'Motivo da resolução' : 'Motivo da reabertura' }}
             <small class="text-muted">(obrigatório)</small>
@@ -102,6 +102,36 @@
         <input type="text" class="form-control" maxlength="500"
                ng-model="transition.reason"
                placeholder="Descreva brevemente o motivo da transição.">
+    </div>
+
+    <!-- Marcação do supervisor — mesmo fluxo e rótulos da tela /supervisor
+         (PUT /service/points/:id/doubt/supervisor-mark) -->
+    <div ng-if="isSupervisorMode">
+        <span style="color: #888;">{{ 'SUPERVISOR.DOUBT.MARK_AS' | i18n }}:</span>
+        <div class="btn-group btn-group-sm" style="margin-top: 4px; display: block;">
+            <button type="button" class="btn btn-sm"
+                    ng-class="doubtMark === 'NAO_VISTO' ? 'btn-default active' : 'btn-default'"
+                    ng-disabled="submitting"
+                    ng-click="setDoubtMark('NAO_VISTO')">
+                {{ 'SUPERVISOR.DOUBT.NOT_SEEN' | i18n }}
+            </button>
+            <button type="button" class="btn btn-sm"
+                    ng-class="doubtMark === 'RESOLVIDO' ? 'btn-success active' : 'btn-default'"
+                    ng-disabled="submitting"
+                    ng-click="setDoubtMark('RESOLVIDO')">
+                {{ 'SUPERVISOR.DOUBT.RESOLVED' | i18n }}
+            </button>
+            <button type="button" class="btn btn-sm"
+                    ng-class="doubtMark === 'EXEMPLO' ? 'btn-info active' : 'btn-default'"
+                    ng-disabled="submitting"
+                    ng-click="setDoubtMark('EXEMPLO')">
+                {{ 'SUPERVISOR.DOUBT.EXAMPLE' | i18n }}
+            </button>
+        </div>
+        <div ng-if="doubtMark === 'EXEMPLO' && doubt.status !== 'RESOLVIDA'"
+             style="margin-top: 6px; font-size: 11px; color: #8a6d3b;">
+            {{ 'SUPERVISOR.DOUBT.EXAMPLE_STILL_OPEN' | i18n }}
+        </div>
     </div>
 
     <div class="alert alert-danger" ng-if="errorMessage">
@@ -114,14 +144,14 @@
         Fechar
     </button>
     <button type="button" class="btn btn-success"
-            ng-if="doubt.status === 'ABERTA'"
+            ng-if="isAdminMode && doubt.status === 'ABERTA'"
             ng-disabled="submitting || !transition.reason || !transition.reason.trim()"
             ng-click="resolve('RESOLVIDA')">
         <span class="glyphicon glyphicon-ok"></span>
         Marcar como resolvida
     </button>
     <button type="button" class="btn btn-warning"
-            ng-if="doubt.status === 'RESOLVIDA'"
+            ng-if="isAdminMode && doubt.status === 'RESOLVIDA'"
             ng-disabled="submitting || !transition.reason || !transition.reason.trim()"
             ng-click="resolve('ABERTA')">
         <span class="glyphicon glyphicon-repeat"></span>

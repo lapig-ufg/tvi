@@ -172,7 +172,8 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
           backdrop: 'static',
           resolve: {
             point: function () { return point; },
-            campaign: function () { return campaign; }
+            campaign: function () { return campaign; },
+            mode: function () { return 'admin'; }
           }
         });
         modalInstance.result.then(function () {

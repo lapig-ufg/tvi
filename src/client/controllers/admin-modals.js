@@ -1022,7 +1022,8 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             backdrop: 'static',
             resolve: {
                 point: function() { return point; },
-                campaign: function() { return campaign; }
+                campaign: function() { return campaign; },
+                mode: function() { return 'admin'; }
             }
         }).result.then(function(result) {
             // Qualquer transição ou comentário pode alterar o resumo e/ou o
@@ -2267,7 +2268,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
 // obrigatório. As chamadas usam os endpoints registrados em
 // routes/doubts.js.
 // ---------------------------------------------------------------------
-Application.controller('AdminDoubtResolveModalController', function ($scope, $uibModalInstance, $http, point, campaign) {
+Application.controller('AdminDoubtResolveModalController', function ($scope, $uibModalInstance, $http, point, campaign, mode) {
     $scope.point = point;
     $scope.campaign = campaign;
     $scope.doubt = angular.copy(point.doubt || {});
@@ -2276,6 +2277,50 @@ Application.controller('AdminDoubtResolveModalController', function ($scope, $ui
     $scope.submitting = false;
     $scope.errorMessage = null;
     $scope._modified = false;
+
+    // O modal é compartilhado por três perfis com permissões de escrita
+    // distintas no servidor:
+    //  - 'admin' (super-admin): comenta e transiciona via rotas /api/* —
+    //    fluxo original do painel administrativo.
+    //  - 'supervisor': as rotas /api/* respondem 401 para a sessão TVI; a
+    //    escrita permitida é a marcação via
+    //    PUT /service/points/:id/doubt/supervisor-mark (mesmo fluxo da tela
+    //    /supervisor).
+    //  - 'reader' (inspetor): somente leitura de comentários e histórico.
+    $scope.isAdminMode = mode !== 'supervisor' && mode !== 'reader';
+    $scope.isSupervisorMode = mode === 'supervisor';
+
+    // Mesma derivação usada em controllers/supervisor.js: o rótulo é
+    // calculado do estado real da dúvida, sem campo de status paralelo.
+    var deriveDoubtMark = function (doubt) {
+        if (!doubt) return null;
+        if (doubt.example === true) return 'EXEMPLO';
+        if (doubt.status === 'RESOLVIDA') return 'RESOLVIDO';
+        return 'NAO_VISTO';
+    };
+    $scope.doubtMark = deriveDoubtMark($scope.doubt);
+
+    $scope.setDoubtMark = function (mark) {
+        if (!$scope.isSupervisorMode || $scope.submitting) return;
+        if (mark === $scope.doubtMark) return;
+
+        $scope.errorMessage = null;
+        $scope.submitting = true;
+        var url = '/service/points/' + encodeURIComponent(point._id) + '/doubt/supervisor-mark';
+        $http.put(url, { mark: mark })
+            .then(function (response) {
+                $scope.submitting = false;
+                $scope._modified = true;
+                var data = response && response.data;
+                if (data && data.doubt) {
+                    $scope.doubt = data.doubt;
+                }
+                $scope.doubtMark = (data && data.mark) || deriveDoubtMark($scope.doubt);
+            }, function (error) {
+                $scope.submitting = false;
+                $scope.errorMessage = (error && error.data && error.data.error) ? error.data.error : 'Não foi possível atualizar a marcação da dúvida.';
+            });
+    };
 
     $scope.cancel = function () {
         // Se houve modificação, fechamos com payload para forçar refresh na

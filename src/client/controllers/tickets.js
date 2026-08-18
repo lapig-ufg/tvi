@@ -217,7 +217,10 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
           backdrop: 'static',
           resolve: {
             point: function () { return point; },
-            campaign: function () { return campaign; }
+            campaign: function () { return campaign; },
+            // Supervisor escreve via supervisor-mark; inspetor só lê — as
+            // rotas administrativas /api/* respondem 401 para a sessão TVI.
+            mode: function () { return $scope.isSupervisorView ? 'supervisor' : 'reader'; }
           }
         });
         modalInstance.result.then(function () {
