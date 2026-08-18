@@ -1,6 +1,7 @@
 var util = require('util')
     , mongodb = require('mongodb')
-    , async = require('async');
+    , async = require('async')
+    , uploadReceipts = require('../services/geojsonUploadReceipts');
 
 module.exports = function (app) {
 
@@ -75,7 +76,13 @@ module.exports = function (app) {
                     // ou desconhecido" no fluxo normal.
                     // waybackSync (2026-08-01): lock + progresso do job de pré-computação
                     // de imagens Wayback por ponto (1 doc por campanha).
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync'];
+                    // geojson_upload_receipts (2026-08-18): recibo por upload de pontos,
+                    // com índice único sobre dedupeKey (campanha + hash SHA-256 do arquivo).
+                    // É o que impede o reenvio do mesmo GeoJSON de duplicar a base, como
+                    // ocorreu em val_prodes_to_2025 em 2026-08-17 (494 pontos enviados duas
+                    // vezes). Em memória não resolveria: o duplo clique pode cair em workers
+                    // distintos do cluster.
+                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync', uploadReceipts.COLLECTION_NAME];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -341,6 +348,28 @@ module.exports = function (app) {
                     }
                     cb();
                 });
+            },
+            // 2026-08-18 — índice único de geojson_upload_receipts.
+            // A definição vive em services/geojsonUploadReceipts.js para que store,
+            // repository e testes compartilhem a mesma fonte de verdade: se o índice
+            // divergir do que o claim espera, a proteção contra duplicação some sem
+            // qualquer erro visível.
+            function(cb) {
+                if (!Repository.collections[uploadReceipts.COLLECTION_NAME]) return cb();
+
+                Repository.collections[uploadReceipts.COLLECTION_NAME].createIndexes(
+                    uploadReceipts.INDEXES,
+                    function(err) {
+                        if (err && err.code !== 11000) {
+                            // Diferente dos demais índices deste arquivo, este não é de
+                            // desempenho: sem ele o claim vira um insert comum e o upload
+                            // volta a aceitar reenvios duplicados sem qualquer sintoma.
+                            console.error('CRÍTICO: falha ao criar o índice único de ' + uploadReceipts.COLLECTION_NAME +
+                                ' — a proteção contra upload duplicado NÃO está ativa:', err);
+                        }
+                        cb();
+                    }
+                );
             }
         ], function(err) {
             if (err) {

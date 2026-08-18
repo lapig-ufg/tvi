@@ -208,8 +208,49 @@
             </div>
         </div>
         
+        <!-- Arquivo já importado nesta campanha (HTTP 409) -->
+        <div ng-if="duplicate" class="panel panel-warning">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">
+                    <i class="glyphicon glyphicon-warning-sign" style="font-size: 1.2em;"></i>
+                    <strong>{{duplicate.inProgress ? 'Importação em andamento' : 'Arquivo já importado'}}</strong>
+                </h3>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-warning">
+                    <p><strong>{{duplicate.error}}</strong></p>
+                    <p>{{duplicate.details}}</p>
+                    <p><strong>Nenhum ponto foi inserido por esta tentativa.</strong></p>
+                </div>
+
+                <div ng-if="duplicate.previousUpload">
+                    <h5><strong>Importação anterior:</strong></h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Arquivo:</strong> {{duplicate.previousUpload.filename}}</li>
+                        <li><strong>Enviado em:</strong> {{duplicate.previousUpload.createdAt | date:'dd/MM/yyyy HH:mm:ss'}}</li>
+                        <li ng-if="duplicate.previousUpload.status === 'completed'">
+                            <strong>Pontos inseridos:</strong> {{duplicate.previousUpload.insertedCount | number}}
+                            <span ng-if="duplicate.previousUpload.firstIndex !== null">
+                                (índices {{duplicate.previousUpload.firstIndex}} a {{duplicate.previousUpload.lastIndex}})
+                            </span>
+                        </li>
+                        <li><strong>Feições no arquivo:</strong> {{duplicate.previousUpload.featuresCount | number}}</li>
+                        <li ng-if="duplicate.previousUpload.forced">
+                            <strong>Observação:</strong> a importação anterior também foi um reenvio deliberado.
+                        </li>
+                    </ul>
+                </div>
+
+                <div ng-if="duplicate.canForce" class="alert alert-danger" style="margin-top: 15px;">
+                    <i class="glyphicon glyphicon-exclamation-sign"></i>
+                    Importar novamente vai <strong>duplicar</strong> os pontos deste arquivo na campanha.
+                    Prossiga apenas se a duplicação for intencional.
+                </div>
+            </div>
+        </div>
+
         <!-- Resultado de Erro -->
-        <div ng-if="!uploadProgress.success" class="panel panel-danger">
+        <div ng-if="!uploadProgress.success && !duplicate" class="panel panel-danger">
             <div class="panel-heading">
                 <h3 class="panel-title text-center">
                     <i class="glyphicon glyphicon-remove-circle" style="font-size: 1.2em;"></i>
@@ -254,6 +295,10 @@
             <button class="btn primary" ng-click="upload()" ng-disabled="!file || uploadProgress.isUploading" ng-if="!uploadProgress.isCompleted">
                 <i class="fas fa-upload"></i>
                 Iniciar Upload
+            </button>
+            <button class="btn danger" ng-click="forceUpload()" ng-if="duplicate.canForce && !uploadProgress.isUploading">
+                <i class="fas fa-exclamation-triangle"></i>
+                Importar mesmo assim
             </button>
             <button class="btn success" ng-click="close()" ng-if="uploadProgress.isCompleted && uploadProgress.success">
                 <i class="fas fa-check"></i>

@@ -3,6 +3,7 @@ const path = require('path');
 const async = require('async');
 const exec = require('child_process').exec;
 const AdmZip = require('adm-zip');
+const uploadReceipts = require('../services/geojsonUploadReceipts');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -36,6 +37,29 @@ module.exports = function(app) {
     // Configuração do multer para upload (versão antiga 0.1.8)
 
     const CampaignCrud = {};
+
+    // -------------------------------------------------------------------------
+    // Idempotência do upload de pontos (2026-08-18)
+    //
+    // Acesso lazy à coleção de recibos: este controller é instanciado por
+    // express-load, que pode rodar antes de Repository.init() concluir — mesmo
+    // motivo documentado em middleware/destructiveConfirmation.js.
+    //
+    // A ausência da coleção é tratada como erro (fail closed) e não como
+    // "segue sem verificar": sem o recibo, o reenvio do mesmo arquivo volta a
+    // duplicar a base silenciosamente, que é exatamente o incidente que esta
+    // proteção existe para impedir.
+    // -------------------------------------------------------------------------
+    function getUploadReceiptStore() {
+        const collection = app.repository
+            && app.repository.collections
+            && app.repository.collections[uploadReceipts.COLLECTION_NAME];
+
+        if (!collection) {
+            throw new Error(`Coleção ${uploadReceipts.COLLECTION_NAME} indisponível — verificação de upload duplicado não pode ser aplicada`);
+        }
+        return uploadReceipts.createStore(collection);
+    }
 
     // -------------------------------------------------------------------------
     // Normalização de propriedades de GeoJSON (TKT-000010)
@@ -1745,17 +1769,113 @@ module.exports = function(app) {
             const sessionId = req.sessionID;
             const userId = (req.session && req.session.admin && req.session.admin.superAdmin && req.session.admin.superAdmin.id) || 'anonymous';
             
+            // -----------------------------------------------------------------
+            // Guarda de idempotência (2026-08-18)
+            //
+            // O hash é do conteúdo GeoJSON já efetivo — depois da extração do ZIP
+            // e do JSON.parse — de modo que o mesmo arquivo enviado solto ou
+            // dentro de um ZIP colida corretamente, e um JSON inválido nunca
+            // gere recibo.
+            //
+            // O claim acontece ANTES do processamento: é isso que fecha a janela
+            // do duplo clique, em que a segunda requisição pode ser atendida por
+            // outro worker do cluster enquanto a primeira ainda insere pontos.
+            // -----------------------------------------------------------------
+            const forceReupload = !!(req.body && req.body.force);
+            const contentHash = uploadReceipts.hashContent(actualGeojsonContent);
+            const receiptStore = getUploadReceiptStore();
+            const claim = await receiptStore.claim({
+                campaignId: campaignId,
+                contentHash: contentHash,
+                filename: filename,
+                featuresCount: geojsonData.features.length,
+                userId: userId,
+                sessionId: sessionId,
+                requestId: requestId,
+                force: forceReupload
+            });
+
+            if (!claim.claimed) {
+                const previous = claim.existing;
+                const inProgress = !!previous && previous.status === 'processing';
+
+                logError('WARN', 'Duplicate GeoJSON upload rejected', null, {
+                    campaignId: campaignId,
+                    filename: filename,
+                    contentHash: contentHash,
+                    featuresCount: geojsonData.features.length,
+                    previousReceiptId: previous ? previous._id : null,
+                    previousStatus: previous ? previous.status : null,
+                    previousCreatedAt: previous ? previous.createdAt : null
+                });
+
+                return res.status(409).json({
+                    success: false,
+                    duplicate: true,
+                    inProgress: inProgress,
+                    error: inProgress
+                        ? 'Este arquivo já está sendo importado nesta campanha'
+                        : 'Este arquivo já foi importado nesta campanha',
+                    details: inProgress
+                        ? 'Um upload do mesmo arquivo está em andamento. Aguarde a conclusão antes de tentar novamente.'
+                        : 'O conteúdo enviado é idêntico ao de um upload anterior. Reenviar criaria pontos duplicados. Para importar novamente de forma deliberada, confirme o reenvio.',
+                    canForce: !inProgress,
+                    previousUpload: previous ? {
+                        filename: previous.filename,
+                        featuresCount: previous.featuresCount,
+                        insertedCount: previous.insertedCount,
+                        errorCount: previous.errorCount,
+                        firstIndex: previous.firstIndex,
+                        lastIndex: previous.lastIndex,
+                        status: previous.status,
+                        forced: previous.forced,
+                        createdAt: previous.createdAt,
+                        completedAt: previous.completedAt
+                    } : null,
+                    requestId: requestId,
+                    timestamp: new Date().toISOString()
+                });
+            }
+
             logError('INFO', 'Starting GeoJSON processing', null, {
                 campaignId: campaignId,
                 filename: filename,
                 featuresCount: geojsonData.features.length,
                 userId: userId,
-                processingMethod: 'direct'
+                processingMethod: 'direct',
+                contentHash: contentHash,
+                receiptId: claim.receipt._id,
+                forced: forceReupload,
+                tookOverStaleReceipt: !!claim.tookOver
             });
             
             // Process GeoJSON with enhanced error handling
-            const result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId, requestId);
-            
+            let result;
+            try {
+                result = await CampaignCrud.processGeoJSONDirect(campaignId, geojsonData, filename, app.io, sessionId, userId, requestId);
+            } catch (processingError) {
+                // Libera o recibo para que o mesmo arquivo possa ser reenviado
+                // depois da correção — sem isto, uma falha no processamento
+                // bloquearia permanentemente o reenvio.
+                await receiptStore.release(claim.receipt._id).catch(() => {});
+                throw processingError;
+            }
+
+            if (result.insertedCount > 0) {
+                await receiptStore.complete(claim.receipt._id, {
+                    insertedCount: result.insertedCount,
+                    errorCount: result.errorCount,
+                    firstIndex: result.firstIndex,
+                    lastIndex: result.lastIndex
+                });
+            } else {
+                // Nenhum ponto entrou (todas as feições inválidas, ou falha de
+                // inserção em todos os lotes). Manter o recibo bloquearia o
+                // reenvio sem motivo: um retry não pode duplicar aquilo que
+                // nunca foi inserido.
+                await receiptStore.release(claim.receipt._id);
+            }
+
             const processingTime = new Date() - startTime;
             
             await logger.info('GeoJSON processing completed successfully', {
@@ -1868,6 +1988,10 @@ module.exports = function(app) {
             );
             
             let counter = lastPoint ? lastPoint.index + 1 : 1;
+            // Faixa de índices gerada por este upload — registrada no recibo
+            // para que a recusa de um reenvio informe exatamente quais pontos a
+            // importação original criou.
+            const firstIndex = counter;
             // Iniciando contador de pontos
             
             // Processar os pontos em lotes menores para melhor responsividade
@@ -2104,6 +2228,8 @@ module.exports = function(app) {
                 processedCount: processedCount,
                 insertedCount: insertedCount,
                 errorCount: errorCount,
+                firstIndex: insertedCount > 0 ? firstIndex : null,
+                lastIndex: insertedCount > 0 ? counter - 1 : null,
                 filename: filename,
                 properties: Array.from(allProperties),
                 duration: duration,
