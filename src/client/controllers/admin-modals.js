@@ -43,7 +43,7 @@ window.getAdminSocket = function() {
 };
 
 // Controllers dos modais (adaptados para admin)
-Application.controller('AdminGeoJSONUploadModalController', function ($scope, $uibModalInstance, $http, $location, campaignId) {
+Application.controller('AdminGeoJSONUploadModalController', function ($scope, $uibModalInstance, $http, $location, campaignId, NotificationDialog) {
     $scope.file = null;
     
     // Progresso do upload
@@ -277,7 +277,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     };
 });
 
-Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, $uibModal, campaign) {
+Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, $uibModal, campaign, NotificationDialog) {
     $scope.campaign = campaign;
     $scope.points = [];
     $scope.filteredPoints = null;
@@ -332,11 +332,14 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     $scope.removalCriteria = {
         type: '',
         user: '',
-        pointId: '',
-        startDate: null,
-        endDate: null
+        pointId: ''
     };
     $scope.removalPreview = [];
+    // Resumo devolvido pelo servidor na pré-visualização (dryRun). Enquanto for
+    // nulo, a confirmação da remoção fica bloqueada.
+    $scope.removalSummary = null;
+    $scope.removalReason = '';
+    $scope.removalLoading = false;
     
     // Selection state
     $scope.selectAll = false;
@@ -618,8 +621,6 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
                 return !!$scope.removalCriteria.user;
             case 'by_point':
                 return !!$scope.removalCriteria.pointId;
-            case 'by_time_range':
-                return !!$scope.removalCriteria.startDate && !!$scope.removalCriteria.endDate;
             case 'incomplete_only':
                 return true;
             default:
@@ -628,63 +629,71 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     };
     
     $scope.previewRemoval = function() {
-        // Simulate removal preview
-        $scope.removalPreview = [];
-        let pointsAffected = 0;
-        
-        $scope.points.forEach(function(point) {
-            if (point.userName && point.userName.length > 0) {
-                let shouldRemove = false;
-                
-                switch ($scope.removalCriteria.type) {
-                    case 'by_user':
-                        shouldRemove = point.userName.includes($scope.removalCriteria.user);
-                        break;
-                    case 'by_point':
-                        shouldRemove = point._id === $scope.removalCriteria.pointId;
-                        break;
-                    case 'incomplete_only':
-                        shouldRemove = point.userName.length < campaign.numInspec;
-                        break;
-                }
-                
-                if (shouldRemove) {
-                    pointsAffected++;
-                    point.userName.forEach(function(user) {
-                        $scope.removalPreview.push({
-                            pointId: point._id,
-                            user: user,
-                            date: new Date(),
-                            impact: point.userName.length <= campaign.numInspec ? 'safe' : 'warning'
-                        });
-                    });
-                }
+        if (!$scope.isRemovalCriteriaValid()) {
+            NotificationDialog.warning('Preencha o critério de remoção antes de pré-visualizar.');
+            return;
+        }
+
+        // A pré-visualização é calculada pelo servidor, com dryRun, sobre a
+        // campanha inteira. Antes era calculada aqui, apenas sobre a página de
+        // pontos carregada, divergindo do que seria de fato removido.
+        $scope.removalLoading = true;
+        $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
+            criteria: $scope.removalCriteria,
+            dryRun: true
+        }).then(function(response) {
+            $scope.removalLoading = false;
+            $scope.removalPreview = response.data.preview || [];
+            $scope.removalSummary = {
+                pointsAffected: response.data.pointsAffected || 0,
+                inspectionsAffected: response.data.inspectionsAffected || 0
+            };
+            if ($scope.removalSummary.pointsAffected === 0) {
+                NotificationDialog.info('Nenhuma inspeção corresponde ao critério selecionado.');
             }
+        }, function(error) {
+            $scope.removalLoading = false;
+            $scope.removalPreview = [];
+            $scope.removalSummary = null;
+            NotificationDialog.error('Erro ao pré-visualizar a remoção: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
         });
-        
-        $scope.removalPreview.pointsAffected = pointsAffected;
     };
     
     $scope.confirmRemoval = function() {
-        NotificationDialog.confirm(`Tem certeza que deseja remover ${$scope.removalPreview.length} inspeções? Esta ação não pode ser desfeita!`, 'Confirmar Remoção').then(function(confirmed) {
+        if (!$scope.removalSummary || $scope.removalSummary.pointsAffected === 0) {
+            NotificationDialog.warning('Execute a pré-visualização antes de confirmar a remoção.');
+            return;
+        }
+        if (!$scope.removalReason || $scope.removalReason.trim().length < 10) {
+            NotificationDialog.warning('Informe o motivo da remoção (mínimo de 10 caracteres). Ele fica registrado na auditoria.');
+            return;
+        }
+
+        const resumo = $scope.removalSummary;
+        NotificationDialog.confirm(
+            `Confirma a remoção de ${resumo.inspectionsAffected} inspeções em ${resumo.pointsAffected} pontos?`,
+            'Confirmar Remoção'
+        ).then(function(confirmed) {
             if (!confirmed) {
                 return;
             }
-            
-            // Implement actual removal logic here
+
+            $scope.removalLoading = true;
             $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
                 criteria: $scope.removalCriteria,
-                preview: $scope.removalPreview
+                reason: $scope.removalReason
             }).then(function(response) {
-                if (response.data.success) {
-                    NotificationDialog.success(`${response.data.removedCount} inspeções removidas com sucesso!`);
-                    $scope.loadPoints();
-                    $scope.removalPreview = [];
-                } else {
-                    NotificationDialog.error('Erro ao remover inspeções: ' + response.data.error);
+                $scope.removalLoading = false;
+                NotificationDialog.success(`${response.data.removedCount} inspeções removidas em ${response.data.pointsAffected} pontos.`);
+                if (response.data.errors && response.data.errors.length > 0) {
+                    NotificationDialog.warning(`${response.data.errors.length} pontos não puderam ser alterados. Consulte os logs do servidor.`);
                 }
+                $scope.removalPreview = [];
+                $scope.removalSummary = null;
+                $scope.loadPoints();
             }, function(error) {
-                NotificationDialog.error('Erro ao remover inspeções: ' + (error.data?.error || 'Erro desconhecido'));
+                $scope.removalLoading = false;
+                NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
             });
         });
     };
@@ -744,21 +753,44 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         });
     };
     
+    // O motivo é obrigatório: fica gravado em points_audit junto do snapshot
+    // anterior, e é o que permite reverter a remoção depois.
+    function pedirMotivo(mensagem) {
+        return NotificationDialog.prompt(mensagem, 'Motivo da Remoção').then(function(motivo) {
+            if (motivo === null || motivo === undefined) {
+                return null;
+            }
+            if (String(motivo).trim().length < 10) {
+                NotificationDialog.warning('O motivo deve ter ao menos 10 caracteres.');
+                return null;
+            }
+            return String(motivo).trim();
+        });
+    }
+    
     $scope.removePointInspections = function(point) {
         NotificationDialog.confirm(`Tem certeza que deseja remover todas as inspeções do ponto ${point._id}?`, 'Confirmar Remoção').then(function(confirmed) {
             if (!confirmed) {
                 return;
             }
             
-            $http.delete(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`).then(function(response) {
-                if (response.data.success) {
-                    NotificationDialog.success('Inspeções removidas com sucesso!');
-                    $scope.loadPoints();
-                } else {
-                    NotificationDialog.error('Erro ao remover inspeções: ' + response.data.error);
+            pedirMotivo(`Informe o motivo da remoção das inspeções do ponto ${point._id}:`).then(function(reason) {
+                if (!reason) {
+                    return;
                 }
-            }, function(error) {
-                NotificationDialog.error('Erro ao remover inspeções: ' + (error.data?.error || 'Erro desconhecido'));
+                
+                $http.delete(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`, {
+                    params: { reason: reason }
+                }).then(function(response) {
+                    if (response.data.success) {
+                        NotificationDialog.success(`${response.data.removedCount} inspeções removidas do ponto ${point._id}.`);
+                        $scope.loadPoints();
+                    } else {
+                        NotificationDialog.error('Erro ao remover inspeções: ' + response.data.error);
+                    }
+                }, function(error) {
+                    NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
+                });
             });
         });
     };
@@ -775,15 +807,27 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             }
             
             const pointIds = $scope.selectedPoints.map(p => p._id);
-            $http.post(`/api/campaigns/${campaign._id}/bulk-remove-inspections`, { pointIds }).then(function(response) {
-                if (response.data.success) {
-                    NotificationDialog.success(`Inspeções removidas de ${response.data.removedCount} pontos!`);
-                    $scope.loadPoints();
-                } else {
-                    NotificationDialog.error('Erro na remoção em lote: ' + response.data.error);
+            pedirMotivo(`Informe o motivo da remoção das inspeções de ${pointIds.length} pontos:`).then(function(reason) {
+                if (!reason) {
+                    return;
                 }
-            }, function(error) {
-                NotificationDialog.error('Erro na remoção em lote: ' + (error.data?.error || 'Erro desconhecido'));
+                
+                $http.post(`/api/campaigns/${campaign._id}/bulk-remove-inspections`, {
+                    pointIds: pointIds,
+                    reason: reason
+                }).then(function(response) {
+                    if (response.data.success) {
+                        NotificationDialog.success(`${response.data.removedCount} inspeções removidas em ${response.data.pointsAffected} pontos.`);
+                        if (response.data.errors && response.data.errors.length > 0) {
+                            NotificationDialog.warning(`${response.data.errors.length} pontos não puderam ser alterados.`);
+                        }
+                        $scope.loadPoints();
+                    } else {
+                        NotificationDialog.error('Erro na remoção em lote: ' + response.data.error);
+                    }
+                }, function(error) {
+                    NotificationDialog.error('Erro na remoção em lote: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
+                });
             });
         });
     };
@@ -1096,7 +1140,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
 });
 
 // Controller para o modal de detalhes do ponto
-Application.controller('PointDetailsModalController', function ($scope, $uibModalInstance, point, campaign) {
+Application.controller('PointDetailsModalController', function ($scope, $uibModalInstance, point, campaign, NotificationDialog) {
     $scope.point = point;
     $scope.campaign = campaign;
     
@@ -1529,36 +1573,26 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
         return $scope.validationErrors.length === 0;
     };
     
+    // 2026-08-18 — A edição de inspeções nunca chegou a ser persistida: o
+    // `$http.put` estava comentado e o modal exibia sucesso simulado, dando ao
+    // administrador a impressão de que as alterações haviam sido gravadas. Não
+    // existe endpoint de edição de inspeções no servidor, e criá-lo exige
+    // definir antes como a alteração se relaciona com a consolidação de
+    // classes e com a auditoria de `points_audit`.
+    //
+    // Até lá, o modal informa a limitação em vez de mentir. A remoção de
+    // inspeções — essa sim implementada e auditada — está disponível na tabela
+    // de pontos do gerenciador de campanhas.
     $scope.saveAllChanges = function() {
         if (!$scope.validateInspections()) {
             return;
         }
         
-        // Preparar dados para envio
-        var updateData = {
-            pointId: $scope.point._id,
-            inspections: $scope.inspections.map(function(inspection) {
-                return {
-                    user: inspection.user,
-                    date: inspection.date,
-                    time: inspection.time,
-                    form: inspection.form.filter(function(form) {
-                        return form.landUse && form.landUse.trim() !== '';
-                    })
-                };
-            })
-        };
-        
-        // Simular envio para o servidor
-        // $http.put(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`, updateData)
-        
-        // Por enquanto, só simular sucesso
-        setTimeout(function() {
-            $scope.$apply(function() {
-                NotificationDialog.success(`${$scope.inspections.length} inspeções salvas com sucesso!`);
-                $uibModalInstance.close('saved');
-            });
-        }, 500);
+        NotificationDialog.warning(
+            'A edição de inspeções ainda não é gravada no servidor. Para retirar inspeções de um ponto, '
+            + 'utilize a ação "Remover Inspeções" na tabela de pontos do gerenciador de campanhas.',
+            'Funcionalidade Indisponível'
+        );
     };
     
     $scope.close = function() {

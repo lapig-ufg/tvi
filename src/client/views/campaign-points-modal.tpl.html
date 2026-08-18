@@ -1024,28 +1024,76 @@
             Esta ação permite remover inspeções específicas. As remoções são permanentes e não podem ser desfeitas.
         </div>
         
+        <!-- Os valores abaixo precisam coincidir com os tipos aceitos pelo
+             servidor em util/inspectionRemovalPlan.js. -->
         <div class="filter-grid">
             <div class="filter-group">
                 <label class="filter-label">Tipo de Remoção</label>
-                <select class="filter-select" ng-model="removalCriteria.type">
+                <select class="filter-select" ng-model="removalCriteria.type" ng-change="removalSummary = null; removalPreview = []">
                     <option value="">Selecione o tipo...</option>
-                    <option value="user">Por Usuário</option>
-                    <option value="point">Por Ponto</option>
-                    <option value="date">Por Data</option>
+                    <option value="by_user">Por Usuário</option>
+                    <option value="by_point">Por Ponto</option>
+                    <option value="incomplete_only">Pontos Incompletos</option>
                 </select>
             </div>
-            
-            <div class="filter-group" ng-if="removalCriteria.type === 'user'">
+
+            <div class="filter-group" ng-if="removalCriteria.type === 'by_user'">
                 <label class="filter-label">Usuário</label>
                 <select class="filter-select" ng-model="removalCriteria.user">
                     <option value="">Selecione o usuário...</option>
                     <option ng-repeat="user in availableUsers" value="{{ user }}">{{ user }}</option>
                 </select>
             </div>
-            
-            <div class="filter-group" ng-if="removalCriteria.type === 'point'">
+
+            <div class="filter-group" ng-if="removalCriteria.type === 'by_point'">
                 <label class="filter-label">ID do Ponto</label>
                 <input type="text" class="filter-input" ng-model="removalCriteria.pointId" placeholder="Ex: P001">
+            </div>
+        </div>
+
+        <div class="filter-group" style="margin-top: 1rem;">
+            <label class="filter-label">Motivo da Remoção (obrigatório, mínimo de 10 caracteres)</label>
+            <textarea class="filter-input" rows="2" ng-model="removalReason"
+                      placeholder="Ex: inspeções duplicadas geradas pela reabertura indevida do bloco 12"></textarea>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary"
+                    ng-disabled="!isRemovalCriteriaValid() || removalLoading"
+                    ng-click="previewRemoval()">
+                <i class="glyphicon glyphicon-search"></i> Pré-visualizar
+            </button>
+            <button class="btn btn-danger" style="margin-left: 0.5rem;"
+                    ng-disabled="!removalSummary || removalSummary.pointsAffected === 0 || removalLoading"
+                    ng-click="confirmRemoval()">
+                <i class="glyphicon glyphicon-trash"></i> Remover Inspeções
+            </button>
+            <span ng-if="removalLoading" style="margin-left: 0.75rem; color: #666;">Processando...</span>
+        </div>
+
+        <div ng-if="removalSummary" style="margin-top: 1.5rem;">
+            <div class="alert" ng-class="removalSummary.pointsAffected > 0 ? 'alert-warning' : 'alert-success'">
+                <strong>{{ removalSummary.inspectionsAffected }}</strong> inspeções em
+                <strong>{{ removalSummary.pointsAffected }}</strong> pontos serão removidas.
+            </div>
+
+            <div ng-if="removalPreview.length > 0" style="max-height: 260px; overflow-y: auto;">
+                <table class="points-table">
+                    <thead>
+                        <tr>
+                            <th>ID do Ponto</th>
+                            <th>Inspetor</th>
+                            <th>Operação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="linha in removalPreview">
+                            <td>{{ linha.pointId }}</td>
+                            <td>{{ linha.user }}</td>
+                            <td>{{ linha.operation === 'remove_inspector' ? 'Remover somente este inspetor' : 'Remover todas as inspeções do ponto' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
