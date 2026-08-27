@@ -1094,7 +1094,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.pointDoubt = (data.point && data.point.doubt) ? data.point.doubt : null;
 
             initFormViewVariables();
-            generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+            // Wayback não usa o seletor de anos do formulário legado; além
+            // disso, o ramo wayback de initFormViewVariables não inicializa
+            // $scope.optionYears, e generateOptionYears faria push em
+            // undefined — o TypeError abortava loadPoint antes de
+            // loadCampaignConfig/generateMaps e a grade nunca era montada.
+            if (!$scope.isWayback) {
+                generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+            }
 
             // TKT-000031: restaurar o intervalo padrão dos filtros de gráfico
             // ao avançar para um novo ponto, evitando que o filtro do ponto

@@ -308,7 +308,10 @@
         </div>
         <div ng-hide="isObjectEmpty(point) && pointLoaded" class="col-xs-12 col-sm-12 col-md-10 col-lg-10 main-content">
             <div class="row">
-                <span  ng-show="pointLoaded" ng-hide="isSentinel || isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:9px 5px 5px 5px;">
+                <!-- ng-show e ng-hide no mesmo elemento disputam a mesma classe CSS
+     (ng-hide) e o resultado depende da ordem dos watchers — o título
+     Landsat vazava em campanhas Wayback. Expressão única resolve. -->
+<span ng-show="pointLoaded && !isSentinel && !isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:9px 5px 5px 5px;">
                     {{ 'TEMPORAL.MAP.LANDSAT_IMAGES' | i18n }}
                 </span>
 
