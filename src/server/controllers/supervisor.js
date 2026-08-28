@@ -2,6 +2,7 @@ const csv = require('fast-csv');
 const proj4 = require('proj4');
 const {exec} = require("child_process");
 const supervisorFilters = require('../util/supervisorFilters');
+const inspectionTable = require('../services/inspectionTable');
 
 const {
     BIOME_PROPERTY_KEYS,
@@ -194,40 +195,16 @@ module.exports = function (app) {
     }
 
     creatPoint = function (point, callback) {
-        var years = [];
-        var yearlyInspections = [];
+        // Tabela de classes por intérprete (colunas por ano no legado e por
+        // célula da grade no Wayback) — ver services/inspectionTable.js.
+        var table = inspectionTable.buildInspectionTable(point);
 
-        if (point) {
-            for (var i = 0; i < point.userName.length; i++) {
-                var userName = point.userName[i];
-                var inspections = point.inspection[i];
-
-                var yearlyInspection = {
-                    userName: userName,
-                    landUse: []
-                }
-                inspections.form.forEach(function (i) {
-                    for (var year = i.initialYear; year <= i.finalYear; year++) {
-                        yearlyInspection.landUse.push(`${i.landUse} ${i.pixelBorder ? ' - BORDA' : ''}`);
-                    }
-                });
-
-                yearlyInspections.push(yearlyInspection)
-            }
-
-            if (point.inspection[0]) {
-                point.inspection[0].form.forEach(function (i) {
-                    for (var year = i.initialYear; year <= i.finalYear; year++) {
-                        years.push(year);
-                    }
-                });
-            }
-        } else {
+        if (!point) {
             point = {};
         }
 
-        point.inspection = yearlyInspections;
-        point.years = years;
+        point.inspection = table.inspections;
+        point.years = table.years;
 
         getImageDates(point.path, point.row, function (dates) {
             point.dates = dates

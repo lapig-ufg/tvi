@@ -1,6 +1,7 @@
 const proj4 = require('proj4');
 const usernameMatcher = require('../services/usernameMatcher');
 const waybackGuard = require('../services/waybackInspectionGuard');
+const inspectionTable = require('../services/inspectionTable');
 
 // Filtro de seleção do próximo ponto do inspetor (findPoint). Função pura,
 // extraída para ser testável isoladamente (test/waybackDistributionFilter.test.js).
@@ -1400,41 +1401,13 @@ module.exports = function(app) {
 					// Criar objeto de resposta
 					getImageDates(point.path, point.row, function(dates) {
 						point.dates = dates;
-						
-						var years = [];
-						var yearlyInspections = [];
 
-						if (point.userName && point.userName.length > 0) {
-							for (var i = 0; i < point.userName.length; i++) {
-								var userName = point.userName[i];
-								var inspections = point.inspection[i];
-
-								var yearlyInspection = {
-									userName: userName,
-									landUse: []
-								}
-								if (inspections && inspections.form) {
-									inspections.form.forEach(function (i) {
-										for (var year = i.initialYear; year <= i.finalYear; year++) {
-											yearlyInspection.landUse.push(`${i.landUse} ${i.pixelBorder ? ' - BORDA' : ''}`);
-										}
-									});
-								}
-
-								yearlyInspections.push(yearlyInspection)
-							}
-
-							if (point.inspection[0] && point.inspection[0].form) {
-								point.inspection[0].form.forEach(function (i) {
-									for (var year = i.initialYear; year <= i.finalYear; year++) {
-										years.push(year);
-									}
-								});
-							}
-						}
-
-						point.inspection = yearlyInspections;
-						point.years = years;
+						// Tabela de classes por intérprete (colunas por ano no
+						// legado e por célula da grade no Wayback) — ver
+						// services/inspectionTable.js.
+						var table = inspectionTable.buildInspectionTable(point);
+						point.inspection = table.inspections;
+						point.years = table.years;
 
 						points.count(filter, function (err, count) {
 							response.send({
@@ -1632,36 +1605,13 @@ module.exports = function(app) {
 				// Criar objeto de resposta
 				getImageDates(point.path, point.row, function(dates) {
 					point.dates = dates;
-					
-					var years = [];
-					var yearlyInspections = [];
 
-					if (point.userName && point.userName.length > 0) {
-						for (var i = 0; i < point.userName.length; i++) {
-							var userName = point.userName[i];
-							var inspections = point.inspection[i];
-
-							var yearlyInspection = {
-								userName: userName,
-								landUse: []
-							}
-							if (inspections && inspections.form) {
-								inspections.form.forEach(function (j) {
-									for (var year = j.initialYear; year <= j.finalYear; year++) {
-										yearlyInspection.landUse.push(`${j.landUse} ${j.pixelBorder ? ' - BORDA' : ''}`);
-										if (i === 0) {
-											years.push(year);
-										}
-									}
-								});
-							}
-
-							yearlyInspections.push(yearlyInspection)
-						}
-					}
-
-					point.inspection = yearlyInspections;
-					point.years = years;
+					// Tabela de classes por intérprete (colunas por ano no
+					// legado e por célula da grade no Wayback) — ver
+					// services/inspectionTable.js.
+					var table = inspectionTable.buildInspectionTable(point);
+					point.inspection = table.inspections;
+					point.years = table.years;
 
 					// Contar total de pontos da campanha
 					points.count({ campaign: point.campaign }, function (err, count) {
