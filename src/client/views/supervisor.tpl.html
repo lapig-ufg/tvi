@@ -347,7 +347,10 @@
                         <div>
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
-                                <span>{{formatMapDate(map.date)}}</span>
+                                <!-- Wayback: mesma numeração sequencial exibida ao
+                                     inspetor na tela temporal, para as duas telas
+                                     referenciarem as células do mesmo jeito. -->
+                                <span>{{(isWayback ? (map.index + 1) + '. ' : '') + formatMapDate(map.date)}}</span>
                                 <span ng-hide="isWayback">{{periodo}}</span>
                             </div>
                             

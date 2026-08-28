@@ -240,7 +240,7 @@
                                 <select ng-disabled="answers.length >= ($index + 1)"
                                         class="form-control form-year-select"
                                         ng-model="answer.initialDate"
-                                        ng-options="x for x in waybackOptionDates[$index]">
+                                        ng-options="o.value as o.label for o in waybackOptionDates[$index]">
                                 </select>
                             </div>
                             <div class="form-group-inline">
@@ -249,7 +249,7 @@
                                         class="form-control form-year-select"
                                         ng-model="answer.finalDate"
                                         ng-change="waybackFormPlus()"
-                                        ng-options="y for y in waybackOptionDates[$index]">
+                                        ng-options="o.value as o.label for o in waybackOptionDates[$index]">
                                 </select>
                             </div>
                         </div>
@@ -352,7 +352,10 @@
                         <div>
                             <!-- Header do mapa com informações -->
                             <div class="map-header">
-                                <span>{{formatMapDate(map.date)}}</span>
+                                <!-- Wayback: numeração sequencial da célula para o
+                                     inspetor correlacionar com as faixas exibidas no
+                                     seletor de datas do formulário. -->
+                                <span>{{(isWayback ? (map.index + 1) + '. ' : '') + formatMapDate(map.date)}}</span>
                                 <span ng-hide="isWayback">{{periodo}}</span>
                             </div>
 

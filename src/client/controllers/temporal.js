@@ -299,14 +299,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             var lastDate = $scope.maps.length ? $scope.maps[$scope.maps.length - 1].date : null;
             if (!lastDate || prev.finalDate === lastDate) return;
 
-            var nextDates = waybackGridService.core.optionDates($scope.maps, prev.finalDate)
-                .filter(function (d) { return d > prev.finalDate; });
-            if (!nextDates.length) return;
+            var nextEntries = waybackGridService.core.optionEntries($scope.maps, prev.finalDate)
+                .filter(function (e) { return e.value > prev.finalDate; });
+            if (!nextEntries.length) return;
 
-            $scope.waybackOptionDates.push(nextDates);
+            $scope.waybackOptionDates.push(nextEntries);
             var defaultLU = ($scope.config && $scope.config.defaultLandUse) || '';
             $scope.answers.push({
-                initialDate: nextDates[0],
+                initialDate: nextEntries[0].value,
                 finalDate: lastDate,
                 landUse: defaultLU || ($scope.config.landUse && $scope.config.landUse[0]) || '',
                 pixelBorder: false
@@ -828,7 +828,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                 if (!preserve) {
                     $scope.answers = waybackGridService.core.buildInitialAnswers(
                         $scope.maps, ($scope.config && $scope.config.defaultLandUse) || '');
-                    $scope.waybackOptionDates = [waybackGridService.core.optionDates($scope.maps, null)];
+                    $scope.waybackOptionDates = [waybackGridService.core.optionEntries($scope.maps, null)];
                 }
                 $scope.waybackGridLoading = false;
             }).catch(function () {
@@ -1246,7 +1246,17 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             if (dateString.startsWith('00/00/')) {
                 return dateString.split('/')[2]; // Retorna apenas o ano
             }
-            
+
+            // Datas ISO de campanhas Wayback são formatadas sem passar por
+            // new Date: a interpretação UTC de 'YYYY-MM-DD' recuava a
+            // legenda 1 dia em fusos negativos e a data da célula divergia
+            // da lista de datas do formulário. Restrito a isWayback para
+            // não alterar nenhum comportamento das campanhas legadas.
+            if ($scope.isWayback) {
+                var isoDateBR = waybackGridService.core.formatDateBR(dateString);
+                if (isoDateBR) return isoDateBR;
+            }
+
             // Caso contrário, formatar como data normal
             try {
                 var date = new Date(dateString);

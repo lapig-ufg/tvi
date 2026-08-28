@@ -221,7 +221,17 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         if (dateString.startsWith('00/00/')) {
             return dateString.split('/')[2]; // Retorna apenas o ano
         }
-        
+
+        // Datas ISO de campanhas Wayback são formatadas sem passar por
+        // new Date: a interpretação UTC de 'YYYY-MM-DD' recuava a legenda
+        // 1 dia em fusos negativos e a data da célula divergia da exibida
+        // na tela do intérprete. Restrito a isWayback para não alterar
+        // nenhum comportamento das campanhas legadas.
+        if ($scope.isWayback) {
+            var isoDateBR = waybackGridService.core.formatDateBR(dateString);
+            if (isoDateBR) return isoDateBR;
+        }
+
         // Caso contrário, formatar como data normal
         try {
             var date = new Date(dateString);
@@ -742,7 +752,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                 if (!preserve) {
                     $scope.answers = waybackGridService.core.buildInitialAnswers(
                         $scope.maps, ($scope.config && $scope.config.defaultLandUse) || '');
-                    $scope.waybackOptionDates = [waybackGridService.core.optionDates($scope.maps, null)];
+                    $scope.waybackOptionDates = [waybackGridService.core.optionEntries($scope.maps, null)];
                 }
                 $scope.waybackGridLoading = false;
             }).catch(function () {

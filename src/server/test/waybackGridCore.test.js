@@ -71,6 +71,48 @@ test('expandAnswersToForm: expande intervalos consolidados em uma entrada por re
     ]);
 });
 
+test('formatDateBR: converte ISO para dd/mm/aaaa por manipulação de string (sem Date, imune a fuso)', () => {
+    assert.equal(core.formatDateBR('2012-09-22'), '22/09/2012');
+    assert.equal(core.formatDateBR('2020-01-30'), '30/01/2020');
+});
+
+test('formatDateBR: entradas não-ISO retornam null (caller decide o fallback legado)', () => {
+    assert.equal(core.formatDateBR('00/00/2020'), null);
+    assert.equal(core.formatDateBR('21/09/2012'), null);
+    assert.equal(core.formatDateBR(''), null);
+    assert.equal(core.formatDateBR(null), null);
+    assert.equal(core.formatDateBR(undefined), null);
+});
+
+const GRID_DUP = [
+    { date: '2008-09-07', index: 0 },
+    { date: '2008-09-07', index: 1 },
+    { date: '2012-09-22', index: 2 },
+    { date: '2012-09-22', index: 3 },
+    { date: '2012-09-22', index: 4 },
+    { date: '2025-10-12', index: 5 }
+];
+
+test('optionEntries: deduplica datas e rotula com a posição global das células (faixa ou única)', () => {
+    assert.deepEqual(core.optionEntries(GRID_DUP, null), [
+        { value: '2008-09-07', label: '2008-09-07 (1-2)' },
+        { value: '2012-09-22', label: '2012-09-22 (3-5)' },
+        { value: '2025-10-12', label: '2025-10-12 (6)' }
+    ]);
+});
+
+test('optionEntries: filtro por data limite preserva a numeração global das células', () => {
+    assert.deepEqual(core.optionEntries(GRID_DUP, '2012-09-22'), [
+        { value: '2012-09-22', label: '2012-09-22 (3-5)' },
+        { value: '2025-10-12', label: '2025-10-12 (6)' }
+    ]);
+});
+
+test('optionEntries: grade vazia ou ausente retorna lista vazia', () => {
+    assert.deepEqual(core.optionEntries([], null), []);
+    assert.deepEqual(core.optionEntries(null, null), []);
+});
+
 test('expandAnswersToForm: célula fora de qualquer intervalo sai com landUse null (barrado pelo guard/form)', () => {
     const grid = core.buildGrid(POINT, {}, RELEASES_INDEX);
     const answers = [{ initialDate: '2018-06-06', finalDate: '2018-06-06', landUse: 'Pastagem', pixelBorder: false }];
