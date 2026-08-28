@@ -1353,14 +1353,21 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         // };
 
         $scope.hasMosaicForYear = function (year) {
-            // garante que o ano é number e evita erro se a lista ainda não chegou
+            // garante que o ano é number e evita erro se as listas ainda não chegaram
             const y = Number(year);
-            if (!Array.isArray($scope.sentinelMosaics)) {
-                return false;
-            }
-            return $scope.sentinelMosaics.some(m =>
+            const sentinelOk = Array.isArray($scope.sentinelMosaics) && $scope.sentinelMosaics.some(m =>
                 Array.isArray(m.years) && m.years.includes(y)
             );
+            if (sentinelOk) {
+                return true;
+            }
+            // Anos sem Sentinel (anteriores a 2017) ainda têm cobertura
+            // Landsat: o modal de comparação degrada para "só Landsat"
+            // quando a camada Sentinel não existe para o ano.
+            const landsatCap = Array.isArray($scope.tilesCapabilities)
+                ? $scope.tilesCapabilities.find(c => c.satellite === 'landsat')
+                : null;
+            return !!(landsatCap && Array.isArray(landsatCap.year) && landsatCap.year.includes(y));
         };
 
 

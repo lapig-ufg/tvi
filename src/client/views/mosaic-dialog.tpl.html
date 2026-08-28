@@ -26,8 +26,9 @@
     
     <!-- Controles -->
     <div class="comparison-controls">
-        <!-- Toggle para visualização mensal -->
-        <div class="control-group">
+        <!-- Toggle para visualização mensal (só quando o Sentinel cobre o ano;
+             antes de 2017 o modal exibe apenas a camada Landsat) -->
+        <div class="control-group" ng-if="hasSentinelImageForYear(year)">
             <label class="switch">
                 <input type="checkbox" ng-model="showMonthlyView" ng-change="updateMapLayers()">
                 <span class="slider round"></span>
@@ -68,8 +69,8 @@
                 </div>
             </div>
             
-            <!-- Visparam Sentinel -->
-            <div class="visparam-section" ng-if="sentinelVisparams.length > 0">
+            <!-- Visparam Sentinel (oculto quando o Sentinel não cobre o ano) -->
+            <div class="visparam-section" ng-if="sentinelVisparams.length > 0 && hasSentinelImageForYear(year)">
                 <div class="visparam-header">
                     <i class="fa fa-satellite-dish"></i>
                     <span>Visualização Sentinel</span>
