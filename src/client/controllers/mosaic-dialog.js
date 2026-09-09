@@ -112,6 +112,29 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
         });
         return detail ? detail.display_name : visparamName;
     };
+
+    $scope.getLegend = function(satellite) {
+        var details = satellite === 'landsat' ? $scope.landsatVisparamDetails : $scope.sentinelVisparamDetails;
+        var selected = satellite === 'landsat' ? $scope.selectedLandsatVisparam : $scope.selectedSentinelVisparam;
+        if (!selected || !Array.isArray(details)) {
+            return null;
+        }
+        var detail = details.find(function(vp) {
+            return vp.name === selected;
+        });
+        var legend = detail && detail.legend;
+        if (!legend || !Array.isArray(legend.palette) || legend.palette.length < 2) {
+            return null;
+        }
+        return legend;
+    };
+
+    $scope.getLegendGradient = function(legend) {
+        if (!legend || !Array.isArray(legend.palette) || legend.palette.length < 2) {
+            return '';
+        }
+        return 'linear-gradient(to right, ' + legend.palette.join(', ') + ')';
+    };
     
     
     // Atualizar configurações dos mapas com debounce

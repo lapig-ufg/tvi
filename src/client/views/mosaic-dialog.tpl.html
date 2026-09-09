@@ -15,12 +15,28 @@
     <!-- Labels das camadas -->
     <div class="layer-labels">
         <div class="left-layer-info">
-            <i class="fa fa-arrow-left"></i> 
-            <strong>Esquerda:</strong> {{leftLayerLabel}}
+            <div class="layer-title">
+                <i class="fa fa-arrow-left"></i>
+                <strong>Esquerda:</strong> {{leftLayerLabel}}
+            </div>
+            <div class="layer-legend" ng-if="leftMapConfig && getLegend('landsat')">
+                <span class="legend-label">{{getLegend('landsat').label}}</span>
+                <span class="legend-value">{{getLegend('landsat').min}}</span>
+                <span class="legend-bar" ng-style="{'background': getLegendGradient(getLegend('landsat'))}"></span>
+                <span class="legend-value">{{getLegend('landsat').max}}</span>
+            </div>
         </div>
         <div class="right-layer-info">
-            <strong>Direita:</strong> {{rightLayerLabel}}
-            <i class="fa fa-arrow-right"></i>
+            <div class="layer-title">
+                <strong>Direita:</strong> {{rightLayerLabel}}
+                <i class="fa fa-arrow-right"></i>
+            </div>
+            <div class="layer-legend" ng-if="rightMapConfig && getLegend('sentinel')">
+                <span class="legend-label">{{getLegend('sentinel').label}}</span>
+                <span class="legend-value">{{getLegend('sentinel').min}}</span>
+                <span class="legend-bar" ng-style="{'background': getLegendGradient(getLegend('sentinel'))}"></span>
+                <span class="legend-value">{{getLegend('sentinel').max}}</span>
+            </div>
         </div>
     </div>
     
@@ -150,15 +166,50 @@
 
 .left-layer-info, .right-layer-info {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 6px;
     font-size: 14px;
     color: #495057;
 }
 
-.left-layer-info i, .right-layer-info i {
+.left-layer-info {
+    align-items: flex-start;
+}
+
+.right-layer-info {
+    align-items: flex-end;
+}
+
+.layer-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.layer-title i {
     color: #6c757d;
     font-size: 16px;
+}
+
+.layer-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.legend-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.legend-bar {
+    display: inline-block;
+    width: 140px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
 }
 
 .left-layer-info strong, .right-layer-info strong {
