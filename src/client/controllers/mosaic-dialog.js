@@ -19,8 +19,12 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     // Implementação customizada de swipe
     
     // Estados e configurações
-    $scope.showMonthlyView = false;
-    $scope.selectedMonth = new Date().getMonth() + 1;
+    // Objeto em vez de primitivos: o toggle fica dentro de um ng-if (escopo
+    // filho) e o ng-model precisa gravar na mesma referência lida aqui.
+    $scope.monthly = {
+        enabled: false,
+        month: new Date().getMonth() + 1
+    };
     
     // Obter AppConfig se disponível
     var tilesUrl = '/api/tiles/xyz/';
@@ -153,8 +157,8 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
         
         // Configuração da camada direita (Sentinel)
         if ($scope.hasSentinelImageForYear($scope.year) && $scope.selectedSentinelVisparam) {
-            var sentinelPeriod = $scope.showMonthlyView ? 'MONTH' : $scope.period;
-            var sentinelMonth = $scope.showMonthlyView ? $scope.selectedMonth : null;
+            var sentinelPeriod = $scope.monthly.enabled ? 'MONTH' : $scope.period;
+            var sentinelMonth = $scope.monthly.enabled ? $scope.monthly.month : null;
             
             $scope.rightMapConfig = {
                 collection: 's2_harmonized',
@@ -166,8 +170,8 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
                 bounds: $scope.map.bounds
             };
             
-            if ($scope.showMonthlyView) {
-                $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + $scope.getMonthName($scope.selectedMonth);
+            if ($scope.monthly.enabled) {
+                $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + $scope.getMonthName($scope.monthly.month);
             } else {
                 $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + $scope.period;
             }

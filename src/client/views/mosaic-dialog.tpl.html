@@ -30,7 +30,7 @@
              antes de 2017 o modal exibe apenas a camada Landsat) -->
         <div class="control-group" ng-if="hasSentinelImageForYear(year)">
             <label class="switch">
-                <input type="checkbox" ng-model="showMonthlyView" ng-change="updateMapLayers()">
+                <input type="checkbox" ng-model="monthly.enabled" ng-change="updateMapLayers()">
                 <span class="slider round"></span>
             </label>
             <span class="control-label">
@@ -39,16 +39,16 @@
             </span>
         </div>
         
-        <!-- Slider de meses (apenas quando showMonthlyView = true) -->
-        <div class="month-controls" ng-show="showMonthlyView">
+        <!-- Slider de meses (apenas com o modo mensal ativo) -->
+        <div class="month-controls" ng-show="monthly.enabled">
             <label>Mês:</label>
             <input type="range" 
                    class="month-slider" 
                    min="1" 
                    max="12" 
-                   ng-model="selectedMonth" 
-                   ng-change="updateMapLayers(true)">
-            <span class="month-display">{{getMonthName(selectedMonth)}}</span>
+                   ng-model="monthly.month"
+                   ng-change="updateMapLayers(true, true)">
+            <span class="month-display">{{getMonthName(monthly.month)}}</span>
         </div>
         
         <!-- Seletores de visualização -->
