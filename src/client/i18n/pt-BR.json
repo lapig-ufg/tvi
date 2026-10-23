@@ -145,7 +145,8 @@
       "WAYBACK_NO_IMAGES": "Este ponto ainda não possui imagens Wayback processadas. A inspeção está bloqueada até a sincronização ser concluída.",
       "WAYBACK_TILE_ERROR": "Imagem indisponível nesta release.",
       "WAYBACK_APPROXIMATE_DATE": "Data aproximada (data da release)",
-      "RELOAD_MAPS": "Recarregar mapas"
+      "RELOAD_MAPS": "Recarregar mapas",
+      "VISUALIZATION": "Visualização"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Série temporal NDVI LANDSAT",

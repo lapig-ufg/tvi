@@ -45,7 +45,7 @@
                         
                         <!-- Seletor de VisParam se houver múltiplas opções -->
                         <div ng-show="availableVisParams.length > 1" style="margin-top: 10px;">
-                            <label style="color: #333; font-weight: normal;">Visualização:</label>
+                            <label style="color: #333; font-weight: normal;">{{ 'TEMPORAL.MAP.VISUALIZATION' | i18n }}:</label>
                             <select class="form-control" 
                                     ng-model="landsatVisparam" 
                                     ng-change="updateLandsatVisparam()"

@@ -145,7 +145,8 @@
       "WAYBACK_NO_IMAGES": "Titik ini belum memiliki citra Wayback yang diproses. Inspeksi diblokir sampai sinkronisasi selesai.",
       "WAYBACK_TILE_ERROR": "Citra tidak tersedia untuk rilis ini.",
       "WAYBACK_APPROXIMATE_DATE": "Tanggal perkiraan (tanggal rilis)",
-      "RELOAD_MAPS": "Muat ulang peta"
+      "RELOAD_MAPS": "Muat ulang peta",
+      "VISUALIZATION": "Visualisasi"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",
