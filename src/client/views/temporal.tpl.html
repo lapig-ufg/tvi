@@ -121,8 +121,13 @@
                         .form-temporal .checkbox-label input[type="checkbox"] {
                             margin-right: 5px;
                         }
+                        /* wrap: a barra lateral ocupa 1/6 da tela e não comporta os
+                           botões em uma linha; sem quebra, o contador e o botão "-"
+                           ficam sob a área dos mapas. */
                         .form-actions {
                             display: flex;
+                            flex-wrap: wrap;
+                            row-gap: 8px;
                             justify-content: space-between;
                             align-items: center;
                             margin-top: 20px;
@@ -133,6 +138,7 @@
                             display: flex;
                             align-items: center;
                             gap: 15px;
+                            margin-left: auto;
                         }
                         .form-actions .counter-display {
                             font-size: 16px;
@@ -279,15 +285,15 @@
                                ng-click="submitFormAndExit()"
                                value="{{ 'TEMPORAL.FORM.SUBMIT_AND_EXIT' | i18n }}">
                         <!-- TKT-000011: registrar dúvida no ponto atual -->
-                        <input type="button" class="btn btn-warning"
-                               style="margin-left: 8px;"
-                               ng-show="point._id"
-                               ng-disabled="onSubmission"
-                               ng-click="openDoubtModal()"
-                               title="Registrar dúvida sobre este ponto">
+                        <button type="button" class="btn btn-warning"
+                                style="margin-left: 8px;"
+                                ng-show="point._id"
+                                ng-disabled="onSubmission"
+                                ng-click="openDoubtModal()"
+                                title="Registrar dúvida sobre este ponto">
                             <span class="glyphicon glyphicon-question-sign"></span>
                             Tenho dúvida
-                        </input>
+                        </button>
                         <span class="label label-warning"
                               ng-show="pointDoubt && pointDoubt.status === 'ABERTA'"
                               style="margin-left: 8px; vertical-align: middle;"
