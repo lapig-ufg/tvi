@@ -17,6 +17,8 @@
  *   - Guarda estática do template: toda ligação `ng-model` usa caminho com
  *     ponto, o slider aciona o debounce e o toggle segue condicionado à
  *     cobertura Sentinel do ano.
+ *   - Rótulos das camadas traduzidos pelo i18nService real (período, mês e
+ *     indisponibilidade) e template sem textos fixos em português.
  *
  * Execução:
  *   cd src/server && npm test
@@ -31,6 +33,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { criarI18nService } = require('./helpers/clientI18n');
 
 const CLIENT_DIR = path.join(__dirname, '..', '..', 'client');
 const CONTROLLER_PATH = path.join(CLIENT_DIR, 'controllers', 'mosaic-dialog.js');
@@ -108,7 +111,8 @@ function instanciar(opcoes) {
         capabilities,
         (opcoes && opcoes.period) || 'DRY',
         { has: function () { return false; } },
-        $timeout
+        $timeout,
+        criarI18nService((opcoes && opcoes.idioma) || 'pt-BR')
     );
 
     return { $scope: $scope, $timeout: $timeout };
@@ -121,7 +125,7 @@ test('estado inicial: camada direita usa o período da campanha e não envia mê
     assert.ok($scope.monthly.month >= 1 && $scope.monthly.month <= 12);
     assert.equal($scope.rightMapConfig.period, 'DRY');
     assert.equal($scope.rightMapConfig.month, null);
-    assert.equal($scope.rightLayerLabel, 'Sentinel 2023 - DRY');
+    assert.equal($scope.rightLayerLabel, 'Sentinel 2023 - SECO');
 });
 
 test('modo mensal ativo: camada direita passa a MONTH com o mês selecionado', () => {
@@ -172,6 +176,36 @@ test('desligar o modo mensal devolve a camada direita ao período da campanha', 
     $scope.updateMapLayers();
     assert.equal($scope.rightMapConfig.period, 'WET');
     assert.equal($scope.rightMapConfig.month, null);
+});
+
+test('rótulos das camadas seguem o idioma ativo', () => {
+    const { $scope } = instanciar({ period: 'DRY', idioma: 'id' });
+
+    assert.equal($scope.leftLayerLabel, 'Landsat 2023 - KERING');
+    assert.equal($scope.rightLayerLabel, 'Sentinel 2023 - KERING');
+
+    $scope.monthly.enabled = true;
+    $scope.monthly.month = 7;
+    $scope.updateMapLayers();
+    assert.equal($scope.rightLayerLabel, 'Sentinel 2023 - Juli');
+    assert.equal($scope.getMonthName(13), '');
+});
+
+test('ano sem cobertura Sentinel informa a indisponibilidade no idioma ativo', () => {
+    const { $scope } = instanciar({ period: 'WET', idioma: 'id', year: 2010 });
+
+    assert.equal($scope.rightMapConfig, null);
+    assert.equal($scope.rightLayerLabel, 'Sentinel tidak tersedia');
+    assert.equal($scope.leftLayerLabel, 'Landsat 2010 - BASAH');
+});
+
+test('template: textos visíveis passam pelo filtro i18n', () => {
+    const html = fs.readFileSync(TEMPLATE_PATH, 'utf8').replace(/<style>[\s\S]*<\/style>/, '').replace(/<!--[\s\S]*?-->/g, '');
+    const fixos = ['Comparação', 'Esquerda', 'Direita', 'Visualização', 'Mês', 'Fechar'];
+    fixos.forEach(function (texto) {
+        assert.ok(html.indexOf(texto) === -1, 'texto fixo "' + texto + '" no template do modal');
+    });
+    assert.match(html, /'MOSAIC\.TITLE_YEAR' \| i18n:\{year: year\}/);
 });
 
 test('template: ligações ng-model usam caminho com ponto e o slider aciona o debounce', () => {

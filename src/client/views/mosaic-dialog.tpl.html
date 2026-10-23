@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h3 class="modal-title text-center">Comparação de Imagens - Ano {{year}}</h3>
+    <h3 class="modal-title text-center">{{ 'MOSAIC.TITLE_YEAR' | i18n:{year: year} }}</h3>
 </div>
 <div class="modal-body">
     <!-- Mapa com swipe do Leaflet -->
@@ -17,7 +17,7 @@
         <div class="left-layer-info">
             <div class="layer-title">
                 <i class="fa fa-arrow-left"></i>
-                <strong>Esquerda:</strong> {{leftLayerLabel}}
+                <strong>{{ 'MOSAIC.LEFT' | i18n }}:</strong> {{leftLayerLabel}}
             </div>
             <div class="layer-legend" ng-if="leftMapConfig && getLegend('landsat')">
                 <span class="legend-label">{{getLegend('landsat').label}}</span>
@@ -28,7 +28,7 @@
         </div>
         <div class="right-layer-info">
             <div class="layer-title">
-                <strong>Direita:</strong> {{rightLayerLabel}}
+                <strong>{{ 'MOSAIC.RIGHT' | i18n }}:</strong> {{rightLayerLabel}}
                 <i class="fa fa-arrow-right"></i>
             </div>
             <div class="layer-legend" ng-if="rightMapConfig && getLegend('sentinel')">
@@ -51,13 +51,13 @@
             </label>
             <span class="control-label">
                 <i class="fa fa-calendar"></i>
-                Visualização Mensal Sentinel
+                {{ 'MOSAIC.MONTHLY_VIEW' | i18n }}
             </span>
         </div>
         
         <!-- Slider de meses (apenas com o modo mensal ativo) -->
         <div class="month-controls" ng-show="monthly.enabled">
-            <label>Mês:</label>
+            <label>{{ 'MOSAIC.MONTH' | i18n }}:</label>
             <input type="range" 
                    class="month-slider" 
                    min="1" 
@@ -73,7 +73,7 @@
             <div class="visparam-section" ng-if="landsatVisparams.length > 0">
                 <div class="visparam-header">
                     <i class="fa fa-satellite"></i>
-                    <span>Visualização Landsat</span>
+                    <span>{{ 'MOSAIC.LANDSAT_VISUALIZATION' | i18n }}</span>
                 </div>
                 <div class="visparam-buttons">
                     <button ng-repeat="vp in landsatVisparams"
@@ -89,7 +89,7 @@
             <div class="visparam-section" ng-if="sentinelVisparams.length > 0 && hasSentinelImageForYear(year)">
                 <div class="visparam-header">
                     <i class="fa fa-satellite-dish"></i>
-                    <span>Visualização Sentinel</span>
+                    <span>{{ 'MOSAIC.SENTINEL_VISUALIZATION' | i18n }}</span>
                 </div>
                 <div class="visparam-buttons">
                     <button ng-repeat="vp in sentinelVisparams"
@@ -105,7 +105,7 @@
 </div>
 
 <div class="modal-footer">
-    <button class="btn btn-secondary" ng-click="close()">Fechar</button>
+    <button class="btn btn-secondary" ng-click="close()">{{ 'COMMON.CLOSE' | i18n }}</button>
 </div>
 
 <style>

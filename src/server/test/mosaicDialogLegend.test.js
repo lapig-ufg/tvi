@@ -28,6 +28,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { criarI18nService } = require('./helpers/clientI18n');
 
 const CLIENT_DIR = path.join(__dirname, '..', '..', 'client');
 const CONTROLLER_PATH = path.join(CLIENT_DIR, 'controllers', 'mosaic-dialog.js');
@@ -114,7 +115,8 @@ function instanciar(caps) {
         caps === undefined ? capabilities() : caps,
         'DRY',
         { has: function () { return false; } },
-        $timeout
+        $timeout,
+        criarI18nService('pt-BR')
     );
     return { $scope: $scope, $timeout: $timeout };
 }

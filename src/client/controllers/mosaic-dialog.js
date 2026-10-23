@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('MosaicDialogController', function ($scope, $uibModalInstance, mosaics, map, point, config, tilesCapabilities, period, $injector, $timeout) {
+Application.controller('MosaicDialogController', function ($scope, $uibModalInstance, mosaics, map, point, config, tilesCapabilities, period, $injector, $timeout, i18nService) {
     // Inicialização básica
     $scope.tilesCapabilities = tilesCapabilities || [];
     $scope.mosaics = mosaics;
@@ -98,12 +98,16 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     };
     
     $scope.getMonthName = function(monthNumber) {
-        var months = [
-            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ];
-        return months[monthNumber - 1] || '';
+        var month = parseInt(monthNumber, 10);
+        if (!(month >= 1 && month <= 12)) {
+            return '';
+        }
+        return i18nService.translate('MONTHS.' + month);
     };
+
+    function getPeriodLabel(periodCode) {
+        return (periodCode === 'DRY' || periodCode === 'WET') ? i18nService.translate('PERIODS.' + periodCode) : periodCode;
+    }
     
     $scope.getVisparamDisplayName = function(visparamName, satellite) {
         var details = satellite === 'landsat' ? $scope.landsatVisparamDetails : $scope.sentinelVisparamDetails;
@@ -171,10 +175,10 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
                     attribution: 'Landsat ' + $scope.year,
                     bounds: $scope.map.bounds
                 };
-                $scope.leftLayerLabel = 'Landsat ' + $scope.year + ' - ' + $scope.period;
+                $scope.leftLayerLabel = 'Landsat ' + $scope.year + ' - ' + getPeriodLabel($scope.period);
             } else {
                 $scope.leftMapConfig = null;
-                $scope.leftLayerLabel = 'Landsat não disponível';
+                $scope.leftLayerLabel = i18nService.translate('MOSAIC.LANDSAT_UNAVAILABLE');
             }
         }
         
@@ -196,11 +200,11 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
             if ($scope.monthly.enabled) {
                 $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + $scope.getMonthName($scope.monthly.month);
             } else {
-                $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + $scope.period;
+                $scope.rightLayerLabel = 'Sentinel ' + $scope.year + ' - ' + getPeriodLabel($scope.period);
             }
         } else {
             $scope.rightMapConfig = null;
-            $scope.rightLayerLabel = 'Sentinel não disponível';
+            $scope.rightLayerLabel = i18nService.translate('MOSAIC.SENTINEL_UNAVAILABLE');
         }
     }
     

@@ -17,7 +17,12 @@
     "ALL": "Semua",
     "NOT_CONSOLIDATED": "Tidak Terkonsolidasi",
     "USER": "Pengguna",
-    "APPLY": "Terapkan"
+    "APPLY": "Terapkan",
+    "YES": "Ya",
+    "NO": "Tidak",
+    "OK": "OK",
+    "COPY": "Salin",
+    "COPIED": "Tersalin!"
   },
   "NAVBAR": {
     "POINTS": "Titik",
@@ -77,7 +82,8 @@
       "NATURAL_COLOR": "Warna Alami",
       "AGRICULTURE": "Pertanian",
       "FALSE_COLOR": "Warna Palsu",
-      "VISUALIZATION": "Visualisasi"
+      "VISUALIZATION": "Visualisasi",
+      "RELOAD_MAPS": "Muat ulang peta"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",
@@ -85,7 +91,10 @@
       "LANDSAT_NDWI_SERIES": "Seri waktu NDWI LANDSAT",
       "MODIS_NDWI_SERIES": "Seri waktu NDWI MODIS",
       "SHOW_TIMESERIES": "Tampilkan Grafik Seri Waktu",
-      "FILTER_PERIOD": "Saring Periode"
+      "FILTER_PERIOD": "Saring Periode",
+      "START_YEAR": "Tahun awal",
+      "UNTIL": "sampai",
+      "END_YEAR": "Tahun akhir"
     },
     "DOUBT": {
       "TITLE": "Keraguan Titik",
@@ -135,7 +144,8 @@
       "WAYBACK_IMAGES": "Citra Esri Wayback",
       "WAYBACK_NO_IMAGES": "Titik ini belum memiliki citra Wayback yang diproses. Inspeksi diblokir sampai sinkronisasi selesai.",
       "WAYBACK_TILE_ERROR": "Citra tidak tersedia untuk rilis ini.",
-      "WAYBACK_APPROXIMATE_DATE": "Tanggal perkiraan (tanggal rilis)"
+      "WAYBACK_APPROXIMATE_DATE": "Tanggal perkiraan (tanggal rilis)",
+      "RELOAD_MAPS": "Muat ulang peta"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",
@@ -144,7 +154,10 @@
       "MODIS_NDWI_SERIES": "Seri waktu NDWI MODIS",
       "PRECIPITATION": "Curah hujan",
       "SHOW_TIMESERIES": "Tampilkan Grafik Seri Waktu",
-      "FILTER_PERIOD": "Saring Periode"
+      "FILTER_PERIOD": "Saring Periode",
+      "START_YEAR": "Tahun awal",
+      "UNTIL": "sampai",
+      "END_YEAR": "Tahun akhir"
     }
   },
   "LANGUAGES": {
@@ -242,6 +255,20 @@
     "DRY": "KERING",
     "WET": "BASAH"
   },
+  "MONTHS": {
+    "1": "Januari",
+    "2": "Februari",
+    "3": "Maret",
+    "4": "April",
+    "5": "Mei",
+    "6": "Juni",
+    "7": "Juli",
+    "8": "Agustus",
+    "9": "September",
+    "10": "Oktober",
+    "11": "November",
+    "12": "Desember"
+  },
   "TABS": {
     "USERS": "Pengguna",
     "POINTS": "Titik"
@@ -259,6 +286,31 @@
     "AGRICULTURE": "Pertanian",
     "FALSE_COLOR": "Warna Palsu",
     "TVI_RED": "TVI Red"
+  },
+  "MOSAIC": {
+    "TITLE": "Perbandingan Citra",
+    "TITLE_YEAR": "Perbandingan Citra - Tahun {{year}}",
+    "LEFT": "Kiri",
+    "RIGHT": "Kanan",
+    "MONTHLY_VIEW": "Tampilan Bulanan Sentinel",
+    "MONTH": "Bulan",
+    "LANDSAT_VISUALIZATION": "Visualisasi Landsat",
+    "SENTINEL_VISUALIZATION": "Visualisasi Sentinel",
+    "LANDSAT_UNAVAILABLE": "Landsat tidak tersedia",
+    "SENTINEL_UNAVAILABLE": "Sentinel tidak tersedia"
+  },
+  "NOTIFICATIONS": {
+    "SUCCESS": "Berhasil",
+    "ERROR": "Galat",
+    "WARNING": "Perhatian",
+    "INFO": "Informasi",
+    "CONFIRM": "Konfirmasi",
+    "DEFAULT": "Notifikasi",
+    "PROMPT": "Masukkan nilai",
+    "PROCESSING": "Memproses...",
+    "PLEASE_WAIT": "Mohon tunggu...",
+    "ERROR_CODE": "Kode Galat",
+    "INTERNAL_SERVER_ERROR": "Galat internal server"
   },
   "PROMPTS": {
     "ENTER_NEW_LAND_USE": "Masukkan jenis penggunaan lahan baru:"

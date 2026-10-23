@@ -4,7 +4,7 @@
  * Serviço de Notificação/Diálogo Personalizado
  * Substitui o alert() nativo por diálogos mais intuitivos e estilizados
  */
-Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
+Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18nService) {
     const service = {};
 
     // Tipos de notificação
@@ -89,17 +89,17 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                     ${errorCode ? `
                         <div class="error-code-section" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid ${COLORS[type]};">
                             <small>
-                                <strong>Código de Erro:</strong> 
+                                <strong>${i18nService.translate('NOTIFICATIONS.ERROR_CODE')}:</strong> 
                                 <span style="font-family: monospace; font-size: 12px; color: #666;">${errorCode}</span>
                                 <button type="button" class="btn btn-xs btn-default" ng-click="copyErrorCode()" style="margin-left: 10px;">
-                                    <i class="glyphicon glyphicon-copy"></i> Copiar
+                                    <i class="glyphicon glyphicon-copy"></i> ${i18nService.translate('COMMON.COPY')}
                                 </button>
                             </small>
                         </div>
                     ` : ''}
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-default" ng-click="$dismiss()">Fechar</button>
+                    <button class="btn btn-default" ng-click="$dismiss()">${i18nService.translate('COMMON.CLOSE')}</button>
                 </div>
             `,
             controller: function($scope, $uibModalInstance) {
@@ -113,7 +113,7 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                             // Mostrar feedback visual
                             const button = event.target.closest('button');
                             const originalText = button.innerHTML;
-                            button.innerHTML = '<i class="glyphicon glyphicon-ok"></i> Copiado!';
+                            button.innerHTML = '<i class="glyphicon glyphicon-ok"></i> ' + i18nService.translate('COMMON.COPIED');
                             button.classList.add('btn-success');
                             button.classList.remove('btn-default');
                             
@@ -158,7 +158,7 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                     </button>
                     <h4 class="modal-title">
                         <i class="glyphicon ${ICONS.confirm}"></i>
-                        ${title || 'Confirmação'}
+                        ${title || i18nService.translate('NOTIFICATIONS.CONFIRM')}
                     </h4>
                 </div>
                 <div class="modal-body">
@@ -166,10 +166,10 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" ng-click="confirm()">
-                        <i class="glyphicon glyphicon-ok"></i> Sim
+                        <i class="glyphicon glyphicon-ok"></i> ${i18nService.translate('COMMON.YES')}
                     </button>
                     <button class="btn btn-default" ng-click="cancel()">
-                        <i class="glyphicon glyphicon-remove"></i> Não
+                        <i class="glyphicon glyphicon-remove"></i> ${i18nService.translate('COMMON.NO')}
                     </button>
                 </div>
             `,
@@ -232,7 +232,7 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
     /**
      * Método para processar erros do servidor e extrair código de erro
      */
-    service.handleServerError = function(error, defaultMessage = 'Erro interno do servidor') {
+    service.handleServerError = function(error, defaultMessage = i18nService.translate('NOTIFICATIONS.INTERNAL_SERVER_ERROR')) {
         let message = defaultMessage;
         let errorCode = null;
         
@@ -244,7 +244,7 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
             errorCode = error.errorCode;
         }
         
-        return service.error(message, 'Erro', errorCode);
+        return service.error(message, i18nService.translate('NOTIFICATIONS.ERROR'), errorCode);
     };
 
     /**
@@ -266,7 +266,7 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                     </button>
                     <h4 class="modal-title">
                         <i class="glyphicon glyphicon-pencil"></i>
-                        ${title || 'Digite um valor'}
+                        ${title || i18nService.translate('NOTIFICATIONS.PROMPT')}
                     </h4>
                 </div>
                 <div class="modal-body">
@@ -276,10 +276,10 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" ng-click="confirm()">
-                        <i class="glyphicon glyphicon-ok"></i> OK
+                        <i class="glyphicon glyphicon-ok"></i> ${i18nService.translate('COMMON.OK')}
                     </button>
                     <button class="btn btn-default" ng-click="cancel()">
-                        <i class="glyphicon glyphicon-remove"></i> Cancelar
+                        <i class="glyphicon glyphicon-remove"></i> ${i18nService.translate('COMMON.CANCEL')}
                     </button>
                 </div>
             `,
@@ -318,11 +318,11 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
                 <div class="modal-header" style="background-color: ${COLORS.info}; color: white;">
                     <h4 class="modal-title">
                         <i class="glyphicon glyphicon-time"></i>
-                        ${title || 'Processando...'}
+                        ${title || i18nService.translate('NOTIFICATIONS.PROCESSING')}
                     </h4>
                 </div>
                 <div class="modal-body">
-                    <p>${message || 'Por favor, aguarde...'}</p>
+                    <p>${message || i18nService.translate('NOTIFICATIONS.PLEASE_WAIT')}</p>
                     <div class="progress">
                         <div class="progress-bar progress-bar-striped active" style="width: 100%"></div>
                     </div>
@@ -349,14 +349,14 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q) {
      * Função auxiliar para obter título padrão baseado no tipo
      */
     function getDefaultTitle(type) {
-        const titles = {
-            success: 'Sucesso',
-            error: 'Erro',
-            warning: 'Atenção',
-            info: 'Informação',
-            confirm: 'Confirmação'
+        const titleKeys = {
+            success: 'NOTIFICATIONS.SUCCESS',
+            error: 'NOTIFICATIONS.ERROR',
+            warning: 'NOTIFICATIONS.WARNING',
+            info: 'NOTIFICATIONS.INFO',
+            confirm: 'NOTIFICATIONS.CONFIRM'
         };
-        return titles[type] || 'Notificação';
+        return i18nService.translate(titleKeys[type] || 'NOTIFICATIONS.DEFAULT');
     }
 
     return service;

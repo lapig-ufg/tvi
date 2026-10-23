@@ -17,7 +17,12 @@
     "ALL": "All",
     "NOT_CONSOLIDATED": "Not Consolidated",
     "USER": "User",
-    "APPLY": "Apply"
+    "APPLY": "Apply",
+    "YES": "Yes",
+    "NO": "No",
+    "OK": "OK",
+    "COPY": "Copy",
+    "COPIED": "Copied!"
   },
   "NAVBAR": {
     "POINTS": "Points",
@@ -77,7 +82,8 @@
       "NATURAL_COLOR": "Natural Color",
       "AGRICULTURE": "Agriculture",
       "FALSE_COLOR": "False Color",
-      "VISUALIZATION": "Visualization"
+      "VISUALIZATION": "Visualization",
+      "RELOAD_MAPS": "Reload maps"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "NDVI LANDSAT time series",
@@ -85,7 +91,10 @@
       "LANDSAT_NDWI_SERIES": "NDWI LANDSAT time series",
       "MODIS_NDWI_SERIES": "NDWI MODIS time series",
       "SHOW_TIMESERIES": "Show Time Series Charts",
-      "FILTER_PERIOD": "Filter Period"
+      "FILTER_PERIOD": "Filter Period",
+      "START_YEAR": "Start year",
+      "UNTIL": "to",
+      "END_YEAR": "End year"
     },
     "DOUBT": {
       "TITLE": "Point Doubt",
@@ -135,7 +144,8 @@
       "WAYBACK_IMAGES": "Esri Wayback Imagery",
       "WAYBACK_NO_IMAGES": "This point has no processed Wayback imagery yet. Inspection is blocked until synchronization completes.",
       "WAYBACK_TILE_ERROR": "Imagery unavailable for this release.",
-      "WAYBACK_APPROXIMATE_DATE": "Approximate date (release date)"
+      "WAYBACK_APPROXIMATE_DATE": "Approximate date (release date)",
+      "RELOAD_MAPS": "Reload maps"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "NDVI LANDSAT time series",
@@ -144,7 +154,10 @@
       "MODIS_NDWI_SERIES": "NDWI MODIS time series",
       "PRECIPITATION": "Precipitation",
       "SHOW_TIMESERIES": "Show Time Series Charts",
-      "FILTER_PERIOD": "Filter Period"
+      "FILTER_PERIOD": "Filter Period",
+      "START_YEAR": "Start year",
+      "UNTIL": "to",
+      "END_YEAR": "End year"
     }
   },
   "LANGUAGES": {
@@ -242,6 +255,20 @@
     "DRY": "DRY",
     "WET": "WET"
   },
+  "MONTHS": {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
+  },
   "TABS": {
     "USERS": "Users",
     "POINTS": "Points"
@@ -259,6 +286,31 @@
     "AGRICULTURE": "Agriculture",
     "FALSE_COLOR": "False Color",
     "TVI_RED": "TVI Red"
+  },
+  "MOSAIC": {
+    "TITLE": "Image Comparison",
+    "TITLE_YEAR": "Image Comparison - Year {{year}}",
+    "LEFT": "Left",
+    "RIGHT": "Right",
+    "MONTHLY_VIEW": "Sentinel Monthly View",
+    "MONTH": "Month",
+    "LANDSAT_VISUALIZATION": "Landsat Visualization",
+    "SENTINEL_VISUALIZATION": "Sentinel Visualization",
+    "LANDSAT_UNAVAILABLE": "Landsat not available",
+    "SENTINEL_UNAVAILABLE": "Sentinel not available"
+  },
+  "NOTIFICATIONS": {
+    "SUCCESS": "Success",
+    "ERROR": "Error",
+    "WARNING": "Warning",
+    "INFO": "Information",
+    "CONFIRM": "Confirmation",
+    "DEFAULT": "Notification",
+    "PROMPT": "Enter a value",
+    "PROCESSING": "Processing...",
+    "PLEASE_WAIT": "Please wait...",
+    "ERROR_CODE": "Error Code",
+    "INTERNAL_SERVER_ERROR": "Internal server error"
   },
   "PROMPTS": {
     "ENTER_NEW_LAND_USE": "Enter the new land use type:"

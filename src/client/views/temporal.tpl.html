@@ -361,7 +361,7 @@
 
                             <!-- Botão do Planet Mosaics -->
                             <span class="planet-button" ng-if="hasMosaicForYear(map.year)" >
-                                <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="Mosaicos Planet">
+                                <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="{{ 'MOSAIC.TITLE' | i18n }}">
                                     <i class="fa fa-camera"></i>
                                 </button>
                             </span>
@@ -422,7 +422,7 @@
 
                 <!-- Botão flutuante para forçar recarregamento dos mapas -->
                 <button ng-click="reloadMaps()" class="btn btn-default btn-reload-maps"
-                        title="Recarregar mapas">
+                        title="{{ 'TEMPORAL.MAP.RELOAD_MAPS' | i18n }}">
                     <i class="fa fa-refresh"></i>
                 </button>
             </div>
@@ -445,10 +445,10 @@
                             
                             <div ng-show="showTimeseriesCharts" style="display: inline-block; margin-left: 20px;">
                                 <label style="margin-right: 10px;">{{ 'TEMPORAL.CHARTS.FILTER_PERIOD' | i18n }}:</label>
-                                <input type="number" ng-model="chartFilterStartYear" placeholder="Ano inicial" 
+                                <input type="number" ng-model="chartFilterStartYear" placeholder="{{ 'TEMPORAL.CHARTS.START_YEAR' | i18n }}" 
                                        style="width: 100px; margin-right: 10px;" min="1985" max="2025">
-                                <label style="margin-right: 10px;">até</label>
-                                <input type="number" ng-model="chartFilterEndYear" placeholder="Ano final" 
+                                <label style="margin-right: 10px;">{{ 'TEMPORAL.CHARTS.UNTIL' | i18n }}</label>
+                                <input type="number" ng-model="chartFilterEndYear" placeholder="{{ 'TEMPORAL.CHARTS.END_YEAR' | i18n }}" 
                                        style="width: 100px; margin-right: 10px;" min="1985" max="2025">
                                 <button type="button" class="btn btn-sm btn-info" ng-click="updateChartFilter()">
                                     {{ 'COMMON.APPLY' | i18n }}
