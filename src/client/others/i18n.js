@@ -57,8 +57,20 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
         }
     };
     
-    // Get translation
-    service.translate = function(key) {
+    // Get translation, replacing {{name}} placeholders with params[name].
+    // Without params the placeholders are kept: tickets.js and admin-tickets.js
+    // replace them manually.
+    service.translate = function(key, params) {
+        var value = lookup(key);
+        if (!params || typeof value !== 'string') {
+            return value;
+        }
+        return value.replace(/\{\{\s*(\w+)\s*\}\}/g, function(placeholder, name) {
+            return Object.prototype.hasOwnProperty.call(params, name) ? params[name] : placeholder;
+        });
+    };
+
+    function lookup(key) {
         var keys = key.split('.');
         var current = service.translations[service.currentLanguage];
         
@@ -89,7 +101,7 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
         }
         
         return current;
-    };
+    }
     
     // Ensure translations are loaded
     service.ensureLoaded = function() {
@@ -144,8 +156,8 @@ Application.factory('i18nService', function($http, $rootScope, $q) {
 
 // i18n filter
 Application.filter('i18n', function(i18nService, $rootScope) {
-    var filter = function(key) {
-        return i18nService.translate(key);
+    var filter = function(key, params) {
+        return i18nService.translate(key, params);
     };
     
     // Make filter stateful so it updates when language changes
