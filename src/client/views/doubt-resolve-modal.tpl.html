@@ -20,9 +20,9 @@
 <div class="modal-header doubt-resolve">
     <h3 class="modal-title">
         <span class="glyphicon glyphicon-question-sign"></span>
-        Dúvida do ponto {{ point._id }}
+        {{ 'DOUBT.POINT_TITLE' | i18n:{pointId: point._id} }}
     </h3>
-    <button type="button" class="close" ng-click="cancel()" aria-label="Fechar">
+    <button type="button" class="close" ng-click="cancel()" aria-label="{{ 'COMMON.CLOSE' | i18n }}">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
@@ -30,46 +30,46 @@
 <div class="modal-body doubt-resolve">
     <div class="doubt-header" ng-class="{ resolved: doubt.status === 'RESOLVIDA' }">
         <div>
-            <b>Status:</b>
+            <b>{{ 'TICKETS.TABLE.STATUS' | i18n }}:</b>
             <span class="label"
                   ng-class="{ 'label-warning': doubt.status === 'ABERTA', 'label-success': doubt.status === 'RESOLVIDA' }">
-                {{ doubt.status }}
+                {{ statusLabel(doubt.status) }}
             </span>
             &nbsp;&nbsp;
-            <b>Aberta por:</b> {{ doubt.openedBy || '—' }}
+            <b>{{ 'DOUBT.OPENED_BY' | i18n }}:</b> {{ doubt.openedBy || '—' }}
             &nbsp;&nbsp;
-            <b>Em:</b> {{ doubt.openedAt | date:'dd/MM/yyyy HH:mm' }}
+            <b>{{ 'DOUBT.OPENED_AT' | i18n }}:</b> {{ doubt.openedAt | date:'dd/MM/yyyy HH:mm' }}
         </div>
         <small ng-if="doubt.status === 'RESOLVIDA'">
-            Resolvida por <b>{{ doubt.resolvedBy }}</b> em {{ doubt.resolvedAt | date:'dd/MM/yyyy HH:mm' }}.
+            {{ 'DOUBT.RESOLVED_BY' | i18n }} <b>{{ doubt.resolvedBy }}</b> {{ 'DOUBT.RESOLVED_AT' | i18n }} {{ doubt.resolvedAt | date:'dd/MM/yyyy HH:mm' }}.
         </small>
     </div>
 
-    <h4 style="margin: 0 0 0.5rem; font-size: 1rem; font-weight: 600;">Comentários</h4>
+    <h4 style="margin: 0 0 0.5rem; font-size: 1rem; font-weight: 600;">{{ 'TICKETS.DETAIL.COMMENTS' | i18n }}</h4>
     <div class="comments-list">
         <div ng-if="!doubt.comments || doubt.comments.length === 0" class="text-muted">
-            Nenhum comentário ainda.
+            {{ 'TICKETS.DETAIL.NO_COMMENTS' | i18n }}
         </div>
         <div class="comment-item" ng-repeat="c in doubt.comments">
             <div class="comment-meta">
                 <span ng-class="{ 'author-admin': c.author.role === 'super-admin', 'author-inspector': c.author.role !== 'super-admin' }">
                     {{ c.author.name }}
                 </span>
-                <small>({{ c.author.role }})</small>
+                <small>({{ roleLabel(c.author.role) }})</small>
                 &nbsp;·&nbsp;
                 {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}
-                <span ng-if="c.year"> &nbsp;·&nbsp; Ano: {{ c.year }}</span>
+                <span ng-if="c.year"> &nbsp;·&nbsp; {{ 'DOUBT.YEAR' | i18n }}: {{ c.year }}</span>
             </div>
             <div style="white-space: pre-wrap;">{{ c.text }}</div>
         </div>
     </div>
 
     <div class="history-list" ng-if="doubt.statusHistory && doubt.statusHistory.length > 0">
-        <b>Histórico de status:</b>
+        <b>{{ 'TICKETS.DETAIL.STATUS_HISTORY' | i18n }}:</b>
         <div class="history-item" ng-repeat="h in doubt.statusHistory">
             {{ h.changedAt | date:'dd/MM/yyyy HH:mm' }} —
-            <span ng-if="h.from">{{ h.from }} → </span>{{ h.to }}
-            por <b>{{ h.changedBy }}</b>
+            <span ng-if="h.from">{{ statusLabel(h.from) }} → </span>{{ statusLabel(h.to) }}
+            {{ 'DOUBT.BY' | i18n }} <b>{{ h.changedBy }}</b>
             <span ng-if="h.reason"> &nbsp;·&nbsp; {{ h.reason }}</span>
         </div>
     </div>
@@ -141,7 +141,7 @@
 
 <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="submitting">
-        Fechar
+        {{ 'COMMON.CLOSE' | i18n }}
     </button>
     <button type="button" class="btn btn-success"
             ng-if="isAdminMode && doubt.status === 'ABERTA'"

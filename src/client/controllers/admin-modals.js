@@ -2268,7 +2268,7 @@ Application.controller('ImportClassificationsModalController', function ($scope,
 // obrigatório. As chamadas usam os endpoints registrados em
 // routes/doubts.js.
 // ---------------------------------------------------------------------
-Application.controller('AdminDoubtResolveModalController', function ($scope, $uibModalInstance, $http, point, campaign, mode) {
+Application.controller('AdminDoubtResolveModalController', function ($scope, $uibModalInstance, $http, point, campaign, mode, i18nService) {
     $scope.point = point;
     $scope.campaign = campaign;
     $scope.doubt = angular.copy(point.doubt || {});
@@ -2300,6 +2300,24 @@ Application.controller('AdminDoubtResolveModalController', function ($scope, $ui
     };
     $scope.doubtMark = deriveDoubtMark($scope.doubt);
 
+    var STATUS_LABEL_KEYS = {
+        ABERTA: 'DOUBT.STATUSES.ABERTA',
+        RESOLVIDA: 'DOUBT.STATUSES.RESOLVIDA'
+    };
+    var ROLE_LABEL_KEYS = {
+        'super-admin': 'DOUBT.ROLES.ADMIN',
+        supervisor: 'DOUBT.ROLES.SUPERVISOR',
+        inspector: 'DOUBT.ROLES.INSPECTOR'
+    };
+
+    $scope.statusLabel = function (status) {
+        return STATUS_LABEL_KEYS[status] ? i18nService.translate(STATUS_LABEL_KEYS[status]) : status;
+    };
+
+    $scope.roleLabel = function (role) {
+        return ROLE_LABEL_KEYS[role] ? i18nService.translate(ROLE_LABEL_KEYS[role]) : role;
+    };
+
     $scope.setDoubtMark = function (mark) {
         if (!$scope.isSupervisorMode || $scope.submitting) return;
         if (mark === $scope.doubtMark) return;
@@ -2318,7 +2336,7 @@ Application.controller('AdminDoubtResolveModalController', function ($scope, $ui
                 $scope.doubtMark = (data && data.mark) || deriveDoubtMark($scope.doubt);
             }, function (error) {
                 $scope.submitting = false;
-                $scope.errorMessage = (error && error.data && error.data.error) ? error.data.error : 'Não foi possível atualizar a marcação da dúvida.';
+                $scope.errorMessage = (error && error.data && error.data.error) ? error.data.error : i18nService.translate('SUPERVISOR.DOUBT.MARK_FAILED');
             });
     };
 

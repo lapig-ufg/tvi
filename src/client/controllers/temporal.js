@@ -359,7 +359,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             modalInstance.result.then(function (result) {
                 if (result && result.doubt) {
                     $scope.pointDoubt = result.doubt;
-                    NotificationDialog.success('Dúvida registrada com sucesso.');
+                    NotificationDialog.success(i18nService.translate('DOUBT.REGISTER_SUCCESS'));
                 }
             }, function () { /* dismiss: nada a fazer */ });
         };
@@ -1336,13 +1336,14 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
 // Mantido neste arquivo (co-localizado com temporalController) para
 // reduzir acoplamento cross-file e facilitar manutenção conjunta.
 // ---------------------------------------------------------------------
-Application.controller('DoubtRegisterModalController', function ($scope, $uibModalInstance, $http, pointId, campaignId, years) {
+Application.controller('DoubtRegisterModalController', function ($scope, $uibModalInstance, $http, pointId, campaignId, years, i18nService) {
     $scope.pointId = pointId;
     $scope.campaignId = campaignId;
     $scope.years = years || [];
     $scope.form = { text: '', year: '' };
     $scope.submitting = false;
     $scope.errorMessage = null;
+    $scope.errorDetail = null;
 
     $scope.cancel = function () {
         $uibModalInstance.dismiss('cancel');
@@ -1350,13 +1351,14 @@ Application.controller('DoubtRegisterModalController', function ($scope, $uibMod
 
     $scope.submit = function () {
         $scope.errorMessage = null;
+        $scope.errorDetail = null;
         var text = ($scope.form.text || '').trim();
         if (text.length < 5) {
-            $scope.errorMessage = 'Descreva a dúvida com pelo menos 5 caracteres.';
+            $scope.errorMessage = i18nService.translate('DOUBT.MIN_LENGTH_ERROR');
             return;
         }
         if (text.length > 2000) {
-            $scope.errorMessage = 'Texto excede o limite de 2000 caracteres.';
+            $scope.errorMessage = i18nService.translate('DOUBT.MAX_LENGTH_ERROR');
             return;
         }
 
@@ -1372,11 +1374,11 @@ Application.controller('DoubtRegisterModalController', function ($scope, $uibMod
                 $uibModalInstance.close(response.data);
             }, function (error) {
                 $scope.submitting = false;
-                var msg = 'Não foi possível registrar a dúvida.';
-                if (error && error.data && error.data.error) {
-                    msg = error.data.error;
-                }
-                $scope.errorMessage = msg;
+                // O servidor responde sempre em português: a mensagem principal
+                // segue o idioma da interface e o texto do servidor fica como
+                // detalhe, útil para quem presta suporte.
+                $scope.errorMessage = i18nService.translate('DOUBT.REGISTER_FAILED');
+                $scope.errorDetail = (error && error.data && error.data.error) || null;
             });
     };
 });

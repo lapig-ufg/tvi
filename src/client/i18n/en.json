@@ -312,6 +312,41 @@
     "ERROR_CODE": "Error Code",
     "INTERNAL_SERVER_ERROR": "Internal server error"
   },
+  "DOUBT": {
+    "REGISTER_TOOLTIP": "Register a question about this point",
+    "I_HAVE_A_QUESTION": "I have a question",
+    "REGISTERED_TOOLTIP": "You have an open question on this point",
+    "REGISTERED": "Question registered",
+    "REGISTER_SUCCESS": "Question registered successfully.",
+    "REGISTER_TITLE": "Register question",
+    "POINT": "Point",
+    "DESCRIBE": "Describe your question",
+    "LENGTH_HINT": "5 to 2000 characters",
+    "TEXT_PLACEHOLDER": "E.g.: I cannot distinguish shrubland from secondary forest in 2014",
+    "REFERENCE_YEAR": "Reference year",
+    "OPTIONAL": "optional",
+    "NONE": "None",
+    "SEND": "Send question",
+    "MIN_LENGTH_ERROR": "Describe your question with at least 5 characters.",
+    "MAX_LENGTH_ERROR": "Text exceeds the 2000-character limit.",
+    "REGISTER_FAILED": "Could not register the question.",
+    "POINT_TITLE": "Question on point {{pointId}}",
+    "OPENED_BY": "Opened by",
+    "OPENED_AT": "On",
+    "RESOLVED_BY": "Resolved by",
+    "RESOLVED_AT": "on",
+    "YEAR": "Year",
+    "BY": "by",
+    "STATUSES": {
+      "ABERTA": "OPEN",
+      "RESOLVIDA": "RESOLVED"
+    },
+    "ROLES": {
+      "ADMIN": "administrator",
+      "SUPERVISOR": "supervisor",
+      "INSPECTOR": "interpreter"
+    }
+  },
   "PROMPTS": {
     "ENTER_NEW_LAND_USE": "Enter the new land use type:"
   },

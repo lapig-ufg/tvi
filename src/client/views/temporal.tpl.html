@@ -290,16 +290,16 @@
                                 ng-show="point._id"
                                 ng-disabled="onSubmission"
                                 ng-click="openDoubtModal()"
-                                title="Registrar dúvida sobre este ponto">
+                                title="{{ 'DOUBT.REGISTER_TOOLTIP' | i18n }}">
                             <span class="glyphicon glyphicon-question-sign"></span>
-                            Tenho dúvida
+                            {{ 'DOUBT.I_HAVE_A_QUESTION' | i18n }}
                         </button>
                         <span class="label label-warning"
                               ng-show="pointDoubt && pointDoubt.status === 'ABERTA'"
                               style="margin-left: 8px; vertical-align: middle;"
-                              title="Você registrou uma dúvida aberta neste ponto">
+                              title="{{ 'DOUBT.REGISTERED_TOOLTIP' | i18n }}">
                             <span class="glyphicon glyphicon-exclamation-sign"></span>
-                            Dúvida registrada
+                            {{ 'DOUBT.REGISTERED' | i18n }}
                         </span>
                         <div class="right-actions">
                             <span class="counter-display"><b>{{counter}} s</b></span>

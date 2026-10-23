@@ -312,6 +312,41 @@
     "ERROR_CODE": "Kode Galat",
     "INTERNAL_SERVER_ERROR": "Galat internal server"
   },
+  "DOUBT": {
+    "REGISTER_TOOLTIP": "Ajukan pertanyaan tentang titik ini",
+    "I_HAVE_A_QUESTION": "Saya punya pertanyaan",
+    "REGISTERED_TOOLTIP": "Anda memiliki pertanyaan terbuka pada titik ini",
+    "REGISTERED": "Pertanyaan tercatat",
+    "REGISTER_SUCCESS": "Pertanyaan berhasil dicatat.",
+    "REGISTER_TITLE": "Ajukan pertanyaan",
+    "POINT": "Titik",
+    "DESCRIBE": "Jelaskan pertanyaan Anda",
+    "LENGTH_HINT": "5 sampai 2000 karakter",
+    "TEXT_PLACEHOLDER": "Contoh: saya tidak dapat membedakan semak belukar dari hutan sekunder pada tahun 2014",
+    "REFERENCE_YEAR": "Tahun referensi",
+    "OPTIONAL": "opsional",
+    "NONE": "Tidak ada",
+    "SEND": "Kirim pertanyaan",
+    "MIN_LENGTH_ERROR": "Jelaskan pertanyaan Anda dengan minimal 5 karakter.",
+    "MAX_LENGTH_ERROR": "Teks melebihi batas 2000 karakter.",
+    "REGISTER_FAILED": "Tidak dapat mencatat pertanyaan.",
+    "POINT_TITLE": "Pertanyaan pada titik {{pointId}}",
+    "OPENED_BY": "Dibuka oleh",
+    "OPENED_AT": "Pada",
+    "RESOLVED_BY": "Diselesaikan oleh",
+    "RESOLVED_AT": "pada",
+    "YEAR": "Tahun",
+    "BY": "oleh",
+    "STATUSES": {
+      "ABERTA": "TERBUKA",
+      "RESOLVIDA": "SELESAI"
+    },
+    "ROLES": {
+      "ADMIN": "administrator",
+      "SUPERVISOR": "supervisor",
+      "INSPECTOR": "pemeriksa"
+    }
+  },
   "PROMPTS": {
     "ENTER_NEW_LAND_USE": "Masukkan jenis penggunaan lahan baru:"
   },

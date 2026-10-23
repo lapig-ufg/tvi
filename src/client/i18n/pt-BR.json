@@ -312,6 +312,41 @@
     "ERROR_CODE": "Código de Erro",
     "INTERNAL_SERVER_ERROR": "Erro interno do servidor"
   },
+  "DOUBT": {
+    "REGISTER_TOOLTIP": "Registrar dúvida sobre este ponto",
+    "I_HAVE_A_QUESTION": "Tenho dúvida",
+    "REGISTERED_TOOLTIP": "Você registrou uma dúvida aberta neste ponto",
+    "REGISTERED": "Dúvida registrada",
+    "REGISTER_SUCCESS": "Dúvida registrada com sucesso.",
+    "REGISTER_TITLE": "Registrar dúvida",
+    "POINT": "Ponto",
+    "DESCRIBE": "Descreva a dúvida",
+    "LENGTH_HINT": "5 a 2000 caracteres",
+    "TEXT_PLACEHOLDER": "Ex.: não consigo distinguir pasto sujo de cerrado antropizado em 2014",
+    "REFERENCE_YEAR": "Ano de referência",
+    "OPTIONAL": "opcional",
+    "NONE": "Nenhum",
+    "SEND": "Enviar dúvida",
+    "MIN_LENGTH_ERROR": "Descreva a dúvida com pelo menos 5 caracteres.",
+    "MAX_LENGTH_ERROR": "Texto excede o limite de 2000 caracteres.",
+    "REGISTER_FAILED": "Não foi possível registrar a dúvida.",
+    "POINT_TITLE": "Dúvida do ponto {{pointId}}",
+    "OPENED_BY": "Aberta por",
+    "OPENED_AT": "Em",
+    "RESOLVED_BY": "Resolvida por",
+    "RESOLVED_AT": "em",
+    "YEAR": "Ano",
+    "BY": "por",
+    "STATUSES": {
+      "ABERTA": "ABERTA",
+      "RESOLVIDA": "RESOLVIDA"
+    },
+    "ROLES": {
+      "ADMIN": "administrador",
+      "SUPERVISOR": "supervisor",
+      "INSPECTOR": "intérprete"
+    }
+  },
   "PROMPTS": {
     "ENTER_NEW_LAND_USE": "Digite o novo tipo de uso da terra:"
   },
