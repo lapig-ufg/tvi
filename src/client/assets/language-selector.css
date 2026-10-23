@@ -1,6 +1,12 @@
 /* Language Selector Styles */
+/*
+ * Com overflow: hidden, o tamanho mínimo automático de um item flex é 0; sem
+ * flex-shrink: 0 o seletor é o primeiro item a encolher no navbar do supervisor,
+ * e o botão ID sai da área visível, sob a barra de filtros fixa em top: 40px.
+ */
 .language-selector {
     display: inline-block;
+    flex-shrink: 0;
     border: 1px solid #ddd;
     border-radius: 4px;
     overflow: hidden;

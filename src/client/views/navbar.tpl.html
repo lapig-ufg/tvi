@@ -40,14 +40,18 @@
   </nav>
   <nav class="navbar navbar-inverse container-fluid" ng-show="user.type == 'supervisor'">
     <div class="blog-masthead row">
-      <div class="col-md-12">
-        <ul class="col-md-4 nav navbar-nav" style="float: left; margin-top: 9px; margin-left: -10px">
+      <!-- A barra de filtros do supervisor é fixa em top: 40px e cobre tudo que
+           o navbar exibir abaixo disso; por isso o navbar ocupa uma única linha.
+           As laterais crescem por igual a partir de base 0 sem encolher abaixo do
+           conteúdo; só o nome da campanha encolhe, com reticências. -->
+      <div class="col-md-12" style="display: flex;">
+        <ul class="col-md-4 nav navbar-nav" style="flex: 1 1 0; min-width: max-content; margin-top: 9px; margin-left: -10px">
           <a ng-href="#/dashboard" style="color: white">&nbsp;{{ 'NAVBAR.DASHBOARD' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;<a ng-href="#/supervisor" style="color: white">{{ 'NAVBAR.POINTS' | i18n }}</a>
         </ul>
-        <div class="col-md-4" ng-show="user" style="float: left">
-          <h3><center><span style="color: #FFFFFF"> {{user.campaign._id}} </span></center></h3>
+        <div class="col-md-4" ng-show="user" style="min-width: 0;">
+          <h3 title="{{user.campaign._id}}" style="text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span style="color: #FFFFFF"> {{user.campaign._id}} </span></h3>
         </div>
-        <div class="col-md-4" style="display: flex; justify-content: flex-end; align-items: center;">
+        <div class="col-md-4" style="flex: 1 1 0; min-width: max-content; display: flex; justify-content: flex-end; align-items: center;">
           <!-- Language Selector -->
           <language-selector style="margin-right: 10px;"></language-selector>
           <button type="button" class="btn btn-info" ng-click="openTickets()" style="color:white; margin-right: 5px"><i class="fa fa-ticket"></i> {{ 'TICKETS.TITLE' | i18n }}</button>
