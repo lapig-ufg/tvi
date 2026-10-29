@@ -243,10 +243,18 @@ do `landsatMap`:
 
 - `L.tileLayer` apontando direto para o WMTS da release; `tileerror` exibe
   aviso i18n (`WAYBACK_TILE_ERROR`) sem quebrar a grade.
+- A amostra é um quadrado de 30 m (`WaybackGridCore.sampleSquareFeature`,
+  GeoJSON `Polygon` centrado no ponto) desenhado com `L.geoJSON`, sem
+  preenchimento e sem interação, no lugar do marcador das demais diretivas.
+- Zoom: inicial e mínimo iguais ao `zoomLevel` da campanha; máximo
+  `min(zoomLevel + 6, 23)`; a tile layer usa `maxNativeZoom: 19` (último nível
+  com tiles nativos nas releases) e reamostra acima desse nível em vez de pedir
+  tiles inexistentes. Nos níveis 18 e 19 a cobertura varia por região e
+  release; a célula exibe o aviso de tile quando a release não tem o tile.
 - **Watchers obrigatórios:** o `ng-repeat` da grade usa `track by map.index`,
-  que **recicla** as células ao trocar de ponto — `$watchGroup(['lon', 'lat',
-  'tileUrl', 'mapDate'])` recentraliza o mapa, reposiciona o marcador e troca
-  a camada de tiles.
+  que **recicla** as células ao trocar de ponto; `$watchGroup(['lon', 'lat',
+  'tileUrl', 'mapDate', 'zoom'])` recentraliza o mapa, redesenha o quadrado,
+  atualiza os limites de zoom e troca a camada de tiles.
 - Cleanup: `mapSyncService.unregister` + `safeDestroyMap` (workaround
   documentado para Leaflet ≤ 1.9.4).
 - Dimensionamento: `style.css` inclui `wayback-map` em todos os grupos de

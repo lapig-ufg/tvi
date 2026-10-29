@@ -25,10 +25,10 @@ const MAX_RETRIES = 3;
 // 13 = 150m) — confirmado no contrato real (MapServer/{id}/query; a raiz do
 // MapServer não aceita query de features). O id é derivado do zoom via
 // `MAX_ZOOM - zoom`, igual à implementação de referência (@esri/wayback-core,
-// src/metadata/index.ts). O grid de inspeção do TVI renderiza os tiles até
-// `zoomLevel + 6 = 19` (waybackMap.js), o maior zoom que o cliente de fato
-// exibe — usamos esse valor para selecionar a camada mais detalhada
-// compatível com a imagem mostrada ao inspetor.
+// src/metadata/index.ts). A cascata começa em 19, o último nível com tiles
+// nativos nas releases (em 18 e 19 a cobertura varia por região e release;
+// waybackMap.js reamostra acima de 19, qualquer que seja o zoom configurado
+// na campanha): é a camada mais detalhada compatível com a imagem exibida.
 const METADATA_MAX_ZOOM = 23;
 const METADATA_MIN_ZOOM = 10;
 // Cascata de zooms para a consulta de metadados: cada sub-layer do MapServer

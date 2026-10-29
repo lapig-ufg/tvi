@@ -9,6 +9,10 @@
  * tile (release removida/renumerada pela Esri), exibe aviso na célula sem
  * quebrar a grade.
  *
+ * A amostra é desenhada como quadrado de 30 m centrado no ponto
+ * (WaybackGridCore.sampleSquareFeature), e não como marcador: sobre imagem
+ * de alta resolução o intérprete precisa ver a área do pixel que classifica.
+ *
  * Estrutura clonada de landsatMap (others/directives.js:801): registro em
  * mapSyncService no setup e mapSyncService.unregister + safeDestroyMap no
  * $destroy — mesmo contrato de cleanup usado pelas demais diretivas de mapa
@@ -17,7 +21,21 @@
  * pendentes do Leaflet <= 1.9.4 (workaround documentado em
  * others/directives.js:15).
  */
-angular.module('application').directive('waybackMap', function ($timeout, mapSyncService) {
+angular.module('application').directive('waybackMap', function ($timeout, mapSyncService, waybackGridService) {
+    // Último nível do TileMatrixSet do World Imagery Wayback da Esri.
+    var WAYBACK_MAX_TILE_LEVEL = 23;
+    // Último nível com tiles nativos nas releases do Wayback (do 20 em diante
+    // não há tile em nenhuma região sondada). Acima dele o Leaflet reamostra o
+    // nível 19 em vez de pedir tiles inexistentes, cujo 404 dispararia o aviso
+    // da célula. Nos níveis 18 e 19 a cobertura varia por região e release;
+    // nesses casos o aviso de tile continua valendo.
+    var WAYBACK_MAX_NATIVE_ZOOM = 19;
+    var FOOTPRINT_STYLE = { color: '#29e7e4', weight: 2, fill: false };
+
+    function maxZoomFor(zoom) {
+        return Math.min(zoom + 6, WAYBACK_MAX_TILE_LEVEL);
+    }
+
     return {
         restrict: 'E',
         template: '<div style="width: 100%; height: 100%; position: relative;">' +
@@ -35,12 +53,16 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
             mapDate: '='
         },
         controller: function ($scope, $element) {
+            var core = waybackGridService.core;
             $scope._destroyed = false;
             $scope.tileError = false;
-            $scope.markerInMap = true;
+
+            function sampleFeature() {
+                return core.sampleSquareFeature($scope.lon, $scope.lat);
+            }
 
             // Cria (ou recria) a tile layer da release corrente. Chamada no
-            // setup e sempre que tileUrl/mapDate mudarem via watcher.
+            // setup e sempre que tileUrl/mapDate/zoom mudarem via watcher.
             function updateTileLayer() {
                 if (!$scope.map) return;
                 $scope.tileError = false;
@@ -55,15 +77,20 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                 }
                 $scope.tileLayer = L.tileLayer($scope.tileUrl, {
                     attribution: 'Esri Wayback — ' + ($scope.mapDate || ''),
-                    maxZoom: $scope.zoom + 6
+                    maxZoom: maxZoomFor($scope.zoom),
+                    maxNativeZoom: WAYBACK_MAX_NATIVE_ZOOM
                 });
                 $scope.tileLayer.on('tileerror', function () {
                     $timeout(function () { $scope.tileError = true; });
                 });
+                // 'loading' dispara a cada novo lote de tiles (troca de zoom ou
+                // de posição), limpando o aviso de um lote anterior sem
+                // cobertura; 'load' não serve porque dispara mesmo quando
+                // todos os tiles falharam.
+                $scope.tileLayer.on('loading', function () {
+                    $timeout(function () { $scope.tileError = false; });
+                });
                 $scope.tileLayer.addTo($scope.map);
-                if ($scope.marker) {
-                    $scope.marker.setZIndexOffset(1000);
-                }
             }
 
             $timeout(function () {
@@ -74,7 +101,7 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                     center: [$scope.lat, $scope.lon],
                     zoom: $scope.zoom,
                     minZoom: $scope.zoom,
-                    maxZoom: $scope.zoom + 6,
+                    maxZoom: maxZoomFor($scope.zoom),
                     zoomControl: true,
                     dragging: true,
                     doubleClickZoom: true,
@@ -85,12 +112,11 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
 
                 updateTileLayer();
 
-                $scope.marker = L.marker([$scope.lat, $scope.lon], {
-                    icon: L.icon({
-                        iconUrl: 'assets/marker2.png',
-                        iconSize: [42, 42]
-                    }),
-                    zIndexOffset: 1000
+                // Camada vetorial no overlayPane, acima dos tiles; sem
+                // interação para preservar arrastar e zoom da célula.
+                $scope.footprint = L.geoJSON(sampleFeature(), {
+                    style: FOOTPRINT_STYLE,
+                    interactive: false
                 }).addTo($scope.map);
 
                 // O ng-repeat da grade usa `track by map.index`: ao trocar de
@@ -98,15 +124,24 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                 // recriadas — sem watcher a célula ficaria congelada no ponto
                 // anterior. Mesmo padrão do landsatMap
                 // (others/directives.js:1032-1051), estendido a tileUrl/mapDate
-                // porque aqui cada célula também troca de release.
-                $scope.$watchGroup(['lon', 'lat', 'tileUrl', 'mapDate'], function (newValues, oldValues) {
+                // porque aqui cada célula também troca de release, e a zoom
+                // porque a campanha pode ser reconfigurada entre pontos.
+                $scope.$watchGroup(['lon', 'lat', 'tileUrl', 'mapDate', 'zoom'], function (newValues, oldValues) {
                     if ($scope._destroyed || !$scope.map) return;
                     var changed = newValues.some(function (v, i) { return v !== oldValues[i]; });
                     if (!changed) return;
+                    if (newValues[4] !== oldValues[4]) {
+                        $scope.map.setMinZoom($scope.zoom);
+                        $scope.map.setMaxZoom(maxZoomFor($scope.zoom));
+                    }
                     if ($scope.lon !== undefined && $scope.lat !== undefined) {
                         $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
-                        if ($scope.marker) {
-                            $scope.marker.setLatLng([$scope.lat, $scope.lon]);
+                        if ($scope.footprint) {
+                            $scope.footprint.clearLayers();
+                            var feature = sampleFeature();
+                            if (feature) {
+                                $scope.footprint.addData(feature);
+                            }
                         }
                     }
                     updateTileLayer();
@@ -119,6 +154,9 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                     if ($scope.tileLayer) {
                         $scope.tileLayer.off();
                         $scope.map.removeLayer($scope.tileLayer);
+                    }
+                    if ($scope.footprint) {
+                        $scope.map.removeLayer($scope.footprint);
                     }
                     mapSyncService.unregister($scope.map);
                     // safeDestroyMap é exposto globalmente em others/directives.js

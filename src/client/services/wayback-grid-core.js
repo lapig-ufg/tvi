@@ -22,6 +22,39 @@
                 .replace('{col}', '{x}');
         },
 
+        // Lado do quadrado que representa a amostra: o pixel Landsat/MapBiomas
+        // (30 m, 900 m²).
+        SAMPLE_SIDE_METERS: 30,
+
+        // Quadrado de sideMeters de lado centrado em (lon, lat), como Feature
+        // GeoJSON do tipo Polygon (anel exterior anti-horário, RFC 7946).
+        // Mesma aproximação de LatLng.toBounds do Leaflet: meio-lado em graus
+        // de latitude = 180 * lado / 40075017 (circunferência equatorial WGS84,
+        // em metros), dividido por cos(lat) em longitude. Erro inferior a 0,2 %
+        // no lado; na projeção Web Mercator o polígono aparece como quadrado.
+        sampleSquareFeature: function (lon, lat, sideMeters) {
+            if (typeof lon !== 'number' || typeof lat !== 'number' || !isFinite(lon) || !isFinite(lat)) {
+                return null;
+            }
+            var side = (typeof sideMeters === 'number' && sideMeters > 0)
+                ? sideMeters
+                : WaybackGridCore.SAMPLE_SIDE_METERS;
+            var halfLat = 180 * side / 40075017;
+            var halfLon = halfLat / Math.cos((Math.PI / 180) * lat);
+            var west = lon - halfLon;
+            var east = lon + halfLon;
+            var south = lat - halfLat;
+            var north = lat + halfLat;
+            return {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[[west, south], [east, south], [east, north], [west, north], [west, south]]]
+                },
+                properties: { sideMeters: side, center: [lon, lat] }
+            };
+        },
+
         buildGrid: function (point, config, releasesIndex) {
             var images = (point && point.waybackImages) || [];
             var initialYear = config && config.initialYear;
