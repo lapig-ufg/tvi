@@ -145,6 +145,17 @@
                             </span>
                         </label>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Zoom inicial dos mapas da grade</label>
+                        <input type="number" class="form-input" ng-model="campaign.zoomLevel"
+                               min="10" max="18" step="1" required>
+                        <small class="form-hint" style="display:block; margin-top:0.25rem;">
+                            Nível de zoom com que os mapas da grade são carregados; também é o zoom mínimo das células.
+                            Padrão 13, o zoom das campanhas atuais. Em campanhas Esri Wayback, 17 deixa o quadrado de
+                            30 m visível (acima de 17 a cobertura da Esri varia por região e release).
+                        </small>
+                    </div>
                 </div>
                 
                 <!-- Tipo de Imagem -->

@@ -300,7 +300,8 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         autoLoadTimeseries: true,
         showPointInfo: true,
         useDynamicMaps: false,
-        imageType: 'landsat'
+        imageType: 'landsat',
+        zoomLevel: 13
     };
 
     $scope.createCampaign = function() {

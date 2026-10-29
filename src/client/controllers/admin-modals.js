@@ -1644,6 +1644,9 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     if (!$scope.campaign.wmsPeriod) {
         $scope.campaign.wmsPeriod = 'BOTH';
     }
+    if (!Number.isInteger($scope.campaign.zoomLevel)) {
+        $scope.campaign.zoomLevel = 13;
+    }
     
     // Buscar capabilities da API
     $http.get('/service/capabilities')

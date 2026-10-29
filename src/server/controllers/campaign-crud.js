@@ -4,6 +4,7 @@ const async = require('async');
 const exec = require('child_process').exec;
 const AdmZip = require('adm-zip');
 const uploadReceipts = require('../services/geojsonUploadReceipts');
+const campaignZoomLevel = require('../services/campaignZoomLevel');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -1138,6 +1139,11 @@ module.exports = function(app) {
                 ? campaignData.defaultLandUse
                 : '';
 
+            const zoomLevel = campaignZoomLevel.parseZoomLevelInput(campaignData.zoomLevel);
+            if (zoomLevel.error) {
+                return res.status(400).json({ error: zoomLevel.error });
+            }
+
             const campaign = {
                 _id: campaignData._id,
                 initialYear: parseInt(campaignData.initialYear) || 1985,
@@ -1159,6 +1165,7 @@ module.exports = function(app) {
                 // Wayback só funciona com tiles dinâmicos — força a flag no tipo wayback.
                 useDynamicMaps: campaignData.imageType === 'wayback' ? true : (campaignData.useDynamicMaps || false),
                 imageType: campaignData.imageType || 'landsat',
+                zoomLevel: zoomLevel.value,
                 // Configurações WMS
                 wmsPeriod: campaignData.wmsPeriod || 'BOTH', // DRY, WET ou BOTH
                 wmsConfig: campaignData.wmsConfig || {
@@ -1231,6 +1238,14 @@ module.exports = function(app) {
             // Wayback só funciona com tiles dinâmicos — força a flag no tipo wayback.
             if (updateData.imageType === 'wayback') {
                 updateData.useDynamicMaps = true;
+            }
+
+            if (updateData.hasOwnProperty('zoomLevel')) {
+                const zoomLevel = campaignZoomLevel.parseZoomLevelInput(updateData.zoomLevel);
+                if (zoomLevel.error) {
+                    return res.status(400).json({ error: zoomLevel.error });
+                }
+                updateData.zoomLevel = zoomLevel.value;
             }
 
             // Atualizar configurações booleanas

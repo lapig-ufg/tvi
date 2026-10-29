@@ -150,7 +150,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.config = {
                 initialYear: campaign.initialYear,
                 finalYear: campaign.finalYear,
-                zoomLevel: 13,
+                zoomLevel: campaign.zoomLevel || 13,
                 landUse: campaign.landUse
             };
 

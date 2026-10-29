@@ -67,6 +67,13 @@ forçado pelo servidor (`campaign-crud.js`). `initialYear`/`finalYear`
 permanecem como filtro opcional do intervalo de datas (não geram célula fixa
 por ano).
 
+`zoomLevel` (inteiro de 10 a 18, padrão 13) define o zoom inicial e mínimo dos
+mapas da grade em qualquer tipo de imagem. É validado pelo servidor
+(`services/campaignZoomLevel.js`) na criação e na atualização e devolvido por
+`GET /service/campaign/config`. Em campanhas Wayback, 17 deixa o quadrado de
+30 m legível (26 px de lado) com cobertura ampla; 18 só onde houver tile
+nativo nesse nível.
+
 ### 2.2 Ponto — campo persistido pelo job
 
 ```js

@@ -208,7 +208,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         $scope.config = {
             initialYear: $rootScope.user.campaign.initialYear,
             finalYear: $rootScope.user.campaign.finalYear,
-            zoomLevel: 13,
+            zoomLevel: $rootScope.user.campaign.zoomLevel || 13,
             landUse: $rootScope.user.campaign.landUse,
             // Classe inicial padrão da primeira caixa (TKT-000005).
             // Vazio mantém comportamento anterior (sem pré-seleção).
@@ -955,6 +955,12 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         var loadCampaignConfig = function(callback) {
             requester._get('campaign/config', {}, function(config) {
                 if (config) {
+                    // Aplicado antes do callback: generateMaps roda nele e a grade
+                    // nasce com o zoom configurado, mesmo que a cópia da campanha na
+                    // sessão de login esteja desatualizada.
+                    if (Number.isInteger(config.zoomLevel)) {
+                        $scope.config.zoomLevel = config.zoomLevel;
+                    }
                     // Atualizar as configurações de visualização
                     $scope.showTimeseries = config.showTimeseries;
                     $scope.showPointInfo = config.showPointInfo;
