@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('AdminCampaignController', function ($scope, $http, $uibModal, $window, $location, $timeout, NotificationDialog) {
+Application.controller('AdminCampaignController', function ($scope, $http, $uibModal, $window, $location, $timeout, NotificationDialog, sampleMarkerService) {
     $scope.campaigns = [];
     $scope.loading = false;
     $scope.pagination = {
@@ -301,7 +301,8 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         showPointInfo: true,
         useDynamicMaps: false,
         imageType: 'landsat',
-        zoomLevel: 13
+        zoomLevel: 13,
+        sampleMarker: sampleMarkerService.core.defaults()
     };
 
     $scope.createCampaign = function() {

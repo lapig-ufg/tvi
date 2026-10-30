@@ -5,6 +5,7 @@ const supervisorFilters = require('../util/supervisorFilters');
 const inspectionTable = require('../services/inspectionTable');
 const supervisorCsv = require('../services/supervisorCsv');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
+const campaignSampleMarker = require('../services/campaignSampleMarker');
 
 const {
     BIOME_PROPERTY_KEYS,
@@ -894,6 +895,7 @@ module.exports = function (app) {
                     defaultVisParam: campaign.defaultVisParam || null,
                     imageType: campaign.imageType || null,
                     zoomLevel: campaignZoomLevel.resolveZoomLevel(campaign),
+                    sampleMarker: campaignSampleMarker.resolveSampleMarker(campaign),
                     // Incluir configurações WMS
                     wmsConfig: campaign.wmsConfig || null,
                     wmsPeriod: campaign.wmsPeriod || 'BOTH',

@@ -1598,7 +1598,7 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
 });
 
 // Controller do modal de formulário
-Application.controller('CampaignFormModalController', function ($scope, $uibModalInstance, $http, campaign, isNew, NotificationDialog) {
+Application.controller('CampaignFormModalController', function ($scope, $uibModalInstance, $http, campaign, isNew, NotificationDialog, sampleMarkerService) {
     $scope.campaign = campaign;
     $scope.isNew = isNew;
     $scope.visParamOptions = [];
@@ -1647,6 +1647,7 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     if (!Number.isInteger($scope.campaign.zoomLevel)) {
         $scope.campaign.zoomLevel = 13;
     }
+    $scope.campaign.sampleMarker = sampleMarkerService.core.normalize($scope.campaign.sampleMarker);
     
     // Buscar capabilities da API
     $http.get('/service/capabilities')

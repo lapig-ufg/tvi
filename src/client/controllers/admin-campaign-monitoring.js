@@ -11,7 +11,7 @@
 // TODO [TKT-000009]: adicionar CRUD de metas individuais consumindo
 //   /api/admin/campaigns/:id/weekly-goals (GET/PUT/DELETE) e histórico em
 //   /api/admin/campaigns/:id/monitoring/weekly-progress.
-Application.controller('AdminCampaignMonitoringController', function($scope, $http, $routeParams, $timeout, $location, $window, NotificationDialog, mapLoadingService) {
+Application.controller('AdminCampaignMonitoringController', function($scope, $http, $routeParams, $timeout, $location, $window, NotificationDialog, mapLoadingService, sampleMarkerService) {
 
 	var chartsGd = [];
 	var socket = null;
@@ -113,7 +113,8 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 			$scope.config = {
 				initialYear: response.data.initialYear,
 				finalYear: response.data.finalYear,
-				zoomLevel: response.data.zoomLevel || 13
+				zoomLevel: response.data.zoomLevel || 13,
+				sampleMarker: sampleMarkerService.core.normalize(response.data.sampleMarker)
 			};
 
 			// Configuração de mapas dinâmicos

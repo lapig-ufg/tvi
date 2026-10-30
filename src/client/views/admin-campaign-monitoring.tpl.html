@@ -302,25 +302,29 @@
 
                                 <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod"
                                              lon="point.lon" lat="point.lat"
-                                             zoom="config.zoomLevel" period="period"
+                                             zoom="config.zoomLevel"
+                                             sample-marker="config.sampleMarker" period="period"
                                              year="map.year" visparams="availableVisParams">
                                 </landsat-map>
 
                                 <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod"
                                               lon="point.lon" lat="point.lat"
-                                              zoom="config.zoomLevel" period="period"
+                                              zoom="config.zoomLevel"
+                                              sample-marker="config.sampleMarker" period="period"
                                               year="map.year" visparams="availableSentinelVisParams">
                                 </sentinel-map>
 
                                 <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod"
                                          lon="point.lon" lat="point.lat"
-                                         zoom="config.zoomLevel" period="period"
+                                         zoom="config.zoomLevel"
+                                         sample-marker="config.sampleMarker" period="period"
                                          year="map.year" wms-config="wmsConfig">
                                 </wms-map>
 
                                 <inspection-map ng-if="useDynamicMaps !== true"
                                                 lon="point.lon" lat="point.lat"
                                                 bounds="map.bounds" zoom="config.zoomLevel"
+                                                sample-marker="config.sampleMarker"
                                                 tms-url="map.url">
                                 </inspection-map>
                             </div>

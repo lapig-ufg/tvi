@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector) {
+Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
     $scope.showChartsLandsatNdwi = false;
@@ -151,6 +151,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 initialYear: campaign.initialYear,
                 finalYear: campaign.finalYear,
                 zoomLevel: campaign.zoomLevel || 13,
+                sampleMarker: sampleMarkerService.core.normalize(campaign.sampleMarker),
                 landUse: campaign.landUse
             };
 

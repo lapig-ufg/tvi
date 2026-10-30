@@ -156,6 +156,63 @@
                             30 m visível (acima de 17 a cobertura da Esri varia por região e release).
                         </small>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Símbolo da amostra</label>
+                        <select class="form-select" ng-model="campaign.sampleMarker.symbol" required>
+                            <option value="marker">Marcador tradicional</option>
+                            <option value="square">Quadrado</option>
+                            <option value="circle">Círculo</option>
+                        </select>
+                        <small class="form-hint" style="display:block; margin-top:0.25rem;">
+                            Como a amostra aparece nas células da grade e no modal de comparação. O quadrado e o círculo
+                            são desenhados em metros sobre a imagem, centrados na amostra.
+                        </small>
+                    </div>
+
+                    <div ng-if="campaign.sampleMarker.symbol !== 'marker'">
+                        <div class="form-group">
+                            <label class="form-label">Raio do buffer (m)</label>
+                            <input type="number" class="form-input" ng-model="campaign.sampleMarker.radiusMeters"
+                                   min="1" max="10000" step="any" required>
+                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
+                                Distância do centro da amostra até a borda do símbolo. 15 m gera um quadrado de 30 m de lado
+                                (o pixel Landsat) ou um círculo de 30 m de diâmetro.
+                            </small>
+                        </div>
+
+                        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                            <div class="form-group" style="flex:1; min-width:140px;">
+                                <label class="form-label">Cor do contorno</label>
+                                <input type="color" class="form-input" ng-model="campaign.sampleMarker.color"
+                                       ng-pattern="/^#[0-9a-fA-F]{6}$/" required style="height:2.5rem; padding:0.2rem;">
+                            </div>
+                            <div class="form-group" style="flex:1; min-width:140px;">
+                                <label class="form-label">Espessura da linha (px)</label>
+                                <input type="number" class="form-input" ng-model="campaign.sampleMarker.weight"
+                                       min="1" max="10" step="1" required>
+                            </div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" ng-model="campaign.sampleMarker.fill">
+                                <span class="checkbox-text">
+                                    <i class="fas fa-paint-brush"></i>
+                                    Preencher o símbolo
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" ng-if="campaign.sampleMarker.fill">
+                            <label class="form-label">Opacidade do preenchimento</label>
+                            <input type="number" class="form-input" ng-model="campaign.sampleMarker.fillOpacity"
+                                   min="0" max="1" step="0.05" required>
+                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
+                                De 0 (transparente) a 1 (opaco). Preenchimento alto encobre a imagem sob o símbolo.
+                            </small>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Tipo de Imagem -->

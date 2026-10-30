@@ -1,12 +1,13 @@
 'use strict';
 
-Application.directive('leafletSwipeMap', function($timeout, $injector) {
+Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMarkerService) {
     return {
         restrict: 'E',
         scope: {
             lon: '=',
             lat: '=',
             zoom: '=',
+            sampleMarker: '=',
             leftLayer: '=',  // Configuração da camada esquerda
             rightLayer: '=', // Configuração da camada direita
             height: '@'
@@ -66,13 +67,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector) {
 
 
                 // Adicionar marcador central
-                marker = L.marker([scope.lat, scope.lon], {
-                    icon: L.icon({
-                        iconUrl: 'assets/marker2.png',
-                        iconSize: [42, 42]
-                    }),
-                    zIndexOffset: 1000
-                }).addTo(map);
+                marker = sampleMarkerService.createLayer([scope.lat, scope.lon], scope.sampleMarker).addTo(map);
 
                 // Adicionar controle de escala
                 L.control.scale({ metric: true, imperial: false }).addTo(map);

@@ -1,6 +1,6 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog, waybackGridService) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog, waybackGridService, sampleMarkerService) {
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false;
@@ -209,6 +209,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             initialYear: $rootScope.user.campaign.initialYear,
             finalYear: $rootScope.user.campaign.finalYear,
             zoomLevel: $rootScope.user.campaign.zoomLevel || 13,
+            sampleMarker: sampleMarkerService.core.normalize($rootScope.user.campaign.sampleMarker),
             landUse: $rootScope.user.campaign.landUse,
             // Classe inicial padrão da primeira caixa (TKT-000005).
             // Vazio mantém comportamento anterior (sem pré-seleção).
@@ -960,6 +961,9 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     // sessão de login esteja desatualizada.
                     if (Number.isInteger(config.zoomLevel)) {
                         $scope.config.zoomLevel = config.zoomLevel;
+                    }
+                    if (config.sampleMarker) {
+                        $scope.config.sampleMarker = sampleMarkerService.core.normalize(config.sampleMarker);
                     }
                     // Atualizar as configurações de visualização
                     $scope.showTimeseries = config.showTimeseries;

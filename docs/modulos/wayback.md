@@ -74,6 +74,19 @@ mapas da grade em qualquer tipo de imagem. É validado pelo servidor
 30 m legível (26 px de lado) com cobertura ampla; 18 só onde houver tile
 nativo nesse nível.
 
+`sampleMarker` (objeto `{ symbol, radiusMeters, color, weight, fill, fillOpacity }`,
+padrão marcador tradicional) define como a amostra aparece nas células da grade
+de qualquer tipo de imagem e no modal de comparação: `symbol` é `marker`,
+`square` ou `circle`; `radiusMeters` é o raio a partir do centro (1 a 10000; 15
+gera um quadrado de 30 m de lado, o pixel Landsat, ou um círculo de 30 m de
+diâmetro); `color` (hexadecimal), `weight` (1 a 10 px), `fill` e `fillOpacity`
+(0 a 1) são o estilo do contorno e do preenchimento. O servidor valida e
+normaliza o objeto (`services/campaignSampleMarker.js`) na criação e na
+atualização e devolve o objeto resolvido em `GET /service/campaign/config`; o
+cliente aplica os mesmos padrões (`services/sample-marker-core.js`) à cópia da
+campanha na sessão e a documentos antigos sem o campo. Campanhas Wayback já
+cadastradas continuam com o marcador até o cadastro escolher o quadrado.
+
 ### 2.2 Ponto — campo persistido pelo job
 
 ```js
@@ -243,9 +256,11 @@ do `landsatMap`:
 
 - `L.tileLayer` apontando direto para o WMTS da release; `tileerror` exibe
   aviso i18n (`WAYBACK_TILE_ERROR`) sem quebrar a grade.
-- A amostra é um quadrado de 30 m (`WaybackGridCore.sampleSquareFeature`,
-  GeoJSON `Polygon` centrado no ponto) desenhado com `L.geoJSON`, sem
-  preenchimento e sem interação, no lugar do marcador das demais diretivas.
+- A amostra é criada por `sampleMarkerService.createLayer` conforme o
+  `sampleMarker` da campanha (padrão marcador tradicional; quadrado ou círculo
+  de raio configurável, sem interação), como nas demais diretivas de mapa. No
+  cadastro da campanha Wayback, o quadrado de 15 m de raio mostra ao intérprete
+  a área do pixel Landsat sobre a imagem de alta resolução.
 - Zoom: inicial e mínimo iguais ao `zoomLevel` da campanha; máximo
   `min(zoomLevel + 6, 23)`; a tile layer usa `maxNativeZoom: 19` (último nível
   com tiles nativos nas releases) e reamostra acima desse nível em vez de pedir
@@ -253,8 +268,10 @@ do `landsatMap`:
   release; a célula exibe o aviso de tile quando a release não tem o tile.
 - **Watchers obrigatórios:** o `ng-repeat` da grade usa `track by map.index`,
   que **recicla** as células ao trocar de ponto; `$watchGroup(['lon', 'lat',
-  'tileUrl', 'mapDate', 'zoom'])` recentraliza o mapa, redesenha o quadrado,
-  atualiza os limites de zoom e troca a camada de tiles.
+  'tileUrl', 'mapDate', 'zoom'])` recentraliza o mapa, reposiciona o símbolo
+  da amostra, atualiza os limites de zoom e troca a camada de tiles; um
+  `$watch` profundo de `sampleMarker` recria a camada quando o símbolo ou o
+  estilo mudam.
 - Cleanup: `mapSyncService.unregister` + `safeDestroyMap` (workaround
   documentado para Leaflet ≤ 1.9.4).
 - Dimensionamento: `style.css` inclui `wayback-map` em todos os grupos de

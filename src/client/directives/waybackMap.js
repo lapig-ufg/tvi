@@ -9,9 +9,10 @@
  * tile (release removida/renumerada pela Esri), exibe aviso na célula sem
  * quebrar a grade.
  *
- * A amostra é desenhada como quadrado de 30 m centrado no ponto
- * (WaybackGridCore.sampleSquareFeature), e não como marcador: sobre imagem
- * de alta resolução o intérprete precisa ver a área do pixel que classifica.
+ * A amostra é desenhada pelo sampleMarkerService conforme a configuração da
+ * campanha (marcador tradicional, quadrado ou círculo de raio configurável):
+ * sobre imagem de alta resolução o intérprete precisa ver a área que
+ * classifica, e o cadastro decide o símbolo.
  *
  * Estrutura clonada de landsatMap (others/directives.js:801): registro em
  * mapSyncService no setup e mapSyncService.unregister + safeDestroyMap no
@@ -21,7 +22,7 @@
  * pendentes do Leaflet <= 1.9.4 (workaround documentado em
  * others/directives.js:15).
  */
-angular.module('application').directive('waybackMap', function ($timeout, mapSyncService, waybackGridService) {
+angular.module('application').directive('waybackMap', function ($timeout, mapSyncService, sampleMarkerService) {
     // Último nível do TileMatrixSet do World Imagery Wayback da Esri.
     var WAYBACK_MAX_TILE_LEVEL = 23;
     // Último nível com tiles nativos nas releases do Wayback (do 20 em diante
@@ -30,7 +31,6 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
     // da célula. Nos níveis 18 e 19 a cobertura varia por região e release;
     // nesses casos o aviso de tile continua valendo.
     var WAYBACK_MAX_NATIVE_ZOOM = 19;
-    var FOOTPRINT_STYLE = { color: '#29e7e4', weight: 2, fill: false };
 
     function maxZoomFor(zoom) {
         return Math.min(zoom + 6, WAYBACK_MAX_TILE_LEVEL);
@@ -50,15 +50,15 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
             lat: '=',
             zoom: '=',
             tileUrl: '=',
-            mapDate: '='
+            mapDate: '=',
+            sampleMarker: '='
         },
         controller: function ($scope, $element) {
-            var core = waybackGridService.core;
             $scope._destroyed = false;
             $scope.tileError = false;
 
-            function sampleFeature() {
-                return core.sampleSquareFeature($scope.lon, $scope.lat);
+            function createSampleLayer() {
+                return sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker);
             }
 
             // Cria (ou recria) a tile layer da release corrente. Chamada no
@@ -112,12 +112,7 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
 
                 updateTileLayer();
 
-                // Camada vetorial no overlayPane, acima dos tiles; sem
-                // interação para preservar arrastar e zoom da célula.
-                $scope.footprint = L.geoJSON(sampleFeature(), {
-                    style: FOOTPRINT_STYLE,
-                    interactive: false
-                }).addTo($scope.map);
+                $scope.marker = createSampleLayer().addTo($scope.map);
 
                 // O ng-repeat da grade usa `track by map.index`: ao trocar de
                 // ponto, as células (e estas diretivas) são RECICLADAS, não
@@ -136,16 +131,23 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                     }
                     if ($scope.lon !== undefined && $scope.lat !== undefined) {
                         $scope.map.setView([$scope.lat, $scope.lon], $scope.zoom, { animate: false });
-                        if ($scope.footprint) {
-                            $scope.footprint.clearLayers();
-                            var feature = sampleFeature();
-                            if (feature) {
-                                $scope.footprint.addData(feature);
-                            }
+                        if ($scope.marker) {
+                            $scope.marker.setLatLng([$scope.lat, $scope.lon]);
                         }
                     }
                     updateTileLayer();
                 });
+
+                // A configuração do símbolo é um objeto: watch profundo, à parte
+                // do $watchGroup (que compara por referência). Símbolo ou estilo
+                // novos exigem outra camada Leaflet.
+                $scope.$watch('sampleMarker', function (newValue, oldValue) {
+                    if ($scope._destroyed || !$scope.map || newValue === oldValue) return;
+                    if ($scope.marker) {
+                        $scope.map.removeLayer($scope.marker);
+                    }
+                    $scope.marker = createSampleLayer().addTo($scope.map);
+                }, true);
             });
 
             $scope.$on('$destroy', function () {
@@ -155,8 +157,8 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                         $scope.tileLayer.off();
                         $scope.map.removeLayer($scope.tileLayer);
                     }
-                    if ($scope.footprint) {
-                        $scope.map.removeLayer($scope.footprint);
+                    if ($scope.marker) {
+                        $scope.map.removeLayer($scope.marker);
                     }
                     mapSyncService.unregister($scope.map);
                     // safeDestroyMap é exposto globalmente em others/directives.js

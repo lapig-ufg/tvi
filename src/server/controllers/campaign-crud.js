@@ -5,6 +5,7 @@ const exec = require('child_process').exec;
 const AdmZip = require('adm-zip');
 const uploadReceipts = require('../services/geojsonUploadReceipts');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
+const campaignSampleMarker = require('../services/campaignSampleMarker');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -1143,6 +1144,10 @@ module.exports = function(app) {
             if (zoomLevel.error) {
                 return res.status(400).json({ error: zoomLevel.error });
             }
+            const sampleMarker = campaignSampleMarker.parseSampleMarkerInput(campaignData.sampleMarker);
+            if (sampleMarker.error) {
+                return res.status(400).json({ error: sampleMarker.error });
+            }
 
             const campaign = {
                 _id: campaignData._id,
@@ -1166,6 +1171,7 @@ module.exports = function(app) {
                 useDynamicMaps: campaignData.imageType === 'wayback' ? true : (campaignData.useDynamicMaps || false),
                 imageType: campaignData.imageType || 'landsat',
                 zoomLevel: zoomLevel.value,
+                sampleMarker: sampleMarker.value,
                 // Configurações WMS
                 wmsPeriod: campaignData.wmsPeriod || 'BOTH', // DRY, WET ou BOTH
                 wmsConfig: campaignData.wmsConfig || {
@@ -1246,6 +1252,14 @@ module.exports = function(app) {
                     return res.status(400).json({ error: zoomLevel.error });
                 }
                 updateData.zoomLevel = zoomLevel.value;
+            }
+
+            if (updateData.hasOwnProperty('sampleMarker')) {
+                const sampleMarker = campaignSampleMarker.parseSampleMarkerInput(updateData.sampleMarker);
+                if (sampleMarker.error) {
+                    return res.status(400).json({ error: sampleMarker.error });
+                }
+                updateData.sampleMarker = sampleMarker.value;
             }
 
             // Atualizar configurações booleanas

@@ -209,7 +209,7 @@ Application
         }
       }
     })
-    .directive('inspectionMap', function (mapSyncService) {
+    .directive('inspectionMap', function (mapSyncService, sampleMarkerService) {
       return {
         template: '<div id="map-{{::$id}}" style="width: 100%; height: 100%;"></div>',
         scope: {
@@ -217,7 +217,8 @@ Application
           lat: '=',
           tmsUrl: '=',
           zoom: '=',
-          bounds: '='
+          bounds: '=',
+          sampleMarker: '='
         },
         controller: function ($scope, $element) {
           $scope._destroyed = false;
@@ -225,12 +226,7 @@ Application
           angular.element($element).ready(function () {
 
             $scope.tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
-            $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({
-                iconUrl: 'assets/marker.png',
-                iconSize: [42, 42]
-              })
-            });
+            $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker, { iconUrl: 'assets/marker.png' });
             applyMarkerShiftHint($scope.marker);
 
             $scope.markerInMap = true;
@@ -483,7 +479,7 @@ Application
     //     }
     //   }
     // })
-    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, mapSyncService) {
+    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, mapSyncService, sampleMarkerService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -496,7 +492,8 @@ Application
           zoom:      '=',
           period:    '=',
           year:      '=',
-          visparams: '='
+          visparams: '=',
+          sampleMarker: '='
         },
         controller: function ($scope, $element, $injector) {
 
@@ -666,13 +663,7 @@ Application
             mapSyncService.register($scope.map);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
-            $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({
-                iconUrl: 'assets/marker2.png',
-                iconSize: [42, 42]
-              }),
-              zIndexOffset: 1000
-            }).addTo($scope.map);
+            $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
@@ -798,7 +789,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, mapSyncService) {
+    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, mapSyncService, sampleMarkerService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -811,7 +802,8 @@ Application
           zoom: '=',
           period: '=',
           year: '=',
-          visparams: '='
+          visparams: '=',
+          sampleMarker: '='
         },
         controller: function ($scope, $element, $injector) {
           $scope._destroyed = false;
@@ -996,13 +988,7 @@ Application
             mapSyncService.register($scope.map);
 
             // Criar marcador com z-index alto para garantir que fique acima dos tiles
-            $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({
-                iconUrl: 'assets/marker2.png',
-                iconSize: [42, 42]
-              }),
-              zIndexOffset: 1000
-            }).addTo($scope.map);
+            $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
@@ -1104,7 +1090,7 @@ Application
         }
       };
     })
-    .directive('wmsMap', function($timeout, $injector, mapSyncService) {
+    .directive('wmsMap', function($timeout, $injector, mapSyncService, sampleMarkerService) {
       return {
         template: `
           <div style="width: 100%; height: 100%; min-height: 300px; position: relative;">
@@ -1123,7 +1109,8 @@ Application
           zoom: '=',
           period: '=',
           year: '=',
-          wmsConfig: '='
+          wmsConfig: '=',
+          sampleMarker: '='
         },
         controller: function($scope, $element) {
           $scope._destroyed = false;
@@ -1564,13 +1551,7 @@ Application
             mapSyncService.register($scope.map);
 
             // Adicionar marcador
-            $scope.marker = L.marker([$scope.lat, $scope.lon], {
-              icon: L.icon({
-                iconUrl: 'assets/marker2.png',
-                iconSize: [42, 42]
-              }),
-              zIndexOffset: 1000
-            }).addTo($scope.map);
+            $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são

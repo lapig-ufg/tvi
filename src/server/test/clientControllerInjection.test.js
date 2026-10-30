@@ -35,6 +35,7 @@ const SERVICOS_INJETAVEIS = [
     'requester',
     'fakeRequester',
     'waybackGridService',
+    'sampleMarkerService',
     'util'
 ];
 

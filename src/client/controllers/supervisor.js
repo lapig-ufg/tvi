@@ -7,7 +7,7 @@
 // vez de em filter.landUse; o fallback no servidor cobre o cliente legado.
 var NOT_CONSOLIDATED_TOKEN = '__NOT_CONSOLIDATED__';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, waybackGridService) {
+Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, waybackGridService, sampleMarkerService) {
     // Sequência monotônica de submits — usada por isCurrent() em $scope.submit
     // para descartar respostas obsoletas de chamadas que perderam a corrida
     // (cliques rápidos Anterior/Próximo, troca rápida de filtro etc.).
@@ -315,6 +315,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             initialYear: $rootScope.user.campaign.initialYear,
             finalYear: $rootScope.user.campaign.finalYear,
             zoomLevel: $rootScope.user.campaign.zoomLevel || 13,
+            sampleMarker: sampleMarkerService.core.normalize($rootScope.user.campaign.sampleMarker),
             landUse: $rootScope.user.campaign.landUse
         }
 
@@ -1055,6 +1056,9 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
                     // sessão de login esteja desatualizada.
                     if (Number.isInteger(config.zoomLevel)) {
                         $scope.config.zoomLevel = config.zoomLevel;
+                    }
+                    if (config.sampleMarker) {
+                        $scope.config.sampleMarker = sampleMarkerService.core.normalize(config.sampleMarker);
                     }
                     // Atualizar as configurações de visualização
                     $scope.showTimeseries = config.showTimeseries;
