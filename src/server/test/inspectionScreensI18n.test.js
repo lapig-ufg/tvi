@@ -1,6 +1,7 @@
 /**
  * Guarda de tradução das telas de inspeção (temporal.tpl.html e
- * supervisor.tpl.html): todo texto visível, inclusive title, placeholder,
+ * supervisor.tpl.html) e das telas de tickets do intérprete e do supervisor:
+ * todo texto visível, inclusive title, placeholder,
  * aria-label e value de botões, deve passar pelo filtro i18n. Os únicos
  * literais aceitos são marcadores técnicos neutros em idioma, listados por
  * tela.
@@ -23,7 +24,11 @@ const VIEWS_DIR = path.join(__dirname, '..', '..', 'client', 'views');
 
 const TELAS = {
     'temporal.tpl.html': [', - lat-lon', ', - lon-lat'],
-    'supervisor.tpl.html': ['index', 'Lat/Lon:', 'Lon/Lat:']
+    'supervisor.tpl.html': ['index', 'Lat/Lon:', 'Lon/Lat:'],
+    'ticket-form.tpl.html': [],
+    'ticket-detail.tpl.html': ['&mdash;', '&rarr;', 'User Agent', 'URL'],
+    'tickets-list.tpl.html': [],
+    'ticket-status-modal.tpl.html': ['&mdash;']
 };
 
 function textosLiterais(html) {

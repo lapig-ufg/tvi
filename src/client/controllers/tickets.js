@@ -232,7 +232,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
         });
       })
       .error(function () {
-        alert('Não foi possível carregar a dúvida deste ponto.');
+        alert(t('TICKETS.DOUBT_LOAD_ERROR'));
       });
   };
 
@@ -274,9 +274,7 @@ Application.controller('TicketsListController', function ($scope, $rootScope, $l
 
   $scope.getSeverityLabel = function (severity) {
     if (!severity) return '';
-    // Severidades sem chave i18n dedicada — mantém o código cru (BAIXA/MEDIA/ALTA/CRITICA)
-    // como fallback consistente.
-    return severity;
+    return t('ADMIN_TICKETS.SEVERITIES.' + severity);
   };
 
   /**
@@ -351,27 +349,23 @@ Application.controller('TicketFormController', function ($scope, $rootScope, $lo
     });
   });
 
-  $scope.types = [
-    { value: 'RECLAMACAO', label: 'Reclamação' },
-    { value: 'SUGESTAO', label: 'Sugestão' },
-    { value: 'DUVIDA', label: 'Dúvida' },
-    { value: 'ELOGIO', label: 'Elogio' }
-  ];
+  var t = function (key) { return i18nService.translate(key); };
 
-  $scope.categories = [
-    { value: 'INTERFACE', label: 'Interface' },
-    { value: 'DESEMPENHO', label: 'Desempenho' },
-    { value: 'FUNCIONALIDADE', label: 'Funcionalidade' },
-    { value: 'DADOS', label: 'Dados' },
-    { value: 'OUTRO', label: 'Outro' }
-  ];
+  function options(group, codes) {
+    return codes.map(function (code) {
+      return { value: code, label: t('ADMIN_TICKETS.' + group + '.' + code) };
+    });
+  }
 
-  $scope.severities = [
-    { value: 'BAIXA', label: 'Baixa' },
-    { value: 'MEDIA', label: 'Média' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Crítica' }
-  ];
+  function buildOptions() {
+    $scope.types = options('TYPES', ['RECLAMACAO', 'SUGESTAO', 'DUVIDA', 'ELOGIO']);
+    $scope.categories = options('CATEGORIES', ['INTERFACE', 'DESEMPENHO', 'FUNCIONALIDADE', 'DADOS', 'OUTRO']);
+    $scope.severities = options('SEVERITIES', ['BAIXA', 'MEDIA', 'ALTA', 'CRITICA']);
+  }
+
+  buildOptions();
+  i18nService.ensureLoaded().then(buildOptions);
+  $scope.$on('languageChanged', buildOptions);
 
   $scope.showSeverity = function () {
     return $scope.ticket.type === 'RECLAMACAO';
@@ -381,12 +375,12 @@ Application.controller('TicketFormController', function ($scope, $rootScope, $lo
     $scope.errorMessage = '';
 
     if (!$scope.ticket.type || !$scope.ticket.category || !$scope.ticket.title || !$scope.ticket.description) {
-      $scope.errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
+      $scope.errorMessage = t('TICKETS.FORM.ERROR_REQUIRED');
       return;
     }
 
     if ($scope.ticket.type === 'RECLAMACAO' && !$scope.ticket.severity) {
-      $scope.errorMessage = 'Severidade é obrigatória para reclamações.';
+      $scope.errorMessage = t('TICKETS.FORM.ERROR_SEVERITY');
       return;
     }
 
@@ -468,6 +462,16 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
   $scope.uploadingFile = false;
   $scope.uploadError = '';
 
+  var t = function (key) { return i18nService.translate(key); };
+
+  // Código sem tradução cadastrada aparece cru, em vez da chave i18n.
+  function codeLabel(group, code) {
+    if (!code) return '';
+    var key = 'ADMIN_TICKETS.' + group + '.' + code;
+    var label = t(key);
+    return label === key ? code : label;
+  }
+
   $scope.loadTicket = function () {
     $scope.loading = true;
     requester._get('tickets/' + $routeParams.id, function (result) {
@@ -522,12 +526,12 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
 
     // Validação client-side
     if (['image/png', 'image/jpeg'].indexOf(file.type) === -1) {
-      $scope.uploadError = 'Apenas imagens PNG e JPG são permitidas.';
+      $scope.uploadError = t('TICKETS.DETAIL.UPLOAD_INVALID_TYPE');
       $scope.$apply();
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      $scope.uploadError = 'O arquivo excede o tamanho máximo de 10 MB.';
+      $scope.uploadError = t('TICKETS.DETAIL.UPLOAD_TOO_LARGE');
       $scope.$apply();
       return;
     }
@@ -549,7 +553,7 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
       }
     }, function (err) {
       $scope.uploadingFile = false;
-      $scope.uploadError = (err.data && err.data.error) || 'Erro ao enviar arquivo.';
+      $scope.uploadError = (err.data && err.data.error) || t('TICKETS.DETAIL.UPLOAD_FAILED');
     });
   };
 
@@ -575,13 +579,7 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
   };
 
   $scope.getTypeLabel = function (type) {
-    var map = {
-      'RECLAMACAO': 'Reclamação',
-      'SUGESTAO': 'Sugestão',
-      'DUVIDA': 'Dúvida',
-      'ELOGIO': 'Elogio'
-    };
-    return map[type] || type;
+    return codeLabel('TYPES', type);
   };
 
   $scope.getStatusBadgeClass = function (status) {
@@ -596,14 +594,7 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
   };
 
   $scope.getStatusLabel = function (status) {
-    var map = {
-      'ABERTO': 'Aberto',
-      'EM_ANALISE': 'Em Análise',
-      'EM_DESENVOLVIMENTO': 'Em Desenvolvimento',
-      'RESOLVIDO': 'Resolvido',
-      'FECHADO': 'Fechado'
-    };
-    return map[status] || status;
+    return codeLabel('STATUSES', status);
   };
 
   $scope.getSeverityBadgeClass = function (severity) {
@@ -617,24 +608,11 @@ Application.controller('TicketDetailController', function ($scope, $rootScope, $
   };
 
   $scope.getSeverityLabel = function (severity) {
-    var map = {
-      'BAIXA': 'Baixa',
-      'MEDIA': 'Média',
-      'ALTA': 'Alta',
-      'CRITICA': 'Crítica'
-    };
-    return map[severity] || severity;
+    return codeLabel('SEVERITIES', severity);
   };
 
   $scope.getCategoryLabel = function (category) {
-    var map = {
-      'INTERFACE': 'Interface',
-      'DESEMPENHO': 'Desempenho',
-      'FUNCIONALIDADE': 'Funcionalidade',
-      'DADOS': 'Dados',
-      'OUTRO': 'Outro'
-    };
-    return map[category] || category;
+    return codeLabel('CATEGORIES', category);
   };
 
   $scope.canEdit = function () {

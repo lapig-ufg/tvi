@@ -433,6 +433,12 @@
       "POINT_BADGE": "POINT",
       "POINT_DOUBT_TOOLTIP": "Doubt registered during point inspection",
       "OPEN_POINT_IN_SUPERVISOR": "Open point in supervisor"
+    },
+    "SEVERITIES": {
+      "BAIXA": "Low",
+      "MEDIA": "Medium",
+      "ALTA": "High",
+      "CRITICA": "Critical"
     }
   },
   "TICKETS": {
@@ -463,7 +469,14 @@
       "TITLE_LABEL": "Title",
       "TITLE_PLACEHOLDER": "Briefly describe the subject (max. 200 characters)",
       "DESCRIPTION": "Description",
-      "DESCRIPTION_PLACEHOLDER": "Describe your request in detail..."
+      "DESCRIPTION_PLACEHOLDER": "Describe your request in detail...",
+      "ERROR_REQUIRED": "Please fill in all required fields.",
+      "ERROR_SEVERITY": "Severity is required for complaints.",
+      "DIAGNOSTICS_CAPTURED": "Diagnostics captured automatically",
+      "DIAGNOSTICS_SCREENSHOT": "Screenshot",
+      "DIAGNOSTICS_LOGS": "console entries (log/info)",
+      "DIAGNOSTICS_WARNINGS": "warnings (warn)",
+      "DIAGNOSTICS_ERRORS": "errors (error)"
     },
     "DETAIL": {
       "AUTHOR": "Author",
@@ -486,7 +499,34 @@
       "YOU_VOTED": "You voted",
       "ATTACHMENTS": "Attachments",
       "NO_ATTACHMENTS": "No attachments.",
-      "UPLOAD_IMAGE": "Upload image"
+      "UPLOAD_IMAGE": "Upload image",
+      "DIAGNOSTICS": "Diagnostics",
+      "SCREEN_RESOLUTION": "Screen resolution",
+      "WINDOW_SIZE": "Window size",
+      "CAPTURED_AT": "Captured at",
+      "CONSOLE": "Console",
+      "UPLOAD_HINT": "PNG or JPG, max. 10 MB",
+      "INTERNAL": "Internal",
+      "UPLOAD_INVALID_TYPE": "Only PNG and JPG images are allowed.",
+      "UPLOAD_TOO_LARGE": "The file exceeds the maximum size of 10 MB.",
+      "UPLOAD_FAILED": "Error uploading file.",
+      "HIDE": "Hide",
+      "SHOW": "Show",
+      "REMOVE_VOTE": "Remove vote",
+      "VOTE": "Vote for this ticket"
+    },
+    "DOUBT_LOAD_ERROR": "Could not load this point's question.",
+    "STATUS_MODAL": {
+      "TITLE": "Change Status",
+      "CURRENT": "Current status:",
+      "NEW": "New Status",
+      "SELECT": "Select...",
+      "REASON": "Reason",
+      "REASON_PLACEHOLDER": "Describe the reason for the status change...",
+      "TERMINAL": "This ticket is in a final state and its status cannot be changed.",
+      "CONFIRM": "Confirm",
+      "ERROR_STATUS": "Select the new status.",
+      "ERROR_REASON": "The reason is required."
     }
   }
 }

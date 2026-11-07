@@ -48,7 +48,7 @@
             <strong>{{ 'TICKETS.DETAIL.VOTES' | i18n }}:</strong><br>
             <button class="btn btn-xs" ng-class="hasVoted() ? 'btn-success' : 'btn-default'"
                     ng-click="toggleVote()" ng-disabled="votingInProgress"
-                    title="{{ hasVoted() ? 'Remover voto' : 'Votar neste ticket' }}">
+                    title="{{ (hasVoted() ? 'TICKETS.DETAIL.REMOVE_VOTE' : 'TICKETS.DETAIL.VOTE') | i18n }}">
               <i class="fa fa-thumbs-up"></i>
               <span>{{ticket.voteCount || 0}}</span>
             </button>
@@ -74,7 +74,7 @@
         <!-- Diagnósticos -->
         <div ng-if="ticket.diagnostics" style="margin-top: 20px;">
           <h4>
-            <i class="fa fa-stethoscope"></i> Diagnósticos
+            <i class="fa fa-stethoscope"></i> {{ 'TICKETS.DETAIL.DIAGNOSTICS' | i18n }}
           </h4>
 
           <!-- Metadados do navegador -->
@@ -90,15 +90,15 @@
                   <td><code>{{ticket.diagnostics.metadata.url}}</code></td>
                 </tr>
                 <tr ng-if="ticket.diagnostics.metadata.screenResolution">
-                  <td><strong>Resolução da tela</strong></td>
+                  <td><strong>{{ 'TICKETS.DETAIL.SCREEN_RESOLUTION' | i18n }}</strong></td>
                   <td>{{ticket.diagnostics.metadata.screenResolution}}</td>
                 </tr>
                 <tr ng-if="ticket.diagnostics.metadata.viewportSize">
-                  <td><strong>Tamanho da janela</strong></td>
+                  <td><strong>{{ 'TICKETS.DETAIL.WINDOW_SIZE' | i18n }}</strong></td>
                   <td>{{ticket.diagnostics.metadata.viewportSize}}</td>
                 </tr>
                 <tr ng-if="ticket.diagnostics.capturedAt">
-                  <td><strong>Capturado em</strong></td>
+                  <td><strong>{{ 'TICKETS.DETAIL.CAPTURED_AT' | i18n }}</strong></td>
                   <td>{{ticket.diagnostics.capturedAt | date:'dd/MM/yyyy HH:mm:ss'}}</td>
                 </tr>
               </tbody>
@@ -108,10 +108,10 @@
           <!-- Logs do console -->
           <div ng-if="ticket.diagnostics.consoleLogs && ticket.diagnostics.consoleLogs.length > 0">
             <h5>
-              <i class="fa fa-terminal"></i> Console
+              <i class="fa fa-terminal"></i> {{ 'TICKETS.DETAIL.CONSOLE' | i18n }}
               <span class="badge">{{ticket.diagnostics.consoleLogs.length}}</span>
               <button class="btn btn-xs btn-default" ng-click="showConsoleLogs = !showConsoleLogs" style="margin-left: 10px;">
-                {{showConsoleLogs ? 'Ocultar' : 'Exibir'}}
+                {{ (showConsoleLogs ? 'TICKETS.DETAIL.HIDE' : 'TICKETS.DETAIL.SHOW') | i18n }}
               </button>
             </h5>
             <div ng-show="showConsoleLogs"
@@ -171,7 +171,7 @@
               <input type="file" accept="image/png,image/jpeg" style="display: none;"
                      onchange="angular.element(this).scope().uploadAttachment(this.files)">
             </label>
-            <small class="text-muted" style="margin-left: 10px;">PNG ou JPG, máx. 10 MB</small>
+            <small class="text-muted" style="margin-left: 10px;">{{ 'TICKETS.DETAIL.UPLOAD_HINT' | i18n }}</small>
             <div class="text-danger" ng-if="uploadError" style="margin-top: 5px;">
               <small><i class="fa fa-exclamation-circle"></i> {{uploadError}}</small>
             </div>
@@ -230,7 +230,7 @@
               <strong>{{comment.author.name}}</strong>
               <span class="text-muted" style="font-size: 12px;">({{comment.author.role}})</span>
               <span class="text-muted pull-right" style="font-size: 12px;">{{comment.createdAt | date:'dd/MM/yyyy HH:mm'}}</span>
-              <span class="label label-warning" ng-if="comment.isInternal" style="margin-left: 5px; font-size: 10px;">Interno</span>
+              <span class="label label-warning" ng-if="comment.isInternal" style="margin-left: 5px; font-size: 10px;">{{ 'TICKETS.DETAIL.INTERNAL' | i18n }}</span>
             </h5>
             <p style="white-space: pre-wrap;">{{comment.text}}</p>
           </div>

@@ -217,8 +217,6 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
 
   $scope.getSeverityLabel = function (severity) {
     if (!severity) return '';
-    // Severidades não têm chaves i18n próprias ainda — manter rótulo cru (BAIXA/MEDIA/ALTA/CRITICA)
-    // até serem adicionadas. Funciona como fallback consistente em todos os locales.
     return severity;
   };
 
@@ -228,7 +226,7 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
 });
 
 /* --- Modal de Mudança de Status --- */
-Application.controller('TicketStatusModalController', function ($scope, $uibModalInstance, requester, ticket) {
+Application.controller('TicketStatusModalController', function ($scope, $uibModalInstance, requester, ticket, i18nService) {
 
   $scope.ticket = ticket;
   $scope.form = {
@@ -247,27 +245,30 @@ Application.controller('TicketStatusModalController', function ($scope, $uibModa
     'FECHADO': []
   };
 
-  var statusLabels = {
-    'ABERTO': 'Aberto',
-    'EM_ANALISE': 'Em Análise',
-    'EM_DESENVOLVIMENTO': 'Em Desenvolvimento',
-    'RESOLVIDO': 'Resolvido',
-    'FECHADO': 'Fechado'
+  // Modal compartilhado entre o admin e a lista de tickets do supervisor:
+  // os rótulos seguem o idioma ativo.
+  var t = function (key) { return i18nService.translate(key); };
+
+  $scope.statusLabel = function (status) {
+    if (!status) return '';
+    var key = 'ADMIN_TICKETS.STATUSES.' + status;
+    var label = t(key);
+    return label === key ? status : label;
   };
 
   $scope.availableStatuses = (transitions[ticket.status] || []).map(function (s) {
-    return { value: s, label: statusLabels[s] || s };
+    return { value: s, label: $scope.statusLabel(s) };
   });
 
   $scope.submit = function () {
     $scope.errorMessage = '';
 
     if (!$scope.form.status) {
-      $scope.errorMessage = 'Selecione o novo status.';
+      $scope.errorMessage = t('TICKETS.STATUS_MODAL.ERROR_STATUS');
       return;
     }
     if (!$scope.form.reason || !$scope.form.reason.trim()) {
-      $scope.errorMessage = 'O motivo é obrigatório.';
+      $scope.errorMessage = t('TICKETS.STATUS_MODAL.ERROR_REASON');
       return;
     }
 

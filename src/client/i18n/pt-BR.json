@@ -433,6 +433,12 @@
       "POINT_BADGE": "PONTO",
       "POINT_DOUBT_TOOLTIP": "Dúvida registrada durante inspeção do ponto",
       "OPEN_POINT_IN_SUPERVISOR": "Abrir ponto no supervisor"
+    },
+    "SEVERITIES": {
+      "BAIXA": "Baixa",
+      "MEDIA": "Média",
+      "ALTA": "Alta",
+      "CRITICA": "Crítica"
     }
   },
   "TICKETS": {
@@ -463,7 +469,14 @@
       "TITLE_LABEL": "Título",
       "TITLE_PLACEHOLDER": "Descreva brevemente o assunto (máx. 200 caracteres)",
       "DESCRIPTION": "Descrição",
-      "DESCRIPTION_PLACEHOLDER": "Descreva detalhadamente a sua solicitação..."
+      "DESCRIPTION_PLACEHOLDER": "Descreva detalhadamente a sua solicitação...",
+      "ERROR_REQUIRED": "Por favor, preencha todos os campos obrigatórios.",
+      "ERROR_SEVERITY": "Severidade é obrigatória para reclamações.",
+      "DIAGNOSTICS_CAPTURED": "Diagnósticos capturados automaticamente",
+      "DIAGNOSTICS_SCREENSHOT": "Screenshot da tela",
+      "DIAGNOSTICS_LOGS": "registros de console (log/info)",
+      "DIAGNOSTICS_WARNINGS": "avisos (warn)",
+      "DIAGNOSTICS_ERRORS": "erros (error)"
     },
     "DETAIL": {
       "AUTHOR": "Autor",
@@ -486,7 +499,34 @@
       "YOU_VOTED": "Você votou",
       "ATTACHMENTS": "Anexos",
       "NO_ATTACHMENTS": "Nenhum anexo.",
-      "UPLOAD_IMAGE": "Enviar imagem"
+      "UPLOAD_IMAGE": "Enviar imagem",
+      "DIAGNOSTICS": "Diagnósticos",
+      "SCREEN_RESOLUTION": "Resolução da tela",
+      "WINDOW_SIZE": "Tamanho da janela",
+      "CAPTURED_AT": "Capturado em",
+      "CONSOLE": "Console",
+      "UPLOAD_HINT": "PNG ou JPG, máx. 10 MB",
+      "INTERNAL": "Interno",
+      "UPLOAD_INVALID_TYPE": "Apenas imagens PNG e JPG são permitidas.",
+      "UPLOAD_TOO_LARGE": "O arquivo excede o tamanho máximo de 10 MB.",
+      "UPLOAD_FAILED": "Erro ao enviar arquivo.",
+      "HIDE": "Ocultar",
+      "SHOW": "Exibir",
+      "REMOVE_VOTE": "Remover voto",
+      "VOTE": "Votar neste ticket"
+    },
+    "DOUBT_LOAD_ERROR": "Não foi possível carregar a dúvida deste ponto.",
+    "STATUS_MODAL": {
+      "TITLE": "Alterar Status",
+      "CURRENT": "Status atual:",
+      "NEW": "Novo Status",
+      "SELECT": "Selecione...",
+      "REASON": "Motivo",
+      "REASON_PLACEHOLDER": "Descreva o motivo da alteração de status...",
+      "TERMINAL": "Este ticket está em estado terminal e não pode ter seu status alterado.",
+      "CONFIRM": "Confirmar",
+      "ERROR_STATUS": "Selecione o novo status.",
+      "ERROR_REASON": "O motivo é obrigatório."
     }
   }
 }

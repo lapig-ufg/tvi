@@ -1,25 +1,25 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <i class="fa fa-exchange"></i> Alterar Status &mdash; <code>{{ticket.ticketNumber}}</code>
+    <i class="fa fa-exchange"></i> {{ 'TICKETS.STATUS_MODAL.TITLE' | i18n }} &mdash; <code>{{ticket.ticketNumber}}</code>
   </h4>
 </div>
 <div class="modal-body">
   <p>
-    Status atual: <span class="label label-info">{{ticket.status}}</span>
+    {{ 'TICKETS.STATUS_MODAL.CURRENT' | i18n }} <span class="label label-info">{{ statusLabel(ticket.status) }}</span>
   </p>
 
   <div class="form-group">
-    <label for="newStatus">Novo Status <span class="text-danger">*</span></label>
+    <label for="newStatus">{{ 'TICKETS.STATUS_MODAL.NEW' | i18n }} <span class="text-danger">*</span></label>
     <select id="newStatus" class="form-control" ng-model="form.status">
-      <option value="">Selecione...</option>
-      <option ng-repeat="s in availableStatuses" value="{{s.value}}">{{s.label}}</option>
+      <option value="">{{ 'TICKETS.STATUS_MODAL.SELECT' | i18n }}</option>
+      <option ng-repeat="s in availableStatuses" value="{{s.value}}">{{ statusLabel(s.value) }}</option>
     </select>
   </div>
 
   <div class="form-group">
-    <label for="reason">Motivo <span class="text-danger">*</span></label>
+    <label for="reason">{{ 'TICKETS.STATUS_MODAL.REASON' | i18n }} <span class="text-danger">*</span></label>
     <textarea id="reason" class="form-control" rows="3" ng-model="form.reason"
-              placeholder="Descreva o motivo da alteração de status..."></textarea>
+              placeholder="{{ 'TICKETS.STATUS_MODAL.REASON_PLACEHOLDER' | i18n }}"></textarea>
   </div>
 
   <div class="alert alert-danger" ng-if="errorMessage">
@@ -27,14 +27,14 @@
   </div>
 
   <div class="alert alert-warning" ng-if="availableStatuses.length === 0">
-    <i class="fa fa-info-circle"></i> Este ticket está em estado terminal e não pode ter seu status alterado.
+    <i class="fa fa-info-circle"></i> {{ 'TICKETS.STATUS_MODAL.TERMINAL' | i18n }}
   </div>
 </div>
 <div class="modal-footer">
   <button class="btn btn-primary" ng-click="submit()" ng-disabled="submitting || availableStatuses.length === 0">
     <i class="fa fa-check" ng-hide="submitting"></i>
     <i class="fa fa-spinner fa-spin" ng-show="submitting"></i>
-    Confirmar
+    {{ 'TICKETS.STATUS_MODAL.CONFIRM' | i18n }}
   </button>
-  <button class="btn btn-default" ng-click="cancel()">Cancelar</button>
+  <button class="btn btn-default" ng-click="cancel()">{{ 'COMMON.CANCEL' | i18n }}</button>
 </div>

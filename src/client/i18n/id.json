@@ -433,6 +433,12 @@
       "POINT_BADGE": "TITIK",
       "POINT_DOUBT_TOOLTIP": "Pertanyaan yang tercatat selama inspeksi titik",
       "OPEN_POINT_IN_SUPERVISOR": "Buka titik di supervisor"
+    },
+    "SEVERITIES": {
+      "BAIXA": "Rendah",
+      "MEDIA": "Sedang",
+      "ALTA": "Tinggi",
+      "CRITICA": "Kritis"
     }
   },
   "TICKETS": {
@@ -463,7 +469,14 @@
       "TITLE_LABEL": "Judul",
       "TITLE_PLACEHOLDER": "Jelaskan subjek secara singkat (maks. 200 karakter)",
       "DESCRIPTION": "Deskripsi",
-      "DESCRIPTION_PLACEHOLDER": "Jelaskan permintaan Anda secara rinci..."
+      "DESCRIPTION_PLACEHOLDER": "Jelaskan permintaan Anda secara rinci...",
+      "ERROR_REQUIRED": "Harap isi semua kolom wajib.",
+      "ERROR_SEVERITY": "Tingkat keparahan wajib diisi untuk keluhan.",
+      "DIAGNOSTICS_CAPTURED": "Diagnostik yang ditangkap otomatis",
+      "DIAGNOSTICS_SCREENSHOT": "Tangkapan layar",
+      "DIAGNOSTICS_LOGS": "catatan konsol (log/info)",
+      "DIAGNOSTICS_WARNINGS": "peringatan (warn)",
+      "DIAGNOSTICS_ERRORS": "galat (error)"
     },
     "DETAIL": {
       "AUTHOR": "Penulis",
@@ -486,7 +499,34 @@
       "YOU_VOTED": "Anda telah memilih",
       "ATTACHMENTS": "Lampiran",
       "NO_ATTACHMENTS": "Tidak ada lampiran.",
-      "UPLOAD_IMAGE": "Unggah gambar"
+      "UPLOAD_IMAGE": "Unggah gambar",
+      "DIAGNOSTICS": "Diagnostik",
+      "SCREEN_RESOLUTION": "Resolusi layar",
+      "WINDOW_SIZE": "Ukuran jendela",
+      "CAPTURED_AT": "Ditangkap pada",
+      "CONSOLE": "Konsol",
+      "UPLOAD_HINT": "PNG atau JPG, maks. 10 MB",
+      "INTERNAL": "Internal",
+      "UPLOAD_INVALID_TYPE": "Hanya gambar PNG dan JPG yang diizinkan.",
+      "UPLOAD_TOO_LARGE": "Ukuran berkas melebihi batas maksimum 10 MB.",
+      "UPLOAD_FAILED": "Gagal mengunggah berkas.",
+      "HIDE": "Sembunyikan",
+      "SHOW": "Tampilkan",
+      "REMOVE_VOTE": "Hapus suara",
+      "VOTE": "Beri suara untuk tiket ini"
+    },
+    "DOUBT_LOAD_ERROR": "Tidak dapat memuat pertanyaan untuk titik ini.",
+    "STATUS_MODAL": {
+      "TITLE": "Ubah Status",
+      "CURRENT": "Status saat ini:",
+      "NEW": "Status Baru",
+      "SELECT": "Pilih...",
+      "REASON": "Alasan",
+      "REASON_PLACEHOLDER": "Jelaskan alasan perubahan status...",
+      "TERMINAL": "Tiket ini berada pada status akhir dan statusnya tidak dapat diubah.",
+      "CONFIRM": "Konfirmasi",
+      "ERROR_STATUS": "Pilih status baru.",
+      "ERROR_REASON": "Alasan wajib diisi."
     }
   }
 }
