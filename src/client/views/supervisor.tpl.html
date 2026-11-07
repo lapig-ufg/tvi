@@ -136,9 +136,9 @@
                         </div>
                         
                         <!-- Propriedades customizadas -->
-                        <div ng-if="point.properties && hasCustomProperties()" style="margin-top: 10px;">
-                            <div ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)" style="margin-bottom: 3px; font-size: 12px;">
-                                <span style="color: #888;">{{formatPropertyName(key)}}:</span> <strong>{{value}}</strong>
+                        <div ng-if="pointPropertyRows.length" style="margin-top: 10px;">
+                            <div ng-repeat="row in pointPropertyRows track by row.key" style="margin-bottom: 3px; font-size: 12px;">
+                                <span style="color: #888;">{{row.label}}:</span> <strong>{{row.value}}</strong>
                             </div>
                         </div>
                     </div>

@@ -105,6 +105,54 @@
                     </small>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Informações do ponto exibidas</label>
+                    <small class="form-hint" style="display:block; color:#666; margin-bottom:0.5rem;">
+                        Colunas do arquivo de pontos mostradas no quadro de localização do intérprete e do supervisor,
+                        por idioma da interface. Um idioma sem lista própria usa a lista Padrão; sem nenhuma lista,
+                        todas as colunas aparecem. O rótulo é opcional; vazio, aparece o nome da coluna.
+                    </small>
+                    <div class="land-use-empty" ng-show="!propertyKeys.length">
+                        <i class="fas fa-info-circle"></i>
+                        <span>As colunas ficam disponíveis após a importação dos pontos.</span>
+                    </div>
+                    <div ng-show="propertyKeys.length">
+                        <div ng-repeat="list in propertyDisplayLists" style="margin-bottom:0.75rem;">
+                            <strong>{{list.label}}</strong>
+                            <div ng-repeat="item in campaign.propertyDisplay[list.id] track by item.key"
+                                 style="display:flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
+                                <code style="min-width:8rem;">{{item.key}}</code>
+                                <input type="text" class="form-input" ng-model="item.label" maxlength="60"
+                                       placeholder="{{formatPropertyKey(item.key)}}">
+                                <button type="button" class="btn-remove" title="Subir" ng-disabled="$first"
+                                        ng-click="movePropertyDisplayItem(list.id, $index, -1)">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <button type="button" class="btn-remove" title="Descer" ng-disabled="$last"
+                                        ng-click="movePropertyDisplayItem(list.id, $index, 1)">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                                <button type="button" class="btn-remove" title="Remover"
+                                        ng-click="removePropertyDisplayItem(list.id, $index)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
+                                <select class="form-select" ng-model="propertyDisplaySelection[list.id]"
+                                        ng-options="key as key for key in availablePropertyKeys(list.id)">
+                                    <option value="">Selecione uma coluna</option>
+                                </select>
+                                <button type="button" class="btn-add"
+                                        ng-disabled="!propertyDisplaySelection[list.id] || campaign.propertyDisplay[list.id].length >= propertyDisplayLimits.items"
+                                        ng-click="addPropertyDisplayItem(list.id)">
+                                    <i class="fas fa-plus"></i>
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Configurações de Visualização -->
                 <div class="form-section">
                     <h4 class="section-title">

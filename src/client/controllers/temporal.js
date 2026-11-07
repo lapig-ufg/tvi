@@ -45,9 +45,6 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
     $scope.campaignSentinelVisParams = [];
     $scope.defaultCampaignSentinelVisParam = null;
     
-    // Lista de propriedades padrão que não devem ser mostradas nas propriedades customizadas
-    $scope.defaultProperties = ['biome', 'uf', 'county', 'countyCode', 'lat', 'lon', 'longitude', 'latitude'];
-    
     // Função para atualizar o visparam do Landsat e propagar para todos os mapas
     $scope.updateLandsatVisparam = function() {
         localStorage.setItem('landsatVisparam', $scope.landsatVisparam);
@@ -210,6 +207,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             finalYear: $rootScope.user.campaign.finalYear,
             zoomLevel: $rootScope.user.campaign.zoomLevel || 13,
             sampleMarker: sampleMarkerService.core.normalize($rootScope.user.campaign.sampleMarker),
+            propertyDisplay: PointPropertyDisplayCore.normalize($rootScope.user.campaign.propertyDisplay),
             landUse: $rootScope.user.campaign.landUse,
             // Classe inicial padrão da primeira caixa (TKT-000005).
             // Vazio mantém comportamento anterior (sem pré-seleção).
@@ -965,6 +963,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
                     if (config.sampleMarker) {
                         $scope.config.sampleMarker = sampleMarkerService.core.normalize(config.sampleMarker);
                     }
+                    $scope.config.propertyDisplay = PointPropertyDisplayCore.normalize(config.propertyDisplay);
                     // Atualizar as configurações de visualização
                     $scope.showTimeseries = config.showTimeseries;
                     $scope.showPointInfo = config.showPointInfo;
@@ -1229,31 +1228,19 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             }
         });
 
-        // Função para verificar se deve mostrar uma propriedade
-        $scope.shouldShowProperty = function(key) {
-            return $scope.defaultProperties.indexOf(key.toLowerCase()) === -1;
-        };
-        
-        // Função para formatar o nome da propriedade
-        $scope.formatPropertyName = function(key) {
-            // Capitalizar primeira letra e substituir underscores por espaços
-            return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
-        };
-        
-        // Função para verificar se existem propriedades customizadas
-        $scope.hasCustomProperties = function() {
-            if (!$scope.point || !$scope.point.properties) {
-                return false;
-            }
-            
-            // Verificar se existe alguma propriedade que não está na lista de defaultProperties
-            for (var key in $scope.point.properties) {
-                if ($scope.shouldShowProperty(key)) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        // Linhas guardadas em variável de escopo: uma função chamada pelo
+        // ng-repeat devolveria objetos novos a cada digest (infdig).
+        function refreshPointPropertyRows() {
+            $scope.pointPropertyRows = PointPropertyDisplayCore.rows(
+                $scope.point && $scope.point.properties,
+                $scope.config && $scope.config.propertyDisplay,
+                i18nService.currentLanguage
+            );
+        }
+
+        $scope.$watch('point', refreshPointPropertyRows);
+        $scope.$watch('config.propertyDisplay', refreshPointPropertyRows, true);
+        $scope.$on('languageChanged', refreshPointPropertyRows);
         
         // Função para formatar data do mapa - mostra apenas ano se for 00/00/YYYY
         $scope.formatMapDate = function(dateString) {

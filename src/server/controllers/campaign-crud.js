@@ -6,6 +6,7 @@ const AdmZip = require('adm-zip');
 const uploadReceipts = require('../services/geojsonUploadReceipts');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
 const campaignSampleMarker = require('../services/campaignSampleMarker');
+const campaignPropertyDisplay = require('../services/campaignPropertyDisplay');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -1148,6 +1149,10 @@ module.exports = function(app) {
             if (sampleMarker.error) {
                 return res.status(400).json({ error: sampleMarker.error });
             }
+            const propertyDisplay = campaignPropertyDisplay.parsePropertyDisplayInput(campaignData.propertyDisplay);
+            if (propertyDisplay.error) {
+                return res.status(400).json({ error: propertyDisplay.error });
+            }
 
             const campaign = {
                 _id: campaignData._id,
@@ -1172,6 +1177,7 @@ module.exports = function(app) {
                 imageType: campaignData.imageType || 'landsat',
                 zoomLevel: zoomLevel.value,
                 sampleMarker: sampleMarker.value,
+                propertyDisplay: propertyDisplay.value,
                 // Configurações WMS
                 wmsPeriod: campaignData.wmsPeriod || 'BOTH', // DRY, WET ou BOTH
                 wmsConfig: campaignData.wmsConfig || {
@@ -1260,6 +1266,14 @@ module.exports = function(app) {
                     return res.status(400).json({ error: sampleMarker.error });
                 }
                 updateData.sampleMarker = sampleMarker.value;
+            }
+
+            if (updateData.hasOwnProperty('propertyDisplay')) {
+                const propertyDisplay = campaignPropertyDisplay.parsePropertyDisplayInput(updateData.propertyDisplay);
+                if (propertyDisplay.error) {
+                    return res.status(400).json({ error: propertyDisplay.error });
+                }
+                updateData.propertyDisplay = propertyDisplay.value;
             }
 
             // Atualizar configurações booleanas

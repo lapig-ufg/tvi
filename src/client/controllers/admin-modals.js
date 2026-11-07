@@ -1651,7 +1651,70 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     $scope.sampleMarkerSizePx = function () {
         return sampleMarkerService.core.screenSizePx($scope.campaign.sampleMarker.radiusMeters, $scope.campaign.zoomLevel);
     };
-    
+
+    // Colunas de point.properties exibidas no quadro de localização do
+    // intérprete e do supervisor, por idioma da interface.
+    $scope.campaign.propertyDisplay = PointPropertyDisplayCore.normalize($scope.campaign.propertyDisplay);
+    $scope.propertyDisplayLists = [
+        { id: 'default', label: 'Padrão' },
+        { id: 'pt-BR', label: 'Português' },
+        { id: 'en', label: 'Inglês' },
+        { id: 'id', label: 'Indonésio' }
+    ];
+    $scope.propertyDisplayLimits = PointPropertyDisplayCore.LIMITS;
+    $scope.propertyDisplaySelection = {};
+    $scope.formatPropertyKey = PointPropertyDisplayCore.formatKey;
+    $scope.propertyKeys = Array.isArray($scope.campaign.properties)
+        ? $scope.campaign.properties.filter(function (key) { return typeof key === 'string' && key; })
+        : [];
+
+    // Cada importação de GeoJSON substitui campaign.properties pelas chaves do
+    // último arquivo; vazia, a lista vem das chaves gravadas nos pontos.
+    if (!$scope.propertyKeys.length && !isNew && $scope.campaign._id) {
+        $http.get('/api/campaigns/' + encodeURIComponent($scope.campaign._id) + '/properties')
+            .then(function (response) {
+                $scope.propertyKeys = PointPropertyDisplayCore.keysFromAnalysis(response.data);
+            })
+            .catch(function () {
+                $scope.propertyKeys = [];
+            });
+    }
+
+    function propertyDisplayList(listId) {
+        return $scope.campaign.propertyDisplay[listId];
+    }
+
+    $scope.availablePropertyKeys = function (listId) {
+        var used = propertyDisplayList(listId).map(function (item) { return item.key; });
+        return $scope.propertyKeys.filter(function (key) { return used.indexOf(key) === -1; });
+    };
+
+    $scope.addPropertyDisplayItem = function (listId) {
+        var key = $scope.propertyDisplaySelection[listId];
+        var list = propertyDisplayList(listId);
+        var exists = list.some(function (item) { return item.key === key; });
+        if (!key || exists || list.length >= PointPropertyDisplayCore.LIMITS.items) {
+            return;
+        }
+        list.push({ key: key, label: '' });
+        $scope.propertyDisplaySelection[listId] = '';
+    };
+
+    $scope.movePropertyDisplayItem = function (listId, index, delta) {
+        var list = propertyDisplayList(listId);
+        var target = index + delta;
+        if (target < 0 || target >= list.length) {
+            return;
+        }
+        var item = list[index];
+        list[index] = list[target];
+        list[target] = item;
+    };
+
+    $scope.removePropertyDisplayItem = function (listId, index) {
+        propertyDisplayList(listId).splice(index, 1);
+    };
+
     // Buscar capabilities da API
     $http.get('/service/capabilities')
         .then(function(response) {

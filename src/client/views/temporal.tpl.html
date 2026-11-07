@@ -27,10 +27,10 @@
                     <p><b>{{ 'TEMPORAL.LOCATION_INFO.COORDINATES' | i18n }}:<br></b> {{point.lat | number:4}}, {{point.lon | number:4}} - lat-lon <br></b> {{point.lon | number:4}}, {{point.lat | number:4}} - lon-lat </p>
                     
                     <!-- Propriedades customizadas -->
-                    <div ng-if="point.properties && hasCustomProperties()">
+                    <div ng-if="pointPropertyRows.length">
                         <hr style="margin: 10px 0;">
-                        <div ng-repeat="(key, value) in point.properties" ng-if="shouldShowProperty(key)">
-                            <p><b>{{formatPropertyName(key)}}: </b>{{value}}</p>
+                        <div ng-repeat="row in pointPropertyRows track by row.key">
+                            <p><b>{{row.label}}: </b>{{row.value}}</p>
                         </div>
                     </div>
                 </div>
