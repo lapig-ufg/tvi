@@ -87,6 +87,49 @@
                             <i class="fas fa-plus"></i>
                             Adicionar Tipo
                         </button>
+                        <button type="button"
+                                class="btn-add"
+                                ng-click="toggleLandUseImport()">
+                            <i class="fas fa-file-import"></i>
+                            Importar de outra campanha
+                        </button>
+                        <div ng-if="landUseImport.open" style="margin-top:0.5rem; padding:0.75rem; border:1px solid #ddd; border-radius:4px;">
+                            <input type="text"
+                                   class="form-input"
+                                   ng-model="landUseImport.query"
+                                   ng-model-options="{ debounce: 300 }"
+                                   ng-change="searchLandUseSources()"
+                                   placeholder="Buscar campanha pelo nome (mínimo de 2 caracteres)">
+                            <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;" ng-show="landUseImport.loading">
+                                Buscando campanhas...
+                            </small>
+                            <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;"
+                                   ng-show="!landUseImport.loading && landUseImport.query.trim().length >= 2 && !landUseImport.results.length">
+                                Nenhuma campanha com classes encontrada.
+                            </small>
+                            <div ng-repeat="source in landUseImport.results track by source.id" style="margin-top:0.25rem;">
+                                <label class="checkbox-label">
+                                    <input type="radio" name="landUseImportSource"
+                                           ng-checked="landUseImport.selected === source"
+                                           ng-click="selectLandUseSource(source)">
+                                    <span class="checkbox-text">{{source.id}} ({{source.count}} classes)</span>
+                                </label>
+                            </div>
+                            <div ng-if="landUseImport.selected" style="margin-top:0.5rem;">
+                                <strong>Classes de {{landUseImport.selected.id}}:</strong>
+                                <ol style="margin:0.25rem 0 0.5rem 1.25rem; max-height:12rem; overflow:auto;">
+                                    <li ng-repeat="lu in landUseImport.selected.landUse track by $index">{{lu}}</li>
+                                </ol>
+                                <button type="button" class="btn-add" ng-click="confirmLandUseImport()">
+                                    <i class="fas fa-check"></i>
+                                    Importar
+                                </button>
+                                <button type="button" class="btn-add" ng-click="toggleLandUseImport()">
+                                    <i class="fas fa-times"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -1805,6 +1805,83 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
             $scope.campaign.defaultLandUse = '';
         }
     };
+
+    // Importação das classes de outra campanha: a lista da origem substitui a
+    // atual exatamente como está, evitando redigitar dezenas de classes.
+    function closedLandUseImport() {
+        return { open: false, query: '', results: [], selected: null, loading: false };
+    }
+
+    function countLabel(count, singular, plural) {
+        return count === 1 ? singular : plural.replace('{n}', count);
+    }
+
+    $scope.landUseImport = closedLandUseImport();
+
+    $scope.toggleLandUseImport = function () {
+        var open = !$scope.landUseImport.open;
+        $scope.landUseImport = closedLandUseImport();
+        $scope.landUseImport.open = open;
+    };
+
+    $scope.searchLandUseSources = function () {
+        var query = ($scope.landUseImport.query || '').trim();
+        $scope.landUseImport.selected = null;
+        if (query.length < 2) {
+            $scope.landUseImport.results = [];
+            $scope.landUseImport.loading = false;
+            return;
+        }
+        $scope.landUseImport.loading = true;
+        $http.get('/api/campaigns/search', { params: { q: query, limit: 20, withLandUse: true } })
+            .then(function (response) {
+                // Respostas fora de ordem: só a da busca vigente é aplicada.
+                if (query !== ($scope.landUseImport.query || '').trim()) {
+                    return;
+                }
+                $scope.landUseImport.results = LandUseImportCore.sources(response.data && response.data.results, $scope.campaign._id);
+                $scope.landUseImport.loading = false;
+            })
+            .catch(function () {
+                if (query !== ($scope.landUseImport.query || '').trim()) {
+                    return;
+                }
+                $scope.landUseImport.results = [];
+                $scope.landUseImport.loading = false;
+            });
+    };
+
+    $scope.selectLandUseSource = function (source) {
+        $scope.landUseImport.selected = source;
+    };
+
+    $scope.confirmLandUseImport = function () {
+        var source = $scope.landUseImport.selected;
+        if (!source) {
+            return;
+        }
+        var apply = function () {
+            var imported = LandUseImportCore.importLandUse(source.landUse, $scope.campaign.defaultLandUse);
+            $scope.campaign.landUse = imported.landUse;
+            $scope.campaign.defaultLandUse = imported.defaultLandUse;
+            $scope.landUseImport = closedLandUseImport();
+        };
+        var current = Array.isArray($scope.campaign.landUse) ? $scope.campaign.landUse : [];
+        if (!current.length) {
+            apply();
+            return;
+        }
+        var message = countLabel(current.length, 'A classe atual será substituída', 'As {n} classes atuais serão substituídas') +
+            countLabel(source.count, ' pela classe de ', ' pelas {n} classes de ') + source.id + '.';
+        if (!isNew) {
+            message += ' Inspeções já registradas mantêm os nomes antigos das classes.';
+        }
+        NotificationDialog.confirm(message, 'Importar classes').then(function (confirmed) {
+            if (confirmed) {
+                apply();
+            }
+        });
+    };
     
     // Funções para gerenciar visparams
     $scope.isVisParamSelected = function(visparam) {

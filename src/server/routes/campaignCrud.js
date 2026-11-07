@@ -178,6 +178,10 @@ module.exports = function (app) {
      *       - in: query
      *         name: limit
      *         schema: { type: integer, minimum: 1, maximum: 20, default: 10 }
+     *       - in: query
+     *         name: withLandUse
+     *         description: When "true", returns only campaigns with land use classes and includes the landUse list
+     *         schema: { type: string, enum: ['true'] }
      *     responses:
      *       200:
      *         description: Matching campaigns (up to limit)

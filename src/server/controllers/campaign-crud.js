@@ -564,21 +564,37 @@ module.exports = function(app) {
             }
 
             const escapedQuery = rawQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Origem da importação de classes no cadastro: só campanhas que
+            // têm classes, com a lista completa.
+            const withLandUse = req.query.withLandUse === 'true';
+
+            const filter = { _id: { $regex: escapedQuery, $options: 'i' } };
+            const projection = { _id: 1, initialYear: 1, finalYear: 1, imageType: 1 };
+            if (withLandUse) {
+                filter['landUse.0'] = { $exists: true };
+                projection.landUse = 1;
+            }
 
             const items = await campaignCollection
-                .find({ _id: { $regex: escapedQuery, $options: 'i' } })
-                .project({ _id: 1, initialYear: 1, finalYear: 1, imageType: 1 })
+                .find(filter)
+                .project(projection)
                 .sort({ _id: 1 })
                 .limit(limit)
                 .toArray();
 
-            const results = items.map(c => ({
-                id: c._id,
-                initialYear: c.initialYear,
-                finalYear: c.finalYear,
-                imageType: c.imageType,
-                label: `${c._id} (${c.initialYear || '?'}-${c.finalYear || '?'})`
-            }));
+            const results = items.map(c => {
+                const result = {
+                    id: c._id,
+                    initialYear: c.initialYear,
+                    finalYear: c.finalYear,
+                    imageType: c.imageType,
+                    label: `${c._id} (${c.initialYear || '?'}-${c.finalYear || '?'})`
+                };
+                if (withLandUse) {
+                    result.landUse = c.landUse;
+                }
+                return result;
+            });
 
             return res.json({ success: true, results });
         } catch (error) {

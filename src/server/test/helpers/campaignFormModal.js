@@ -15,6 +15,7 @@ const vm = require('node:vm');
 const CLIENT_DIR = path.join(__dirname, '..', '..', '..', 'client');
 const PointPropertyDisplayCore = require(path.join(CLIENT_DIR, 'services', 'point-property-display-core'));
 const SampleMarkerCore = require(path.join(CLIENT_DIR, 'services', 'sample-marker-core'));
+const LandUseImportCore = require(path.join(CLIENT_DIR, 'services', 'land-use-import-core'));
 
 function fonteDoController() {
     const fonte = fs.readFileSync(path.join(CLIENT_DIR, 'controllers', 'admin-modals.js'), 'utf8');
@@ -55,6 +56,7 @@ function abrirModal(campaign, isNew, respostas, confirmar) {
     const contexto = vm.createContext({
         Application: { controller: function (nome, fn) { registro[nome] = fn; } },
         PointPropertyDisplayCore: PointPropertyDisplayCore,
+        LandUseImportCore: LandUseImportCore,
         console: { error: function () {}, log: function () {}, warn: function () {} }
     });
     vm.runInContext(fonteDoController(), contexto);
