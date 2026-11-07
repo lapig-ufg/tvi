@@ -104,12 +104,16 @@ function safeDestroyMap(map) {
  * Aplica um tooltip de descoberta ao marcador principal dos mapas de inspeção,
  * sinalizando o atalho Shift+clique para ocultar/mostrar o marcador (TKT-000025).
  * O tooltip aparece ao passar o mouse sobre o marcador — suficiente para
- * discoverability sem poluir a interface.
+ * discoverability sem poluir a interface. O conteúdo é uma função, avaliada
+ * pelo Leaflet a cada abertura do tooltip: a dica acompanha a troca de idioma
+ * sem recriar a camada.
  */
-function applyMarkerShiftHint(marker) {
+function applyMarkerShiftHint(marker, i18nService) {
   if (!marker || typeof marker.bindTooltip !== 'function') return marker;
   try {
-    marker.bindTooltip('Shift + clique no mapa para ocultar o marcador', {
+    marker.bindTooltip(function () {
+      return i18nService.translate('TEMPORAL.MAP.SHIFT_HIDE_SAMPLE');
+    }, {
       direction: 'top',
       offset: [0, -30],
       opacity: 0.9,
@@ -209,7 +213,7 @@ Application
         }
       }
     })
-    .directive('inspectionMap', function (mapSyncService, sampleMarkerService) {
+    .directive('inspectionMap', function (mapSyncService, sampleMarkerService, i18nService) {
       return {
         template: '<div id="map-{{::$id}}" style="width: 100%; height: 100%;"></div>',
         scope: {
@@ -227,7 +231,7 @@ Application
 
             $scope.tmsLayer = new L.ImageOverlay($scope.tmsUrl, $scope.bounds);
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker, { iconUrl: 'assets/marker.png' });
-            applyMarkerShiftHint($scope.marker);
+            applyMarkerShiftHint($scope.marker, i18nService);
 
             $scope.markerInMap = true;
             var mapElement = $element[0].querySelector(`#map-${$scope.$id}`);
@@ -293,7 +297,7 @@ Application
         }
       }
     })
-    .directive('planetMap', function($timeout) {
+    .directive('planetMap', function($timeout, i18nService) {
       return {
         template: `
                 <div>
@@ -342,7 +346,7 @@ Application
                   iconSize: [42, 42]
                 })
               }).addTo($scope.map);
-              applyMarkerShiftHint($scope.marker);
+              applyMarkerShiftHint($scope.marker, i18nService);
 
               $scope.tileLayer = L.tileLayer.wms('/service/mapbiomas/wms', {
                 layers: $scope.mosaicUrl,
@@ -479,7 +483,7 @@ Application
     //     }
     //   }
     // })
-    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, mapSyncService, sampleMarkerService) {
+    .directive('sentinelMap', function ($timeout, $injector, capabilitiesService, mapSyncService, sampleMarkerService, i18nService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -665,7 +669,7 @@ Application
             // Camada da amostra conforme o símbolo da campanha; o marcador nasce
             // com z-index alto para ficar acima dos tiles.
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
-            applyMarkerShiftHint($scope.marker);
+            applyMarkerShiftHint($scope.marker, i18nService);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom
@@ -790,7 +794,7 @@ Application
         }
       }
     })
-    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, mapSyncService, sampleMarkerService) {
+    .directive('landsatMap', function ($timeout, capabilitiesService, $injector, mapSyncService, sampleMarkerService, i18nService) {
       return {
         template: `
           <div style="width: 100%; height: 100%;">
@@ -991,7 +995,7 @@ Application
             // Camada da amostra conforme o símbolo da campanha; o marcador nasce
             // com z-index alto para ficar acima dos tiles.
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
-            applyMarkerShiftHint($scope.marker);
+            applyMarkerShiftHint($scope.marker, i18nService);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom
@@ -1092,7 +1096,7 @@ Application
         }
       };
     })
-    .directive('wmsMap', function($timeout, $injector, mapSyncService, sampleMarkerService) {
+    .directive('wmsMap', function($timeout, $injector, mapSyncService, sampleMarkerService, i18nService) {
       return {
         template: `
           <div style="width: 100%; height: 100%; min-height: 300px; position: relative;">
@@ -1554,7 +1558,7 @@ Application
 
             // Camada da amostra conforme o símbolo da campanha
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
-            applyMarkerShiftHint($scope.marker);
+            applyMarkerShiftHint($scope.marker, i18nService);
 
             // Toggle do marcador somente com Shift+click. Cliques simples são
             // ignorados para não ocultar o marcador por engano durante zoom

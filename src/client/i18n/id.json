@@ -146,7 +146,8 @@
       "WAYBACK_TILE_ERROR": "Citra tidak tersedia untuk rilis ini.",
       "WAYBACK_APPROXIMATE_DATE": "Tanggal perkiraan (tanggal rilis)",
       "RELOAD_MAPS": "Muat ulang peta",
-      "VISUALIZATION": "Visualisasi"
+      "VISUALIZATION": "Visualisasi",
+      "SHIFT_HIDE_SAMPLE": "Shift + klik pada peta untuk menyembunyikan penanda"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Seri waktu NDVI LANDSAT",

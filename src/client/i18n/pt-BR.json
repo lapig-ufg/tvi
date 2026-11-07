@@ -146,7 +146,8 @@
       "WAYBACK_TILE_ERROR": "Imagem indisponível nesta release.",
       "WAYBACK_APPROXIMATE_DATE": "Data aproximada (data da release)",
       "RELOAD_MAPS": "Recarregar mapas",
-      "VISUALIZATION": "Visualização"
+      "VISUALIZATION": "Visualização",
+      "SHIFT_HIDE_SAMPLE": "Shift + clique no mapa para ocultar o marcador"
     },
     "CHARTS": {
       "LANDSAT_SERIES": "Série temporal NDVI LANDSAT",
