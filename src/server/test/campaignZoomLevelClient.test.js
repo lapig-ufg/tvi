@@ -67,6 +67,7 @@ test('formulário de campanha: campo zoomLevel com os limites do servidor', () =
     assert.match(input[0], new RegExp(`min="${zoom.MIN_ZOOM_LEVEL}"`), 'min difere de MIN_ZOOM_LEVEL');
     assert.match(input[0], new RegExp(`max="${zoom.MAX_ZOOM_LEVEL}"`), 'max difere de MAX_ZOOM_LEVEL');
     assert.match(input[0], /\brequired\b/);
+    assert.match(input[0], /ng-pattern="\/\^\[0-9\]\+\$\/"/, 'zoom sem validação de inteiro no formulário');
 });
 
 test('cadastro: padrão do zoom em campanha nova e em campanha sem o campo', () => {

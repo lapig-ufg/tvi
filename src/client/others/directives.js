@@ -662,7 +662,8 @@ Application
 
             mapSyncService.register($scope.map);
 
-            // Criar marcador com z-index alto para garantir que fique acima dos tiles
+            // Camada da amostra conforme o símbolo da campanha; o marcador nasce
+            // com z-index alto para ficar acima dos tiles.
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 
@@ -987,7 +988,8 @@ Application
 
             mapSyncService.register($scope.map);
 
-            // Criar marcador com z-index alto para garantir que fique acima dos tiles
+            // Camada da amostra conforme o símbolo da campanha; o marcador nasce
+            // com z-index alto para ficar acima dos tiles.
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 
@@ -1550,7 +1552,7 @@ Application
 
             mapSyncService.register($scope.map);
 
-            // Adicionar marcador
+            // Camada da amostra conforme o símbolo da campanha
             $scope.marker = sampleMarkerService.createLayer([$scope.lat, $scope.lon], $scope.sampleMarker).addTo($scope.map);
             applyMarkerShiftHint($scope.marker);
 

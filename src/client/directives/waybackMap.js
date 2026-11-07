@@ -14,13 +14,12 @@
  * sobre imagem de alta resolução o intérprete precisa ver a área que
  * classifica, e o cadastro decide o símbolo.
  *
- * Estrutura clonada de landsatMap (others/directives.js:801): registro em
+ * Estrutura clonada de landsatMap (others/directives.js): registro em
  * mapSyncService no setup e mapSyncService.unregister + safeDestroyMap no
- * $destroy — mesmo contrato de cleanup usado pelas demais diretivas de mapa
- * do projeto (ver others/directives.js:1092-1101 e
- * directives/campaignPointsMap.js:89-107), que neutraliza callbacks
- * pendentes do Leaflet <= 1.9.4 (workaround documentado em
- * others/directives.js:15).
+ * $destroy, o mesmo contrato de cleanup das demais diretivas de mapa do
+ * projeto (landsatMap e directives/campaignPointsMap.js), que neutraliza
+ * callbacks pendentes do Leaflet <= 1.9.4 (workaround documentado no
+ * cabeçalho de others/directives.js).
  */
 angular.module('application').directive('waybackMap', function ($timeout, mapSyncService, sampleMarkerService) {
     // Último nível do TileMatrixSet do World Imagery Wayback da Esri.
@@ -117,8 +116,8 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                 // O ng-repeat da grade usa `track by map.index`: ao trocar de
                 // ponto, as células (e estas diretivas) são RECICLADAS, não
                 // recriadas — sem watcher a célula ficaria congelada no ponto
-                // anterior. Mesmo padrão do landsatMap
-                // (others/directives.js:1032-1051), estendido a tileUrl/mapDate
+                // anterior. Mesmo padrão do watcher de lon/lat do landsatMap
+                // (others/directives.js), estendido a tileUrl/mapDate
                 // porque aqui cada célula também troca de release, e a zoom
                 // porque a campanha pode ser reconfigurada entre pontos.
                 $scope.$watchGroup(['lon', 'lat', 'tileUrl', 'mapDate', 'zoom'], function (newValues, oldValues) {
@@ -143,10 +142,11 @@ angular.module('application').directive('waybackMap', function ($timeout, mapSyn
                 // novos exigem outra camada Leaflet.
                 $scope.$watch('sampleMarker', function (newValue, oldValue) {
                     if ($scope._destroyed || !$scope.map || newValue === oldValue) return;
+                    var replacement = createSampleLayer();
                     if ($scope.marker) {
                         $scope.map.removeLayer($scope.marker);
                     }
-                    $scope.marker = createSampleLayer().addTo($scope.map);
+                    $scope.marker = replacement.addTo($scope.map);
                 }, true);
             });
 

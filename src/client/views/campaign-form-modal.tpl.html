@@ -149,11 +149,11 @@
                     <div class="form-group">
                         <label class="form-label">Zoom inicial dos mapas da grade</label>
                         <input type="number" class="form-input" ng-model="campaign.zoomLevel"
-                               min="10" max="18" step="1" required>
+                               min="10" max="18" step="1" ng-pattern="/^[0-9]+$/" required>
                         <small class="form-hint" style="display:block; margin-top:0.25rem;">
                             Nível de zoom com que os mapas da grade são carregados; também é o zoom mínimo das células.
-                            Padrão 13, o zoom das campanhas atuais. Em campanhas Esri Wayback, 17 deixa o quadrado de
-                            30 m visível (acima de 17 a cobertura da Esri varia por região e release).
+                            Padrão 13, o zoom das campanhas atuais. Em campanhas Esri Wayback com o símbolo quadrado, 17
+                            deixa o quadrado de 30 m visível (acima de 17 a cobertura da Esri varia por região e release).
                         </small>
                     </div>
 
@@ -178,6 +178,14 @@
                             <small class="form-hint" style="display:block; margin-top:0.25rem;">
                                 Distância do centro da amostra até a borda do símbolo. 15 m gera um quadrado de 30 m de lado
                                 (o pixel Landsat) ou um círculo de 30 m de diâmetro.
+                                <span ng-if="sampleMarkerSizePx() !== null">
+                                    No zoom inicial {{campaign.zoomLevel}}, o símbolo mede cerca de
+                                    {{sampleMarkerSizePx() | number:0}} px na tela.
+                                </span>
+                                <span ng-if="sampleMarkerSizePx() !== null && sampleMarkerSizePx() < 8"
+                                      style="color:#a94442; font-weight:600;">
+                                    Abaixo de 8 px ele quase não se distingue: aumente o zoom inicial ou o raio.
+                                </span>
                             </small>
                         </div>
 
@@ -190,7 +198,7 @@
                             <div class="form-group" style="flex:1; min-width:140px;">
                                 <label class="form-label">Espessura da linha (px)</label>
                                 <input type="number" class="form-input" ng-model="campaign.sampleMarker.weight"
-                                       min="1" max="10" step="1" required>
+                                       min="1" max="10" step="1" ng-pattern="/^[0-9]+$/" required>
                             </div>
                         </div>
 

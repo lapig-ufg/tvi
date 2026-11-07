@@ -27,20 +27,24 @@
         fillOpacity: 0.2
     };
 
-    var LIMITS = {
-        radiusMeters: { min: 1, max: 10000 },
-        weight: { min: 1, max: 10 },
-        fillOpacity: { min: 0, max: 1 }
-    };
+    var LIMITS = Object.freeze({
+        radiusMeters: Object.freeze({ min: 1, max: 10000 }),
+        weight: Object.freeze({ min: 1, max: 10 }),
+        fillOpacity: Object.freeze({ min: 0, max: 1 })
+    });
 
     var COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
     // Circunferência equatorial WGS84, a mesma de LatLng.toBounds do Leaflet
     // (meio-lado em graus de latitude = 180 · lado / circunferência; em
-    // longitude, dividido pelo cosseno da latitude). O quadrado de raio r mede
-    // 2r de lado com erro inferior a 0,2 % em qualquer latitude e aparece como
-    // quadrado na projeção Web Mercator.
+    // longitude, dividido pelo cosseno da latitude). Com raio de até 1 km o
+    // lado 2r sai com erro inferior a 0,2 % em qualquer latitude e o quadrado
+    // aparece como quadrado na projeção Web Mercator; em raios maiores e
+    // latitudes altas o erro cresce (0,9 % com 10 km a 80°).
     var EQUATOR_CIRCUMFERENCE = 40075017;
+
+    // Resolução do Web Mercator no equador em z = 0: 2πR/256 com R = 6378137 m.
+    var WEB_MERCATOR_RESOLUTION_Z0 = 156543.03392804097;
 
     function isBlank(value) {
         return value === undefined || value === null || value === '';
@@ -91,7 +95,7 @@
 
     var SampleMarkerCore = {
 
-        SYMBOLS: SYMBOLS.slice(),
+        SYMBOLS: Object.freeze(SYMBOLS.slice()),
 
         LIMITS: LIMITS,
 
@@ -113,10 +117,6 @@
             return result;
         },
 
-        isVector: function (config) {
-            return SampleMarkerCore.normalize(config).symbol !== 'marker';
-        },
-
         squareBounds: function (lat, lon, radiusMeters) {
             var halfLat = 180 * (2 * radiusMeters) / EQUATOR_CIRCUMFERENCE;
             var halfLon = halfLat / Math.cos((Math.PI / 180) * lat);
@@ -132,6 +132,17 @@
                 [bounds.north, bounds.east],
                 [bounds.north, bounds.west]
             ];
+        },
+
+        // Diâmetro do símbolo em pixels de tela no equador, onde ele é menor
+        // (latitudes maiores o ampliam), dado o zoom inicial da grade.
+        screenSizePx: function (radiusMeters, zoom) {
+            var radius = toNumber(radiusMeters);
+            var level = toNumber(zoom);
+            if (radius === null || level === null || radius <= 0) {
+                return null;
+            }
+            return 2 * radius / (WEB_MERCATOR_RESOLUTION_Z0 / Math.pow(2, level));
         },
 
         // Opções de L.Path. Não interativo para preservar arrastar e zoom da

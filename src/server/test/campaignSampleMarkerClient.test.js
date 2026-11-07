@@ -156,6 +156,7 @@ test('formulário de campanha: símbolo da amostra com as opções e os limites 
     assert.match(weight, /type="number"/);
     assert.match(weight, new RegExp(`min="${limites.weight.min}"`), 'min da espessura difere do servidor');
     assert.match(weight, new RegExp(`max="${limites.weight.max}"`), 'max da espessura difere do servidor');
+    assert.match(weight, /ng-pattern="\/\^\[0-9\]\+\$\/"/, 'espessura sem validação de inteiro no formulário');
     const opacity = input('fillOpacity');
     assert.match(opacity, new RegExp(`min="${limites.fillOpacity.min}"`), 'min da opacidade difere do servidor');
     assert.match(opacity, new RegExp(`max="${limites.fillOpacity.max}"`), 'max da opacidade difere do servidor');
@@ -177,4 +178,16 @@ test('cadastro: símbolo padrão em campanha nova e normalização no modal de e
     const modal = read('controllers/admin-modals.js');
     assert.match(modal, /\$scope\.campaign\.sampleMarker\s*=\s*sampleMarkerService\.core\.normalize\(\$scope\.campaign\.sampleMarker\)/,
         'modal não normaliza sampleMarker da campanha');
+});
+
+test('cadastro orienta o tamanho do símbolo em tela no zoom configurado', () => {
+    const template = read('views/campaign-form-modal.tpl.html');
+    const radiusGroup = template.match(/<div class="form-group">\s*<label class="form-label">Raio do buffer \(m\)<\/label>[\s\S]*?<\/div>/);
+    assert.ok(radiusGroup, 'grupo do raio ausente');
+    assert.match(radiusGroup[0], /sampleMarkerSizePx\(\)/, 'hint do raio não mostra o tamanho em tela');
+    assert.match(radiusGroup[0], /sampleMarkerSizePx\(\) < 8/, 'hint do raio não alerta símbolos pequenos');
+
+    const modal = read('controllers/admin-modals.js');
+    assert.match(modal, /\$scope\.sampleMarkerSizePx\s*=\s*function/, 'modal não define sampleMarkerSizePx');
+    assert.match(modal, /sampleMarkerService\.core\.screenSizePx\(/, 'sampleMarkerSizePx não usa o núcleo');
 });

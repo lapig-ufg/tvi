@@ -84,7 +84,12 @@ function criarSampleMarkerFalso() {
     const camadas = [];
     const service = {
         core: core,
+        falharProximaCriacao: false,
         createLayer: function (latlng, config, options) {
+            if (service.falharProximaCriacao) {
+                service.falharProximaCriacao = false;
+                throw new Error('coordenada ausente');
+            }
             const layer = {
                 latlng: latlng, config: config, options: options, moves: [], front: 0,
                 setLatLng: function (ll) { layer.latlng = ll; layer.moves.push(ll); return layer; },
@@ -147,7 +152,7 @@ function instanciar(valores) {
             .forEach(function (w) { w.fn(novo, antigo); });
     }
 
-    return { $scope: $scope, chamadas: chamadas, camadas: sampleMarker.camadas, mapSync: mapSync,
+    return { $scope: $scope, chamadas: chamadas, camadas: sampleMarker.camadas, servico: sampleMarker.service, mapSync: mapSync,
         watchers: watchers, watches: watches, handlers: handlers, trocar: trocar, trocarSimbolo: trocarSimbolo };
 }
 
@@ -222,6 +227,16 @@ test('configuração do símbolo alterada entre pontos recria a camada com a nov
     trocar({ lon: -40, lat: -5 });
     assert.deepEqual(plain(camadas[1].moves), [[-5, -40]], 'a nova camada passa a acompanhar o ponto');
     assert.deepEqual(plain(camadas[0].moves), [], 'a camada antiga não é mais movida');
+});
+
+test('falha ao criar o novo símbolo mantém o anterior na célula', () => {
+    const { $scope, chamadas, camadas, servico, trocarSimbolo } = instanciar(PONTO);
+    servico.falharProximaCriacao = true;
+    assert.throws(() => trocarSimbolo({ symbol: 'circle', radiusMeters: 50 }), /coordenada ausente/);
+    const mapa = chamadas.map[0];
+    assert.equal(camadas.length, 1);
+    assert.ok(mapa.layers.includes(camadas[0]), 'camada anterior continua no mapa');
+    assert.equal($scope.marker, camadas[0], 'referência da célula continua válida');
 });
 
 test('aviso de tile liga no tileerror e desliga quando a camada inicia um novo carregamento', () => {

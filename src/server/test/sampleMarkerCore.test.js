@@ -61,11 +61,37 @@ test('normalize: ausente, inválido ou parcial cai no padrão campo a campo, sem
     assert.notEqual(core.normalize(input), input, 'devolve um objeto novo');
 });
 
-test('isVector: falso para o marcador (e para configuração ausente), verdadeiro para quadrado e círculo', () => {
-    assert.equal(core.isVector(undefined), false);
-    assert.equal(core.isVector({ symbol: 'marker' }), false);
-    assert.equal(core.isVector({ symbol: 'square' }), true);
-    assert.equal(core.isVector({ symbol: 'circle' }), true);
+test('SYMBOLS e LIMITS são imutáveis', () => {
+    assert.ok(Object.isFrozen(core.SYMBOLS));
+    assert.ok(Object.isFrozen(core.LIMITS));
+    ['radiusMeters', 'weight', 'fillOpacity'].forEach((field) => assert.ok(Object.isFrozen(core.LIMITS[field]), field));
+});
+
+test('normalize e resolveSampleMarker do servidor concordam para a mesma tabela de entradas', () => {
+    [
+        undefined, null, '', 'square', [], {},
+        { symbol: 'square' },
+        { symbol: 'Square' },
+        { symbol: 'circle', radiusMeters: '150', color: '#FF8800', weight: '3', fill: true, fillOpacity: '0.5' },
+        { radiusMeters: 0 }, { radiusMeters: 10001 }, { radiusMeters: 2.5 }, { radiusMeters: 'abc' },
+        { color: '#fff' }, { color: 'red' }, { color: '#ABCDEF' },
+        { weight: 0 }, { weight: 2.5 }, { weight: 11 }, { weight: '4' },
+        { fill: 'yes' }, { fill: 1 }, { fill: true },
+        { fillOpacity: 1.5 }, { fillOpacity: -0.1 }, { fillOpacity: '0.75' },
+        { symbol: null, radiusMeters: '', color: undefined, weight: null, fill: '', fillOpacity: undefined },
+        { symbol: 'hexagon', radiusMeters: -5, color: 'blue', weight: 99, fill: 'no', fillOpacity: 7, extra: 1 }
+    ].forEach((input) => {
+        assert.deepEqual(core.normalize(input), server.resolveSampleMarker({ sampleMarker: input }), JSON.stringify(input));
+    });
+});
+
+test('screenSizePx: diâmetro do símbolo em px na tela, no equador, para o zoom configurado', () => {
+    assert.ok(Math.abs(core.screenSizePx(15, 17) - 25.12) < 0.05, String(core.screenSizePx(15, 17)));
+    assert.ok(Math.abs(core.screenSizePx(15, 13) - 1.57) < 0.02, String(core.screenSizePx(15, 13)));
+    assert.ok(Math.abs(core.screenSizePx(100, 13) - 10.47) < 0.02, String(core.screenSizePx(100, 13)));
+    assert.equal(core.screenSizePx(undefined, 13), null);
+    assert.equal(core.screenSizePx(15, 'x'), null);
+    assert.equal(core.screenSizePx(0, 13), null);
 });
 
 test('squareLatLngs: quatro vértices [lat, lon] (SW, SE, NE, NW) com lado 2 × raio e centro no ponto', () => {

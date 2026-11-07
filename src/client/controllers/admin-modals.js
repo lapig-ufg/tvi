@@ -1648,6 +1648,9 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         $scope.campaign.zoomLevel = 13;
     }
     $scope.campaign.sampleMarker = sampleMarkerService.core.normalize($scope.campaign.sampleMarker);
+    $scope.sampleMarkerSizePx = function () {
+        return sampleMarkerService.core.screenSizePx($scope.campaign.sampleMarker.radiusMeters, $scope.campaign.zoomLevel);
+    };
     
     // Buscar capabilities da API
     $http.get('/service/capabilities')

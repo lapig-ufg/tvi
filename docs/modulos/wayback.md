@@ -70,9 +70,9 @@ por ano).
 `zoomLevel` (inteiro de 10 a 18, padrão 13) define o zoom inicial e mínimo dos
 mapas da grade em qualquer tipo de imagem. É validado pelo servidor
 (`services/campaignZoomLevel.js`) na criação e na atualização e devolvido por
-`GET /service/campaign/config`. Em campanhas Wayback, 17 deixa o quadrado de
-30 m legível (26 px de lado) com cobertura ampla; 18 só onde houver tile
-nativo nesse nível.
+`GET /service/campaign/config`. Em campanhas Wayback com o símbolo quadrado,
+17 deixa o quadrado de 30 m legível (25 px de lado) com cobertura ampla; 18
+só onde houver tile nativo nesse nível.
 
 `sampleMarker` (objeto `{ symbol, radiusMeters, color, weight, fill, fillOpacity }`,
 padrão marcador tradicional) define como a amostra aparece nas células da grade

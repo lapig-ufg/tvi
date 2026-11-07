@@ -120,8 +120,3 @@ test('expandAnswersToForm: célula fora de qualquer intervalo sai com landUse nu
     assert.equal(form[1].landUse, null);
     assert.equal(form[2].landUse, null);
 });
-
-// Distância geodésica entre dois pontos [lon, lat], em metros, no raio
-// equatorial WGS84 (o mesmo que a circunferência de 40075017 m implica).
-
-// Área com sinal do anel (shoelace, em graus²): positiva para anel anti-horário.
