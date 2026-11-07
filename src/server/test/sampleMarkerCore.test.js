@@ -33,6 +33,7 @@ function haversine(a, b) {
 
 test('paridade com o servidor: SYMBOLS, padrões e LIMITS idênticos', () => {
     assert.deepEqual(core.SYMBOLS, server.SYMBOLS);
+    assert.deepEqual(core.CENTER_MARKS, server.CENTER_MARKS);
     assert.deepEqual(core.defaults(), server.DEFAULTS);
     assert.deepEqual(core.LIMITS, server.LIMITS);
 });
@@ -52,7 +53,7 @@ test('normalize: ausente, inválido ou parcial cai no padrão campo a campo, sem
     assert.deepEqual(core.normalize([]), core.defaults());
     assert.deepEqual(
         core.normalize({ symbol: 'square', radiusMeters: '50', color: '#FFAA00', weight: '4', fill: true, fillOpacity: 0.6 }),
-        { symbol: 'square', radiusMeters: 50, color: '#ffaa00', weight: 4, fill: true, fillOpacity: 0.6 });
+        { symbol: 'square', radiusMeters: 50, color: '#ffaa00', weight: 4, fill: true, fillOpacity: 0.6, centerMark: 'cross-green' });
     assert.deepEqual(
         core.normalize({ symbol: 'hexagon', radiusMeters: 0, color: 'blue', weight: 2.5, fill: 'no', fillOpacity: 9 }),
         core.defaults());
@@ -79,10 +80,20 @@ test('normalize e resolveSampleMarker do servidor concordam para a mesma tabela 
         { fill: 'yes' }, { fill: 1 }, { fill: true },
         { fillOpacity: 1.5 }, { fillOpacity: -0.1 }, { fillOpacity: '0.75' },
         { symbol: null, radiusMeters: '', color: undefined, weight: null, fill: '', fillOpacity: undefined },
-        { symbol: 'hexagon', radiusMeters: -5, color: 'blue', weight: 99, fill: 'no', fillOpacity: 7, extra: 1 }
+        { symbol: 'hexagon', radiusMeters: -5, color: 'blue', weight: 99, fill: 'no', fillOpacity: 7, extra: 1 },
+        { centerMark: 'cross-white' }, { centerMark: 'none' }, { centerMark: 'xx' }, { centerMark: null }
     ].forEach((input) => {
         assert.deepEqual(core.normalize(input), server.resolveSampleMarker({ sampleMarker: input }), JSON.stringify(input));
     });
+});
+
+test('centerMarkIconUrl: imagem da cruz conforme a cor, nula sem cruz ou com o símbolo marcador', () => {
+    assert.equal(core.centerMarkIconUrl({ symbol: 'circle' }), 'assets/marker2.png');
+    assert.equal(core.centerMarkIconUrl({ symbol: 'square', centerMark: 'cross-white' }), 'assets/marker.png');
+    assert.equal(core.centerMarkIconUrl({ symbol: 'circle', centerMark: 'none' }), null);
+    assert.equal(core.centerMarkIconUrl({ symbol: 'marker', centerMark: 'cross-green' }), null);
+    assert.equal(core.centerMarkIconUrl(undefined), null, 'sem configuração o símbolo é o marcador');
+    assert.ok(Object.isFrozen(core.CENTER_MARKS));
 });
 
 test('screenSizePx: diâmetro do símbolo em px na tela, no equador, para o zoom configurado', () => {

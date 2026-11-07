@@ -1,7 +1,8 @@
 /**
  * campaignSampleMarker: representação da amostra nas células da grade, por
  * campanha: símbolo (marcador tradicional, quadrado ou círculo), raio em
- * metros a partir do centro e estilo do contorno e do preenchimento.
+ * metros a partir do centro, estilo do contorno e do preenchimento e a cruz
+ * desenhada no ponto central do quadrado ou do círculo.
  *
  * Padrões e limites são replicados em client/services/sample-marker-core.js;
  * a paridade entre os dois é garantida por teste. Módulo puro, sem
@@ -11,6 +12,8 @@
 
 const SYMBOLS = Object.freeze(['marker', 'square', 'circle']);
 
+const CENTER_MARKS = Object.freeze(['cross-green', 'cross-white', 'none']);
+
 // Raio de 15 m: quadrado de 30 m de lado, o pixel Landsat/MapBiomas.
 const DEFAULTS = Object.freeze({
     symbol: 'marker',
@@ -18,7 +21,8 @@ const DEFAULTS = Object.freeze({
     color: '#29e7e4',
     weight: 2,
     fill: false,
-    fillOpacity: 0.2
+    fillOpacity: 0.2,
+    centerMark: 'cross-green'
 });
 
 const LIMITS = Object.freeze({
@@ -63,7 +67,8 @@ const NORMALIZERS = {
     fillOpacity: (value) => {
         const number = toNumber(value);
         return inRange(number, LIMITS.fillOpacity) ? number : null;
-    }
+    },
+    centerMark: (value) => (CENTER_MARKS.indexOf(value) !== -1 ? value : null)
 };
 
 const ERRORS = {
@@ -72,7 +77,8 @@ const ERRORS = {
     color: 'sampleMarker.color must be a hexadecimal color like #29e7e4',
     weight: `sampleMarker.weight must be an integer between ${LIMITS.weight.min} and ${LIMITS.weight.max}`,
     fill: 'sampleMarker.fill must be a boolean',
-    fillOpacity: `sampleMarker.fillOpacity must be a number between ${LIMITS.fillOpacity.min} and ${LIMITS.fillOpacity.max}`
+    fillOpacity: `sampleMarker.fillOpacity must be a number between ${LIMITS.fillOpacity.min} and ${LIMITS.fillOpacity.max}`,
+    centerMark: `sampleMarker.centerMark must be one of ${CENTER_MARKS.join(', ')}`
 };
 
 function isPlainObject(value) {
@@ -113,6 +119,7 @@ function resolveSampleMarker(campaign) {
 
 module.exports = {
     SYMBOLS,
+    CENTER_MARKS,
     DEFAULTS,
     LIMITS,
     COLOR_PATTERN,

@@ -74,13 +74,15 @@ mapas da grade em qualquer tipo de imagem. É validado pelo servidor
 17 deixa o quadrado de 30 m legível (25 px de lado) com cobertura ampla; 18
 só onde houver tile nativo nesse nível.
 
-`sampleMarker` (objeto `{ symbol, radiusMeters, color, weight, fill, fillOpacity }`,
+`sampleMarker` (objeto `{ symbol, radiusMeters, color, weight, fill, fillOpacity, centerMark }`,
 padrão marcador tradicional) define como a amostra aparece nas células da grade
 de qualquer tipo de imagem e no modal de comparação: `symbol` é `marker`,
 `square` ou `circle`; `radiusMeters` é o raio a partir do centro (1 a 10000; 15
 gera um quadrado de 30 m de lado, o pixel Landsat, ou um círculo de 30 m de
 diâmetro); `color` (hexadecimal), `weight` (1 a 10 px), `fill` e `fillOpacity`
-(0 a 1) são o estilo do contorno e do preenchimento. O servidor valida e
+(0 a 1) são o estilo do contorno e do preenchimento; `centerMark` (`cross-green`,
+padrão, `cross-white` ou `none`) é a cruz de 42 px desenhada sobre a coordenada
+da amostra no meio do quadrado ou do círculo, ignorada com o símbolo marcador. O servidor valida e
 normaliza o objeto (`services/campaignSampleMarker.js`) na criação e na
 atualização e devolve o objeto resolvido em `GET /service/campaign/config`; o
 cliente aplica os mesmos padrões (`services/sample-marker-core.js`) à cópia da
@@ -258,7 +260,9 @@ do `landsatMap`:
   aviso i18n (`WAYBACK_TILE_ERROR`) sem quebrar a grade.
 - A amostra é criada por `sampleMarkerService.createLayer` conforme o
   `sampleMarker` da campanha (padrão marcador tradicional; quadrado ou círculo
-  de raio configurável, sem interação), como nas demais diretivas de mapa. No
+  de raio configurável, não interativos, com a cruz central opcional, que
+  recebe a dica do Shift e repassa os cliques ao mapa), como nas demais
+  diretivas de mapa. No
   cadastro da campanha Wayback, o quadrado de 15 m de raio mostra ao intérprete
   a área do pixel Landsat sobre a imagem de alta resolução.
 - Zoom: inicial e mínimo iguais ao `zoomLevel` da campanha; máximo

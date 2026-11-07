@@ -189,6 +189,18 @@
                             </small>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">Marca no centro</label>
+                            <select class="form-select" ng-model="campaign.sampleMarker.centerMark" required>
+                                <option value="cross-green">Cruz verde</option>
+                                <option value="cross-white">Cruz branca</option>
+                                <option value="none">Nenhuma</option>
+                            </select>
+                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
+                                Cruz de tamanho fixo desenhada sobre a coordenada da amostra, no meio do símbolo.
+                            </small>
+                        </div>
+
                         <div style="display:flex; gap:1rem; flex-wrap:wrap;">
                             <div class="form-group" style="flex:1; min-width:140px;">
                                 <label class="form-label">Cor do contorno</label>

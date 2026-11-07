@@ -17,6 +17,13 @@
 
     var SYMBOLS = ['marker', 'square', 'circle'];
 
+    var CENTER_MARKS = ['cross-green', 'cross-white', 'none'];
+
+    var CENTER_MARK_ICONS = {
+        'cross-green': 'assets/marker2.png',
+        'cross-white': 'assets/marker.png'
+    };
+
     // Raio de 15 m: quadrado de 30 m de lado, o pixel Landsat/MapBiomas.
     var DEFAULTS = {
         symbol: 'marker',
@@ -24,7 +31,8 @@
         color: '#29e7e4',
         weight: 2,
         fill: false,
-        fillOpacity: 0.2
+        fillOpacity: 0.2,
+        centerMark: 'cross-green'
     };
 
     var LIMITS = Object.freeze({
@@ -86,6 +94,9 @@
         fillOpacity: function (value) {
             var number = toNumber(value);
             return inRange(number, LIMITS.fillOpacity) ? number : null;
+        },
+        centerMark: function (value) {
+            return CENTER_MARKS.indexOf(value) !== -1 ? value : null;
         }
     };
 
@@ -96,6 +107,8 @@
     var SampleMarkerCore = {
 
         SYMBOLS: Object.freeze(SYMBOLS.slice()),
+
+        CENTER_MARKS: Object.freeze(CENTER_MARKS.slice()),
 
         LIMITS: LIMITS,
 
@@ -143,6 +156,16 @@
                 return null;
             }
             return 2 * radius / (WEB_MERCATOR_RESOLUTION_Z0 / Math.pow(2, level));
+        },
+
+        // Imagem da cruz desenhada no centro do quadrado ou do círculo; o
+        // símbolo marcador já é a própria cruz.
+        centerMarkIconUrl: function (config) {
+            var settings = SampleMarkerCore.normalize(config);
+            if (settings.symbol === 'marker') {
+                return null;
+            }
+            return CENTER_MARK_ICONS[settings.centerMark] || null;
         },
 
         // Opções de L.Path. Não interativo para preservar arrastar e zoom da

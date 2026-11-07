@@ -17,7 +17,7 @@ const path = require('node:path');
 
 const sampleMarker = require(path.join(__dirname, '..', 'services', 'campaignSampleMarker'));
 
-const DEFAULTS = { symbol: 'marker', radiusMeters: 15, color: '#29e7e4', weight: 2, fill: false, fillOpacity: 0.2 };
+const DEFAULTS = { symbol: 'marker', radiusMeters: 15, color: '#29e7e4', weight: 2, fill: false, fillOpacity: 0.2, centerMark: 'cross-green' };
 
 test('constantes: símbolos, padrões congelados e limites', () => {
     assert.deepEqual(sampleMarker.SYMBOLS, ['marker', 'square', 'circle']);
@@ -46,7 +46,7 @@ test('parseSampleMarkerInput: objeto parcial completa os campos ausentes com os 
 test('parseSampleMarkerInput: aceita strings numéricas e grava a cor em minúsculas', () => {
     const input = { symbol: 'circle', radiusMeters: '150', color: '#FF8800', weight: '3', fill: true, fillOpacity: '0.5' };
     assert.deepEqual(sampleMarker.parseSampleMarkerInput(input),
-        { value: { symbol: 'circle', radiusMeters: 150, color: '#ff8800', weight: 3, fill: true, fillOpacity: 0.5 } });
+        { value: { symbol: 'circle', radiusMeters: 150, color: '#ff8800', weight: 3, fill: true, fillOpacity: 0.5, centerMark: 'cross-green' } });
     assert.deepEqual(sampleMarker.parseSampleMarkerInput({ radiusMeters: 2.5 }).value.radiusMeters, 2.5);
 });
 
@@ -92,6 +92,19 @@ test('resolveSampleMarker: documento sem campo, parcial ou inválido resolve cam
         DEFAULTS);
     assert.deepEqual(sampleMarker.resolveSampleMarker({ sampleMarker: { symbol: 'circle', weight: 'bad' } }),
         Object.assign({}, DEFAULTS, { symbol: 'circle' }));
+});
+
+test('centerMark: padrão cross-green, aceita os três valores e rejeita os demais', () => {
+    assert.deepEqual(sampleMarker.CENTER_MARKS, ['cross-green', 'cross-white', 'none']);
+    assert.ok(Object.isFrozen(sampleMarker.CENTER_MARKS));
+    assert.equal(sampleMarker.parseSampleMarkerInput({ symbol: 'circle' }).value.centerMark, 'cross-green');
+    assert.equal(sampleMarker.parseSampleMarkerInput({ symbol: 'circle', centerMark: 'none' }).value.centerMark, 'none');
+    assert.equal(sampleMarker.parseSampleMarkerInput({ symbol: 'square', centerMark: 'cross-white' }).value.centerMark, 'cross-white');
+    assert.deepEqual(sampleMarker.parseSampleMarkerInput({ centerMark: 'cross-red' }),
+        { error: 'sampleMarker.centerMark must be one of cross-green, cross-white, none' });
+    assert.equal(sampleMarker.resolveSampleMarker({ sampleMarker: { centerMark: 'x' } }).centerMark, 'cross-green');
+    assert.equal(sampleMarker.resolveSampleMarker({ sampleMarker: { centerMark: 'none' } }).centerMark, 'none');
+    assert.equal(sampleMarker.resolveSampleMarker({}).centerMark, 'cross-green');
 });
 
 test('resultados são objetos novos, sem compartilhar DEFAULTS', () => {

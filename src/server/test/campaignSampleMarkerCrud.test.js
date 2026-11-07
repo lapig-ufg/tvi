@@ -22,7 +22,7 @@ const path = require('node:path');
 
 const TEST_DB = 'tvi_campaign_sample_marker_test';
 const CAMPAIGN_ID = 'sample_marker_test';
-const DEFAULTS = { symbol: 'marker', radiusMeters: 15, color: '#29e7e4', weight: 2, fill: false, fillOpacity: 0.2 };
+const DEFAULTS = { symbol: 'marker', radiusMeters: 15, color: '#29e7e4', weight: 2, fill: false, fillOpacity: 0.2, centerMark: 'cross-green' };
 
 let mongodb;
 try {
@@ -167,16 +167,24 @@ test('símbolo da amostra: create, update e campaign/config', { concurrency: fal
         const res = await create({ sampleMarker: { symbol: 'square', radiusMeters: '15', color: '#FF8800', weight: '3', fill: true, fillOpacity: '0.4' } });
         assert.equal(res.statusCode, 200);
         assert.deepEqual((await stored()).sampleMarker,
-            { symbol: 'square', radiusMeters: 15, color: '#ff8800', weight: 3, fill: true, fillOpacity: 0.4 });
+            { symbol: 'square', radiusMeters: 15, color: '#ff8800', weight: 3, fill: true, fillOpacity: 0.4, centerMark: 'cross-green' });
     });
 
     await t.test('create com símbolo, cor, raio ou tipo inválidos responde 400 e não insere', async () => {
-        for (const value of [{ symbol: 'star' }, { color: 'red' }, { radiusMeters: 0 }, 'square']) {
+        for (const value of [{ symbol: 'star' }, { color: 'red' }, { radiusMeters: 0 }, { centerMark: 'cross-red' }, 'square']) {
             const res = await create({ sampleMarker: value });
             assert.equal(res.statusCode, 400, JSON.stringify(value));
             assert.match(String(res.body.error), /sampleMarker/);
             assert.equal(await stored(), null, `${JSON.stringify(value)} não pode ser inserido`);
         }
+    });
+
+    await t.test('create com círculo e centerMark cross-white grava e campaign/config expõe o valor', async () => {
+        const res = await create({ sampleMarker: { symbol: 'circle', radiusMeters: 150, centerMark: 'cross-white' } });
+        assert.equal(res.statusCode, 200);
+        const esperado = Object.assign({}, DEFAULTS, { symbol: 'circle', radiusMeters: 150, centerMark: 'cross-white' });
+        assert.deepEqual((await stored()).sampleMarker, esperado);
+        assert.deepEqual((await campaignConfig()).body.sampleMarker, esperado);
     });
 
     await t.test('update grava objeto válido normalizado e rejeita inválido mantendo o anterior', async () => {

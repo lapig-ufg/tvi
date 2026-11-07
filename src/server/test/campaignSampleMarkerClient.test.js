@@ -168,6 +168,17 @@ test('formulário de campanha: símbolo da amostra com as opções e os limites 
         'campos vetoriais devem sair do formulário quando o símbolo é o marcador');
 });
 
+test('formulário de campanha: marca no centro com as opções do servidor, só para quadrado e círculo', () => {
+    const template = read('views/campaign-form-modal.tpl.html');
+    const select = template.match(/<select[^>]*ng-model="campaign\.sampleMarker\.centerMark"[^>]*>([\s\S]*?)<\/select>/);
+    assert.ok(select, 'select de campaign.sampleMarker.centerMark ausente');
+    const options = Array.from(select[1].matchAll(/<option value="([^"]+)"/g)).map((m) => m[1]);
+    assert.deepEqual(options, sampleMarker.CENTER_MARKS);
+    const inicioVetorial = template.indexOf(`ng-if="campaign.sampleMarker.symbol !== 'marker'"`);
+    assert.ok(inicioVetorial !== -1, 'bloco vetorial ausente');
+    assert.ok(template.indexOf('ng-model="campaign.sampleMarker.centerMark"') > inicioVetorial, 'select fora do bloco vetorial');
+});
+
 test('cadastro: símbolo padrão em campanha nova e normalização no modal de edição', () => {
     const list = read('controllers/admin-campaign.js');
     const start = list.indexOf('$scope.newCampaign = {');
