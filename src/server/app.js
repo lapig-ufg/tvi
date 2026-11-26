@@ -216,6 +216,12 @@ app.middleware.repository.init(() => {
 
 		const httpServer = http.listen(app.config.port, function () {
 			console.log('TVI Server started on port', app.config.port);
+			if (process.env.PRIMARY_WORKER || !require('cluster').isWorker) {
+				app.stopPointOperations = require('./services/campaignPointOperationWorker').start(
+					app.services.campaignPointOperations,
+					() => console.error('Falha no processamento de operações de pontos; nova consulta ocorrerá no próximo ciclo.')
+				);
+			}
 			if(process.env.PRIMARY_WORKER) {
 				app.middleware.jobs.start();
 			}
@@ -226,6 +232,7 @@ app.middleware.repository.init(() => {
 		// Graceful shutdown — fechar WebSocket bridge e HTTP server
 		function gracefulShutdown(signal) {
 			console.log(`[Shutdown] Recebido ${signal}, encerrando...`);
+			if (app.stopPointOperations) app.stopPointOperations();
 			if (app.tilesCacheWs) {
 				app.tilesCacheWs.stop();
 			}

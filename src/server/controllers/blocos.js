@@ -1,3 +1,5 @@
+const campaignPointWriteLock = require('../services/campaignPointWriteLock');
+
 module.exports = function(app) {
 
 	var Blocos = {};
@@ -29,7 +31,12 @@ module.exports = function(app) {
 				return response.status(404).json({ error: 'Campanha não encontrada' });
 			}
 
-			var numInspec = campaign.numInspec || 1;
+			if (campaign.pointOperationId) {
+				return response.status(409).json({ error: 'Há uma operação de pontos em andamento nesta campanha.' });
+			}
+
+			return await campaignPointWriteLock.withLock(campaigns, campaignId, async function(lockedCampaign) {
+			var numInspec = lockedCampaign.numInspec || 1;
 
 			// Verificar se já existem blocos para esta campanha
 			var existingCount = await blocos.count({ campaignId: campaignId });
@@ -47,6 +54,7 @@ module.exports = function(app) {
 			var allPoints = await points.find(
 				{
 					campaign: campaignId,
+					pointMutationLock: { $exists: false },
 					$where: 'this.userName.length < ' + numInspec
 				},
 				{ _id: 1, index: 1, userName: 1 }
@@ -136,13 +144,14 @@ module.exports = function(app) {
 				totalPoints: allPoints.length
 			});
 
+			});
 		} catch (err) {
 			await logger.error('Erro ao gerar blocos', {
 				module: 'blocos',
 				function: 'generateBlocks',
 				metadata: { error: err.message, stack: err.stack }
 			});
-			response.status(500).json({ error: 'Erro interno ao gerar blocos' });
+			response.status(err.statusCode || 500).json({ error: err.statusCode ? err.message : 'Erro interno ao gerar blocos' });
 		}
 	};
 
@@ -159,6 +168,7 @@ module.exports = function(app) {
 		var activeBlock = await blocos.findOne({
 			campaignId: campaignId,
 			assignedTo: username,
+			pointMutationLock: { $exists: false },
 			status: 'assigned'
 		});
 
@@ -180,6 +190,7 @@ module.exports = function(app) {
 		// Exclui blocos cujo blockIndex o inspetor já completou na mesma rodada
 		var filter = {
 			campaignId: campaignId,
+			pointMutationLock: { $exists: false },
 			status: 'available',
 			// Tier 2.8 (2026-05-10) — não reatribuir blocos que o inspetor já
 			// pulou por ownership (todos os pontIds do bloco já têm ele em
@@ -595,6 +606,7 @@ module.exports = function(app) {
 				return response.status(400).json({ error: 'inspectionRound é obrigatório' });
 			}
 
+			return await campaignPointWriteLock.withLock(campaigns, campaignId, async function() {
 			// Buscar o bloco
 			var block = await blocos.findOne({
 				campaignId: campaignId,
@@ -698,13 +710,14 @@ module.exports = function(app) {
 
 			response.json({ success: true, message: 'Bloco descartado e recriado para reinspeção' });
 
+			});
 		} catch (err) {
 			await logger.error('Erro ao descartar bloco', {
 				module: 'blocos',
 				function: 'discardBlock',
 				metadata: { error: err.message, stack: err.stack }
 			});
-			response.status(500).json({ error: 'Erro interno ao descartar bloco' });
+			response.status(err.statusCode || 500).json({ error: err.statusCode ? err.message : 'Erro interno ao descartar bloco' });
 		}
 	};
 
@@ -737,6 +750,7 @@ module.exports = function(app) {
 		try {
 			var campaignId = request.params.id;
 
+			return await campaignPointWriteLock.withLock(campaigns, campaignId, async function() {
 			// Verificar se há blocos em inspeção ativa
 			var activeCount = await blocos.count({
 				campaignId: campaignId,
@@ -762,13 +776,14 @@ module.exports = function(app) {
 				success: true,
 				deletedCount: result.deletedCount
 			});
+			});
 		} catch (err) {
 			await logger.error('Erro ao remover blocos', {
 				module: 'blocos',
 				function: 'deleteAllBlocks',
 				metadata: { error: err.message }
 			});
-			response.status(500).json({ error: 'Erro interno ao remover blocos' });
+			response.status(err.statusCode || 500).json({ error: err.statusCode ? err.message : 'Erro interno ao remover blocos' });
 		}
 	};
 
@@ -908,6 +923,7 @@ module.exports = function(app) {
 			var blockSize = parseInt((request.body && request.body.blockSize) || '5', 10);
 			if (blockSize < 1 || blockSize > 1000) blockSize = 5;
 
+			return await campaignPointWriteLock.withLock(campaigns, campaignId, async function() {
 			var zombies = await Blocos.findZombiePointIds(campaignId);
 			if (zombies.length === 0) {
 				return response.json({ success: true, created: 0, message: 'Nenhum zumbi encontrado.' });
@@ -1018,12 +1034,13 @@ module.exports = function(app) {
 					to: blocksToInsert[blocksToInsert.length - 1].blockIndex
 				}
 			});
+			});
 		} catch (err) {
 			await logger.error('Erro ao gerar blocos de recovery', {
 				module: 'blocos', function: 'generateRecoveryBlocks',
 				metadata: { error: err.message, stack: err.stack }
 			});
-			response.status(500).json({ error: 'Erro interno ao gerar blocos de recovery' });
+			response.status(err.statusCode || 500).json({ error: err.statusCode ? err.message : 'Erro interno ao gerar blocos de recovery' });
 		}
 	};
 

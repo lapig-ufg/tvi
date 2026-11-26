@@ -541,6 +541,10 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
         AdminPages.go('campaign-edit', { campaignId: $scope.details.campaign._id });
     };
     
+    $scope.manageCampaignPoints = function(action) {
+        AdminPages.go('campaign-point-mutations', { campaignId: $scope.details.campaign._id, action: action });
+    };
+
     $scope.uploadMorePoints = function() {
         AdminPages.go('campaign-upload', { campaignId: $scope.details.campaign._id });
     };

@@ -65,6 +65,25 @@ Application.run(function(AdminPages, $http, sampleMarkerService) {
         });
     }
 
+    AdminPages.register('campaign-point-mutations', {
+        title: 'Gerenciar pontos da campanha',
+        templateUrl: 'views/campaign-point-mutations.tpl.html',
+        controller: 'CampaignPointMutationsController',
+        editable: true,
+        editState: function(scope) {
+            return scope.unsentChanges ? { input: scope.input, approval: scope.approval } : null;
+        },
+        pending: function(scope) { return !!scope.applying; },
+        parent: function(params) { return '/admin/campaigns/manage/' + encodeURIComponent(params.campaignId); },
+        load: function(params) {
+            return loadCampaign(params).then(function(locals) {
+                locals.mutationAction = params.action === 'delete' ? 'delete' : 'add';
+                locals.pointId = locals.mutationAction === 'delete' && typeof params.pointId === 'string' ? params.pointId : '';
+                return locals;
+            });
+        }
+    });
+
     AdminPages.register('campaign-offline', {
         title: 'Cache offline da campanha',
         templateUrl: 'views/campaign-offline-page.tpl.html',
@@ -91,7 +110,11 @@ Application.run(function(AdminPages, $http, sampleMarkerService) {
             });
         },
         save: function(campaign, locals, params) {
-            return $http.put(campaignUrl(params), campaign).then(saved);
+            var payload = angular.copy(campaign);
+            ['pointOperationId', 'pointImportLock', 'pointOperationRange', 'pointSequence'].forEach(function(key) {
+                delete payload[key];
+            });
+            return $http.put(campaignUrl(params), payload).then(saved);
         }
     });
 

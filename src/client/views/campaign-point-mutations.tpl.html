@@ -1,0 +1,65 @@
+<div class="modal-body campaign-point-mutations">
+    <p>Campanha: <strong>{{campaignId}}</strong></p>
+    <p>As inclusões preservam os pontos e as inspeções existentes. A exclusão remove os pontos selecionados e suas inspeções; confira a prévia antes de confirmar.</p>
+    <p>A exclusão remove o ponto operacional e suas inspeções, mas preserva o histórico de auditoria e o cache compartilhado de imagens. Pontos em inspeção ou pertencentes a blocos atribuídos não podem ser excluídos.</p>
+    <div class="alert alert-danger" role="alert" ng-if="error">{{error}}</div>
+    <fieldset ng-disabled="applying">
+        <div class="form-group">
+            <label for="point-operation-kind">Operação</label>
+            <select id="point-operation-kind" class="form-control" ng-model="input.kind" ng-change="changeKind()">
+                <option value="add">Adicionar pontos</option><option value="delete">Excluir pontos</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="point-operation-format">Formato</label>
+            <select id="point-operation-format" class="form-control" ng-model="input.format" ng-change="invalidatePreview()">
+                <option value="geojson">GeoJSON</option>
+                <option value="csv" ng-if="input.kind === 'delete'">CSV de identificadores</option>
+                <option value="ids" ng-if="input.kind === 'delete'">Identificadores de pontos</option>
+            </select>
+        </div>
+        <p ng-if="input.kind === 'delete'">O CSV deve conter a coluna id, _id ou pointId. No GeoJSON, as coordenadas devem corresponder exatamente aos pontos existentes. Correspondências ambíguas serão rejeitadas.</p>
+        <p ng-if="input.kind === 'add'">Informe um GeoJSON de pontos. Limite de 1.000 pontos por operação.</p>
+        <div class="form-group">
+            <label for="point-operation-file">Arquivo (máximo de 5 MB)</label>
+            <input id="point-operation-file" type="file" accept=".json,.geojson,.csv" onchange="angular.element(this).scope().readFile(this)">
+            <span ng-if="fileName">{{fileName}}</span>
+        </div>
+        <div class="form-group">
+            <label for="point-operation-content">Conteúdo ou identificadores (um por linha)</label>
+            <textarea id="point-operation-content" class="form-control" rows="7" ng-model="input.content" ng-change="invalidatePreview()" spellcheck="false"></textarea>
+        </div>
+        <button type="button" class="btn btn-default" ng-click="requestPreview()" ng-disabled="previewLoading || !input.content.trim()">{{previewLoading ? 'Validando...' : 'Gerar prévia'}}</button>
+    </fieldset>
+    <section ng-if="preview" aria-label="Prévia da operação">
+        <h3>Prévia</h3>
+        <p><strong>{{preview.total}}</strong> pontos; <strong>{{preview.inspections || 0}}</strong> inspeções afetadas.</p>
+        <p>Válida até {{preview.expiresAt | date:'dd/MM/yyyy HH:mm:ss'}}. Exibição dos primeiros 50 pontos.</p>
+        <div class="table-responsive"><table class="table table-striped">
+            <thead><tr><th scope="col">Identificador</th><th scope="col">Longitude</th><th scope="col">Latitude</th><th scope="col">Inspeções</th></tr></thead>
+            <tbody><tr ng-repeat="row in preview.rows | limitTo:50"><td>{{row.id}}</td><td>{{row.lon}}</td><td>{{row.lat}}</td><td>{{row.inspections || 0}}</td></tr></tbody>
+        </table></div>
+        <div ng-if="preview.issues.length" role="alert"><h4>Pendências: {{preview.issues.length}}</h4><ul><li ng-repeat="issue in preview.issues | limitTo:50">Registro {{issue.row}}: {{issue.reason}}</li></ul></div>
+        <p ng-if="!preview.canApply">A prévia não permite aplicação. Corrija as pendências e gere outra prévia.</p>
+    </section>
+    <section ng-if="(preview && preview.canApply) || resumeJob" aria-label="Confirmação da operação">
+        <h3>{{resumeJob ? 'Retomar operação interrompida' : 'Confirmar operação'}}</h3>
+        <p ng-if="resumeJob">{{resumeJob.id}}: {{resumeJob.processed || 0}} de {{resumeJob.total}} pontos processados.</p>
+        <fieldset ng-disabled="applying">
+            <div class="form-group"><label for="point-operation-confirmation">Digite o identificador da campanha: {{campaignId}}</label><input id="point-operation-confirmation" class="form-control" ng-model="approval.confirmation" ng-change="markUnsaved()" autocomplete="off"></div>
+            <div class="form-group"><label for="point-operation-reason">Justificativa (mínimo de 10 caracteres)</label><textarea id="point-operation-reason" class="form-control" rows="3" ng-model="approval.reason" ng-change="markUnsaved()"></textarea></div>
+            <button type="button" class="btn btn-default" ng-click="confirmOperation()" ng-disabled="!canConfirm()">{{applying ? 'Enviando...' : (resumeJob ? 'Confirmar retomada' : 'Confirmar aplicação')}}</button>
+        </fieldset>
+    </section>
+    <section aria-label="Histórico das operações">
+        <h3>Operações recentes</h3>
+        <p>O processamento continua no servidor ao sair desta página. Uma operação concluída pode conter pontos não aplicados; confira os resultados e os motivos.</p>
+        <p class="alert alert-danger" role="alert" ng-if="historyError">{{historyError}}</p>
+        <button type="button" class="btn btn-default" ng-click="refreshOperations()" ng-disabled="applying">Atualizar operações</button>
+        <div class="table-responsive"><table class="table table-striped">
+            <thead><tr><th scope="col">Operação</th><th scope="col">Estado</th><th scope="col">Processados</th><th scope="col">Aplicados</th><th scope="col">Não aplicados</th><th scope="col">Detalhes</th><th scope="col">Ação</th></tr></thead>
+            <tbody><tr ng-repeat="job in operations track by job.id"><td>{{job.kind === 'add' ? 'Inclusão' : 'Exclusão'}}</td><td>{{statusLabel(job.status)}}</td><td>{{job.processed || 0}} / {{job.total}}</td><td>{{affectedCount(job)}}</td><td>{{job.skipped || 0}}</td><td>{{job.error}}<details ng-if="job.outcomes.length || job.issues.length || job.publicIssues.length"><summary>Resultados e motivos</summary><ul><li ng-repeat="outcome in job.outcomes">{{outcome.id}}: {{outcomeLabel(outcome.status)}}<span ng-if="outcome.reason">: {{outcome.reason}}</span></li><li ng-repeat="issue in job.issues">Registro {{issue.row}}: {{issue.reason}}</li><li ng-repeat="issue in job.publicIssues">Registro {{issue.row}}: {{issue.reason}}</li></ul></details></td><td><button type="button" class="btn btn-default" ng-if="job.status === 'failed'" ng-click="prepareResume(job)" ng-disabled="applying">Preparar retomada</button></td></tr></tbody>
+        </table></div>
+        <p ng-if="!operations.length">Nenhuma operação registrada.</p>
+    </section>
+</div>

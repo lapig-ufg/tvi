@@ -23,6 +23,7 @@ module.exports = function (app) {
         if (campaignId || !permission.admin) query.campaign = campaignId || permission.campaignId;
         const point = await app.repository.collections.points.findOne(query);
         if (!point) throw Object.assign(new Error('Ponto não encontrado.'), { status: 404 });
+        if (point.pointMutationLock) throw Object.assign(new Error('O ponto está em manutenção.'), { status: 409 });
         const campaign = await app.repository.collections.campaign.findOne({ _id: point.campaign });
         if (!campaign) throw Object.assign(new Error('Campanha não encontrada.'), { status: 404 });
         return { point, campaign };
@@ -72,6 +73,7 @@ module.exports = function (app) {
                     selected = await app.services.bdcSelectionService.resolve(ctx.campaign, ctx.point, Number(input.year), input.period, start, input.retry === true);
                     if (!selected) return res.status(404).json({ code: 'BDC_NOT_STARTED', error: 'Seleção BDC ainda não solicitada.' });
                 }
+                await context(req, ctx.point._id, ctx.campaign._id);
                 res.status(start && ['pending', 'running'].includes(selected.state) ? 202 : 200).json(present(selected));
             } catch (error) { failure(res, error); }
         };
@@ -100,6 +102,7 @@ module.exports = function (app) {
                 || ['.', '..'].includes(id) || !['landsat-2', 'S2_L2A-1'].includes(selected.params.collection)
                 || !availableProfiles(selected, row).includes(p.profile)) return res.status(404).json({ error: 'Imagem ou composição indisponível.' });
             const data = await app.services.bdcTilesClient.getTile(selected.params.collection, id, p.profile, ...xyz);
+            await context(req, selected.pointId, selected.campaignId);
             if (!Buffer.isBuffer(data) || data.length < 8 || data.length > 8 * 1024 * 1024
                 || !data.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
                 return res.status(502).json({ error: 'Imagem BDC inválida.' });

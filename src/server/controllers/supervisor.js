@@ -467,13 +467,17 @@ module.exports = function (app) {
                 }
             });
 
-            await pointsCollection.update(
-                { _id: pointId },
+            const write = await pointsCollection.update(
+                { _id: pointId, pointMutationLock: { $exists: false } },
                 {
                     $set: setFields,
                     $push: { editHistory: historyEntry }
                 }
             );
+
+            if (!write || (write.result ? write.result.n : write.matchedCount) !== 1) {
+                return response.status(409).json({ error: 'O ponto foi removido ou está em manutenção. Atualize a página.' });
+            }
 
             await logger.info('Consolidated classification updated successfully', {
                 req: request,

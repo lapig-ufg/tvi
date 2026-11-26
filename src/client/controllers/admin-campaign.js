@@ -409,31 +409,9 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     };
 
     $scope.deletePoints = function(campaign) {
-        if (destroyed || deletionPending) return;
-        const campaignId = campaign._id;
-        deletionPending = true;
-        return NotificationDialog.confirm(`Tem certeza que deseja deletar TODOS os pontos da campanha "${campaignId}"? Esta ação não pode ser desfeita!`, 'Confirmar Exclusão').then(function(confirmed) {
-            if (!confirmed || destroyed) {
-                return;
-            }
-            
-            return $http.delete('/api/campaigns/' + campaignId + '/points').then(function(response) {
-                if (destroyed) return;
-                if (response.data.success) {
-                    $scope.loadCampaigns();
-                    NotificationDialog.info(response.data.message);
-                } else {
-                    NotificationDialog.error('Erro ao deletar pontos');
-                }
-            }, function(error) {
-                if (destroyed) return;
-                if (error.status === 401) {
-                    $location.path('/admin/login');
-                } else {
-                    NotificationDialog.error('Erro ao deletar pontos: ' + (error.data.error || 'Erro desconhecido'));
-                }
-            });
-        }).finally(function() { deletionPending = false; });
+        if (destroyed) return;
+        rememberList();
+        AdminPages.go('campaign-point-mutations', { campaignId: campaign._id, action: 'delete' });
     };
 
     $scope.manageCampaign = function(campaign) {

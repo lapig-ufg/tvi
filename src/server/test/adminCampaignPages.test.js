@@ -503,3 +503,18 @@ test('operações diretas expõem estado pendente para impedir saída e edição
         assert.equal(pages[id].pending({}), false, id);
     }
 });
+
+
+test('edição não transmite campos internos de operações nem modifica a campanha original', async () => {
+    let submitted;
+    const campaign = {
+        _id: 'campanha', landUse: ['Floresta'], pointOperationId: 'op',
+        pointImportLock: { owner: 'worker' }, pointOperationRange: { start: 10 }, pointSequence: 15
+    };
+    const original = structuredClone(campaign);
+    const page = registry({ put: async (url, body) => { submitted = body; return { data: { success: true } }; } })['campaign-edit'];
+    await page.save(campaign, {}, { campaignId: campaign._id });
+    assert.deepEqual(submitted, { _id: 'campanha', landUse: ['Floresta'] });
+    assert.deepEqual(campaign, original);
+    assert.notEqual(submitted.landUse, campaign.landUse);
+});

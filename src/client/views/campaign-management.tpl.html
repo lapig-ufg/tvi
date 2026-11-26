@@ -802,6 +802,13 @@
                         </div>
                     </button>
                     
+                    <button class="action-card secondary clickable" ng-click="manageCampaignPoints('add')">
+                        <div class="action-content"><span class="action-title">Adicionar pontos com prévia</span><span class="action-desc">Preservar pontos e inspeções existentes</span></div>
+                    </button>
+                    <button class="action-card secondary clickable" ng-click="manageCampaignPoints('delete')">
+                        <div class="action-content"><span class="action-title">Excluir pontos selecionados</span><span class="action-desc">Conferir identificadores e inspeções afetadas</span></div>
+                    </button>
+
                     <button class="action-card danger clickable" ng-click="deleteCampaign()" 
                             ng-disabled="details.campaign.totalPoints > 0">
                         <div class="action-icon">

@@ -39,9 +39,21 @@ function validRemote(remote, params, jobId) {
     return eligible.includes(result.best_local_id) && (!result.best_global_id || eligible.includes(result.best_global_id));
 }
 
-function create(collection, tiles) {
+function create(collection, tiles, points) {
+    async function available(point) {
+        if (!points) return;
+        const current = await points.findOne({ _id: point._id, campaign: point.campaign });
+        if (!current) {
+            await collection.deleteMany({ campaignId: point.campaign, pointId: point._id });
+            throw Object.assign(new Error('Ponto não encontrado.'), { status: 404 });
+        }
+        if (current.pointMutationLock) {
+            throw Object.assign(new Error('O ponto está em manutenção.'), { status: 409 });
+        }
+    }
     return {
         async resolve(campaign, point, year, period, start, retry = false) {
+            await available(point);
             const seed = identity(campaign, point, year, period);
             let saved = await collection.findOne({ _id: seed._id });
             if (!saved && !start) return null;
@@ -50,11 +62,13 @@ function create(collection, tiles) {
                 catch (error) { if (error.code !== 11000) throw error; }
                 saved = await collection.findOne({ _id: seed._id });
             }
+            await available(point);
             if (['ready', 'no_image'].includes(saved.state)) {
                 if (seed.profiles.some(profile => !(saved.profiles || []).includes(profile))) {
                     await collection.updateOne({ _id: seed._id }, { $addToSet: { profiles: { $each: seed.profiles } } });
                     saved = await collection.findOne({ _id: seed._id });
                 }
+                await available(point);
                 return saved;
             }
             const retrying = start && retry === true && saved.state === 'failed' && saved.error && saved.error.retryable;
@@ -69,8 +83,10 @@ function create(collection, tiles) {
                 error: remote.error || null, algorithmVersion: remote.algorithm_version, updatedAt: new Date() };
             const states = retrying ? ['failed', 'pending', 'running'] : remote.state === 'pending' ? ['pending'] : ['pending', 'running'];
             const updateVersion = Number.isSafeInteger(saved.updateVersion) ? saved.updateVersion : { $exists: false };
+            await available(point);
             await collection.updateOne({ _id: seed._id, state: { $in: states }, updateVersion },
                 { $set: update, $inc: { updateVersion: 1 } });
+            await available(point);
             return collection.findOne({ _id: seed._id });
         },
         async historical(id, campaignId, pointId) {
@@ -80,7 +96,7 @@ function create(collection, tiles) {
     };
 }
 module.exports = function (app) {
-    function service() { return create(app.repository.collections.campaignImageSelections, app.services.bdcTilesClient); }
+    function service() { return create(app.repository.collections.campaignImageSelections, app.services.bdcTilesClient, app.repository.collections.points); }
     return { resolve(...args) { return service().resolve(...args); }, historical(...args) { return service().historical(...args); } };
 };
 module.exports.create = create;

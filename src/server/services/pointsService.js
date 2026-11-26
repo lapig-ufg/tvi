@@ -80,6 +80,18 @@ module.exports = function (app) {
         return auditCol.insertOne(entry);
     }
 
+    async function updateUnlockedPoint(points, pointId, update) {
+        const result = await points.updateOne({ _id: pointId, pointMutationLock: { $exists: false } }, update);
+        const matched = result.matchedCount !== undefined ? result.matchedCount : result.result && result.result.n;
+        if (matched !== 1) {
+            const error = new Error('Ponto indisponível para alteração.');
+            error.code = 'POINT_UNAVAILABLE';
+            error.status = 409;
+            throw error;
+        }
+        return result;
+    }
+
     async function loadPoint(pointId) {
         const points = getPointsCollection();
         return points.findOne({ _id: pointId });
@@ -142,7 +154,7 @@ module.exports = function (app) {
 
         // Mantém compatibilidade com fluxo legado: handler ainda decide se
         // chama setClassConsolidated separadamente (não fundimos aqui).
-        const result = await points.updateOne({ _id: pointId }, updateStruct);
+        const result = await updateUnlockedPoint(points, pointId, updateStruct);
         const after = await loadPoint(pointId);
 
         await writeAudit({
@@ -196,7 +208,7 @@ module.exports = function (app) {
             }
         };
 
-        const result = await points.updateOne({ _id: pointId }, updateStruct);
+        const result = await updateUnlockedPoint(points, pointId, updateStruct);
         const after = await loadPoint(pointId);
 
         await writeAudit({
@@ -279,7 +291,7 @@ module.exports = function (app) {
         }
 
         const now = new Date();
-        const result = await points.updateOne({ _id: pointId }, buildClearInspectionsUpdate(now));
+        const result = await updateUnlockedPoint(points, pointId, buildClearInspectionsUpdate(now));
         const after = await loadPoint(pointId);
 
         await writeAudit({
@@ -355,7 +367,7 @@ module.exports = function (app) {
             updateSet.classConsolidated = [];
         }
 
-        const result = await points.updateOne({ _id: pointId }, { $set: updateSet });
+        const result = await updateUnlockedPoint(points, pointId, { $set: updateSet });
         const after = await loadPoint(pointId);
 
         await writeAudit({
@@ -397,8 +409,8 @@ module.exports = function (app) {
             throw new Error('pointsService.setClassConsolidated: ponto não encontrado: ' + pointId);
         }
 
-        const result = await points.updateOne(
-            { _id: pointId },
+        const result = await updateUnlockedPoint(
+            points, pointId,
             { $set: { classConsolidated: value, updateAt: new Date() } }
         );
         const after = await loadPoint(pointId);
@@ -465,7 +477,7 @@ module.exports = function (app) {
             archivedReason: beforeSnap.archivedReason || null,
             updateAt: new Date()
         };
-        const result = await points.updateOne({ _id: pointId }, { $set: updateSet });
+        const result = await updateUnlockedPoint(points, pointId, { $set: updateSet });
         const after = await loadPoint(pointId);
 
         await writeAudit({

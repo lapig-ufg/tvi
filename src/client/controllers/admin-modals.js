@@ -749,6 +749,11 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     };
     
     // Point action functions
+    $scope.deleteCampaignPoint = function(point) {
+        rememberPoints();
+        AdminPages.go('campaign-point-mutations', { campaignId: campaign._id, action: 'delete', pointId: point._id });
+    };
+
     $scope.viewPointDetails = function(point) {
         rememberPoints();
         AdminPages.go('point-details', { campaignId: campaign._id, pointId: point._id });

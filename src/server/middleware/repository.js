@@ -82,7 +82,7 @@ module.exports = function (app) {
                     // ocorreu em val_prodes_to_2025 em 2026-08-17 (494 pontos enviados duas
                     // vezes). Em memória não resolveria: o duplo clique pode cair em workers
                     // distintos do cluster.
-                    var requiredCollections = ['campaignImageSelections', 'campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync', uploadReceipts.COLLECTION_NAME];
+                    var requiredCollections = ['campaign_point_operations', 'campaignImageSelections', 'campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync', uploadReceipts.COLLECTION_NAME];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -149,6 +149,10 @@ module.exports = function (app) {
         
         async.series([
             function(cb) {
+                Repository.collections.campaign_point_operations.createIndexes(
+                    require('../services/campaignPointOperations').INDEXES, cb);
+            },
+            function(cb) {
                 const selections = Repository.collections.campaignImageSelections;
                 if (!selections) return cb();
                 selections.createIndexes([
@@ -162,6 +166,7 @@ module.exports = function (app) {
                 Repository.collections.points.createIndexes([
                     // Índice composto para consultas por campanha e status
                     { key: { campaign: 1, _id: 1 }, name: 'campaign_id' },
+                    { key: { campaign: 1, lon: 1, lat: 1 }, name: 'campaign_coordinates' },
                     { key: { campaign: 1, userName: 1 }, name: 'campaign_userName' },
                     { key: { campaign: 1, cached: 1 }, name: 'campaign_cached' },
                     { key: { campaign: 1, uf: 1 }, name: 'campaign_uf' },

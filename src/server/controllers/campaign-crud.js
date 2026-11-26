@@ -4,6 +4,7 @@ const async = require('async');
 const exec = require('child_process').exec;
 const AdmZip = require('adm-zip');
 const uploadReceipts = require('../services/geojsonUploadReceipts');
+const campaignPointWriteLock = require('../services/campaignPointWriteLock');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
 const campaignSampleMarker = require('../services/campaignSampleMarker');
 const campaignPropertyDisplay = require('../services/campaignPropertyDisplay');
@@ -1075,6 +1076,10 @@ module.exports = function(app) {
     CampaignCrud.create = async (req, res) => {
         try {
             const campaignData = req.body;
+            const reservedFields = ['pointOperationId', 'pointImportLock', 'pointOperationRange', 'pointSequence'];
+            if (Object.keys(campaignData).some(key => reservedFields.includes(key.split('.')[0]))) {
+                return res.status(400).json({ error: 'Os campos internos de operação de pontos não podem ser definidos pelo cliente.' });
+            }
             
             await logger.info('Campaign create requested', {
                 req,
@@ -1259,8 +1264,15 @@ module.exports = function(app) {
         try {
             const campaignId = req.params.id;
             const updateData = req.body;
+            const reservedFields = ['pointOperationId', 'pointImportLock', 'pointOperationRange', 'pointSequence'];
+            if (Object.keys(updateData).some(key => reservedFields.includes(key.split('.')[0]))) {
+                return res.status(400).json({ error: 'Os campos internos de operação de pontos não podem ser alterados.' });
+            }
             const previous = await campaignCollection.findOne({ _id: campaignId });
             if (!previous) return res.status(404).json({ error: 'Campanha não encontrada.' });
+            if (previous.pointOperationId !== undefined || previous.pointImportLock !== undefined) {
+                return res.status(409).json({ error: 'Há uma operação de pontos em andamento nesta campanha.' });
+            }
             
             await logger.info('Campaign update requested', {
                 req,
@@ -1448,7 +1460,7 @@ module.exports = function(app) {
             Object.assign(updateData, bdc.value);
             updateData.updatedAt = new Date();
 
-            const updateQuery = { _id: campaignId };
+            const updateQuery = { _id: campaignId, pointOperationId: { $exists: false }, pointImportLock: { $exists: false } };
             for (const field of ['imagerySource', 'bdcConfig', 'imageType', 'useDynamicMaps', 'wmsConfig']) {
                 updateQuery[field] = Object.prototype.hasOwnProperty.call(previous, field)
                     ? previous[field] : { $exists: false };
@@ -1459,7 +1471,7 @@ module.exports = function(app) {
                 { $set: updateData }
             );
             
-            if (result.matchedCount === 0) {
+            if ((result.matchedCount !== undefined ? result.matchedCount : result.result && result.result.n) !== 1) {
                 const errorCode = await logger.warn('Campaign update rejected after concurrent configuration change', {
                     req,
                     module: 'campaignCrud',
@@ -1468,7 +1480,7 @@ module.exports = function(app) {
                 });
                 
                 return res.status(409).json({
-                    error: 'A configuração da campanha mudou durante a edição. Recarregue antes de salvar.',
+                    error: 'A campanha mudou ou há uma operação de pontos em andamento. Recarregue antes de salvar.',
                     errorCode
                 });
             }
@@ -1503,6 +1515,7 @@ module.exports = function(app) {
     CampaignCrud.delete = async (req, res) => {
         try {
             const campaignId = req.params.id;
+            return await campaignPointWriteLock.withLock(campaignCollection, campaignId, async lockedCampaign => {
             
             await logger.info('Campaign delete requested', {
                 req,
@@ -1528,9 +1541,14 @@ module.exports = function(app) {
                 });
             }
             
-            const result = await campaignCollection.deleteOne({ _id: campaignId });
-            
-            if (result.deletedCount === 0) {
+            const result = await campaignCollection.deleteOne({ _id: campaignId,
+                pointOperationId: { $exists: false }, pointImportLock: lockedCampaign.pointImportLock });
+
+            if ((result.deletedCount !== undefined ? result.deletedCount : result.result && result.result.n) !== 1) {
+                const current = await campaignCollection.findOne({ _id: campaignId });
+                if (current) {
+                    return res.status(409).json({ error: 'Há uma operação de pontos em andamento nesta campanha.' });
+                }
                 const errorCode = await logger.warn('Campaign deletion failed - campaign not found', {
                     req,
                     module: 'campaignCrud',
@@ -1552,6 +1570,7 @@ module.exports = function(app) {
             });
             
             res.json({ success: true, message: 'Campaign deleted successfully' });
+            });
         } catch (error) {
             const errorCode = await logger.logError(error, req, {
                 module: 'campaignCrud',
@@ -1559,8 +1578,8 @@ module.exports = function(app) {
                 metadata: { campaignId: req.params.id }
             });
             
-            res.status(500).json({ 
-                error: 'Failed to delete campaign',
+            res.status(error.statusCode || 500).json({
+                error: error.statusCode ? error.message : 'Failed to delete campaign',
                 errorCode
             });
         }
@@ -2010,9 +2029,9 @@ module.exports = function(app) {
                 } : null
             });
             
-            res.status(500).json({ 
-                error: 'Erro interno do servidor',
-                details: `Unexpected error: ${error.message}`,
+            res.status(error.statusCode || 500).json({
+                error: error.statusCode ? error.message : 'Erro interno do servidor',
+                details: error.statusCode ? undefined : `Unexpected error: ${error.message}`,
                 requestId: requestId,
                 timestamp: new Date().toISOString(),
                 processingTime: processingTime
@@ -2022,6 +2041,12 @@ module.exports = function(app) {
     
     // Processamento direto do GeoJSON sem salvar arquivo
     CampaignCrud.processGeoJSONDirect = async (campaignId, geojsonData, filename, io, sessionId, userId, requestId = null) => {
+        if (!geojsonData || geojsonData.type !== 'FeatureCollection' || !Array.isArray(geojsonData.features)) {
+            const error = new Error('O GeoJSON deve ser uma FeatureCollection.');
+            error.statusCode = 400;
+            throw error;
+        }
+        return campaignPointWriteLock.withLock(campaignCollection, campaignId, async lockedCampaign => {
         const totalFeatures = geojsonData.features.length;
         let processedCount = 0;
         let insertedCount = 0;
@@ -2065,8 +2090,8 @@ module.exports = function(app) {
             await campaignCollection.updateOne(
                 { _id: campaignId },
                 { 
-                    $set: { 
-                        properties: Array.from(allProperties)
+                    $addToSet: {
+                        properties: { $each: Array.from(allProperties) }
                     } 
                 }
             );
@@ -2077,7 +2102,26 @@ module.exports = function(app) {
                 { sort: { index: -1 }, projection: { index: 1 } }
             );
             
-            let counter = lastPoint ? lastPoint.index + 1 : 1;
+            const lastIndex = lastPoint ? lastPoint.index : 0;
+            const sequence = lockedCampaign.pointSequence === undefined ? 0 : lockedCampaign.pointSequence;
+            if (!Number.isSafeInteger(lastIndex) || lastIndex < 0 || !Number.isSafeInteger(sequence) || sequence < 0) {
+                throw Object.assign(new Error('A sequência de índices da campanha é inválida.'), { statusCode: 409 });
+            }
+            let counter = Math.max(lastIndex, sequence) + 1;
+            const reservedEnd = counter + totalFeatures - 1;
+            if (!Number.isSafeInteger(counter) || !Number.isSafeInteger(reservedEnd)) {
+                throw Object.assign(new Error('O limite de índices da campanha foi atingido.'), { statusCode: 409 });
+            }
+            if (totalFeatures > 0) {
+                const reservation = await campaignCollection.updateOne(
+                    { _id: campaignId, pointImportLock: lockedCampaign.pointImportLock, pointOperationId: { $exists: false } },
+                    { $max: { pointSequence: reservedEnd } }
+                );
+                const matched = reservation.matchedCount !== undefined ? reservation.matchedCount : reservation.result && reservation.result.n;
+                if (matched !== 1) {
+                    throw Object.assign(new Error('A reserva da campanha mudou durante a importação.'), { statusCode: 409 });
+                }
+            }
             // Faixa de índices gerada por este upload — registrada no recibo
             // para que a recusa de um reenvio informe exatamente quais pontos a
             // importação original criou.
@@ -2356,6 +2400,7 @@ module.exports = function(app) {
             
             throw error;
         }
+        });
     };
     
     // Processamento em foreground do GeoJSON com progresso em tempo real
@@ -3190,19 +3235,10 @@ module.exports = function(app) {
 
     // Deletar pontos de uma campanha
     CampaignCrud.deletePoints = async (req, res) => {
-        try {
-            const campaignId = req.params.id;
-
-            const result = await pointsCollection.deleteMany({ campaign: campaignId });
-
-            res.json({
-                success: true,
-                message: `Deleted ${result.deletedCount} points`
-            });
-        } catch (error) {
-            console.error('Error deleting points:', error);
-            res.status(500).json({ error: 'Failed to delete points' });
-        }
+        return res.status(409).json({
+            code: 'POINT_PREVIEW_REQUIRED',
+            error: 'Use o gerenciamento de pontos para conferir a prévia e confirmar a exclusão.'
+        });
     };
 
     /**
@@ -3760,6 +3796,7 @@ module.exports = function(app) {
                 return res.status(404).json({ error: 'Campanha não encontrada' });
             }
 
+            return await campaignPointWriteLock.withLock(campaignCollection, campaignId, async () => {
             const totalPoints = await pointsCollection.count({ campaign: campaignId });
             if (totalPoints === 0) {
                 return res.status(400).json({ error: 'Campanha não possui pontos' });
@@ -3930,6 +3967,7 @@ module.exports = function(app) {
                 });
             }
 
+            });
         } catch (error) {
             if (logger) {
                 await logger.logError(error, req, {
@@ -3947,7 +3985,7 @@ module.exports = function(app) {
 
             // Se a resposta ainda não foi enviada
             if (!res.headersSent) {
-                res.status(500).json({ error: 'Erro interno ao importar classificações' });
+                res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : 'Erro interno ao importar classificações' });
             }
         }
     };
@@ -3993,6 +4031,7 @@ module.exports = function(app) {
                 return res.status(400).json({ error: 'Arquivo GeoJSON não contém features' });
             }
 
+            return await campaignPointWriteLock.withLock(campaignCollection, campaignId, async () => {
             // Responder imediatamente
             res.json({
                 success: true,
@@ -4308,6 +4347,7 @@ module.exports = function(app) {
                 });
             }
 
+            });
         } catch (error) {
             if (logger) {
                 await logger.logError(error, req, {
@@ -4324,7 +4364,7 @@ module.exports = function(app) {
             }
 
             if (!res.headersSent) {
-                res.status(500).json({ error: 'Erro interno ao importar classificações do arquivo' });
+                res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : 'Erro interno ao importar classificações do arquivo' });
             }
         }
     };

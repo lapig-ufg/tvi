@@ -53,7 +53,7 @@ function criarApp(pontoInicial) {
                             Object.keys(update.$unset || {}).forEach(function (campo) {
                                 delete estado.ponto[campo];
                             });
-                            return { modifiedCount: 1 };
+                            return { matchedCount: 1, modifiedCount: 1 };
                         }
                     },
                     points_audit: {

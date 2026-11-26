@@ -36,6 +36,7 @@ function buildFindPointFilter(campaign, username) {
 	}
 
 	var andClauses = [
+		{ pointMutationLock: { $exists: false } },
 		{ "campaign": { "$eq": campaign._id } },
 		{ "userName": { "$nin": [ username ] } },
 		{ "underInspection": { $lt: campaign.numInspec } },
@@ -529,11 +530,17 @@ module.exports = function(app) {
 				return findPointFromBlock(campaign, username, callback);
 			}
 
-			// Incrementar underInspection no ponto
-			await points.updateOne(
-				{ _id: point._id },
+			var reservationFilter = buildFindPointFilter(campaign, username);
+			reservationFilter.$and.push({ _id: point._id });
+			var reservation = await points.updateOne(
+				reservationFilter,
 				{ $inc: { underInspection: 1 } }
 			);
+			var reservedCount = reservation.matchedCount !== undefined ? reservation.matchedCount
+				: reservation.result && reservation.result.n;
+			if (reservedCount !== 1) {
+				return callback({ point: {}, error: 'Ponto indisponível para inspeção.', code: 'POINT_UNAVAILABLE' });
+			}
 			point.underInspection = (point.underInspection || 0) + 1;
 
 			// Tier 2.10 (2026-05-14) — avanço-no-serve REMOVIDO.
@@ -1011,6 +1018,9 @@ module.exports = function(app) {
 			response.send({ success: true });
 			response.end();
 		} catch (error) {
+			if (error.code === 'POINT_UNAVAILABLE') {
+				return response.status(409).json({ error: 'O ponto foi removido ou está em manutenção. Atualize a página.' });
+			}
 			const errorCode = await logger.error('Unexpected error in updatePoint', {
 				module: 'points', function: 'updatePoint',
 				metadata: { error: error.message, stack: error.stack }
@@ -1142,11 +1152,14 @@ module.exports = function(app) {
 		const { pointId, classConsolidated } = result;
 
 		points.updateOne(
-			{ '_id': pointId },
+			{ '_id': pointId, pointMutationLock: { $exists: false } },
 			{ '$set': { 'classConsolidated': classConsolidated } },
-			function(err) {
+			function(err, write) {
 				if (err) {
 					return response.status(500).json({ error: 'Internal server error' });
+				}
+				if (!write || (write.result ? write.result.n : write.matchedCount) !== 1) {
+					return response.status(409).json({ error: 'O ponto foi removido ou está em manutenção.' });
 				}
 				response.json({ success: true });
 			}
