@@ -5,6 +5,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
     var removalPending = false;
     var counterTimer = null;
     var generateMaps;
+    var fallbackVisparamNames = [];
+    var fallbackVisparamOptions = [];
     $scope.$on('$destroy', function() {
         destroyed = true;
         if (counterTimer) $interval.cancel(counterTimer);
@@ -70,13 +72,14 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             });
         }
         
-        // Fallback: criar objetos básicos se não temos os detalhes ainda
-        return $scope.campaignVisParams.map(function(vp) {
-            return {
-                name: vp,
-                display_name: vp // Usar o próprio nome como display temporariamente
-            };
-        });
+        if (fallbackVisparamNames.length !== $scope.campaignVisParams.length ||
+            fallbackVisparamNames.some(function(name, index) { return name !== $scope.campaignVisParams[index]; })) {
+            fallbackVisparamNames = $scope.campaignVisParams.slice();
+            fallbackVisparamOptions = fallbackVisparamNames.map(function(name) {
+                return { name: name, display_name: name };
+            });
+        }
+        return fallbackVisparamOptions;
     };
     
     // Funções para atualizar parâmetros do Sentinel
@@ -586,9 +589,11 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         generateMaps = function () {
+            if (destroyed || !$scope.point) return;
             $scope.maps = [];
             $scope.mapStates = {};
             $scope.$broadcast('resetLazyMaps');
+            $scope.periodo = i18nService.translate($scope.period === 'WET' ? 'PERIODS.WET' : 'PERIODS.DRY');
 
             if ($scope.isSentinel) {
                 generateSentinelMaps();
@@ -599,6 +604,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
         };
         
+        $scope.generateMaps = generateMaps;
+
         var generateSentinelMaps = function() {
             if (!$scope.sentinelMosaics || $scope.sentinelMosaics.length === 0) {
                 console.warn('No Sentinel capabilities loaded yet');

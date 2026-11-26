@@ -22,7 +22,9 @@
             <tbody><tr ng-repeat="item in offline.status.errors track by item._id">
                 <td>{{item.point_id}}</td><td>{{item.params.year}} / {{item.params.period}}</td><td>{{item.params.visparam}}</td>
                 <td>{{item.params.z}}/{{item.params.x}}/{{item.params.y}}</td>
-                <td>{{offlineLabels[item.state]}}: {{offlineReasons[item.reason] || item.reason}}</td>
+                <td>{{offlineLabels[item.state]}}: {{offlineReasons[item.reason] || item.reason}}
+                    <div class="text-muted" ng-if="offlineValidationReasons[item.diagnostics.validation_code]">{{offlineValidationReasons[item.diagnostics.validation_code]}}</div>
+                </td>
                 <td>{{item.attempts}}</td><td>{{item.next_retry ? (item.next_retry | date:'dd/MM/yyyy HH:mm:ss') : 'Sem retentativa automática'}}</td>
             </tr></tbody>
         </table>

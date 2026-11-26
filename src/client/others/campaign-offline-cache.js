@@ -53,9 +53,16 @@ Application.directive('campaignOfflineCache', function () {
                 empty_collection: 'Nenhuma cena disponível para os critérios do período',
                 invalid_tile: 'Imagem inválida; ausência de dados não comprovada',
                 cache_expired: 'Imagem vencida ou sem validade comprovada; verificar novamente',
-                gee_credential_denied: 'Credencial recusada', GoogleAdmissionError: 'Limite de chamadas atingido',
+                gee_credential_denied: 'Credencial recusada', GoogleAdmissionError: 'Aguardando disponibilidade no controle de chamadas',
                 EarthEngineRateLimitedError: 'Limitação do Earth Engine', TimeoutError: 'Tempo de resposta excedido',
                 source_unavailable: 'Fonte ou armazenamento indisponível'
+            };
+            $scope.offlineValidationReasons = {
+                empty_image: 'Arquivo vazio', unsupported_format: 'Formato não suportado',
+                invalid_dimensions: 'Dimensões diferentes de 256 × 256 pixels',
+                transparent_image: 'Imagem totalmente transparente', white_image: 'Imagem totalmente branca',
+                corrupt_image: 'Arquivo de imagem corrompido', oversized_image: 'Arquivo acima do tamanho permitido',
+                persistence_unconfirmed: 'Gravação no armazenamento não confirmada', invalid_content: 'Conteúdo inválido'
             };
             $scope.offlineActive = function () {
                 var status = $scope.offline.status && $scope.offline.status.status;

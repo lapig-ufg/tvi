@@ -159,3 +159,72 @@ test('serviços do Temporal exigem sessão de superadministrador', () => {
         assert.equal(allowed, true, route.url);
     }
 });
+
+test('controles Landsat chamam a geração pública e atualizam período e visualização', async () => {
+    const c = temporal();
+    await c.respond('/api/campaigns/test', campaign);
+    c.capabilities();
+    c.point();
+    assert.equal(typeof c.scope.generateMaps, 'function');
+    c.scope.period = 'WET';
+    c.scope.landsatVisparam = 'landsat-tvi-true';
+    c.scope.generateMaps();
+    assert.deepEqual(Array.from(c.scope.maps, map => map.year), [2020, 2021]);
+    assert.ok(c.scope.maps.every(map => map.period === 'WET' && map.visparam === 'landsat-tvi-true'));
+    assert.equal(c.scope.periodo, 'PERIODS.WET');
+    const maps = c.scope.maps;
+    c.destroy();
+    c.scope.generateMaps();
+    assert.equal(c.scope.maps, maps);
+});
+
+test('grade de mapas fica fora dos controles de visualização e os contêineres estão balanceados', () => {
+    const template = fs.readFileSync(path.join(client, 'views/admin-temporal.tpl.html'), 'utf8');
+    const stack = [];
+    const controls = [];
+    let grid;
+    for (const match of template.matchAll(/<\/?div\b(?:"[^"]*"|'[^']*'|[^'">])*>/g)) {
+        const tag = match[0];
+        if (tag.startsWith('</')) {
+            assert.ok(stack.length, 'fechamento de div sem abertura');
+            stack.pop();
+            continue;
+        }
+        const className = (tag.match(/\bclass="([^"]*)"/) || [])[1] || '';
+        const node = { classes: className.split(/\s+/), parent: stack[stack.length - 1] };
+        if (node.classes.includes('visparam-controls')) controls.push(node);
+        if (node.classes.includes('maps-grid')) {
+            grid = node;
+            assert.equal(stack.some(ancestor => ancestor.classes.includes('visparam-controls')), false,
+                'grade herdaria display flex ou ng-show dos controles Landsat');
+        }
+        stack.push(node);
+    }
+    assert.equal(stack.length, 0, 'div aberta sem fechamento');
+    assert.ok(grid);
+    assert.equal(controls.length, 3);
+    assert.ok(controls.every(control => control.parent === grid.parent));
+});
+
+test('mapas possuem superfície definida e limitada à cobertura offline padrão', () => {
+    const template = fs.readFileSync(path.join(client, 'views/admin-temporal.tpl.html'), 'utf8');
+    assert.match(template, /\.admin-temporal \.map-viewport,\s*\.admin-temporal \.map-placeholder\s*\{[^}]*height:\s*512px;[^}]*max-width:\s*512px;/);
+    assert.match(template, /\.admin-temporal \.map-viewport > landsat-map,\s*\.admin-temporal \.map-viewport > inspection-map\s*\{[^}]*display:\s*block;[^}]*height:\s*100%;/);
+    const viewport = template.match(/<div class="map-viewport">([\s\S]*?)<\/div>/);
+    assert.ok(viewport);
+    assert.match(viewport[1], /<landsat-map\b/);
+    assert.match(viewport[1], /<inspection-map\b/);
+});
+
+test('opções anteriores às capabilities mantêm identidade entre ciclos do AngularJS', async () => {
+    const c = temporal();
+    await c.respond('/api/campaigns/test', campaign);
+    const first = c.scope.getAvailableVisParams();
+    assert.equal(c.scope.getAvailableVisParams(), first);
+    assert.equal(first[0].name, 'landsat-tvi-false');
+    c.scope.campaignVisParams = ['landsat-tvi-true'];
+    const changed = c.scope.getAvailableVisParams();
+    assert.notEqual(changed, first);
+    assert.equal(changed[0].name, 'landsat-tvi-true');
+    assert.equal(c.scope.getAvailableVisParams(), changed);
+});

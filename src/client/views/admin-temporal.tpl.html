@@ -448,15 +448,19 @@
 }
 
 /* Maps Grid */
-.maps-grid {
+.admin-temporal .maps-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 512px));
     gap: 1.5rem;
     width: 100%;
     position: relative;
 }
 
-.map-card {
+.admin-temporal .map-card {
+    width: 100%;
+    max-width: 512px;
+    min-width: 0;
+    position: relative;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -491,8 +495,22 @@
     font-weight: 500;
 }
 
-.map-placeholder {
-    height: 300px;
+.admin-temporal .map-viewport,
+.admin-temporal .map-placeholder {
+    /* A superfície respeita a cobertura offline de 512 × 512 pixels. */
+    height: 512px;
+    width: 100%;
+    max-width: 512px;
+}
+
+.admin-temporal .map-viewport > landsat-map,
+.admin-temporal .map-viewport > inspection-map {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.admin-temporal .map-placeholder {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -603,7 +621,7 @@
         padding: 1rem;
     }
     
-    .maps-grid {
+    .admin-temporal .maps-grid {
         grid-template-columns: 1fr;
     }
     
@@ -985,7 +1003,8 @@
                                    ng-model="landsatVisparam" 
                                    value="landsat-tvi-false"
                                    ng-change="updateLandsatVisparam()">
-                        <label for="visFalse">{{ 'SUPERVISOR.MAP.FALSE_COLOR' | i18n }}</label>
+                            <label for="visFalse">{{ 'SUPERVISOR.MAP.FALSE_COLOR' | i18n }}</label>
+                        </div>
                     </div>
                 </div>
 
@@ -1068,24 +1087,26 @@
                             </span>
 
                             <!-- Map Component -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
-                                         lon="point.lon"
-                                         lat="point.lat"
-                                         zoom="config.zoomLevel"
-                                         sample-marker="config.sampleMarker"
-                                         period="period"
-                                         year="map.year"
-                                         visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
-                            </landsat-map>
+                            <div class="map-viewport">
+                                <landsat-map ng-if="useDynamicMaps === true && !isSentinel"
+                                             lon="point.lon"
+                                             lat="point.lat"
+                                             zoom="config.zoomLevel"
+                                             sample-marker="config.sampleMarker"
+                                             period="period"
+                                             year="map.year"
+                                             visparams="['landsat-tvi-true', 'landsat-tvi-agri', 'landsat-tvi-false']">
+                                </landsat-map>
 
-                            <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
-                                            lon="point.lon"
-                                            lat="point.lat"
-                                            bounds="map.bounds"
-                                            zoom="config.zoomLevel"
-                                            sample-marker="config.sampleMarker"
-                                            tms-url="map.url">
-                            </inspection-map>
+                                <inspection-map ng-if="useDynamicMaps !== true || isSentinel"
+                                                lon="point.lon"
+                                                lat="point.lat"
+                                                bounds="map.bounds"
+                                                zoom="config.zoomLevel"
+                                                sample-marker="config.sampleMarker"
+                                                tms-url="map.url">
+                                </inspection-map>
+                            </div>
                         </div>
                     </div>
                 </div>
