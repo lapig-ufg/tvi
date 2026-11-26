@@ -12,7 +12,7 @@
  * Apply exige token destrutivo (60s) obtido em /api/admin/destructive-token.
  */
 Application.controller('AdminExcessInspectionsModalController',
-    function ($scope, $http, $window, campaign) {
+    function ($scope, $http, NotificationDialog, campaign) {
 
         $scope.campaign = campaign;
         $scope.activeTab = 'list';
@@ -73,6 +73,11 @@ Application.controller('AdminExcessInspectionsModalController',
         };
 
         var filterTimer = null;
+        var destroyed = false;
+        $scope.$on('$destroy', function() {
+            destroyed = true;
+            clearTimeout(filterTimer);
+        });
         $scope.onFilterChange = function () {
             if (filterTimer) clearTimeout(filterTimer);
             filterTimer = setTimeout(function () {
@@ -95,7 +100,7 @@ Application.controller('AdminExcessInspectionsModalController',
                     $scope.summary.total = resp.data.total || 0;
                 })
                 .catch(function (err) {
-                    $window.alert('Erro ao carregar lista: ' + (err.data && err.data.error || err.statusText));
+                    NotificationDialog.error('Erro ao carregar lista: ' + (err.data && err.data.error || err.statusText));
                 })
                 .finally(function () {
                     $scope.loadingList = false;
@@ -131,7 +136,7 @@ Application.controller('AdminExcessInspectionsModalController',
                     .map(function (s) { return s.trim(); })
                     .filter(function (s) { return s.length > 0; });
                 if (body.keepInspectors.length === 0) {
-                    $window.alert('Informe ao menos 1 username em "Usernames a manter".');
+                    NotificationDialog.error('Informe ao menos 1 username em "Usernames a manter".');
                     $scope.previewing = false;
                     return;
                 }
@@ -143,19 +148,19 @@ Application.controller('AdminExcessInspectionsModalController',
                     $scope.previewLimit = 50;
                 })
                 .catch(function (err) {
-                    $window.alert('Erro no preview: ' + (err.data && err.data.error || err.statusText));
+                    NotificationDialog.error('Erro no preview: ' + (err.data && err.data.error || err.statusText));
                 })
                 .finally(function () {
                     $scope.previewing = false;
                 });
         };
 
-        function requestDestructiveToken() {
+        function requestDestructiveToken(preview) {
             return $http.post('/api/admin/destructive-token', {
                 intent: 'removeExcessInspections',
                 context: {
                     campaignId: $scope.campaign._id,
-                    previewId: $scope.preview && $scope.preview.previewId
+                    previewId: preview.previewId
                 }
             }).then(function (resp) {
                 return resp.data && resp.data.token;
@@ -163,40 +168,40 @@ Application.controller('AdminExcessInspectionsModalController',
         }
 
         $scope.applyChanges = function () {
-            if (!$scope.preview || !$scope.preview.previewId) return;
+            if (destroyed || $scope.applying || !$scope.preview || !$scope.preview.previewId) return;
             if (!$scope.applyReason || $scope.applyReason.length < 10) {
-                $window.alert('Justificativa deve ter ao menos 10 caracteres.');
+                NotificationDialog.error('A justificativa deve ter ao menos 10 caracteres.');
                 return;
             }
-            if (!$window.confirm('Confirma remoção de ' + $scope.preview.totalRemovals + ' inspeções em ' + $scope.preview.totalAffected + ' pontos? Esta operação é registrada em audit.')) {
-                return;
-            }
-
+            var preview = angular.copy($scope.preview);
+            var reason = $scope.applyReason;
+            var message = 'Confirma a remoção de ' + preview.totalRemovals + ' inspeções em '
+                + preview.totalAffected + ' pontos? A operação será registrada na auditoria.';
             $scope.applying = true;
-            requestDestructiveToken()
-                .then(function (token) {
-                    if (!token) throw new Error('Não foi possível obter token destrutivo.');
+            return NotificationDialog.confirm(message, 'Remover inspeções excedentes').then(function(confirmed) {
+                if (!confirmed || destroyed) return;
+                return requestDestructiveToken(preview).then(function(token) {
+                    if (destroyed) return;
+                    if (!token) throw new Error('Não foi possível obter o token destrutivo.');
                     return $http.post(baseUrl() + '/apply', {
-                        previewId: $scope.preview.previewId,
-                        expectedCount: $scope.preview.totalAffected,
+                        previewId: preview.previewId,
+                        expectedCount: preview.totalAffected,
                         confirmationToken: token,
-                        reason: $scope.applyReason
+                        reason: reason
                     });
-                })
-                .then(function (resp) {
+                }).then(function(resp) {
+                    if (destroyed || !resp) return;
                     $scope.applyResult = resp.data;
                     $scope.preview = null;
                     $scope.applyReason = '';
-                    // Recarrega lista para refletir o novo estado
                     $scope.loadList();
-                })
-                .catch(function (err) {
-                    var msg = (err.data && err.data.error) || err.message || err.statusText;
-                    $window.alert('Erro ao aplicar: ' + msg);
-                })
-                .finally(function () {
-                    $scope.applying = false;
                 });
+            }).catch(function(err) {
+                var msg = (err.data && err.data.error) || err.message || err.statusText;
+                if (!destroyed) NotificationDialog.error('Erro ao aplicar: ' + msg);
+            }).finally(function() {
+                $scope.applying = false;
+            });
         };
 
         $scope.loadHistory = function () {
@@ -209,7 +214,7 @@ Application.controller('AdminExcessInspectionsModalController',
                     $scope.historyTotal = resp.data.total || 0;
                 })
                 .catch(function (err) {
-                    $window.alert('Erro ao carregar histórico: ' + (err.data && err.data.error || err.statusText));
+                    NotificationDialog.error('Erro ao carregar histórico: ' + (err.data && err.data.error || err.statusText));
                 })
                 .finally(function () {
                     $scope.loadingHistory = false;

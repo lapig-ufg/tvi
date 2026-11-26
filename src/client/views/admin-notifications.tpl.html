@@ -1,0 +1,13 @@
+<section class="container-fluid admin-notifications" aria-label="Mensagens administrativas" ng-if="isAdministrativePage() && notices.items.length">
+    <div class="alert" role="alert" ng-repeat="notice in notices.items track by notice.id" ng-class="{'alert-danger': notice.type === 'error', 'alert-success': notice.type === 'success', 'alert-warning': notice.type === 'warning' || notice.kind === 'confirm', 'alert-info': notice.type === 'info' && notice.kind !== 'confirm'}">
+        <h2 class="h4">{{notice.title}}</h2>
+        <p style="white-space: pre-wrap;">{{notice.message}}</p>
+        <p ng-if="notice.errorCode">Código: <code>{{notice.errorCode}}</code></p>
+        <label ng-if="notice.kind === 'prompt'">Resposta <input class="form-control" ng-model="notice.value" type="text"></label>
+        <div style="margin-top: 12px;" ng-if="notice.kind !== 'progress'">
+            <button class="btn btn-primary" type="button" ng-if="notice.kind === 'confirm' || notice.kind === 'prompt'" ng-click="notices.answer(notice, true)">Confirmar</button>
+            <button class="btn btn-default" type="button" ng-click="notices.answer(notice, false)">{{notice.kind === 'confirm' || notice.kind === 'prompt' ? 'Cancelar' : 'Fechar mensagem'}}</button>
+        </div>
+        <p role="status" ng-if="notice.kind === 'progress'">Processamento em andamento...</p>
+    </div>
+</section>

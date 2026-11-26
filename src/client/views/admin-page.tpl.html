@@ -1,0 +1,12 @@
+<main class="container-fluid admin-page">
+    <nav aria-label="Navegação administrativa" class="admin-page-navigation">
+        <button type="button" class="btn btn-default" ng-click="backToOrigin()" ng-disabled="page.isBusy()">Voltar</button>
+        <a class="btn btn-default" ng-href="#{{page.parent}}">Listagem</a>
+        <a class="btn btn-default" href="#/admin/home">Menu administrativo</a>
+    </nav>
+    <h1>{{page.title || 'Administração'}}</h1>
+    <div role="alert" class="alert alert-danger" ng-if="page.error">{{page.error}}</div>
+    <p role="status" ng-if="page.busy">Salvando alterações...</p>
+    <fieldset class="admin-page-content" ng-class="page.definition.className" ng-disabled="page.isBusy()" ng-if="page.definition" admin-page-content>
+    </fieldset>
+</main>

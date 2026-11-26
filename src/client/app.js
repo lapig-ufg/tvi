@@ -53,6 +53,11 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 			templateUrl: 'views/admin-home.tpl.html',
 			reloadOnSearch: false
 		})
+		.when('/admin/page/:pageId', {
+			controller: 'AdminPageController',
+			templateUrl: 'views/admin-page.tpl.html',
+			resolve: { page: function(AdminPages, $route) { return AdminPages.load($route.current.params); } }
+		})
 		.when('/admin/logs', {
 			controller: 'AdminLogsController',
 			templateUrl: 'views/admin-logs.tpl.html',

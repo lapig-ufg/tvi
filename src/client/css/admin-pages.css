@@ -1,0 +1,20 @@
+.admin-page { max-width: 1600px; padding: 24px; }
+.admin-page-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.admin-page-content { min-width: 0; border: 0; padding: 0; }
+.admin-page .admin-page-content .modal-body { max-height: none; overflow: visible; }
+.admin-page .admin-page-content .modal-footer { position: static; }
+.admin-page-content .modal-header .close,
+.admin-page-content .modal-header .close-btn { display: none; }
+.admin-page-content .modal-header { padding-left: 0; padding-right: 0; }
+.admin-page-content .modal-header h3 { font-size: 22px; }
+@media (max-width: 767px) { .admin-page { padding: 16px; } }
+
+.admin-page .admin-page-content .modern-modal,
+.admin-page .admin-page-content .upload-modal,
+.admin-page .admin-page-content .modal-content,
+.admin-page .admin-page-content .collections-editor {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+.admin-page .admin-page-content .modal-content { box-shadow: none; }

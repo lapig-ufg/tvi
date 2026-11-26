@@ -1,4 +1,11 @@
-Application.controller('AdminVisParamsController', function ($scope, $http, $location, requester, NotificationDialog, $timeout, $uibModal) {
+Application.controller('AdminVisParamsController', function ($scope, $http, $location, requester, NotificationDialog, $timeout, AdminPages) {
+    var destroyed = false;
+    var deletionPending = false;
+    var initializationPending = false;
+    var listLoaded = false;
+    var requestVersion = 0;
+    var filterState;
+
     // Estado e variáveis
     $scope.loading = {
         list: false,
@@ -23,17 +30,51 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
     $scope.itemsPerPage = 10;
     $scope.totalItems = 0;
 
+    function isCurrentPage() {
+        return !destroyed && $location.path() === '/admin/visualization-params';
+    }
+
+    function filters() {
+        return [$scope.selectedCategory, $scope.showOnlyActive, $scope.searchText];
+    }
+
+    function restoreQuery() {
+        const query = $location.search();
+        $scope.activeTab = query.tab === 'collections' ? 'collections' : 'parameters';
+        $scope.selectedCategory = $scope.categories.indexOf(query.category) !== -1 ? query.category : '';
+        $scope.searchText = typeof query.search === 'string' ? query.search.slice(0, 200) : '';
+        $scope.showOnlyActive = query.active === 'true';
+        const page = typeof query.page === 'string' && /^[1-9][0-9]*$/.test(query.page) ? Number(query.page) : 1;
+        $scope.currentPage = Number.isSafeInteger(page) ? page : 1;
+        filterState = filters();
+    }
+
+    function syncQuery() {
+        if (!isCurrentPage()) return;
+        const query = {};
+        if ($scope.activeTab === 'collections') query.tab = 'collections';
+        if ($scope.categories.indexOf($scope.selectedCategory) !== -1) query.category = $scope.selectedCategory;
+        if ($scope.searchText) query.search = $scope.searchText.slice(0, 200);
+        if ($scope.showOnlyActive) query.active = 'true';
+        if ($scope.currentPage > 1) query.page = String($scope.currentPage);
+        $location.search(query).replace();
+    }
+
+    restoreQuery();
+    syncQuery();
+
     // Collections
     $scope.landsatCollections = [];
     $scope.sentinelCollections = {};
 
     // Navegação
     $scope.goBack = function() {
-        $location.path('/admin/home');
+        $location.path('/admin/home').search({});
     };
 
     $scope.setActiveTab = function(tab) {
-        $scope.activeTab = tab;
+        $scope.activeTab = tab === 'collections' ? 'collections' : 'parameters';
+        syncQuery();
         if (tab === 'collections') {
             $scope.loadCollections();
         }
@@ -41,6 +82,8 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
     // Carregar parâmetros de visualização
     $scope.loadVisParams = function() {
+        if (!isCurrentPage()) return;
+        const currentRequest = ++requestVersion;
         $scope.loading.list = true;
         
         const params = {};
@@ -54,11 +97,14 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
         // Remove console.log
 
         requester._get('../api/vis-params', params, function(response) {
+            if (!isCurrentPage() || currentRequest !== requestVersion) return;
             // Response received
             $scope.loading.list = false;
             $scope.visParams = response.data || response;
+            listLoaded = true;
             $scope.applyFilters();
         }, function(error) {
+            if (!isCurrentPage() || currentRequest !== requestVersion) return;
             // Error handled
             $scope.loading.list = false;
             NotificationDialog.show('Erro ao carregar parâmetros', 'error');
@@ -81,6 +127,8 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
         $scope.filteredParams = filtered;
         $scope.totalItems = filtered.length;
+        if (listLoaded) $scope.currentPage = Math.min($scope.currentPage, Math.max(1, $scope.totalPages()));
+        syncQuery();
         $scope.updatePaginatedItems();
     };
 
@@ -95,6 +143,7 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
     $scope.changePage = function(page) {
         if (page >= 1 && page <= $scope.totalPages()) {
             $scope.currentPage = page;
+            syncQuery();
             $scope.updatePaginatedItems();
         }
     };
@@ -105,53 +154,17 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
     // Criar novo parâmetro
     $scope.createParam = function() {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-modal-v2.tpl.html',
-            controller: 'AdminVisParamModalV2Controller',
-            size: 'lg',
-            windowClass: 'vis-param-modal-v2',
-            resolve: {
-                param: function() { return null; },
-                categories: function() { return $scope.categories; }
-            }
-        });
-
-        modalInstance.result.then(function(result) {
-            $scope.loadVisParams();
-            NotificationDialog.show('Parâmetro criado com sucesso', 'success');
-        });
+        AdminPages.go('vis-param-create');
     };
 
     // Editar parâmetro
     $scope.editParam = function(param) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-modal-v2.tpl.html',
-            controller: 'AdminVisParamModalV2Controller',
-            size: 'lg',
-            windowClass: 'vis-param-modal-v2',
-            resolve: {
-                param: function() { return angular.copy(param); },
-                categories: function() { return $scope.categories; }
-            }
-        });
-
-        modalInstance.result.then(function(result) {
-            $scope.loadVisParams();
-            NotificationDialog.show('Parâmetro atualizado com sucesso', 'success');
-        });
+        AdminPages.go('vis-param-edit', { name: param.name });
     };
 
     // Visualizar detalhes
     $scope.viewDetails = function(param) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-details-modal.tpl.html',
-            controller: 'AdminVisParamDetailsController',
-            size: 'lg',
-            windowClass: 'vis-param-modal',
-            resolve: {
-                param: function() { return param; }
-            }
-        });
+        AdminPages.go('vis-param-details', { name: param.name });
     };
 
     // Alternar status ativo/inativo
@@ -161,11 +174,13 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
         const url = '../api/vis-params/' + encodeURIComponent(param.name) + '/toggle';
         
         requester._patch(url, {}, function(response) {
+            if (!isCurrentPage()) return;
             // Toggle successful
             $scope.loading.save = false;
             param.active = !param.active;
             NotificationDialog.show('Status alterado com sucesso', 'success');
         }, function(error) {
+            if (!isCurrentPage()) return;
             // Error handled
             $scope.loading.save = false;
             NotificationDialog.show('Erro ao alterar status', 'error');
@@ -174,68 +189,36 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
     // Deletar parâmetro
     $scope.deleteParam = function(param) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/confirm-dialog.tpl.html',
-            controller: 'ConfirmDialogController',
-            size: 'md',
-            resolve: {
-                title: function() { return 'Confirmar Exclusão'; },
-                message: function() { 
-                    return 'Tem certeza que deseja excluir o parâmetro "' + param.display_name + '"? Esta ação não pode ser desfeita.'; 
-                }
-            }
-        });
-
-        modalInstance.result.then(function() {
+        if (!isCurrentPage() || deletionPending) return;
+        deletionPending = true;
+        const name = param.name;
+        return NotificationDialog.confirm('Tem certeza de que deseja excluir o parâmetro "' + param.display_name + '"? Esta ação não pode ser desfeita.', 'Confirmar exclusão').then(function(confirmed) {
+            if (!confirmed || !isCurrentPage()) { deletionPending = false; return; }
             $scope.loading.delete = true;
             
-            requester._delete('../api/vis-params/' + encodeURIComponent(param.name), function(response) {
+            requester._delete('../api/vis-params/' + encodeURIComponent(name), function(response) {
+                deletionPending = false;
+                if (!isCurrentPage()) return;
                 $scope.loading.delete = false;
                 $scope.loadVisParams();
                 NotificationDialog.show('Parâmetro excluído com sucesso', 'success');
             }, function(error) {
+                deletionPending = false;
+                if (!isCurrentPage()) return;
                 $scope.loading.delete = false;
                 NotificationDialog.show('Erro ao excluir parâmetro', 'error');
             });
-        });
+        }, function() { deletionPending = false; });
     };
 
     // Clonar parâmetro
     $scope.cloneParam = function(param) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-clone-modal.tpl.html',
-            controller: 'AdminVisParamCloneController',
-            size: 'md',
-            resolve: {
-                originalParam: function() { return param; }
-            }
-        });
-
-        modalInstance.result.then(function(newName) {
-            $scope.loading.save = true;
-            
-            requester._post('../api/vis-params/clone/' + encodeURIComponent(param.name) + '?new_name=' + encodeURIComponent(newName), {}, 
-            function(response) {
-                $scope.loading.save = false;
-                $scope.loadVisParams();
-                NotificationDialog.show('Parâmetro clonado com sucesso', 'success');
-            }, function(error) {
-                $scope.loading.save = false;
-                NotificationDialog.show('Erro ao clonar parâmetro', 'error');
-            });
-        });
+        AdminPages.go('vis-param-clone', { name: param.name });
     };
 
     // Testar parâmetro
     $scope.testParam = function(param) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-test-modal.tpl.html',
-            controller: 'AdminVisParamTestController',
-            size: 'lg',
-            resolve: {
-                param: function() { return param; }
-            }
-        });
+        AdminPages.go('vis-param-test', { name: param.name });
     };
 
     // Exportar parâmetros
@@ -243,6 +226,7 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
         $scope.loading.export = true;
         
         requester._get('../api/vis-params/export/all', {}, function(response) {
+            if (!isCurrentPage()) return;
             $scope.loading.export = false;
             
             // Download do arquivo JSON
@@ -258,6 +242,7 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
             
             NotificationDialog.show('Parâmetros exportados com sucesso', 'success');
         }, function(error) {
+            if (!isCurrentPage()) return;
             $scope.loading.export = false;
             NotificationDialog.show('Erro ao exportar parâmetros', 'error');
         });
@@ -265,16 +250,7 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
     // Importar parâmetros
     $scope.importParams = function() {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-vis-param-import-modal.tpl.html',
-            controller: 'AdminVisParamImportController',
-            size: 'md'
-        });
-
-        modalInstance.result.then(function(result) {
-            $scope.loadVisParams();
-            NotificationDialog.show(result.message, 'success');
-        });
+        AdminPages.go('vis-param-import');
     };
 
     // Carregar collections
@@ -283,17 +259,21 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
         
         // Carregar Landsat collections
         requester._get('../api/vis-params/landsat-collections', {}, function(response) {
+            if (!isCurrentPage()) return;
             $scope.landsatCollections = response.data || response;
             
             // Carregar Sentinel collections
             requester._get('../api/vis-params/sentinel-collections', {}, function(response) {
+                if (!isCurrentPage()) return;
                 $scope.loading.collections = false;
                 $scope.sentinelCollections = response.data || response;
             }, function(error) {
+                if (!isCurrentPage()) return;
                 $scope.loading.collections = false;
                 NotificationDialog.show('Erro ao carregar collections Sentinel', 'error');
             });
         }, function(error) {
+            if (!isCurrentPage()) return;
             $scope.loading.collections = false;
             NotificationDialog.show('Erro ao carregar collections Landsat', 'error');
         });
@@ -301,114 +281,88 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
 
     // Editar Landsat collections
     $scope.editLandsatCollections = function() {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-landsat-collections-modal.tpl.html',
-            controller: 'AdminLandsatCollectionsController',
-            size: 'lg',
-            resolve: {
-                collections: function() { return angular.copy($scope.landsatCollections); }
-            }
-        });
-
-        modalInstance.result.then(function() {
-            $scope.loadCollections();
-            NotificationDialog.show('Collections Landsat atualizadas', 'success');
-        });
+        AdminPages.go('landsat-collections');
     };
 
     // Editar Sentinel collections
     $scope.editSentinelCollections = function() {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/admin-sentinel-collections-modal.tpl.html',
-            controller: 'AdminSentinelCollectionsController',
-            size: 'lg',
-            resolve: {
-                collections: function() { return angular.copy($scope.sentinelCollections); }
-            }
-        });
-
-        modalInstance.result.then(function() {
-            $scope.loadCollections();
-            NotificationDialog.show('Collections Sentinel atualizadas', 'success');
-        });
+        AdminPages.go('sentinel-collections');
     };
 
     // Inicializar Sentinel collections
     $scope.initializeSentinelCollections = function() {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/confirm-dialog.tpl.html',
-            controller: 'ConfirmDialogController',
-            size: 'md',
-            resolve: {
-                title: function() { return 'Inicializar Collections Sentinel'; },
-                message: function() { 
-                    return 'Isso criará uma configuração padrão para as collections Sentinel-2. Continuar?'; 
-                }
-            }
-        });
-
-        modalInstance.result.then(function() {
+        if (!isCurrentPage() || initializationPending) return;
+        initializationPending = true;
+        return NotificationDialog.confirm('Isso criará uma configuração padrão para as coleções Sentinel-2. Continuar?', 'Inicializar coleções Sentinel').then(function(confirmed) {
+            if (!confirmed || !isCurrentPage()) { initializationPending = false; return; }
             $scope.loading.collections = true;
             
             requester._post('../api/vis-params/sentinel-collections/initialize', {}, function(response) {
+                initializationPending = false;
+                if (!isCurrentPage()) return;
                 $scope.loading.collections = false;
                 $scope.loadCollections();
                 NotificationDialog.show('Collections Sentinel inicializadas', 'success');
             }, function(error) {
+                initializationPending = false;
+                if (!isCurrentPage()) return;
                 $scope.loading.collections = false;
                 NotificationDialog.show('Erro ao inicializar collections', 'error');
             });
-        });
+        }, function() { initializationPending = false; });
     };
 
     // Visualizar bandas de uma collection
     $scope.viewCollectionBands = function(collectionName) {
-        requester._get('../api/vis-params/sentinel-collections/bands/' + encodeURIComponent(collectionName), {}, 
-        function(response) {
-            var modalInstance = $uibModal.open({
-                templateUrl: 'views/admin-collection-bands-modal.tpl.html',
-                controller: 'AdminCollectionBandsController',
-                size: 'lg',
-                resolve: {
-                    collectionName: function() { return collectionName; },
-                    bands: function() { return response.data || response; }
-                }
-            });
-        }, function(error) {
-            NotificationDialog.show('Erro ao carregar bandas da collection', 'error');
-        });
+        AdminPages.go('collection-bands', { collectionName: collectionName });
     };
 
-    // Watchers
-    $scope.$watch('selectedCategory', function() {
-        $scope.loadVisParams();
+    $scope.$watchGroup(['selectedCategory', 'showOnlyActive', 'searchText'], function() {
+        const current = filters();
+        if (current.every(function(value, index) { return value === filterState[index]; })) return;
+        const serverFiltersChanged = current[0] !== filterState[0] || current[1] !== filterState[1];
+        filterState = current;
+        $scope.currentPage = 1;
+        syncQuery();
+        if (serverFiltersChanged && $scope.adminUser) $scope.loadVisParams();
+        else if (listLoaded) $scope.applyFilters();
     });
 
-    $scope.$watch('showOnlyActive', function() {
-        $scope.loadVisParams();
-    });
-
-    $scope.$watch('searchText', function() {
-        $scope.applyFilters();
+    $scope.$on('$routeUpdate', function() {
+        if (!isCurrentPage()) return;
+        const previous = filters();
+        const previousTab = $scope.activeTab;
+        const previousPage = $scope.currentPage;
+        restoreQuery();
+        syncQuery();
+        if (!$scope.adminUser || destroyed) return;
+        if (previousTab === $scope.activeTab && previousPage === $scope.currentPage &&
+            previous.every(function(value, index) { return value === filterState[index]; })) return;
+        if (previous[0] !== filterState[0] || previous[1] !== filterState[1]) $scope.loadVisParams();
+        else if (listLoaded) $scope.applyFilters();
+        if ($scope.activeTab === 'collections' && previousTab !== $scope.activeTab) $scope.loadCollections();
     });
 
     // Cleanup
     $scope.$on('$destroy', function() {
-        // Cleanup se necessário
+        destroyed = true;
     });
 
     // Verificar autenticação
     $scope.checkAuthentication = function() {
         $http.get('/api/admin/check').then(function(response) {
+            if (!isCurrentPage()) return;
             if (response.data.authenticated && response.data.user) {
                 $scope.adminUser = response.data.user;
                 // Load vis params after authentication is confirmed
                 $scope.loadVisParams();
+                if ($scope.activeTab === 'collections') $scope.loadCollections();
             } else {
                 console.error('Not authenticated as super-admin');
                 $location.path('/admin/login');
             }
         }, function(error) {
+            if (!isCurrentPage()) return;
             console.error('Authentication check failed:', error);
             $location.path('/admin/login');
         });

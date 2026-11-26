@@ -39,7 +39,7 @@ function instanciar(idioma) {
     const $q = {
         defer: function () { return { promise: {}, resolve: function () {} }; }
     };
-    const service = registro.NotificationDialog($uibModal, function () {}, $q, criarI18nService(idioma));
+    const service = registro.NotificationDialog($uibModal, function () {}, $q, criarI18nService(idioma), { path: () => '/supervisor' }, { show() { throw new Error('Notificação administrativa fora da administração'); } });
     return { service: service, ultimoTemplate: function () { return templates[templates.length - 1]; } };
 }
 

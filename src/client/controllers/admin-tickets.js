@@ -5,11 +5,14 @@
  */
 
 /* --- Gestão Admin de Tickets --- */
-Application.controller('AdminTicketsController', function ($scope, $rootScope, $location, $uibModal, requester, $http, i18nService) {
+Application.controller('AdminTicketsController', function ($scope, $location, AdminPages, requester, i18nService) {
 
+  var query = $location.search();
   $scope.tickets = [];
   $scope.pagination = { total: 0, page: 1, limit: 50, pages: 0 };
   $scope.pageSizes = [25, 50, 100, 200];
+  $scope.pagination.page = Math.max(1, parseInt(query.page, 10) || 1);
+  $scope.pagination.limit = $scope.pageSizes.indexOf(Number(query.limit)) >= 0 ? Number(query.limit) : 50;
   $scope.filters = {
     type: '',
     status: '',
@@ -17,6 +20,9 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
     origin: '',
     search: ''
   };
+  Object.keys($scope.filters).forEach(function(key) {
+    if (typeof query[key] === 'string') $scope.filters[key] = query[key];
+  });
   $scope.stats = null;
   $scope.loading = false;
 
@@ -68,7 +74,7 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
   });
   rebuildI18nState();
 
-  $rootScope.$on('languageChanged', function () {
+  $scope.$on('languageChanged', function () {
     rebuildI18nState();
   });
 
@@ -135,58 +141,26 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
     $location.path('/tickets/' + ticket._id);
   };
 
+  function openPage(id, params) {
+    $location.search(Object.assign({}, $scope.filters, {
+      page: $scope.pagination.page,
+      limit: $scope.pagination.limit
+    }));
+    AdminPages.go(id, params);
+  }
+
   $scope.openStatusModal = function (ticket) {
     if (ticket && ticket._isDoubt) {
       // Dúvida de ponto usa fluxo próprio de resolução
       $scope.openDoubtResolveModal(ticket);
       return;
     }
-    var modalInstance = $uibModal.open({
-      templateUrl: 'views/ticket-status-modal.tpl.html',
-      controller: 'TicketStatusModalController',
-      resolve: {
-        ticket: function () { return ticket; }
-      }
-    });
-
-    modalInstance.result.then(function () {
-      $scope.loadTickets();
-      $scope.loadStats();
-    });
+    openPage('ticket-status', { ticketId: ticket._id });
   };
 
   $scope.openDoubtResolveModal = function (ticket) {
     if (!ticket || !ticket._isDoubt || !ticket._pointId) return;
-    $http.get('/service/points/' + ticket._pointId + '/doubt')
-      .success(function (result) {
-        var point = {
-          _id: result.pointId,
-          campaign: result.campaign,
-          doubt: result.doubt
-        };
-        var campaign = { _id: result.campaign };
-        var modalInstance = $uibModal.open({
-          templateUrl: 'views/doubt-resolve-modal.tpl.html',
-          controller: 'AdminDoubtResolveModalController',
-          size: 'lg',
-          backdrop: 'static',
-          resolve: {
-            point: function () { return point; },
-            campaign: function () { return campaign; },
-            mode: function () { return 'admin'; }
-          }
-        });
-        modalInstance.result.then(function () {
-          $scope.loadTickets();
-          $scope.loadStats();
-        }, function () {
-          // Recarregar mesmo em dismiss: o admin pode ter comentado antes de fechar
-          $scope.loadTickets();
-        });
-      })
-      .error(function () {
-        alert('Não foi possível carregar a dúvida deste ponto.');
-      });
+    openPage('ticket-doubt', { pointId: ticket._pointId });
   };
 
   // Labels e badges (mesmo padrão dos controllers de usuário)
@@ -226,7 +200,7 @@ Application.controller('AdminTicketsController', function ($scope, $rootScope, $
 });
 
 /* --- Modal de Mudança de Status --- */
-Application.controller('TicketStatusModalController', function ($scope, $uibModalInstance, requester, ticket, i18nService) {
+Application.controller('TicketStatusModalController', function ($scope, $uibModalInstance, $http, ticket, i18nService) {
 
   $scope.ticket = ticket;
   $scope.form = {
@@ -261,9 +235,10 @@ Application.controller('TicketStatusModalController', function ($scope, $uibModa
   });
 
   $scope.submit = function () {
+    if ($scope.submitting) return;
     $scope.errorMessage = '';
 
-    if (!$scope.form.status) {
+    if ((transitions[ticket.status] || []).indexOf($scope.form.status) === -1) {
       $scope.errorMessage = t('TICKETS.STATUS_MODAL.ERROR_STATUS');
       return;
     }
@@ -274,16 +249,19 @@ Application.controller('TicketStatusModalController', function ($scope, $uibModa
 
     $scope.submitting = true;
 
-    requester._patch('tickets/' + ticket._id + '/status', {
+    return $http.patch('/service/tickets/' + encodeURIComponent(ticket._id) + '/status', {
       status: $scope.form.status,
-      reason: $scope.form.reason
-    }, function (result) {
-      $scope.submitting = false;
-      if (result && result.error) {
-        $scope.errorMessage = result.error;
+      reason: $scope.form.reason.trim()
+    }).then(function (response) {
+      if (response.data && response.data.error) {
+        $scope.errorMessage = response.data.error;
       } else {
-        $uibModalInstance.close(result);
+        $uibModalInstance.close(response.data);
       }
+    }, function (error) {
+      $scope.errorMessage = (error.data && error.data.error) || t('COMMON.ERROR');
+    }).finally(function () {
+      $scope.submitting = false;
     });
   };
 

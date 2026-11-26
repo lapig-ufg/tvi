@@ -1,6 +1,9 @@
 'use strict';
 
-Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
+Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, AdminPages, $timeout, i18nService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
+    var destroyed = false;
+    var removalPending = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
     $scope.showChartsLandsatNdwi = false;
@@ -1132,28 +1135,35 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         $scope.removeInspections = () => {
-            NotificationDialog.confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: $scope.point._id})).then(function(confirmed) {
-                if (!confirmed) {
+            if (destroyed || removalPending || !$scope.point) return;
+            const pointId = $scope.point._id;
+            const pointIndex = $scope.point.index;
+            removalPending = true;
+            return NotificationDialog.confirm(i18nService.translate('ALERTS.CONFIRM_REMOVE_INSPECTIONS', {pointId: pointId})).then(function(confirmed) {
+                if (!confirmed || destroyed) {
+                    removalPending = false;
                     return;
                 }
 
-                const pointId = $scope.point._id;
-                // `requester._get` só propaga falhas de HTTP quando o callback
-                // expõe `.error` (ver others/services.js). Sem isso, respostas
-                // 401/403/500 eram descartadas e o botão parecia inerte.
-                const onSuccess = function (data) {
+                // requester._get encaminha falhas HTTP pelo atributo error do callback.
+                const onSuccess = function(data) {
+                    removalPending = false;
+                    if (destroyed) return;
                     if (data) {
                         NotificationDialog.success(i18nService.translate('ALERTS.INSPECTIONS_REMOVED', {pointId: pointId}));
-                        $scope.submit($scope.point.index);
+                        if ($scope.point && $scope.point._id === pointId) $scope.submit(pointIndex);
                     }
                 };
-                onSuccess.error = function (error) {
+                onSuccess.error = function(error) {
+                    removalPending = false;
+                    if (destroyed) return;
                     NotificationDialog.error(
                         (error && error.error) || i18nService.translate('ALERTS.INSPECTIONS_REMOVE_FAILED', {pointId: pointId})
                     );
                 };
-
-                requester._get(`admin/campaign/removeInspections?pointId=${pointId}`, onSuccess);
+                requester._get('admin/campaign/removeInspections?pointId=' + encodeURIComponent(pointId), onSuccess);
+            }, function() {
+                removalPending = false;
             });
         };
 
@@ -1232,36 +1242,12 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             return false;
         };
         
-        $scope.openMosaicDialog = function(map, point, config) {
-            const mapYear = map.year || Number(new Date(map.date).getFullYear());
-            const mosaicsForYear = $scope.sentinelMosaics.filter(m =>
-                Array.isArray(m.years) && m.years.includes(mapYear)
-            );
-
-            $uibModal.open({
-                controller: 'MosaicDialogController',
-                templateUrl: 'views/mosaic-dialog.tpl.html',
-                windowClass: 'modal-80-percent',
-                resolve: {
-                    mosaics: function() {
-                        return mosaicsForYear;
-                    },
-                    map: function() {
-                        return map;
-                    },
-                    point: function() {
-                        return point;
-                    },
-                    config: function() {
-                        return config;
-                    },
-                    tilesCapabilities: function() {
-                        return $scope.tilesCapabilities;
-                    },
-                    period: function() {
-                        return $scope.period;
-                    }
-                }
+        $scope.openMosaicDialog = function(map, point) {
+            AdminPages.go('mosaic-comparison', {
+                campaignId: $scope.campaign._id,
+                pointId: point._id,
+                year: map.year || Number(new Date(map.date).getFullYear()),
+                period: $scope.period
             });
         };
     };

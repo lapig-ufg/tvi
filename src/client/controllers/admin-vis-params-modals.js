@@ -156,9 +156,12 @@ Application.controller('AdminVisParamTestController', function ($scope, $uibModa
         layer_type: param.category === 'sentinel2' ? 'sentinel2' : 'landsat'
     };
     $scope.loading = false;
+    var destroyed = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     $scope.result = null;
     
     $scope.runTest = function() {
+        if (destroyed || $scope.loading) return;
         $scope.loading = true;
         $scope.result = null;
         
@@ -171,9 +174,11 @@ Application.controller('AdminVisParamTestController', function ($scope, $uibModa
         };
         
         requester._post('../api/vis-params/test', testData, function(response) {
+            if (destroyed) return;
             $scope.loading = false;
             $scope.result = response;
         }, function(error) {
+            if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show('Erro ao testar parâmetro', 'error');
         });
@@ -192,27 +197,42 @@ Application.controller('AdminVisParamImportController', function ($scope, $uibMo
         overwrite: false
     };
     $scope.loading = false;
+    var destroyed = false;
     
-    // File reader
+    var activeReader = null;
+    $scope.$on('$destroy', function() {
+        destroyed = true;
+        if (activeReader && activeReader.readyState === 1) activeReader.abort();
+        activeReader = null;
+    });
+
     $scope.onFileSelect = function(files) {
-        if (files && files.length > 0) {
-            const file = files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    $scope.importData.content = JSON.parse(e.target.result);
-                    $scope.$apply();
-                } catch (error) {
-                    NotificationDialog.show('Arquivo JSON inválido', 'error');
-                }
-            };
-            
-            reader.readAsText(file);
-        }
+        if (destroyed || $scope.loading) return;
+        if (activeReader && activeReader.readyState === 1) activeReader.abort();
+        $scope.importData.content = null;
+        if (!files || !files.length) return;
+
+        const reader = new FileReader();
+        activeReader = reader;
+        reader.onload = function(event) {
+            if (destroyed || activeReader !== reader) return;
+            try {
+                $scope.importData.content = JSON.parse(event.target.result);
+            } catch (error) {
+                NotificationDialog.show('Arquivo JSON inválido', 'error');
+            }
+            $scope.$apply();
+        };
+        reader.onerror = function() {
+            if (destroyed || activeReader !== reader) return;
+            NotificationDialog.show('Não foi possível ler o arquivo', 'error');
+            $scope.$apply();
+        };
+        reader.readAsText(files[0]);
     };
-    
+
     $scope.import = function() {
+        if (destroyed || $scope.loading) return;
         if (!$scope.importData.content) {
             NotificationDialog.show('Selecione um arquivo para importar', 'warning');
             return;
@@ -223,12 +243,14 @@ Application.controller('AdminVisParamImportController', function ($scope, $uibMo
         requester._post('../api/vis-params/import?overwrite=' + $scope.importData.overwrite, 
             $scope.importData.content, 
             function(response) {
+                if (destroyed) return;
                 $scope.loading = false;
                 $uibModalInstance.close({
                     message: 'Importação concluída com sucesso'
                 });
             }, 
             function(error) {
+                if (destroyed) return;
                 $scope.loading = false;
                 NotificationDialog.show('Erro ao importar parâmetros', 'error');
             }
@@ -244,6 +266,8 @@ Application.controller('AdminVisParamImportController', function ($scope, $uibMo
 Application.controller('AdminLandsatCollectionsController', function ($scope, $uibModalInstance, collections, requester, NotificationDialog) {
     $scope.collections = collections || [];
     $scope.loading = false;
+    var destroyed = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     
     $scope.addCollection = function() {
         $scope.collections.push({
@@ -259,12 +283,15 @@ Application.controller('AdminLandsatCollectionsController', function ($scope, $u
     };
     
     $scope.save = function() {
+        if (destroyed || $scope.loading) return;
         $scope.loading = true;
         
         requester._put('../api/vis-params/landsat-collections', $scope.collections, function(response) {
+            if (destroyed) return;
             $scope.loading = false;
             $uibModalInstance.close();
         }, function(error) {
+            if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show('Erro ao salvar collections', 'error');
         });
@@ -287,14 +314,19 @@ Application.controller('AdminSentinelCollectionsController', function ($scope, $
         }
     };
     $scope.loading = false;
+    var destroyed = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     
     $scope.save = function() {
+        if (destroyed || $scope.loading) return;
         $scope.loading = true;
         
         requester._put('../api/vis-params/sentinel-collections', $scope.data, function(response) {
+            if (destroyed) return;
             $scope.loading = false;
             $uibModalInstance.close();
         }, function(error) {
+            if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show('Erro ao salvar collections', 'error');
         });

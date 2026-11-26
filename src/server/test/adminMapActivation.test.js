@@ -17,7 +17,7 @@ function controller(file) {
         $routeParams: { id: 'test' }, $interval() {},
         $timeout(fn) { timers.push(fn); },
         $window: { addEventListener() {}, removeEventListener() {} },
-        requester: { _get() {}, _post() {} }, fakeRequester: {}, util: {}, $uibModal: {},
+        requester: { _get() {}, _post() {} }, fakeRequester: {}, util: {}, AdminPages: { go() {} },
         i18nService: { translate: value => value }, NotificationDialog: {},
         $injector: { has: () => false }, sampleMarkerService: { core: { normalize: () => ({}) } }
     };

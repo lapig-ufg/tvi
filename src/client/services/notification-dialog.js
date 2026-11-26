@@ -4,7 +4,7 @@
  * Serviço de Notificação/Diálogo Personalizado
  * Substitui o alert() nativo por diálogos mais intuitivos e estilizados
  */
-Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18nService) {
+Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18nService, $location, AdminNotifications) {
     const service = {};
 
     // Tipos de notificação
@@ -38,6 +38,11 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18n
      * Exibe uma notificação do tipo toast (auto-fechamento)
      */
     service.toast = function(message, type = TYPES.INFO, duration = 3000) {
+        if ($location.path().indexOf('/admin') === 0) {
+            const notice = AdminNotifications.show('alert', message, getDefaultTitle(type), { type: type });
+            $timeout(notice.close, duration);
+            return notice;
+        }
         const modalInstance = $uibModal.open({
             animation: true,
             backdrop: false,
@@ -68,6 +73,9 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18n
      * Exibe um diálogo modal com botão de fechar
      */
     service.alert = function(message, title, type = TYPES.INFO, errorCode = null) {
+        if ($location.path().indexOf('/admin') === 0) {
+            return AdminNotifications.show('alert', message, title || getDefaultTitle(type), { type: type, errorCode: errorCode }).result;
+        }
         const modalInstance = $uibModal.open({
             animation: true,
             backdrop: 'static',
@@ -143,6 +151,9 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18n
      * Exibe um diálogo de confirmação com botões Sim/Não
      */
     service.confirm = function(message, title) {
+        if ($location.path().indexOf('/admin') === 0) {
+            return AdminNotifications.show('confirm', message, title || i18nService.translate('NOTIFICATIONS.CONFIRM')).result;
+        }
         const deferred = $q.defer();
         
         const modalInstance = $uibModal.open({
@@ -251,6 +262,9 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18n
      * Exibe um diálogo com campo de entrada
      */
     service.prompt = function(message, title, defaultValue = '') {
+        if ($location.path().indexOf('/admin') === 0) {
+            return AdminNotifications.show('prompt', message, title || i18nService.translate('NOTIFICATIONS.PROMPT'), { value: defaultValue }).result;
+        }
         const deferred = $q.defer();
         
         const modalInstance = $uibModal.open({
@@ -308,6 +322,9 @@ Application.factory('NotificationDialog', function($uibModal, $timeout, $q, i18n
      * Exibe um diálogo de progresso
      */
     service.progress = function(title, message) {
+        if ($location.path().indexOf('/admin') === 0) {
+            return AdminNotifications.show('progress', message || i18nService.translate('NOTIFICATIONS.PLEASE_WAIT'), title || i18nService.translate('NOTIFICATIONS.PROCESSING'));
+        }
         const modalInstance = $uibModal.open({
             animation: true,
             backdrop: 'static',

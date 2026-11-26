@@ -45,6 +45,16 @@ window.getAdminSocket = function() {
 // Controllers dos modais (adaptados para admin)
 Application.controller('AdminGeoJSONUploadModalController', function ($scope, $uibModalInstance, $http, $location, campaignId, NotificationDialog) {
     $scope.file = null;
+    var destroyed = false;
+    var progressTimer = null;
+    var activeReader = null;
+
+    $scope.$on('$destroy', function() {
+        destroyed = true;
+        clearInterval(progressTimer);
+        if (activeReader && activeReader.readyState === 1) activeReader.abort();
+        activeReader = null;
+    });
     
     // Progresso do upload
     $scope.uploadProgress = {
@@ -84,6 +94,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
             });
         }, 500);
         
+        progressTimer = progressInterval;
         return progressInterval;
     }
     
@@ -99,6 +110,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
 
     function handleUploadSuccess(response, progressInterval) {
         clearInterval(progressInterval);
+        if (destroyed) return;
 
         $scope.uploadProgress.isUploading = false;
         $scope.uploadProgress.isCompleted = true;
@@ -120,6 +132,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
 
     function handleUploadError(error, progressInterval) {
         clearInterval(progressInterval);
+        if (destroyed) return;
 
         $scope.uploadProgress.isUploading = false;
         $scope.uploadProgress.isCompleted = true;
@@ -156,6 +169,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     }
 
     function sendUpload(payload) {
+        if (destroyed) return;
         lastPayload = payload;
 
         $scope.duplicate = null;
@@ -182,6 +196,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     }
 
     $scope.upload = function() {
+        if (destroyed || $scope.uploadProgress.isUploading) return;
         if (!$scope.file) {
             NotificationDialog.warning('Selecione um arquivo GeoJSON ou ZIP');
             return;
@@ -190,6 +205,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
         var file = $scope.file;
         var isZipFile = file.name.toLowerCase().endsWith('.zip');
         var reader = new FileReader();
+        activeReader = reader;
 
         // Estado inicial dentro do digest do clique, para o painel de progresso
         // aparecer imediatamente (a leitura do arquivo é assíncrona).
@@ -200,6 +216,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
         $scope.uploadProgress.progress = 0;
 
         reader.onload = function(e) {
+            if (destroyed) return;
             // Callback do FileReader roda fora do digest do Angular.
             $scope.$apply(function() {
                 if (isZipFile) {
@@ -220,6 +237,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
         };
 
         reader.onerror = function() {
+            if (destroyed) return;
             $scope.$apply(function() {
                 $scope.uploadProgress.isUploading = false;
                 $scope.uploadProgress.isCompleted = true;
@@ -239,7 +257,7 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     // Reenvio deliberado após a recusa por duplicidade. O backend grava o recibo
     // com `forced: true`, preservando o histórico dos dois envios.
     $scope.forceUpload = function() {
-        if (!lastPayload) return;
+        if (!lastPayload || destroyed || $scope.uploadProgress.isUploading) return;
 
         var forced = {};
         Object.keys(lastPayload).forEach(function(key) {
@@ -262,8 +280,20 @@ Application.controller('AdminGeoJSONUploadModalController', function ($scope, $u
     };
 });
 
-Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, $uibModal, campaign, NotificationDialog) {
+Application.controller('AdminCampaignPointsModalController', function ($scope, $uibModalInstance, $http, $location, AdminPages, campaign, NotificationDialog) {
     $scope.campaign = campaign;
+    var destroyed = false;
+    var previewCriteria = null;
+    $scope.$on('$destroy', function() { destroyed = true; });
+
+    function confirmRemovalAction(message, action) {
+        if (destroyed || $scope.removalLoading) return;
+        $scope.removalLoading = true;
+        return NotificationDialog.confirm(message, 'Confirmar Remoção').then(function(confirmed) {
+            if (!confirmed || destroyed) return;
+            return action();
+        }).finally(function() { $scope.removalLoading = false; });
+    }
     $scope.points = [];
     $scope.filteredPoints = null;
     $scope.loading = false;
@@ -614,6 +644,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     };
     
     $scope.previewRemoval = function() {
+        if (destroyed || $scope.removalLoading) return;
         if (!$scope.isRemovalCriteriaValid()) {
             NotificationDialog.warning('Preencha o critério de remoção antes de pré-visualizar.');
             return;
@@ -623,11 +654,15 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         // campanha inteira. Antes era calculada aqui, apenas sobre a página de
         // pontos carregada, divergindo do que seria de fato removido.
         $scope.removalLoading = true;
-        $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
-            criteria: $scope.removalCriteria,
+        previewCriteria = null;
+        var criteria = angular.copy($scope.removalCriteria);
+        return $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
+            criteria: criteria,
             dryRun: true
         }).then(function(response) {
             $scope.removalLoading = false;
+            if (destroyed) return;
+            previewCriteria = criteria;
             $scope.removalPreview = response.data.preview || [];
             $scope.removalSummary = {
                 pointsAffected: response.data.pointsAffected || 0,
@@ -638,6 +673,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             }
         }, function(error) {
             $scope.removalLoading = false;
+            if (destroyed) return;
             $scope.removalPreview = [];
             $scope.removalSummary = null;
             NotificationDialog.error('Erro ao pré-visualizar a remoção: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
@@ -645,6 +681,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     };
     
     $scope.confirmRemoval = function() {
+        if (destroyed || $scope.removalLoading) return;
         if (!$scope.removalSummary || $scope.removalSummary.pointsAffected === 0) {
             NotificationDialog.warning('Execute a pré-visualização antes de confirmar a remoção.');
             return;
@@ -654,33 +691,34 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
             return;
         }
 
+        if (!previewCriteria || !angular.equals(previewCriteria, $scope.removalCriteria)) {
+            NotificationDialog.warning('O critério mudou. Execute a pré-visualização novamente.');
+            return;
+        }
+        const criteria = angular.copy(previewCriteria);
+        const reason = $scope.removalReason;
         const resumo = $scope.removalSummary;
-        NotificationDialog.confirm(
+        return confirmRemovalAction(
             `Confirma a remoção de ${resumo.inspectionsAffected} inspeções em ${resumo.pointsAffected} pontos?`,
-            'Confirmar Remoção'
-        ).then(function(confirmed) {
-            if (!confirmed) {
-                return;
+            function() {
+                return $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
+                    criteria: criteria,
+                    reason: reason
+                }).then(function(response) {
+                    if (destroyed) return;
+                    NotificationDialog.success(`${response.data.removedCount} inspeções removidas em ${response.data.pointsAffected} pontos.`);
+                    if (response.data.errors && response.data.errors.length > 0) {
+                        NotificationDialog.warning(`${response.data.errors.length} pontos não puderam ser alterados. Consulte os logs do servidor.`);
+                    }
+                    $scope.removalPreview = [];
+                    $scope.removalSummary = null;
+                    $scope.loadPoints();
+                }, function(error) {
+                    if (destroyed) return;
+                    NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
+                });
             }
-
-            $scope.removalLoading = true;
-            $http.post(`/api/campaigns/${campaign._id}/remove-inspections`, {
-                criteria: $scope.removalCriteria,
-                reason: $scope.removalReason
-            }).then(function(response) {
-                $scope.removalLoading = false;
-                NotificationDialog.success(`${response.data.removedCount} inspeções removidas em ${response.data.pointsAffected} pontos.`);
-                if (response.data.errors && response.data.errors.length > 0) {
-                    NotificationDialog.warning(`${response.data.errors.length} pontos não puderam ser alterados. Consulte os logs do servidor.`);
-                }
-                $scope.removalPreview = [];
-                $scope.removalSummary = null;
-                $scope.loadPoints();
-            }, function(error) {
-                $scope.removalLoading = false;
-                NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
-            });
-        });
+        );
     };
     
     // Selection functions
@@ -712,30 +750,13 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     
     // Point action functions
     $scope.viewPointDetails = function(point) {
-        $uibModal.open({
-            templateUrl: 'views/point-details-modal.tpl.html',
-            controller: 'PointDetailsModalController',
-            size: 'lg',
-            resolve: {
-                point: function() { return point; },
-                campaign: function() { return campaign; }
-            }
-        });
+        rememberPoints();
+        AdminPages.go('point-details', { campaignId: campaign._id, pointId: point._id });
     };
     
     $scope.editPointInspections = function(point) {
-        $uibModal.open({
-            templateUrl: 'views/point-inspections-edit-modal.tpl.html',
-            controller: 'PointInspectionsEditModalController',
-            size: 'lg',
-            windowClass: 'modal-80-percent',
-            resolve: {
-                point: function() { return point; },
-                campaign: function() { return campaign; }
-            }
-        }).result.then(function() {
-            $scope.loadPoints();
-        });
+        rememberPoints();
+        AdminPages.go('point-inspections', { campaignId: campaign._id, pointId: point._id });
     };
     
     // O motivo é obrigatório: fica gravado em points_audit junto do snapshot
@@ -754,53 +775,43 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     }
     
     $scope.removePointInspections = function(point) {
-        NotificationDialog.confirm(`Tem certeza que deseja remover todas as inspeções do ponto ${point._id}?`, 'Confirmar Remoção').then(function(confirmed) {
-            if (!confirmed) {
-                return;
-            }
-            
-            pedirMotivo(`Informe o motivo da remoção das inspeções do ponto ${point._id}:`).then(function(reason) {
-                if (!reason) {
-                    return;
-                }
-                
-                $http.delete(`/api/campaigns/${campaign._id}/points/${point._id}/inspections`, {
+        const pointId = point._id;
+        return confirmRemovalAction(`Tem certeza que deseja remover todas as inspeções do ponto ${pointId}?`, function() {
+            return pedirMotivo(`Informe o motivo da remoção das inspeções do ponto ${pointId}:`).then(function(reason) {
+                if (!reason || destroyed) return;
+                return $http.delete(`/api/campaigns/${campaign._id}/points/${pointId}/inspections`, {
                     params: { reason: reason }
                 }).then(function(response) {
+                    if (destroyed) return;
                     if (response.data.success) {
-                        NotificationDialog.success(`${response.data.removedCount} inspeções removidas do ponto ${point._id}.`);
+                        NotificationDialog.success(`${response.data.removedCount} inspeções removidas do ponto ${pointId}.`);
                         $scope.loadPoints();
                     } else {
                         NotificationDialog.error('Erro ao remover inspeções: ' + response.data.error);
                     }
                 }, function(error) {
-                    NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
+                    if (!destroyed) NotificationDialog.error('Erro ao remover inspeções: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
                 });
             });
         });
     };
-    
+
     // Bulk actions
     $scope.bulkEditInspections = function() {
         NotificationDialog.info('Funcionalidade de edição em lote será implementada em breve');
     };
     
     $scope.bulkRemoveInspections = function() {
-        NotificationDialog.confirm(`Tem certeza que deseja remover as inspeções de ${$scope.selectedPoints.length} pontos selecionados?`, 'Confirmar Remoção em Lote').then(function(confirmed) {
-            if (!confirmed) {
-                return;
-            }
-            
-            const pointIds = $scope.selectedPoints.map(p => p._id);
-            pedirMotivo(`Informe o motivo da remoção das inspeções de ${pointIds.length} pontos:`).then(function(reason) {
-                if (!reason) {
-                    return;
-                }
-                
-                $http.post(`/api/campaigns/${campaign._id}/bulk-remove-inspections`, {
+        const pointIds = $scope.selectedPoints.map(function(point) { return point._id; });
+        if (!pointIds.length) return;
+        return confirmRemovalAction(`Tem certeza que deseja remover as inspeções de ${pointIds.length} pontos selecionados?`, function() {
+            return pedirMotivo(`Informe o motivo da remoção das inspeções de ${pointIds.length} pontos:`).then(function(reason) {
+                if (!reason || destroyed) return;
+                return $http.post(`/api/campaigns/${campaign._id}/bulk-remove-inspections`, {
                     pointIds: pointIds,
                     reason: reason
                 }).then(function(response) {
+                    if (destroyed) return;
                     if (response.data.success) {
                         NotificationDialog.success(`${response.data.removedCount} inspeções removidas em ${response.data.pointsAffected} pontos.`);
                         if (response.data.errors && response.data.errors.length > 0) {
@@ -811,12 +822,12 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
                         NotificationDialog.error('Erro na remoção em lote: ' + response.data.error);
                     }
                 }, function(error) {
-                    NotificationDialog.error('Erro na remoção em lote: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
+                    if (!destroyed) NotificationDialog.error('Erro na remoção em lote: ' + ((error.data && error.data.error) || 'Erro desconhecido'));
                 });
             });
         });
     };
-    
+
     $scope.exportSelectedPoints = function() {
         const pointsToExport = $scope.selectedPoints.length > 0 ? $scope.selectedPoints : $scope.points;
         
@@ -934,40 +945,13 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     
     // Point actions
     $scope.viewPoint = function(point) {
-        $uibModal.open({
-            templateUrl: 'views/point-details-modal.tpl.html',
-            controller: 'PointDetailsModalController',
-            size: 'lg',
-            resolve: {
-                point: function() {
-                    return point;
-                },
-                campaign: function() {
-                    return campaign;
-                }
-            }
-        });
+        rememberPoints();
+        AdminPages.go('point-details', { campaignId: campaign._id, pointId: point._id });
     };
     
     $scope.editPoint = function(point) {
-        $uibModal.open({
-            templateUrl: 'views/point-inspections-edit-modal.tpl.html',
-            controller: 'PointInspectionsEditModalController',
-            size: 'xl',
-            windowClass: 'modal-80-percent',
-            resolve: {
-                point: function() {
-                    return point;
-                },
-                campaign: function() {
-                    return campaign;
-                }
-            }
-        }).result.then(function(result) {
-            if (result === 'saved') {
-                $scope.loadPoints(); // Reload points after edit
-            }
-        });
+        rememberPoints();
+        AdminPages.go('point-inspections', { campaignId: campaign._id, pointId: point._id });
     };
     
     // Missing applyFilters function
@@ -1010,30 +994,10 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         $scope.loadPoints();
     };
 
-    // TKT-000011: abre modal de resolução de dúvida para um ponto.
     $scope.openDoubtResolveModal = function(point) {
-        if (!point || !point.doubt) {
-            return;
-        }
-        $uibModal.open({
-            templateUrl: 'views/doubt-resolve-modal.tpl.html',
-            controller: 'AdminDoubtResolveModalController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                point: function() { return point; },
-                campaign: function() { return campaign; },
-                mode: function() { return 'admin'; }
-            }
-        }).result.then(function(result) {
-            // Qualquer transição ou comentário pode alterar o resumo e/ou o
-            // status do ponto listado; recarregamos tudo para refletir o
-            // estado servidor-verificado.
-            if (result) {
-                $scope.loadPoints();
-                $scope.loadDoubtSummary();
-            }
-        }, function() { /* dismiss: nada a fazer */ });
+        if (!point || !point.doubt) return;
+        rememberPoints();
+        AdminPages.go('point-doubt', { campaignId: campaign._id, pointId: point._id });
     };
     
     $scope.searchPointById = function() {
@@ -1119,7 +1083,31 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
         $scope.bulkRemoveInspections();
     };
     
-    // Initialize
+    var pointsQuery = $location.search();
+    Object.keys($scope.filters).forEach(function(key) {
+        var value = pointsQuery['f_' + key];
+        if (typeof value === 'string') {
+            $scope.filters[key] = key === 'minInspections' || key === 'maxInspections'
+                ? (/^\d+$/.test(value) ? Number(value) : null) : value;
+        }
+    });
+    $scope.currentPage = Math.max(1, parseInt(pointsQuery.page, 10) || 1);
+    if ([10, 25, 50, 100, 200].indexOf(Number(pointsQuery.pageSize)) >= 0) $scope.pageSize = String(pointsQuery.pageSize);
+    $scope.searchId = typeof pointsQuery.search === 'string' ? pointsQuery.search : '';
+    if (['filters', 'inspectors', 'spatial', 'remove'].indexOf(pointsQuery.tab) >= 0) $scope.activeTab = pointsQuery.tab;
+    $scope.showAdvancedFilters = $scope.hasActiveFilters();
+
+    function rememberPoints() {
+        Object.keys($scope.filters).forEach(function(key) {
+            var value = $scope.filters[key];
+            $location.search('f_' + key, value === '' || value === null ? null : value);
+        });
+        $location.search('page', $scope.currentPage);
+        $location.search('pageSize', $scope.pageSize);
+        $location.search('search', $scope.searchId || null);
+        $location.search('tab', $scope.activeTab);
+    }
+
     $scope.loadPoints();
     // TKT-000011: carregar resumo de dúvidas para o stat-card
     $scope.loadDoubtSummary();
@@ -1246,15 +1234,10 @@ Application.controller('PointDetailsModalController', function ($scope, $uibModa
         NotificationDialog.info('Funcionalidade de edição individual será implementada em breve');
     };
     
-    $scope.removeInspection = function(inspection, index) {
-        NotificationDialog.confirm(`Tem certeza que deseja remover a inspeção de ${inspection.user}?`, 'Confirmar Remoção').then(function(confirmed) {
-            if (confirmed) {
-                // Implementar remoção individual
-                NotificationDialog.info('Remoção individual será implementada em breve');
-            }
-        });
+    $scope.removeInspection = function() {
+        NotificationDialog.info('A remoção individual não está disponível. Utilize a remoção de inspeções na listagem de pontos.');
     };
-    
+
     $scope.viewInTemporal = function() {
         // Abrir o admin-temporal em nova aba com o ponto selecionado
         var url = window.location.origin + '/#/admin/temporal?pointId=' + $scope.point._id;
@@ -1270,6 +1253,17 @@ Application.controller('PointDetailsModalController', function ($scope, $uibModa
 // Controller para o modal de edição de inspeções
 Application.controller('PointInspectionsEditModalController', function ($scope, $uibModalInstance, $http, point, campaign, NotificationDialog) {
     $scope.point = point;
+    var destroyed = false;
+    var confirmationPending = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
+
+    function confirmEdit(message, action) {
+        if (destroyed || confirmationPending) return;
+        confirmationPending = true;
+        return NotificationDialog.confirm(message, 'Confirmar alteração').then(function(confirmed) {
+            if (confirmed && !destroyed) return action();
+        }).finally(function() { confirmationPending = false; });
+    }
     $scope.campaign = campaign;
     $scope.inspections = [];
     $scope.originalInspections = [];
@@ -1493,13 +1487,14 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
     };
     
     $scope.removeInspection = function(index) {
-        NotificationDialog.confirm('Tem certeza que deseja remover esta inspeção?', 'Confirmar Remoção').then(function(confirmed) {
-            if (confirmed) {
-                $scope.inspections.splice(index, 1);
-            }
+        var inspection = $scope.inspections[index];
+        if (!inspection) return;
+        return confirmEdit('Tem certeza que deseja remover esta inspeção?', function() {
+            var currentIndex = $scope.inspections.indexOf(inspection);
+            if (currentIndex >= 0) $scope.inspections.splice(currentIndex, 1);
         });
     };
-    
+
     $scope.addFormItem = function(inspection) {
         inspection.form.push({
             initialYear: $scope.campaign.initialYear || 2020,
@@ -1520,14 +1515,12 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
     };
     
     $scope.resetChanges = function() {
-        NotificationDialog.confirm('Tem certeza que deseja descartar todas as alterações?', 'Confirmar Descarte').then(function(confirmed) {
-            if (confirmed) {
-                $scope.inspections = angular.copy($scope.originalInspections);
-                $scope.validationErrors = [];
-            }
+        return confirmEdit('Tem certeza que deseja descartar todas as alterações?', function() {
+            $scope.inspections = angular.copy($scope.originalInspections);
+            $scope.validationErrors = [];
         });
     };
-    
+
     $scope.validateInspections = function() {
         $scope.validationErrors = [];
         
@@ -1582,15 +1575,7 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
     };
     
     $scope.close = function() {
-        if ($scope.hasChanges()) {
-            NotificationDialog.confirm('Você tem alterações não salvas. Tem certeza que deseja fechar?', 'Confirmar Fechamento').then(function(confirmed) {
-                if (confirmed) {
-                    $uibModalInstance.dismiss('cancel');
-                }
-            });
-        } else {
-            $uibModalInstance.dismiss('cancel');
-        }
+        $uibModalInstance.dismiss('cancel');
     };
     
     // Inicializar
@@ -1600,6 +1585,9 @@ Application.controller('PointInspectionsEditModalController', function ($scope, 
 // Controller do modal de formulário
 Application.controller('CampaignFormModalController', function ($scope, $uibModalInstance, $http, campaign, isNew, NotificationDialog, sampleMarkerService) {
     $scope.campaign = campaign;
+    var destroyed = false;
+    var landUsePending = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     $scope.isNew = isNew;
     $scope.visParamOptions = [];
     $scope.landsatVisParams = [];
@@ -1790,12 +1778,16 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     };
     
     $scope.addLandUse = function() {
-        const newLandUse = prompt('Digite o novo tipo de uso da terra:');
-        if (newLandUse && !$scope.campaign.landUse.includes(newLandUse)) {
-            $scope.campaign.landUse.push(newLandUse);
-        }
+        if (destroyed || landUsePending) return;
+        landUsePending = true;
+        return NotificationDialog.prompt('Digite o tipo de uso da terra:', 'Adicionar classe').then(function(value) {
+            landUsePending = false;
+            if (destroyed || typeof value !== 'string') return;
+            var landUse = value.trim();
+            if (landUse && !$scope.campaign.landUse.includes(landUse)) $scope.campaign.landUse.push(landUse);
+        });
     };
-    
+
     $scope.removeLandUse = function(index) {
         var removed = $scope.campaign.landUse[index];
         $scope.campaign.landUse.splice(index, 1);
@@ -1856,7 +1848,8 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     };
 
     $scope.confirmLandUseImport = function () {
-        var source = $scope.landUseImport.selected;
+        if (destroyed || landUsePending) return;
+        var source = angular.copy($scope.landUseImport.selected);
         if (!source) {
             return;
         }
@@ -1876,8 +1869,10 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
         if (!isNew) {
             message += ' Inspeções já registradas mantêm os nomes antigos das classes.';
         }
-        NotificationDialog.confirm(message, 'Importar classes').then(function (confirmed) {
-            if (confirmed) {
+        landUsePending = true;
+        return NotificationDialog.confirm(message, 'Importar classes').then(function (confirmed) {
+            landUsePending = false;
+            if (confirmed && !destroyed) {
                 apply();
             }
         });

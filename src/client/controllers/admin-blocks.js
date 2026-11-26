@@ -1,6 +1,9 @@
 'use strict';
 
-Application.controller('AdminBlocksController', function ($scope, $http, $routeParams, $location, $uibModal, NotificationDialog) {
+Application.controller('AdminBlocksController', function ($scope, $http, $routeParams, $location, NotificationDialog) {
+    var destroyed = false;
+    var operationPending = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     $scope.campaignId = $routeParams.id;
     $scope.campaign = null;
     $scope.blocks = [];
@@ -39,6 +42,7 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
         $scope.$root.isAdminMode = true;
 
         $http.get('/api/admin/check').then(function(response) {
+            if (destroyed) return;
             if (!response.data.authenticated) {
                 $location.path('/admin/login');
             } else {
@@ -46,6 +50,7 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
                 $scope.loadCampaign();
             }
         }, function() {
+            if (destroyed) return;
             $location.path('/admin/login');
         });
     };
@@ -53,10 +58,12 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
     // Carregar dados da campanha
     $scope.loadCampaign = function() {
         $http.get('/api/campaigns/' + $scope.campaignId).then(function(response) {
+            if (destroyed) return;
             $scope.campaign = response.data;
             $scope.loadBlocks();
             $scope.loadSummary();
         }, function() {
+            if (destroyed) return;
             NotificationDialog.error('Campanha não encontrada');
             $location.path('/admin/campaigns');
         });
@@ -83,10 +90,12 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
         }
 
         $http.get('/api/campaigns/' + $scope.campaignId + '/blocks' + params).then(function(response) {
+            if (destroyed) return;
             $scope.blocks = response.data.blocks;
             $scope.pagination = response.data.pagination;
             $scope.loading = false;
         }, function(error) {
+            if (destroyed) return;
             $scope.loading = false;
             if (error.status === 401) {
                 $location.path('/admin/login');
@@ -99,99 +108,91 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
     // Carregar resumo
     $scope.loadSummary = function() {
         $http.get('/api/campaigns/' + $scope.campaignId + '/blocks/summary').then(function(response) {
+            if (destroyed) return;
             $scope.summary = response.data;
         });
     };
 
-    // Gerar blocos
-    $scope.generateBlocks = function() {
-        NotificationDialog.confirm(
-            'Gerar blocos com tamanho ' + $scope.generateForm.blockSize +
-            ' e timeout de ' + $scope.generateForm.timeoutMinutes + ' minutos?',
-            'Gerar Blocos'
-        ).then(function(confirmed) {
-            if (!confirmed) return;
-
+    function confirmOperation(message, title, execute, successMessage, errorMessage) {
+        if (destroyed || operationPending) return;
+        operationPending = true;
+        return NotificationDialog.confirm(message, title).then(function(confirmed) {
+            if (!confirmed || destroyed) return;
             $scope.loading = true;
-            $http.post('/api/campaigns/' + $scope.campaignId + '/generate-blocks', {
-                blockSize: $scope.generateForm.blockSize,
-                timeoutMinutes: $scope.generateForm.timeoutMinutes
-            }).then(function(response) {
-                $scope.loading = false;
-                NotificationDialog.success(
-                    'Blocos gerados: ' + response.data.totalBlocks +
-                    ' blocos (' + response.data.blocksPerRound + ' por rodada, ' +
-                    response.data.rounds + ' rodada(s))'
-                );
+            return execute().then(function(response) {
+                if (destroyed) return;
+                NotificationDialog.success(successMessage(response));
                 $scope.loadBlocks();
                 $scope.loadSummary();
-            }, function(error) {
-                $scope.loading = false;
-                NotificationDialog.error(error.data.error || 'Erro ao gerar blocos');
             });
+        }).catch(function(error) {
+            if (!destroyed) NotificationDialog.error((error.data && error.data.error) || errorMessage);
+        }).finally(function() {
+            operationPending = false;
+            if (!destroyed) $scope.loading = false;
         });
+    }
+
+    $scope.generateBlocks = function() {
+        var payload = {
+            blockSize: $scope.generateForm.blockSize,
+            timeoutMinutes: $scope.generateForm.timeoutMinutes
+        };
+        var url = '/api/campaigns/' + encodeURIComponent($scope.campaignId) + '/generate-blocks';
+        return confirmOperation(
+            'Gerar blocos com tamanho ' + payload.blockSize +
+            ' e timeout de ' + payload.timeoutMinutes + ' minutos?',
+            'Gerar Blocos',
+            function() { return $http.post(url, payload); },
+            function(response) {
+                return 'Blocos gerados: ' + response.data.totalBlocks +
+                    ' blocos (' + response.data.blocksPerRound + ' por rodada, ' + response.data.rounds + ' rodada(s))';
+            },
+            'Erro ao gerar blocos'
+        );
     };
 
-    // Descartar bloco
     $scope.discardBlock = function(block) {
-        NotificationDialog.confirm(
-            'Descartar bloco ' + block.blockIndex + ' (rodada ' + block.inspectionRound + ')?\n' +
+        var blockIndex = block.blockIndex;
+        var payload = {
+            inspectionRound: block.inspectionRound,
+            reason: 'Descarte manual via admin',
+            discardedBy: $scope.user ? $scope.user.username : 'admin'
+        };
+        var url = '/api/campaigns/' + encodeURIComponent($scope.campaignId) + '/blocks/' + encodeURIComponent(blockIndex) + '/discard';
+        return confirmOperation(
+            'Descartar bloco ' + blockIndex + ' (rodada ' + payload.inspectionRound + ')?\n' +
             'As inspeções do inspetor "' + (block.assignedTo || '-') + '" serão removidas dos pontos.',
-            'Descartar Bloco'
-        ).then(function(confirmed) {
-            if (!confirmed) return;
-
-            $http.post('/api/campaigns/' + $scope.campaignId + '/blocks/' + block.blockIndex + '/discard', {
-                inspectionRound: block.inspectionRound,
-                reason: 'Descarte manual via admin',
-                discardedBy: $scope.user ? $scope.user.username : 'admin'
-            }).then(function() {
-                NotificationDialog.success('Bloco descartado e recriado para reinspeção');
-                $scope.loadBlocks();
-                $scope.loadSummary();
-            }, function(error) {
-                NotificationDialog.error(error.data.error || 'Erro ao descartar bloco');
-            });
-        });
+            'Descartar Bloco',
+            function() { return $http.post(url, payload); },
+            function() { return 'Bloco descartado e recriado para reinspeção'; },
+            'Erro ao descartar bloco'
+        );
     };
 
-    // Liberar blocos expirados
     $scope.releaseExpired = function() {
-        NotificationDialog.confirm(
-            'Liberar todos os blocos com timeout expirado?',
-            'Liberar Expirados'
-        ).then(function(confirmed) {
-            if (!confirmed) return;
-
-            $http.post('/api/campaigns/' + $scope.campaignId + '/blocks/release-expired').then(function(response) {
-                NotificationDialog.success(response.data.releasedCount + ' bloco(s) liberado(s)');
-                $scope.loadBlocks();
-                $scope.loadSummary();
-            }, function(error) {
-                NotificationDialog.error(error.data.error || 'Erro ao liberar blocos');
-            });
-        });
+        var url = '/api/campaigns/' + encodeURIComponent($scope.campaignId) + '/blocks/release-expired';
+        return confirmOperation(
+            'Liberar todos os blocos com timeout expirado?', 'Liberar Expirados',
+            function() { return $http.post(url); },
+            function(response) { return response.data.releasedCount + ' bloco(s) liberado(s)'; },
+            'Erro ao liberar blocos'
+        );
     };
 
-    // Remover todos os blocos
     $scope.deleteAllBlocks = function() {
-        NotificationDialog.confirm(
+        var url = '/api/campaigns/' + encodeURIComponent($scope.campaignId) + '/blocks';
+        return confirmOperation(
             'ATENÇÃO: Remover TODOS os blocos desta campanha? Os pontos e inspeções não serão afetados.',
-            'Remover Todos os Blocos'
-        ).then(function(confirmed) {
-            if (!confirmed) return;
-
-            $http.delete('/api/campaigns/' + $scope.campaignId + '/blocks', {
-                data: { force: true },
-                headers: { 'Content-Type': 'application/json' }
-            }).then(function(response) {
-                NotificationDialog.success(response.data.deletedCount + ' bloco(s) removido(s)');
-                $scope.loadBlocks();
-                $scope.loadSummary();
-            }, function(error) {
-                NotificationDialog.error(error.data.error || 'Erro ao remover blocos');
-            });
-        });
+            'Remover Todos os Blocos',
+            function() {
+                return $http.delete(url, {
+                    data: { force: true }, headers: { 'Content-Type': 'application/json' }
+                });
+            },
+            function(response) { return response.data.deletedCount + ' bloco(s) removido(s)'; },
+            'Erro ao remover blocos'
+        );
     };
 
     // Aplicar filtros
@@ -285,6 +286,7 @@ Application.controller('AdminBlocksController', function ($scope, $http, $routeP
     $scope.logout = function() {
         $scope.$root.isAdminMode = false;
         $http.post('/api/admin/logout').then(function() {
+            if (destroyed) return;
             $location.path('/admin/login');
         });
     };

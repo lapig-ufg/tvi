@@ -1,7 +1,9 @@
 'use strict';
 
-Application.controller('AdminCampaignController', function ($scope, $http, $uibModal, $window, $location, $timeout, NotificationDialog, sampleMarkerService) {
+Application.controller('AdminCampaignController', function ($scope, $http, AdminPages, $window, $location, $timeout, NotificationDialog, sampleMarkerService) {
     $scope.campaigns = [];
+    var destroyed = false;
+    var deletionPending = false;
     $scope.loading = false;
     $scope.pagination = {
         currentPage: 1,
@@ -306,80 +308,26 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
     };
 
     $scope.createCampaign = function() {
-        const modalInstance = $uibModal.open({
-            templateUrl: 'views/campaign-form-modal.tpl.html',
-            controller: 'CampaignFormModalController',
-            size: 'lg',
-            windowClass: 'modern-modal-window',
-            resolve: {
-                campaign: function() {
-                    return angular.copy($scope.newCampaign);
-                },
-                isNew: function() {
-                    return true;
-                }
-            }
-        });
-        
-        modalInstance.result.then(function(campaign) {
-            $http.post('/api/campaigns', campaign).then(function(response) {
-                if (response.data.success) {
-                    $scope.loadCampaigns();
-                    NotificationDialog.success('Campanha criada com sucesso!');
-                } else {
-                    NotificationDialog.error('Erro ao criar campanha');
-                }
-            }, function(error) {
-                if (error.status === 401) {
-                    $location.path('/admin/login');
-                } else {
-                    NotificationDialog.error('Erro ao criar campanha: ' + (error.data.error || 'Erro desconhecido'));
-                }
-            });
-        });
+        rememberList();
+        AdminPages.go('campaign-create', {});
     };
 
     $scope.editCampaign = function(campaign) {
-        const modalInstance = $uibModal.open({
-            templateUrl: 'views/campaign-form-modal.tpl.html',
-            controller: 'CampaignFormModalController',
-            size: 'lg',
-            windowClass: 'modern-modal-window',
-            resolve: {
-                campaign: function() {
-                    return angular.copy(campaign);
-                },
-                isNew: function() {
-                    return false;
-                }
-            }
-        });
-        
-        modalInstance.result.then(function(updatedCampaign) {
-            $http.put('/api/campaigns/' + updatedCampaign._id, updatedCampaign).then(function(response) {
-                if (response.data.success) {
-                    $scope.loadCampaigns();
-                    NotificationDialog.success('Campanha atualizada com sucesso!');
-                } else {
-                    NotificationDialog.error('Erro ao atualizar campanha');
-                }
-            }, function(error) {
-                if (error.status === 401) {
-                    $location.path('/admin/login');
-                } else {
-                    NotificationDialog.error('Erro ao atualizar campanha: ' + (error.data.error || 'Erro desconhecido'));
-                }
-            });
-        });
+        rememberList();
+        AdminPages.go('campaign-edit', { campaignId: campaign._id });
     };
 
     $scope.deleteCampaign = function(campaign) {
-        NotificationDialog.confirm(`Tem certeza que deseja deletar a campanha "${campaign._id}"?`, 'Confirmar Exclusão').then(function(confirmed) {
-            if (!confirmed) {
+        if (destroyed || deletionPending) return;
+        const campaignId = campaign._id;
+        deletionPending = true;
+        return NotificationDialog.confirm(`Tem certeza que deseja deletar a campanha "${campaignId}"?`, 'Confirmar Exclusão').then(function(confirmed) {
+            if (!confirmed || destroyed) {
                 return;
             }
             
-            $http.delete('/api/campaigns/' + campaign._id).then(function(response) {
+            return $http.delete('/api/campaigns/' + campaignId).then(function(response) {
+                if (destroyed) return;
                 if (response.data.success) {
                     $scope.loadCampaigns();
                     NotificationDialog.success('Campanha deletada com sucesso!');
@@ -387,74 +335,42 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
                     NotificationDialog.error('Erro: ' + response.data.error);
                 }
             }, function(error) {
+                if (destroyed) return;
                 if (error.status === 401) {
                     $location.path('/admin/login');
                 } else {
                     NotificationDialog.error('Erro ao deletar campanha: ' + (error.data.error || 'Erro desconhecido'));
                 }
             });
-        });
+        }).finally(function() { deletionPending = false; });
     };
 
     $scope.uploadGeoJSON = function(campaign) {
-        const modalInstance = $uibModal.open({
-            templateUrl: 'views/geojson-upload-modal.tpl.html',
-            controller: 'AdminGeoJSONUploadModalController',
-            size: 'lg',
-            windowClass: 'modal-90-width',
-            resolve: {
-                campaignId: function() {
-                    return campaign._id;
-                }
-            }
-        });
-        
-        modalInstance.result.then(function(result) {
-            if (result.success) {
-                $scope.loadCampaigns();
-                NotificationDialog.success(`Upload realizado com sucesso! ${result.message}`);
-            }
-        });
+        rememberList();
+        AdminPages.go('campaign-upload', { campaignId: campaign._id });
     };
 
     $scope.importClassifications = function(campaign) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/import-classifications-modal.tpl.html',
-            controller: 'ImportClassificationsModalController',
-            size: 'lg',
-            windowClass: 'upload-modal-window',
-            resolve: {
-                campaign: function() { return campaign; }
-            }
-        });
-        modalInstance.result.then(function(result) {
-            if (result && result.success) {
-                $scope.loadCampaigns();
-            }
-        });
+        rememberList();
+        AdminPages.go('campaign-import', { campaignId: campaign._id });
     };
 
     $scope.viewPoints = function(campaign) {
-        $uibModal.open({
-            templateUrl: 'views/campaign-points-modal.tpl.html',
-            controller: 'AdminCampaignPointsModalController',
-            size: 'lg',
-            windowClass: 'points-modal-wide',
-            resolve: {
-                campaign: function() {
-                    return campaign;
-                }
-            }
-        });
+        rememberList();
+        AdminPages.go('campaign-points', { campaignId: campaign._id });
     };
 
     $scope.deletePoints = function(campaign) {
-        NotificationDialog.confirm(`Tem certeza que deseja deletar TODOS os pontos da campanha "${campaign._id}"? Esta ação não pode ser desfeita!`, 'Confirmar Exclusão').then(function(confirmed) {
-            if (!confirmed) {
+        if (destroyed || deletionPending) return;
+        const campaignId = campaign._id;
+        deletionPending = true;
+        return NotificationDialog.confirm(`Tem certeza que deseja deletar TODOS os pontos da campanha "${campaignId}"? Esta ação não pode ser desfeita!`, 'Confirmar Exclusão').then(function(confirmed) {
+            if (!confirmed || destroyed) {
                 return;
             }
             
-            $http.delete('/api/campaigns/' + campaign._id + '/points').then(function(response) {
+            return $http.delete('/api/campaigns/' + campaignId + '/points').then(function(response) {
+                if (destroyed) return;
                 if (response.data.success) {
                     $scope.loadCampaigns();
                     NotificationDialog.info(response.data.message);
@@ -462,13 +378,14 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
                     NotificationDialog.error('Erro ao deletar pontos');
                 }
             }, function(error) {
+                if (destroyed) return;
                 if (error.status === 401) {
                     $location.path('/admin/login');
                 } else {
                     NotificationDialog.error('Erro ao deletar pontos: ' + (error.data.error || 'Erro desconhecido'));
                 }
             });
-        });
+        }).finally(function() { deletionPending = false; });
     };
 
     $scope.manageCampaign = function(campaign) {
@@ -483,30 +400,14 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         $location.path('/admin/campaigns/' + campaign._id + '/blocks');
     };
 
-    // Tier 2.10 (2026-05-14) — abre modal de gerenciamento de inspeções excedentes
     $scope.manageExcessInspections = function(campaign) {
-        $uibModal.open({
-            templateUrl: 'views/admin-excess-inspections-modal.tpl.html',
-            controller: 'AdminExcessInspectionsModalController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                campaign: function () { return campaign; }
-            }
-        });
+        rememberList();
+        AdminPages.go('campaign-excess', { campaignId: campaign._id });
     };
 
-    // Tier 2.10 (2026-05-14) — abre modal de monitoramento e recuperação de pontos zumbi
     $scope.manageZombies = function(campaign) {
-        $uibModal.open({
-            templateUrl: 'views/admin-zombies-modal.tpl.html',
-            controller: 'AdminZombiesModalController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                campaign: function () { return campaign; }
-            }
-        });
+        rememberList();
+        AdminPages.go('campaign-zombies', { campaignId: campaign._id });
     };
 
     $scope.getProgressClass = function(progress) {
@@ -515,6 +416,29 @@ Application.controller('AdminCampaignController', function ($scope, $http, $uibM
         return 'progress-bar-success';
     };
 
-    // Verificar autenticação ao carregar
+    $scope.$on('$destroy', function() {
+        destroyed = true;
+        if ($scope.filterChangeTimeout) $timeout.cancel($scope.filterChangeTimeout);
+    });
+
+    var listQuery = $location.search();
+    Object.keys($scope.filters).forEach(function(key) {
+        var value = listQuery['f_' + key];
+        if (typeof value === 'string') {
+            $scope.filters[key] = ['showTimeseries', 'showPointInfo', 'useDynamicMaps'].indexOf(key) >= 0
+                ? (value === 'true' ? true : value === 'false' ? false : null) : value;
+        }
+    });
+    $scope.pagination.currentPage = Math.max(1, parseInt(listQuery.page, 10) || 1);
+    $scope.showFilters = Object.keys($scope.filters).some(function(key) { return key !== 'sortBy' && $scope.filters[key] !== '' && $scope.filters[key] !== null; });
+
+    function rememberList() {
+        Object.keys($scope.filters).forEach(function(key) {
+            var value = $scope.filters[key];
+            $location.search('f_' + key, value === '' || value === null ? null : String(value));
+        });
+        $location.search('page', $scope.pagination.currentPage);
+    }
+
     $scope.checkAuth();
 });

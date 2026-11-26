@@ -5,8 +5,6 @@ module.exports = function(app) {
     // Basic CRUD operations
     app.get('/api/vis-params', auth, controller.list);
     app.post('/api/vis-params', auth, controller.create);
-    app.get('/api/vis-params/:name', auth, controller.get);
-    app.put('/api/vis-params/:name', auth, controller.update);
     app.delete('/api/vis-params/:name', auth, controller.delete);
 
     // Additional operations
@@ -25,4 +23,7 @@ module.exports = function(app) {
     app.put('/api/vis-params/sentinel-collections', auth, controller.updateSentinelCollections);
     app.post('/api/vis-params/sentinel-collections/initialize', auth, controller.initializeSentinelCollections);
     app.get('/api/vis-params/sentinel-collections/bands/:collection_name', auth, controller.getSentinelBands);
+
+    app.get('/api/vis-params/:name', auth, controller.get);
+    app.put('/api/vis-params/:name', auth, controller.update);
 };

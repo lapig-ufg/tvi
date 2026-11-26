@@ -1,8 +1,9 @@
 'use strict';
 
 // Controller para Gestão de Campanha Individual
-Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $interval, $uibModal, NotificationDialog) {
+Application.controller('CampaignManagementController', function ($scope, $http, $location, $routeParams, $timeout, $interval, AdminPages, NotificationDialog) {
     $scope.campaignId = $routeParams.id;
+    var deletionPending = false;
     $scope.loading = true;
     $scope.details = null;
     $scope.activeTab = 'users';
@@ -523,37 +524,7 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     
     // Funções de ação para os botões
     $scope.editCampaign = function() {
-        const modalInstance = $uibModal.open({
-            templateUrl: 'views/campaign-form-modal.tpl.html',
-            controller: 'CampaignFormModalController',
-            size: 'lg',
-            windowClass: 'modern-modal-window',
-            resolve: {
-                campaign: function() {
-                    return angular.copy($scope.details.campaign);
-                },
-                isNew: function() {
-                    return false;
-                }
-            }
-        });
-        
-        modalInstance.result.then(function(updatedCampaign) {
-            $http.put('/api/campaigns/' + updatedCampaign._id, updatedCampaign).then(function(response) {
-                if (response.data.success) {
-                    $scope.loadCampaignDetails();
-                    NotificationDialog.success('Campanha atualizada com sucesso!');
-                } else {
-                    NotificationDialog.error('Erro ao atualizar campanha');
-                }
-            }, function(error) {
-                if (error.status === 401) {
-                    $location.path('/admin/login');
-                } else {
-                    NotificationDialog.error('Erro ao atualizar campanha: ' + (error.data.error || 'Erro desconhecido'));
-                }
-            });
-        });
+        AdminPages.go('campaign-edit', { campaignId: $scope.details.campaign._id });
     };
     
     $scope.downloadReport = function() {
@@ -563,53 +534,28 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     };
     
     $scope.viewPoints = function() {
-        $uibModal.open({
-            templateUrl: 'views/campaign-points-modal.tpl.html',
-            controller: 'AdminCampaignPointsModalController',
-            size: 'xl',
-            windowClass: 'points-modal-wide',
-            resolve: {
-                campaign: function() {
-                    return $scope.details.campaign;
-                }
-            }
-        });
+        AdminPages.go('campaign-points', { campaignId: $scope.details.campaign._id });
     };
     
     $scope.manageLandUse = function() {
-        // Redirecionar para página de gestão de classes de uso
-        NotificationDialog.info('Redirecionando para gestão de classes de uso do solo...');
-        // TODO: Implementar redirecionamento ou modal específico
+        AdminPages.go('campaign-edit', { campaignId: $scope.details.campaign._id });
     };
     
     $scope.uploadMorePoints = function() {
-        const modalInstance = $uibModal.open({
-            templateUrl: 'views/geojson-upload-modal.tpl.html',
-            controller: 'AdminGeoJSONUploadModalController',
-            size: 'lg',
-            windowClass: 'modal-90-width',
-            resolve: {
-                campaignId: function() {
-                    return $scope.details.campaign._id;
-                }
-            }
-        });
-        
-        modalInstance.result.then(function(result) {
-            if (result.success) {
-                $scope.loadCampaignDetails();
-                NotificationDialog.success(`Upload realizado com sucesso! ${result.message}`);
-            }
-        });
+        AdminPages.go('campaign-upload', { campaignId: $scope.details.campaign._id });
     };
     
     $scope.deleteCampaign = function() {
-        NotificationDialog.confirm(`Tem certeza que deseja deletar a campanha "${$scope.details.campaign._id}"?`, 'Confirmar Exclusão').then(function(confirmed) {
-            if (!confirmed) {
+        if (waybackDestroyed || deletionPending) return;
+        const campaignId = $scope.details.campaign._id;
+        deletionPending = true;
+        return NotificationDialog.confirm(`Tem certeza que deseja deletar a campanha "${campaignId}"?`, 'Confirmar Exclusão').then(function(confirmed) {
+            if (!confirmed || waybackDestroyed) {
                 return;
             }
             
-            $http.delete('/api/campaigns/' + $scope.details.campaign._id).then(function(response) {
+            return $http.delete('/api/campaigns/' + campaignId).then(function(response) {
+                if (waybackDestroyed) return;
                 if (response.data.success) {
                     NotificationDialog.success('Campanha deletada com sucesso!');
                     $location.path('/admin/campaigns');
@@ -617,13 +563,14 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
                     NotificationDialog.error('Erro: ' + response.data.error);
                 }
             }, function(error) {
+                if (waybackDestroyed) return;
                 if (error.status === 401) {
                     $location.path('/admin/login');
                 } else {
                     NotificationDialog.error('Erro ao deletar campanha: ' + (error.data.error || 'Erro desconhecido'));
                 }
             });
-        });
+        }).finally(function() { deletionPending = false; });
     };
     
     // Funções para análise de propriedades
@@ -726,15 +673,20 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
     };
 
     $scope.startWaybackSync = function (force) {
-        if ($scope.wayback.starting) return;
+        if (waybackDestroyed || $scope.wayback.starting) return;
+        $scope.wayback.starting = true;
+        var campaignId = $scope.campaignId;
         var doStart = function () {
             $scope.wayback.starting = true;
-            var url = '/api/wayback/sync/' + $scope.campaignId + (force ? '?force=1' : '');
-            $http.post(url).then(function () {
+            if (waybackDestroyed) return;
+            var url = '/api/wayback/sync/' + encodeURIComponent(campaignId) + (force ? '?force=1' : '');
+            return $http.post(url).then(function () {
+                if (waybackDestroyed) return;
                 $scope.wayback.starting = false;
                 NotificationDialog.success('Sincronização iniciada.');
                 $scope.loadWaybackStatus();
             }, function (error) {
+                if (waybackDestroyed) return;
                 $scope.wayback.starting = false;
                 if (error.status === 401) {
                     $location.path('/admin/login');
@@ -745,14 +697,15 @@ Application.controller('CampaignManagementController', function ($scope, $http, 
             });
         };
         if (force) {
-            NotificationDialog.confirm(
+            return NotificationDialog.confirm(
                 'A ressincronização forçada reprocessa TODOS os pontos da campanha, inclusive os já sincronizados. Para campanhas grandes, isso pode levar horas. Deseja continuar?',
                 'Forçar ressincronização'
             ).then(function (confirmed) {
-                if (confirmed) doStart();
+                if (confirmed && !waybackDestroyed) return doStart();
+                else $scope.wayback.starting = false;
             });
         } else {
-            doStart();
+            return doStart();
         }
     };
 

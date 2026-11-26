@@ -29,6 +29,8 @@
   <link href="assets/style.css" rel="stylesheet">
   <link href="assets/language-selector.css" rel="stylesheet">
   <link href="assets/css/notification-dialog.css" rel="stylesheet">
+  <link href="css/admin-pages.css" rel="stylesheet">
+  <link href="css/admin-log-pages.css" rel="stylesheet">
   <link href="3thparty/css/magnifier.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="3thparty/css/ui-bootstrap-csp.css">
@@ -81,6 +83,15 @@
 <script src="controllers/admin-tickets.js"></script>
 <script src="others/services.js"></script>
 <script src="services/notification-dialog.js"></script>
+<script src="services/admin-pages.js"></script>
+<script src="services/admin-notifications.js"></script>
+<script src="controllers/admin-page.js"></script>
+<script src="directives/adminNotifications.js"></script>
+<script src="directives/adminPageContent.js"></script>
+<script src="services/admin-campaign-pages.js"></script>
+<script src="services/admin-visualization-pages.js"></script>
+<script src="services/admin-support-pages.js"></script>
+<script src="services/admin-mosaic-page.js"></script>
 <script src="services/loading-interceptor.js"></script>
 <script src="services/diagnostic-capture.js"></script>
 <script src="services/wayback-grid-core.js"></script>
@@ -101,6 +112,7 @@
 <script src="socket.io/socket.io.js"></script>
 <global-loading></global-loading>
 <div ng-include="'views/navbar.tpl.html'"></div>
+<admin-notifications></admin-notifications>
 <div ng-view="view" class="content-main page-view"></div>
 </body>
 </html>

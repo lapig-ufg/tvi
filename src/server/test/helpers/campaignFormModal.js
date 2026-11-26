@@ -55,12 +55,13 @@ function abrirModal(campaign, isNew, respostas, confirmar) {
     const confirmacoes = [];
     const contexto = vm.createContext({
         Application: { controller: function (nome, fn) { registro[nome] = fn; } },
+        angular: { copy: value => structuredClone(value) },
         PointPropertyDisplayCore: PointPropertyDisplayCore,
         LandUseImportCore: LandUseImportCore,
         console: { error: function () {}, log: function () {}, warn: function () {} }
     });
     vm.runInContext(fonteDoController(), contexto);
-    const $scope = {};
+    const $scope = { $on: function() {} };
     const $http = {
         get: function (url, config) {
             requisicoes.push({ url: url, config: config });

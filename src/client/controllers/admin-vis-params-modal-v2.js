@@ -4,6 +4,8 @@ Application.controller('AdminVisParamModalV2Controller', function ($scope, $uibM
     $scope.title = $scope.isEdit ? 'Editar Parâmetro de Visualização' : 'Novo Parâmetro de Visualização';
     $scope.categories = categories;
     $scope.loading = false;
+    var destroyed = false;
+    $scope.$on('$destroy', function() { destroyed = true; });
     
     // Estados do wizard
     $scope.currentStep = 1;
@@ -406,6 +408,7 @@ Application.controller('AdminVisParamModalV2Controller', function ($scope, $uibM
     
     // Save
     $scope.save = function() {
+        if (destroyed || $scope.loading) return;
         if (!$scope.canProceed()) {
             NotificationDialog.show('Por favor, complete todos os campos obrigatórios', 'warning');
             return;
@@ -460,6 +463,7 @@ Application.controller('AdminVisParamModalV2Controller', function ($scope, $uibM
         const method = $scope.isEdit ? requester._put : requester._post;
         
         method(endpoint, dataToSave, function(response) {
+            if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show(
                 $scope.isEdit ? 'Parâmetro atualizado com sucesso!' : 'Parâmetro criado com sucesso!', 
@@ -467,6 +471,7 @@ Application.controller('AdminVisParamModalV2Controller', function ($scope, $uibM
             );
             $uibModalInstance.close(response);
         }, function(error) {
+            if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show('Erro ao salvar parâmetro: ' + (error.message || 'Erro desconhecido'), 'error');
         });

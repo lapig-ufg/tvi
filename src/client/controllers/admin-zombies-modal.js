@@ -9,7 +9,7 @@
  *   GET  /api/admin/campaigns/:id/zombies/history  (tvi_zombie_counts)
  */
 Application.controller('AdminZombiesModalController',
-    function ($scope, $http, $window, campaign) {
+    function ($scope, $http, NotificationDialog, campaign) {
 
         $scope.campaign = campaign;
         $scope.activeTab = 'list';
@@ -45,33 +45,34 @@ Application.controller('AdminZombiesModalController',
                     $scope.report = resp.data;
                 })
                 .catch(function (err) {
-                    $window.alert('Erro ao carregar zumbis: ' + (err.data && err.data.error || err.statusText));
+                    NotificationDialog.error('Erro ao carregar zumbis: ' + (err.data && err.data.error || err.statusText));
                 })
                 .finally(function () {
                     $scope.loadingReport = false;
                 });
         };
 
-        $scope.recoverZombies = function () {
-            if (!$scope.report || !$scope.report.total) return;
-            var msg = 'Confirma criar blocos de recovery para ' + $scope.report.total + ' pontos zumbi? '
-                    + 'A operação é idempotente — pontos já cobertos por blocos available/assigned são ignorados.';
-            if (!$window.confirm(msg)) return;
+        var destroyed = false;
+        $scope.$on('$destroy', function() { destroyed = true; });
 
+        $scope.recoverZombies = function () {
+            if (destroyed || $scope.recovering || !$scope.report || !$scope.report.total) return;
+            var msg = 'Confirma criar blocos de recuperação para ' + $scope.report.total + ' pontos? '
+                + 'Pontos já cobertos por blocos disponíveis ou atribuídos serão ignorados.';
             $scope.recovering = true;
-            $scope.recoveryResult = null;
-            $http.post(baseUrl() + '/recover-zombies', {})
-                .then(function (resp) {
+            return NotificationDialog.confirm(msg, 'Recuperar pontos').then(function(confirmed) {
+                if (!confirmed || destroyed) return;
+                $scope.recoveryResult = null;
+                return $http.post(baseUrl() + '/recover-zombies', {}).then(function(resp) {
+                    if (destroyed) return;
                     $scope.recoveryResult = resp.data;
-                    // Recarrega relatório para refletir o novo estado
                     $scope.loadZombies();
-                })
-                .catch(function (err) {
-                    $window.alert('Erro ao recuperar zumbis: ' + (err.data && err.data.error || err.statusText));
-                })
-                .finally(function () {
-                    $scope.recovering = false;
                 });
+            }).catch(function(err) {
+                if (!destroyed) NotificationDialog.error('Erro ao recuperar pontos: ' + (err.data && err.data.error || err.statusText));
+            }).finally(function() {
+                $scope.recovering = false;
+            });
         };
 
         $scope.loadHistory = function () {
@@ -84,7 +85,7 @@ Application.controller('AdminZombiesModalController',
                     $scope.historyTotal = resp.data.total || 0;
                 })
                 .catch(function (err) {
-                    $window.alert('Erro ao carregar histórico: ' + (err.data && err.data.error || err.statusText));
+                    NotificationDialog.error('Erro ao carregar histórico: ' + (err.data && err.data.error || err.statusText));
                 })
                 .finally(function () {
                     $scope.loadingHistory = false;
