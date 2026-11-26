@@ -4,6 +4,54 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     $scope.campaigns = [];
     var destroyed = false;
     var deletionPending = false;
+    var actionMenuFocus;
+
+    function availableMenuButtons(menu) {
+        return Array.prototype.filter.call(menu.querySelectorAll('button'), function(button) {
+            return !button.disabled && button.getClientRects().length > 0;
+        });
+    }
+
+    $scope.campaignActionsToggled = function(open, menuId) {
+        if (actionMenuFocus) $timeout.cancel(actionMenuFocus);
+        if (!open) return;
+        actionMenuFocus = $timeout(function() {
+            if (destroyed) return;
+            var menu = $window.document.getElementById(menuId);
+            if (!menu) return;
+            var rect = menu.getBoundingClientRect();
+            if (rect.bottom > $window.innerHeight - 12) {
+                menu.style.top = Math.max(12, $window.innerHeight - rect.height - 12) + ($window.pageYOffset || 0) + 'px';
+            }
+            if (rect.left < 12 || rect.right > $window.innerWidth - 12) {
+                menu.style.left = Math.max(12, Math.min(rect.left, $window.innerWidth - rect.width - 12)) + ($window.pageXOffset || 0) + 'px';
+                menu.style.right = 'auto';
+            }
+            var buttons = availableMenuButtons(menu);
+            if (buttons.length) buttons[0].focus();
+        });
+    };
+
+    $scope.campaignMenuKeydown = function(event, open) {
+        var menu = event.currentTarget;
+        if (event.key === 'Escape' || event.key === 'Tab') {
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); }
+            var toggle = $window.document.getElementById(menu.getAttribute('aria-labelledby'));
+            if (toggle) toggle.focus();
+            return false;
+        }
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End'].indexOf(event.key) === -1) return open;
+        event.preventDefault();
+        event.stopPropagation();
+        var buttons = availableMenuButtons(menu);
+        if (!buttons.length) return open;
+        var index = buttons.indexOf(event.target);
+        if (event.key === 'Home') index = 0;
+        else if (event.key === 'End') index = buttons.length - 1;
+        else index = (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[index].focus();
+        return open;
+    };
     $scope.loading = false;
     $scope.pagination = {
         currentPage: 1,
@@ -418,6 +466,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
 
     $scope.$on('$destroy', function() {
         destroyed = true;
+        if (actionMenuFocus) $timeout.cancel(actionMenuFocus);
         if ($scope.filterChangeTimeout) $timeout.cancel($scope.filterChangeTimeout);
     });
 

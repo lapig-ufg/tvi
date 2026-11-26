@@ -243,51 +243,58 @@
                             </span>
                         </td>
                         <td class="campaign-actions">
-                            <div class="action-buttons">
-                                <button class="action-btn manage" ng-click="manageCampaign(campaign)"
-                                        title="Gerenciar campanha">
-                                    <i class="fas fa-cog"></i>
+                            <div class="campaign-row-actions">
+                                <button type="button" class="campaign-manage-button" ng-click="manageCampaign(campaign)" title="Gerenciar campanha">
+                                    <i class="fas fa-cog" aria-hidden="true"></i><span>Gerenciar</span>
                                 </button>
-                                <button class="action-btn monitor" ng-click="monitorCampaign(campaign)"
-                                        title="Monitorar campanha" ng-disabled="!campaign.totalPoints">
-                                    <i class="fas fa-chart-bar"></i>
-                                </button>
-                                <button class="action-btn blocks" ng-click="manageBlocks(campaign)"
-                                        title="Gerenciar blocos de inspeção" ng-disabled="!campaign.totalPoints">
-                                    <i class="fas fa-cubes"></i>
-                                </button>
-                                <button class="action-btn edit" ng-click="editCampaign(campaign)" 
-                                        title="Editar campanha">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="action-btn upload" ng-click="uploadGeoJSON(campaign)"
-                                        title="Upload GeoJSON">
-                                    <i class="fas fa-upload"></i>
-                                </button>
-                                <button class="action-btn import-class" ng-click="importClassifications(campaign)"
-                                        title="Importar Classificações" ng-disabled="!campaign.totalPoints">
-                                    <i class="fas fa-file-import"></i>
-                                </button>
-                                <button class="action-btn view" ng-click="viewPoints(campaign)"
-                                        title="Ver pontos" ng-disabled="!campaign.totalPoints">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </button>
-                                <button class="action-btn delete-points" ng-click="deletePoints(campaign)"
-                                        title="Deletar pontos" ng-disabled="!campaign.totalPoints">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                                <button class="action-btn excess" ng-click="manageExcessInspections(campaign)"
-                                        title="Inspeções excedentes" ng-show="campaign.numInspec > 0">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                </button>
-                                <button class="action-btn zombies" ng-click="manageZombies(campaign)"
-                                        title="Pontos zumbi" ng-show="campaign.numInspec > 0">
-                                    <i class="fas fa-recycle"></i>
-                                </button>
-                                <button class="action-btn delete" ng-click="deleteCampaign(campaign)"
-                                        title="Deletar campanha" ng-disabled="campaign.totalPoints > 0">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                <div uib-dropdown dropdown-append-to-body is-open="actionsOpen"
+                                     on-toggle="campaignActionsToggled(open, 'campaign-action-menu-' + $id)">
+                                    <button type="button" class="campaign-more-button" uib-dropdown-toggle
+                                            id="campaign-action-toggle-{{::$id}}" aria-controls="campaign-action-menu-{{::$id}}"
+                                            aria-label="Mais ações da campanha {{campaign._id}}">
+                                        <span>Mais ações</span><i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-right campaign-action-menu" uib-dropdown-menu role="menu"
+                                        id="campaign-action-menu-{{::$id}}" aria-labelledby="campaign-action-toggle-{{::$id}}"
+                                        ng-keydown="actionsOpen = campaignMenuKeydown($event, actionsOpen)">
+                                        <li class="campaign-menu-context" role="presentation">{{campaign._id}}</li>
+                                        <li class="campaign-menu-heading" role="presentation">Acompanhamento</li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="monitorCampaign(campaign)" ng-disabled="!campaign.totalPoints">
+                                            <i class="fas fa-chart-bar" aria-hidden="true"></i><span>Monitorar campanha</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="manageBlocks(campaign)" ng-disabled="!campaign.totalPoints">
+                                            <i class="fas fa-cubes" aria-hidden="true"></i><span>Blocos de inspeção</span>
+                                        </button></li>
+                                        <li class="campaign-menu-heading" role="presentation">Dados</li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="editCampaign(campaign)">
+                                            <i class="fas fa-edit" aria-hidden="true"></i><span>Editar campanha</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="uploadGeoJSON(campaign)">
+                                            <i class="fas fa-upload" aria-hidden="true"></i><span>Enviar GeoJSON</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="importClassifications(campaign)" ng-disabled="!campaign.totalPoints">
+                                            <i class="fas fa-file-import" aria-hidden="true"></i><span>Importar classificações</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="viewPoints(campaign)" ng-disabled="!campaign.totalPoints">
+                                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>Ver pontos</span>
+                                        </button></li>
+                                        <li class="campaign-menu-heading" role="presentation" ng-show="campaign.numInspec > 0">Manutenção</li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="manageExcessInspections(campaign)" ng-show="campaign.numInspec > 0">
+                                            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i><span>Inspeções excedentes</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" ng-click="manageZombies(campaign)" ng-show="campaign.numInspec > 0">
+                                            <i class="fas fa-recycle" aria-hidden="true"></i><span>Pontos zumbi</span>
+                                        </button></li>
+                                        <li class="campaign-menu-heading campaign-menu-danger-heading" role="presentation">Exclusão</li>
+                                        <li role="presentation"><button type="button" role="menuitem" class="campaign-menu-danger" ng-click="deletePoints(campaign)" ng-disabled="!campaign.totalPoints">
+                                            <i class="fas fa-trash-alt" aria-hidden="true"></i><span>Excluir pontos</span>
+                                        </button></li>
+                                        <li role="presentation"><button type="button" role="menuitem" class="campaign-menu-danger" ng-click="deleteCampaign(campaign)" ng-disabled="campaign.totalPoints > 0"
+                                                title="{{campaign.totalPoints > 0 ? 'Exclua os pontos antes de excluir a campanha' : 'Excluir campanha'}}">
+                                            <i class="fas fa-trash" aria-hidden="true"></i><span>Excluir campanha</span>
+                                        </button></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
