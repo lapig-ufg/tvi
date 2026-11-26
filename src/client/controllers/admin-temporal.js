@@ -1,6 +1,6 @@
 'use strict';
 
-Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, mapLoadingService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
+Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
     $scope.showChartsLandsatNdwi = false;
@@ -575,7 +575,6 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         var generateMaps = function () {
             $scope.maps = [];
             $scope.mapStates = {};
-            mapLoadingService.reset();
             $scope.$broadcast('resetLazyMaps');
 
             if ($scope.isSentinel) {
@@ -584,15 +583,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 generateLandsatMaps();
             }
             
-            // Enfileirar os primeiros mapas (serão ativados em sequência pelo service)
-            $timeout(function() {
-                var initialMapsToLoad = Math.min(3, $scope.maps.length);
-                for (var i = 0; i < initialMapsToLoad; i++) {
-                    if ($scope.mapStates[i] && !$scope.mapStates[i].visible) {
-                        $scope.onMapVisible(i);
-                    }
-                }
-            }, 200);
+
         };
         
         var generateSentinelMaps = function() {
@@ -796,30 +787,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             }
         };
         
-        /**
-         * Ativa um mapa via fila serializada do mapLoadingService.
-         * Mesmo padrão do temporal.js — ver comentários lá para detalhes do fluxo.
-         */
         $scope.onMapVisible = function(index) {
-            if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
-                return;
-            }
-
-            mapLoadingService.enqueue(index, function() {
-                $scope.mapStates[index].visible = true;
-                $scope.mapStates[index].loading = true;
-                mapLoadingService.startLoading(index);
-
-                // Aguardar compile/link do Angular antes de sinalizar ready
-                $timeout(function() {
-                    mapLoadingService.mapReady(index);
-                }, 0);
-
-                $timeout(function() {
-                    $scope.mapStates[index].loading = false;
-                    mapLoadingService.finishLoading(index);
-                }, 800);
-            });
+            if (!$scope.mapStates[index] || $scope.mapStates[index].visible) return;
+            $scope.mapStates[index].visible = true;
         };
 
         $scope.getKml = function () {

@@ -11,7 +11,7 @@
 // TODO [TKT-000009]: adicionar CRUD de metas individuais consumindo
 //   /api/admin/campaigns/:id/weekly-goals (GET/PUT/DELETE) e histórico em
 //   /api/admin/campaigns/:id/monitoring/weekly-progress.
-Application.controller('AdminCampaignMonitoringController', function($scope, $http, $routeParams, $timeout, $location, $window, NotificationDialog, mapLoadingService, sampleMarkerService) {
+Application.controller('AdminCampaignMonitoringController', function($scope, $http, $routeParams, $timeout, $location, $window, NotificationDialog, sampleMarkerService) {
 
 	var chartsGd = [];
 	var socket = null;
@@ -565,30 +565,13 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 	};
 
 	$scope.onMapVisible = function(index) {
-		if ($scope.mapStates[index].visible || mapLoadingService.isLoaded(index)) {
-			return;
-		}
-
-		mapLoadingService.enqueue(index, function() {
-			$scope.mapStates[index].visible = true;
-			$scope.mapStates[index].loading = true;
-			mapLoadingService.startLoading(index);
-
-			$timeout(function() {
-				mapLoadingService.mapReady(index);
-			}, 0);
-
-			$timeout(function() {
-				$scope.mapStates[index].loading = false;
-				mapLoadingService.finishLoading(index);
-			}, 800);
-		});
+		if (!$scope.mapStates[index] || $scope.mapStates[index].visible) return;
+		$scope.mapStates[index].visible = true;
 	};
 
 	function generateMaps() {
 		$scope.maps = [];
 		$scope.mapStates = {};
-		mapLoadingService.reset();
 		$scope.$broadcast('resetLazyMaps');
 
 		if (!$scope.point || !$scope.config.initialYear) return;
@@ -709,8 +692,6 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 		// Resize
 		$window.removeEventListener('resize', resizeHandler);
 
-		// Map loading
-		mapLoadingService.reset();
 	});
 
 	// ========== INÍCIO ==========
