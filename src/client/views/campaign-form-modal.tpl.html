@@ -12,7 +12,7 @@
         </div>
 
         <div class="modal-body">
-            <form name="campaignForm" class="modern-form">
+            <form name="campaignForm" class="modern-form" autocomplete="off">
                 <section
                     class="campaign-editor-section campaign-editor-general"
                     aria-labelledby="campaign-general-title"
@@ -20,11 +20,13 @@
                     <h4 class="section-title" id="campaign-general-title">Dados gerais</h4>
                     <div class="campaign-editor-general-fields">
                         <div class="form-group" ng-if="isNew">
-                            <label for="campaign-id" class="form-label required">ID da campanha</label>
+                            <label for="campaign-code" class="form-label required">ID da campanha</label>
                             <input
                                 type="text"
                                 class="form-input"
-                                id="campaign-id"
+                                id="campaign-code"
+                                name="campaignCode"
+                                autocomplete="off"
                                 ng-model="campaign._id"
                                 placeholder="Digite um ID único para a campanha"
                                 required
@@ -69,9 +71,11 @@
                             />
                         </div>
                         <div class="form-group">
-                            <label for="campaign-password" class="form-label">Senha de acesso</label>
+                            <label for="campaign-access-secret" class="form-label">Senha de acesso</label>
                             <input
-                                id="campaign-password"
+                                id="campaign-access-secret"
+                                name="campaignAccessSecret"
+                                autocomplete="new-password"
                                 type="password"
                                 class="form-input"
                                 ng-model="campaign.password"
@@ -1176,8 +1180,10 @@
         margin: 0;
     }
     .admin-page .campaign-editor .modal-header {
-        padding: 0 0 24px;
-        background: transparent;
+        padding: 24px;
+        background: #fff;
+        border: 1px solid #dce3eb;
+        border-radius: 6px;
     }
     .admin-page .campaign-editor .modal-title {
         display: none;
@@ -1244,6 +1250,9 @@
         }
     }
     @media (max-width: 767px) {
+        .admin-page .campaign-editor .modal-header {
+            padding: 18px;
+        }
         .campaign-editor .modal-header,
         .campaign-editor .modal-body,
         .campaign-editor .modal-footer {
