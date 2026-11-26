@@ -462,7 +462,7 @@ Application.controller('AdminVisParamModalV2Controller', function ($scope, $uibM
         
         const method = $scope.isEdit ? requester._put : requester._post;
         
-        method(endpoint, dataToSave, function(response) {
+        method.call(requester, endpoint, dataToSave, function(response) {
             if (destroyed) return;
             $scope.loading = false;
             NotificationDialog.show(

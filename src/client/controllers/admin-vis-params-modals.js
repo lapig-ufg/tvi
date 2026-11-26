@@ -106,7 +106,7 @@ Application.controller('AdminVisParamModalController', function ($scope, $uibMod
         
         const method = $scope.isEdit ? requester._put : requester._post;
         
-        method(endpoint, $scope.param, function(response) {
+        method.call(requester, endpoint, $scope.param, function(response) {
             $scope.loading = false;
             $uibModalInstance.close(response);
         }, function(error) {

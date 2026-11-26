@@ -28,10 +28,11 @@ Application
             return {};
         }
 
-        this._put = function (url, params, callback) {
+        this._put = function (url, params, callback, errorCallback) {
 
             url = this.servicePrefix + url;
             if (typeof params === "function") {
+                errorCallback = typeof callback === "function" ? callback : errorCallback;
                 callback = params;
                 params = [];
             }
@@ -45,16 +46,19 @@ Application
             $http.put(url, params, config).success(function (response) {
                 callback(response);
             }.bind(this)).error(function(error) {
-                if (callback.error) {
+                if (typeof errorCallback === "function") {
+                    errorCallback(error);
+                } else if (callback.error) {
                     callback.error(error);
                 }
             });
         }
 
-        this._post = function (url, params, callback) {
+        this._post = function (url, params, callback, errorCallback) {
 
             url = this.servicePrefix + url;
             if (typeof params === "function") {
+                errorCallback = typeof callback === "function" ? callback : errorCallback;
                 callback = params;
                 params = [];
             }
@@ -68,16 +72,19 @@ Application
             $http.post(url, params, config).success(function (response) {
                 callback(response);
             }.bind(this)).error(function(error) {
-                if (callback.error) {
+                if (typeof errorCallback === "function") {
+                    errorCallback(error);
+                } else if (callback.error) {
                     callback.error(error);
                 }
             });
         }
 
-        this._get = function (url, params, callback) {
+        this._get = function (url, params, callback, errorCallback) {
 
             url = this.servicePrefix + url;
             if (typeof params === "function") {
+                errorCallback = typeof callback === "function" ? callback : errorCallback;
                 callback = params;
                 params = [];
             }
@@ -97,16 +104,19 @@ Application
                 callback(response);
             }.bind(this)).error(function(error) {
                 // Error
-                if (callback.error) {
+                if (typeof errorCallback === "function") {
+                    errorCallback(error);
+                } else if (callback.error) {
                     callback.error(error);
                 }
             });
         }
 
-        this._patch = function (url, params, callback) {
+        this._patch = function (url, params, callback, errorCallback) {
 
             url = this.servicePrefix + url;
             if (typeof params === "function") {
+                errorCallback = typeof callback === "function" ? callback : errorCallback;
                 callback = params;
                 params = {};
             }
@@ -124,16 +134,19 @@ Application
                 callback(response);
             }.bind(this)).error(function(error) {
                 // Error
-                if (callback.error) {
+                if (typeof errorCallback === "function") {
+                    errorCallback(error);
+                } else if (callback.error) {
                     callback.error(error);
                 }
             });
         }
 
-        this._delete = function (url, params, callback) {
+        this._delete = function (url, params, callback, errorCallback) {
 
             url = this.servicePrefix + url;
             if (typeof params === "function") {
+                errorCallback = typeof callback === "function" ? callback : errorCallback;
                 callback = params;
                 params = [];
             }
@@ -149,7 +162,9 @@ Application
             $http.delete(url, config).success(function (response) {
                 callback(response);
             }.bind(this)).error(function(error) {
-                if (callback.error) {
+                if (typeof errorCallback === "function") {
+                    errorCallback(error);
+                } else if (callback.error) {
                     callback.error(error);
                 }
             });

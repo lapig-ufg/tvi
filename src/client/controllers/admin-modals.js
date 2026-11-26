@@ -298,7 +298,7 @@ Application.controller('AdminCampaignPointsModalController', function ($scope, $
     $scope.filteredPoints = null;
     $scope.loading = false;
     $scope.currentPage = 1;
-    $scope.pageSize = 10;
+    $scope.pageSize = '10';
     $scope.totalPoints = 0;
     $scope.searchId = '';
     $scope.Math = Math;
