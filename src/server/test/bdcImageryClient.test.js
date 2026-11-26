@@ -11,7 +11,7 @@ function deferred() {
     return { promise, resolve, reject };
 }
 function client() {
-    const calls = [], timers = [];
+    const calls = [], timers = [], modals = [];
     let service;
     const http = {};
     ['get', 'post'].forEach(method => {
@@ -24,9 +24,13 @@ function client() {
     function timeout(fn, delay) { const timer = { fn, delay }; timers.push(timer); return timer; }
     timeout.cancel = timer => { if (timer) timer.cancelled = true; };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../client/services/bdcImageryService.js'), 'utf8'), {
-        angular: { module: () => ({ factory: (name, factory) => { service = factory(http, timeout, { defer: deferred }); } }) }
+        angular: { module: () => ({ factory: (name, factory) => { service = factory(http, timeout, { defer: deferred }, { open(options) {
+            const result = deferred();
+            const modal = { options, result: result.promise, close: result.resolve, dismiss: result.reject };
+            modals.push(modal); return modal;
+        } }, { translate: key => ({ 'VIS_PARAMS.NATURAL_COLOR': 'Cor natural', 'VIS_PARAMS.FALSE_COLOR': 'Falsa cor', 'VIS_PARAMS.AGRICULTURE': 'Agricultura' }[key] || key) }); } }) }
     });
-    return { service, calls, timers };
+    return { service, calls, timers, modals };
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const options = { pointId: 'p1', year: 2020, period: 'DRY', revision: 1 };
@@ -109,7 +113,7 @@ test('URL de composição preserva a aquisição e recusa origem externa', () =>
     assert.equal(c.calls.length, 0);
 });
 
-test('supervisão abre referências da inspeção, preserva anos históricos e separa revisão atual', () => {
+test('supervisão preserva referências históricas mesmo diante de configuração de revisão atual', () => {
     const c = client();
     const scope = { config: { initialYear: 2020, finalYear: 2021 }, period: 'DRY' };
     const grid = c.service.bindGrid(scope, true);
@@ -119,8 +123,8 @@ test('supervisão abre referências da inspeção, preserva anos históricos e s
     assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'old');
     assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019]);
     scope.bdc.view = 'current';
-    assert.equal(scope.bdcSelectionId(2019, 'DRY'), null);
-    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2020, 2021]);
+    assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'old');
+    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019]);
     assert.equal(c.calls.length, 0);
 });
 
@@ -365,4 +369,77 @@ test('primeira notificação dos parâmetros visuais não recria a camada recém
     d.watches[1](initial, initial);
     assert.equal(d.timers.length, 0);
     assert.equal(d.layers.length, 1);
+});
+
+test('ajuda BDC abre um diálogo contextual e fecha ao destruir a tela sem alterar seleções', async () => {
+    for (const supervision of [false, true]) {
+        const c = client(), events = {};
+        const scope = { config: {}, showTimeseries: true, $on(name, callback) { events[name] = callback; } };
+        c.service.bindGrid(scope, supervision);
+        scope.bdc.profile = 'natural';
+        scope.openBdcHelp();
+        scope.openBdcHelp();
+        assert.equal(c.modals.length, 1);
+        assert.equal(c.modals[0].options.templateUrl, 'views/bdc-help.tpl.html');
+        const content = c.modals[0].options.resolve.help();
+        assert.equal(content.supervision, supervision);
+        assert.equal(content.showTimeseries, true);
+        c.modals[0].close();
+        await tick();
+        scope.openBdcHelp();
+        assert.equal(c.modals.length, 2);
+        events.$destroy();
+        await tick();
+        assert.equal(scope.bdc.profile, 'natural');
+        assert.equal(scope.bdc.view, supervision ? 'history' : 'current');
+        assert.equal(c.calls.length, 0);
+    }
+});
+test('composições têm rótulos legíveis mantendo os identificadores e referências históricas', () => {
+    const c = client(), scope = { config: {} };
+    const grid = c.service.bindGrid(scope, true);
+    grid.reset({ inspection: [{ bdcSelections: [{ year: 2020, period: 'DRY', profile: 'false-color', selectionId: 'historic' }] }] });
+    grid.configure({ imagerySource: 'bdc', bdcConfig: { defaultProfile: 'natural', profiles: ['natural', 'ndvi', 'agriculture'] } });
+    assert.equal(scope.bdcProfileLabel('natural'), 'Cor natural');
+    assert.equal(scope.bdcProfileLabel('false-color'), 'Falsa cor');
+    assert.equal(scope.bdcProfileLabel('ndvi'), 'NDVI');
+    assert.equal(scope.bdcProfileLabel('agriculture'), 'Agricultura');
+    assert.equal(scope.bdcProfileLabel('landsat-tvi-true'), 'Cor natural');
+    assert.equal(scope.bdcProfileLabel('landsat-tvi-false'), 'Falsa cor');
+    assert.equal(scope.bdcProfileLabel('landsat-tvi-agri'), 'Agricultura');
+    assert.equal(scope.bdcProfileLabel('landsat-tvi-ndvi'), 'NDVI');
+    assert.equal(scope.bdcProfileLabel('tvi-rgb'), 'Cor natural');
+    assert.equal(scope.bdcProfileLabel('tvi-ndvi'), 'NDVI');
+    assert.equal(scope.bdcProfileLabel('custom-profile'), 'custom-profile');
+    assert.deepEqual(Array.from(scope.bdc.profiles), ['natural', 'ndvi', 'agriculture', 'false-color']);
+    assert.equal(scope.bdcSelectionId(2020, 'DRY'), 'historic');
+    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), 'false-color');
+});
+
+test('supervisão sem referência não substitui anos nem composição pela campanha atual', () => {
+    const c = client(), scope = { config: { initialYear: 2020, finalYear: 2022 } };
+    const grid = c.service.bindGrid(scope, true);
+    grid.reset({ inspection: [{ userName: 'Ana', bdcSelections: [] }] });
+    grid.configure({ imagerySource: 'bdc', bdcConfig: { defaultProfile: 'natural', profiles: ['natural'] } });
+    assert.equal(scope.isBdc, true);
+    assert.equal(scope.buildBdcMaps().length, 0);
+    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), null);
+    assert.equal(scope.bdcSelectionId(2020, 'DRY'), null);
+    assert.equal(c.calls.length, 0);
+});
+test('troca de inspeção preserva aquisição e composição individuais sem aplicar substituição', () => {
+    const c = client(), scope = { config: {} };
+    const grid = c.service.bindGrid(scope, true);
+    grid.reset({ inspection: [
+        { bdcSelections: [{ year: 2020, period: 'DRY', selectionId: 'first', profile: 'natural' }] },
+        { bdcSelections: [{ year: 2019, period: 'DRY', selectionId: 'second', profile: 'ndvi' }] }
+    ] });
+    scope.bdc.inspectionIndex = 1;
+    scope.bdc.profile = 'agriculture';
+    scope.bdc.profileOverride = true;
+    scope.changeBdcView();
+    assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'second');
+    assert.equal(scope.bdcSelectionProfile(2019, 'DRY'), 'ndvi');
+    assert.deepEqual(Array.from(scope.maps, map => map.year), [2019]);
+    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), null);
 });

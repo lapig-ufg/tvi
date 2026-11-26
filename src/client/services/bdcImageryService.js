@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('application').factory('bdcImageryService', function ($http, $timeout, $q) {
+angular.module('application').factory('bdcImageryService', function ($http, $timeout, $q, $uibModal, i18nService) {
     var entries = Object.create(null);
     var queue = [];
     var active = 0;
@@ -117,23 +117,44 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
     }
 
     function bindGrid(scope, supervision) {
+        var helpModal;
+        scope.bdcProfileLabel = function (profile) {
+            var keys = { natural: 'VIS_PARAMS.NATURAL_COLOR', 'false-color': 'VIS_PARAMS.FALSE_COLOR', agriculture: 'VIS_PARAMS.AGRICULTURE',
+                'landsat-tvi-true': 'VIS_PARAMS.NATURAL_COLOR', 'landsat-tvi-false': 'VIS_PARAMS.FALSE_COLOR',
+                'landsat-tvi-agri': 'VIS_PARAMS.AGRICULTURE', 'tvi-rgb': 'VIS_PARAMS.NATURAL_COLOR',
+                'tvi-green': 'BDC.PROFILE_VEGETATION', 'tvi-red': 'BDC.PROFILE_INFRARED' };
+            return keys[profile] ? i18nService.translate(keys[profile]) : ['ndvi', 'tvi-ndvi', 'landsat-tvi-ndvi'].indexOf(profile) !== -1 ? 'NDVI' : profile;
+        };
+        scope.openBdcHelp = function () {
+            if (helpModal) return;
+            helpModal = $uibModal.open({
+                templateUrl: 'views/bdc-help.tpl.html',
+                size: 'md',
+                ariaLabelledBy: 'bdc-help-title',
+                controller: ['$scope', 'help', function (modalScope, help) { modalScope.help = help; }],
+                resolve: { help: function () { return { supervision: supervision, showTimeseries: !!scope.showTimeseries }; } }
+            });
+            function clearHelp() { helpModal = null; }
+            helpModal.result.then(clearHelp, clearHelp);
+        };
+        if (scope.$on) scope.$on('$destroy', function () { if (helpModal) helpModal.dismiss(); });
         scope.bdc = { view: supervision ? 'history' : 'current', inspectors: [], inspectionIndex: 0, references: [], profile: null };
         function historicalReferences() {
             var inspection = scope.bdc.inspectors[scope.bdc.inspectionIndex];
             return inspection && Array.isArray(inspection.bdcSelections) ? inspection.bdcSelections : [];
         }
         scope.bdcSelectionId = function (year, period) {
-            if (scope.bdc.view !== 'history') return null;
+            if (!supervision && scope.bdc.view !== 'history') return null;
             var reference = historicalReferences().find(function (item) { return item.year === year && item.period === period; });
             return reference ? reference.selectionId : null;
         };
         scope.bdcSelectionProfile = function (year, period) {
             var reference = historicalReferences().find(function (item) { return item.year === year && item.period === period; });
-            return reference ? reference.profile : scope.bdc.profile;
+            return reference ? reference.profile : supervision ? null : scope.bdc.profile;
         };
         scope.buildBdcMaps = function () {
-            var years = scope.bdc.view === 'history' ? historicalReferences().map(function (reference) { return reference.year; }) : [];
-            if (!years.length) {
+            var years = supervision || scope.bdc.view === 'history' ? historicalReferences().map(function (reference) { return reference.year; }) : [];
+            if (!years.length && !supervision) {
                 var initial = Number(scope.config.initialYear), final = Number(scope.config.finalYear);
                 if (Number.isInteger(initial) && Number.isInteger(final) && initial >= 1970 && final <= new Date().getFullYear()) {
                     for (var year = initial; year <= final; year += 1) years.push(year);

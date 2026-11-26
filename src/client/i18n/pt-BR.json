@@ -1,5 +1,8 @@
 {
   "BDC": {
+    "PROFILE_VEGETATION": "Vegetação e uso do solo",
+    "PROFILE_INFRARED": "Infravermelho e vegetação",
+    "HELP": "Ajuda",
     "ADMIN_NOTICE": "Esta campanha utiliza o Brazil Data Cube. Consulte as aquisições e suas referências históricas na inspeção ou na supervisão da campanha. Esta visualização administrativa não apresenta imagens BDC.",
     "TITLE": "Imagens Brazil Data Cube",
     "PROFILE": "Composição",

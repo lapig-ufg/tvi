@@ -1,5 +1,8 @@
 {
   "BDC": {
+    "PROFILE_VEGETATION": "Vegetasi dan penggunaan lahan",
+    "PROFILE_INFRARED": "Inframerah dan vegetasi",
+    "HELP": "Bantuan",
     "ADMIN_NOTICE": "Kampanye ini menggunakan Brazil Data Cube. Lihat akuisisi dan referensi historis dalam inspeksi atau supervisi kampanye. Tampilan administratif ini tidak menampilkan citra BDC.",
     "TITLE": "Citra Brazil Data Cube",
     "PROFILE": "Komposisi",

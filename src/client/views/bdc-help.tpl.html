@@ -1,0 +1,13 @@
+<div class="modal-header">
+    <button type="button" class="close" ng-click="$dismiss()" aria-label="{{ 'COMMON.CLOSE' | i18n }}"><span aria-hidden="true">&times;</span></button>
+    <h3 class="modal-title" id="bdc-help-title">{{ 'BDC.TITLE' | i18n }}</h3>
+</div>
+<div class="modal-body bdc-help-content">
+    <p>{{ 'BDC.PERIODS' | i18n }}</p>
+    <p>{{ 'BDC.CLOUD_NOTICE' | i18n }}</p>
+    <p ng-if="help.supervision">{{ 'BDC.HISTORY_NOTICE' | i18n }}</p>
+    <p ng-if="help.showTimeseries">{{ 'BDC.TIMESERIES_NOTICE' | i18n }}</p>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" ng-click="$close()">{{ 'COMMON.CLOSE' | i18n }}</button>
+</div>

@@ -343,22 +343,12 @@
                 <!-- Container com Bootstrap Grid -->
                 <div class="bdc-toolbar" ng-if="isBdc">
                     <strong>{{ 'BDC.TITLE' | i18n }}</strong>
-                    <label>{{ 'BDC.VIEW' | i18n }}
-                        <select ng-model="bdc.view" ng-change="changeBdcView()">
-                            <option value="history">{{ 'BDC.HISTORICAL' | i18n }}</option>
-                            <option value="current" ng-disabled="!bdc.currentAvailable">{{ 'BDC.CURRENT' | i18n }}</option>
-                        </select>
-                    </label>
-                    <label ng-if="bdc.view === 'history'">{{ 'BDC.INSPECTION' | i18n }}
+                    <label ng-if="bdc.inspectors.length > 1">{{ 'BDC.INSPECTION' | i18n }}
                         <select ng-model="bdc.inspectionIndex" ng-change="changeBdcView()" ng-options="index as inspection.userName for (index, inspection) in bdc.inspectors"></select>
                     </label>
-                    <label>{{ 'BDC.PROFILE' | i18n }}
-                        <select ng-model="bdc.profile" ng-options="profile for profile in bdc.profiles" ng-change="bdc.profileOverride = true"></select>
-                    </label>
-                    <p>{{ 'BDC.PERIODS' | i18n }}</p>
-                    <p>{{ 'BDC.HISTORY_NOTICE' | i18n }}</p>
-                    <p ng-if="showTimeseries">{{ 'BDC.TIMESERIES_NOTICE' | i18n }}</p>
+                    <button type="button" class="btn btn-default btn-sm bdc-help-button" ng-click="openBdcHelp()"><i class="fa fa-question-circle" aria-hidden="true"></i> {{ 'BDC.HELP' | i18n }}</button>
                 </div>
+                <div class="alert alert-info" ng-if="isBdc && maps.length === 0" role="status">{{ 'BDC.NO_HISTORY' | i18n }}</div>
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
                          ng-class="getMapBoxClass(maps.length)">
@@ -379,7 +369,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdc.view === 'history' && !bdc.profileOverride ? bdcSelectionProfile(map.year, period) : bdc.profile" historical="bdc.view === 'history'" selection-id="bdcSelectionId(map.year, period)"></bdc-map>
+                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdcSelectionProfile(map.year, period)" historical="true" selection-id="bdcSelectionId(map.year, period)"></bdc-map>
                             <landsat-map ng-if="!isBdc && useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"

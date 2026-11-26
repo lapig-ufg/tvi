@@ -1,5 +1,8 @@
 {
   "BDC": {
+    "PROFILE_VEGETATION": "Vegetation and land use",
+    "PROFILE_INFRARED": "Infrared and vegetation",
+    "HELP": "Help",
     "ADMIN_NOTICE": "This campaign uses Brazil Data Cube. View acquisitions and historical references in campaign inspection or supervision. This administrative view does not display BDC imagery.",
     "TITLE": "Brazil Data Cube imagery",
     "PROFILE": "Composition",

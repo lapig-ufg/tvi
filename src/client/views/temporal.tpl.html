@@ -355,11 +355,9 @@
                 <div class="bdc-toolbar" ng-if="isBdc">
                     <strong>{{ 'BDC.TITLE' | i18n }}</strong>
                     <label>{{ 'BDC.PROFILE' | i18n }}
-                        <select ng-model="bdc.profile" ng-options="profile for profile in bdc.profiles"></select>
+                        <select ng-model="bdc.profile" ng-options="profile as bdcProfileLabel(profile) for profile in bdc.profiles"></select>
                     </label>
-                    <p>{{ 'BDC.PERIODS' | i18n }}</p>
-                    <p>{{ 'BDC.CLOUD_NOTICE' | i18n }}</p>
-                    <p ng-if="showTimeseries">{{ 'BDC.TIMESERIES_NOTICE' | i18n }}</p>
+                    <button type="button" class="btn btn-default btn-sm bdc-help-button" ng-click="openBdcHelp()"><i class="fa fa-question-circle" aria-hidden="true"></i> {{ 'BDC.HELP' | i18n }}</button>
                 </div>
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"

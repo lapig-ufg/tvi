@@ -5,22 +5,41 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
         restrict: 'E',
         scope: { point: '=', year: '=', period: '=', config: '=', profile: '=', selectionId: '=?', historical: '=?',
             selection: '=?', side: '@?', onViewed: '&?', onCompare: '&?' },
-        template: '<div class="bdc-card">' +
-            '<div class="bdc-card-status" role="status">{{ statusKey | i18n }}</div>' +
-            '<div ng-if="resolved.state === \'ready\'" class="bdc-card-metadata">' +
-            '<span>{{ image.datetime | date:\'dd/MM/yyyy\':\'UTC\' }} · {{ \'BDC.LOCAL_CLOUD\' | i18n }}: {{ image.cloudPercent | number:1 }}%</span>' +
-            '<span>{{ \'BDC.REVISION\' | i18n }} {{resolved.revision}} · {{effectiveProfile}}</span>' +
-            '</div><div class="bdc-leaflet-map" aria-label="BDC"></div>' +
-            '<div class="bdc-card-actions">' +
-            '<button type="button" class="btn btn-default btn-sm" ng-if="retryable" ng-click="retry()">{{ \'BDC.RETRY\' | i18n }}</button>' +
-            '<button type="button" class="btn btn-default btn-sm" ng-if="resolved.state === \'ready\' && resolved.global && onCompare" ng-click="compare()">{{ \'BDC.COMPARE\' | i18n }}</button>' +
-            '</div></div>',
+        template: "<div class=\"bdc-card\" ng-keydown=\"informationKeydown($event)\">" +
+            "<div class=\"bdc-leaflet-map\" aria-label=\"BDC\"></div>" +
+            "<div class=\"bdc-card-status\" role=\"status\" ng-if=\"statusKey !== 'BDC.READY'\">{{ statusKey | i18n }} <button type=\"button\" class=\"btn btn-default btn-sm\" ng-if=\"retryable\" ng-click=\"retry()\">{{ 'BDC.RETRY' | i18n }}</button></div>" +
+            "<button type=\"button\" class=\"bdc-information-toggle btn btn-default btn-sm\" ng-click=\"toggleInformation()\" aria-expanded=\"{{informationOpen}}\" aria-controls=\"bdc-information-{{$id}}\" aria-label=\"{{ 'BDC.TITLE' | i18n }}\"><span class=\"glyphicon glyphicon-info-sign\" aria-hidden=\"true\"></span></button>" +
+            "<div class=\"bdc-card-information\" id=\"bdc-information-{{$id}}\" ng-show=\"informationOpen\" role=\"region\" aria-label=\"{{ 'BDC.TITLE' | i18n }}\">" +
+            "<button type=\"button\" class=\"bdc-information-close btn btn-default btn-sm\" ng-click=\"closeInformation(true)\">{{ 'COMMON.CLOSE' | i18n }}</button>" +
+            "<strong>{{ 'BDC.TITLE' | i18n }}</strong><p>{{ statusKey | i18n }}</p>" +
+            "<p ng-if=\"image.datetime\">{{ image.datetime | date:'dd/MM/yyyy':'UTC' }}</p>" +
+            "<p ng-if=\"image.cloudPercent != null\">{{ 'BDC.LOCAL_CLOUD' | i18n }}: {{ image.cloudPercent | number:1 }}%</p>" +
+            "<p ng-if=\"resolved.revision\">{{ 'BDC.REVISION' | i18n }}: {{resolved.revision}}</p>" +
+            "<p>{{ 'BDC.PROFILE' | i18n }}: {{effectiveProfile || profile}}</p>" +
+            "<button type=\"button\" class=\"btn btn-default btn-sm\" ng-if=\"resolved.state === 'ready' && resolved.global && onCompare\" ng-click=\"compare()\">{{ 'BDC.COMPARE' | i18n }}</button>" +
+            "</div></div>",
         link: function (scope, element) {
             var destroyed = false, visible = !$window.IntersectionObserver, version = 0;
             var unsubscribe, observer, map, layer, marker, renderTask;
             var tileCleanups = [];
             var stateKeys = { pending: 'BDC.QUEUED', running: 'BDC.ANALYZING', no_image: 'BDC.NO_IMAGE', failed: 'BDC.ERROR' };
             scope.statusKey = 'BDC.QUEUED';
+            scope.informationOpen = false;
+            scope.closeInformation = function (restoreFocus) {
+                scope.informationOpen = false;
+                if (restoreFocus && !destroyed) {
+                    var button = element[0].querySelector('.bdc-information-toggle');
+                    if (button && button.focus) button.focus();
+                }
+            };
+            scope.toggleInformation = function () { scope.informationOpen = !scope.informationOpen; };
+            scope.informationKeydown = function (event) {
+                if (event.key === 'Escape' && scope.informationOpen) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    scope.closeInformation(true);
+                }
+            };
 
             function clearLayer() {
                 tileCleanups.splice(0).forEach(function (cleanup) { cleanup(); });
@@ -50,13 +69,6 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
                 scope.image = data[scope.side || 'local'];
                 scope.effectiveProfile = scope.profile;
                 var url = bdcImageryService.tileUrl(data, scope.effectiveProfile, scope.side);
-                if (!url && scope.historical && Array.isArray(data.profiles)) {
-                    var alternative = data.profiles.find(function (profile) { return bdcImageryService.tileUrl(data, profile.id, scope.side); });
-                    if (alternative) {
-                        scope.effectiveProfile = alternative.id;
-                        url = bdcImageryService.tileUrl(data, alternative.id, scope.side);
-                    }
-                }
                 if (!url) { scope.statusKey = 'BDC.PROFILE_UNAVAILABLE'; scope.retryable = false; return; }
                 var zoom = Math.max(6, Math.min(18, Number(scope.config && scope.config.zoomLevel) || 13));
                 var center = Number.isFinite(data.lat) && Number.isFinite(data.lon)
@@ -157,6 +169,8 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             }
 
             function start() {
+                scope.closeInformation(false);
+                scope.image = null;
                 version += 1;
                 if (unsubscribe) { unsubscribe(); unsubscribe = null; }
                 removeMap();
@@ -196,6 +210,7 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             }
             scope.$on('$destroy', function () {
                 destroyed = true;
+                scope.closeInformation(false);
                 version += 1;
                 if (observer) observer.disconnect();
                 if (unsubscribe) unsubscribe();
