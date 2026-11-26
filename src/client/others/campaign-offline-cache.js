@@ -61,6 +61,7 @@ Application.directive('campaignOfflineCache', function () {
                 empty_image: 'Arquivo vazio', unsupported_format: 'Formato não suportado',
                 invalid_dimensions: 'Dimensões diferentes de 256 × 256 pixels',
                 transparent_image: 'Imagem totalmente transparente', white_image: 'Imagem totalmente branca',
+                black_image: 'Imagem totalmente preta, sem informação visual para inspeção',
                 corrupt_image: 'Arquivo de imagem corrompido', oversized_image: 'Arquivo acima do tamanho permitido',
                 persistence_unconfirmed: 'Gravação no armazenamento não confirmada', invalid_content: 'Conteúdo inválido'
             };
