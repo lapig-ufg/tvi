@@ -5,6 +5,7 @@ bdc-map { display: block; width: 100%; }
 .bdc-card-status { font-weight: 600; }
 .bdc-card-metadata { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 12px; }
 .bdc-leaflet-map { width: 100%; height: 260px; background: #e6ebeb; }
+.ee-mapbox .bdc-leaflet-map { height: 260px !important; }
 .bdc-card-actions { display: flex; gap: 8px; }
 .bdc-toolbar { clear: both; padding: 12px; background: #edf4f2; border: 1px solid #c8d9d3; margin: 8px 0; }
 .bdc-toolbar label { margin-right: 16px; }

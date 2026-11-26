@@ -243,7 +243,7 @@ test('dimensões inválidas não são enviadas nem substituídas silenciosamente
     }
 });
 
-test('campanha BDC não permite iniciar geração offline GEE', async () => {
+test('campanha BDC sem configuração não permite iniciar geração offline', async () => {
     const env = panel();
     env.calls[0].d.resolve({ data: { status: 'not_started' } });
     await tick();
@@ -252,4 +252,47 @@ test('campanha BDC não permite iniciar geração offline GEE', async () => {
     env.scope.startOffline('start');
     await tick();
     assert.equal(env.calls.filter(call => call.method === 'post').length, 0);
+});
+
+function validBdcCampaign() {
+    return { imagerySource: 'bdc', useDynamicMaps: true, imageType: 'landsat', initialYear: 2020, finalYear: 2021,
+        bdcConfig: { schemaVersion: 1, collection: 'landsat-2', selectionRevision: 1,
+            periodPolicy: 'tvi-seasonal-v1', selectionStrategy: 'local_cloud', bufferRadiusM: 1000,
+            profiles: ['landsat-tvi-true'], defaultProfile: 'landsat-tvi-true' } };
+}
+
+test('campanha BDC válida inicia cache e acompanha progresso silenciosamente', async () => {
+    const p = panel();
+    p.scope.campaign = validBdcCampaign();
+    p.calls[0].d.resolve({ data: { status: 'not_started' } });
+    await tick();
+    assert.equal(p.scope.offlineSupported(), true);
+    p.scope.startOffline('start');
+    assert.equal(p.calls[1].method, 'post');
+    assert.deepEqual(JSON.parse(JSON.stringify(p.calls[1].args[1])), { mode: 'start', width: 512, height: 512 });
+    p.calls[1].d.resolve({ data: { status: 'preparing', config: { source: 'bdc', width: 512, height: 512 } } });
+    await tick();
+    p.timers.at(-1).fn();
+    assert.equal(p.calls[2].args[1].hideLoading, true);
+    for (const reason of ['bdc_selection_pending', 'bdc_origin_busy', 'bdc_origin_paused',
+        'bdc_selection_failed', 'bdc_no_image', 'bdc_tile_outside']) assert.ok(p.scope.offlineReasons[reason]);
+});
+
+test('configurações BDC inválidas impedem todas as ações de geração', async () => {
+    const changes = [
+        { collection: 'S2_L2A-1' }, { schemaVersion: 2 }, { selectionRevision: 0 },
+        { periodPolicy: 'unknown' }, { selectionStrategy: 'global' }, { bufferRadiusM: 99 },
+        { bufferRadiusM: 5001 }, { profiles: [] }, { profiles: ['../profile'] }, { defaultProfile: 'unknown' }
+    ];
+    for (const change of changes) {
+        const p = panel();
+        p.scope.campaign = validBdcCampaign();
+        Object.assign(p.scope.campaign.bdcConfig, change);
+        p.calls[0].d.resolve({ data: { status: 'blocked' } });
+        await tick();
+        assert.equal(p.scope.offlineSupported(), false);
+        for (const mode of ['start', 'retry_failed', 'regenerate']) p.scope.startOffline(mode);
+        await tick();
+        assert.equal(p.calls.length, 1);
+    }
 });

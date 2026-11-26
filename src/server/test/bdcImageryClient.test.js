@@ -161,7 +161,7 @@ test('supervisão identifica inspetor pelo vetor histórico e bloqueia intervalo
 
 function mapDirective(extra = {}) {
     let definition, observerCallback;
-    const calls = [], layers = [], timers = [], events = {}, watches = [], viewed = [], maps = [];
+    const calls = [], layers = [], timers = [], events = {}, watches = [], viewed = [], maps = [], tileRequests = [], revoked = [];
     const scope = Object.assign({ point: { _id: 'p1', lat: -15, lon: -48 }, year: 2020, period: 'DRY',
         profile: 'rgb', config: { zoomLevel: 13, sampleMarker: {}, bdcConfig: { selectionRevision: 2 } },
         $watchGroup(names, fn) { watches.push(fn); }, $evalAsync(fn) { fn(); },
@@ -172,6 +172,10 @@ function mapDirective(extra = {}) {
         this.observe = () => {};
         this.disconnect = () => { calls.push('disconnect'); };
     } } : {};
+    window.document = { createElement: () => ({ setAttribute() {}, removeAttribute() {} }) };
+    window.URL = { createObjectURL: () => 'blob:test', revokeObjectURL: url => revoked.push(url) };
+    window.setTimeout = (fn, delay) => { const timer = { fn, delay }; timers.push(timer); return timer; };
+    window.clearTimeout = timer => { timer.cancelled = true; };
     function timeout(fn, delay) { const timer = { fn, delay }; timers.push(timer); return timer; }
     timeout.cancel = timer => { if (timer) timer.cancelled = true; };
     const imagery = { tileUrl: client().service.tileUrl, observe(options, callback) {
@@ -191,15 +195,21 @@ function mapDirective(extra = {}) {
             layers.push(layer); return layer;
         }
     };
+    L.TileLayer = { extend: methods => function (url, options) {
+        return Object.assign(L.tileLayer(url, options), methods, { getTileUrl: () => url });
+    } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../client/directives/bdcMap.js'), 'utf8'), {
         angular: { module: () => ({ directive: (name, factory) => {
-            definition = factory(window, timeout, imagery, { register() {}, unregister() { calls.push('unregister'); } },
+            definition = factory(window, timeout, imagery, { request(url, callback) {
+                const request = { url, callback }; tileRequests.push(request);
+                return () => { request.cancelled = true; };
+            } }, { register() {}, unregister() { calls.push('unregister'); } },
                 { createLayer: () => ({ addTo() { return this; } }) });
         } }) }, L
     });
     definition.link(scope, [{ querySelector: () => ({}) }]);
     watches[0]();
-    return { scope, calls, layers, timers, events, watches, viewed, maps, visible(value) { observerCallback([{ isIntersecting: value }]); } };
+    return { scope, calls, layers, timers, events, watches, viewed, maps, tileRequests, revoked, visible(value) { observerCallback([{ isIntersecting: value }]); } };
 }
 function ready(extra = {}) {
     return { id: 'selection', state: 'ready', revision: 1, lon: -50, lat: -17, year: 2020, period: 'DRY',
@@ -298,4 +308,61 @@ test('novo lote não oculta tile inválido ainda presente no mapa', () => {
     layer.events.tileload({ tile: {} });
     layer.events.load();
     assert.equal(d.viewed.length, 1);
+});
+
+
+test('inspeção e supervisão apresentam mapas diretamente sem ação de comparação', () => {
+    for (const name of ['temporal', 'supervisor']) {
+        const template = fs.readFileSync(path.join(__dirname, '../../client/views/' + name + '.tpl.html'), 'utf8');
+        assert.match(template, /<bdc-map /);
+        assert.doesNotMatch(template, /on-compare=|<bdc-comparison/);
+    }
+});
+
+ test('tiles aguardam fila sem prazo global e liberam download e blob ao trocar ponto', () => {
+    const d = mapDirective();
+    d.calls[0].callback(ready());
+    const layer = d.layers[0], completed = [];
+    const tile = layer.createTile({}, error => completed.push(error));
+    assert.equal(d.timers.length, 0);
+    d.tileRequests[0].callback(null, 'blob');
+    assert.equal(tile.src, 'blob:test');
+    d.scope.point = { _id: 'p2', lat: -12, lon: -40 };
+    d.watches[0]();
+    assert.equal(d.tileRequests[0].cancelled, true);
+    assert.deepEqual(d.revoked, ['blob:test']);
+    assert.equal(d.timers[0].cancelled, true);
+    d.tileRequests[0].callback(null, 'late blob');
+    assert.equal(completed.length, 0);
+});
+
+test('tileabort cancela download e decodificação sem callback tardio', () => {
+    for (const decoding of [false, true]) {
+        const d = mapDirective();
+        d.calls[0].callback(ready());
+        const layer = d.layers[0], completed = [];
+        const tile = layer.createTile({}, error => completed.push(error));
+        if (decoding) d.tileRequests[0].callback(null, 'blob');
+        assert.equal(typeof layer.events.tileabort, 'function');
+        layer.events.tileabort({ tile });
+        assert.equal(d.tileRequests[0].cancelled, true);
+        if (decoding) {
+            assert.deepEqual(d.revoked, ['blob:test']);
+            assert.equal(d.timers[0].cancelled, true);
+            d.timers[0].fn();
+        }
+        d.tileRequests[0].callback(null, 'late blob');
+        assert.equal(completed.length, 0);
+        assert.equal(tile.onload, null);
+        assert.equal(tile.onerror, null);
+    }
+});
+
+test('primeira notificação dos parâmetros visuais não recria a camada recém-carregada', () => {
+    const d = mapDirective();
+    d.calls[0].callback(ready());
+    const initial = ['rgb', 13, d.scope.config.sampleMarker];
+    d.watches[1](initial, initial);
+    assert.equal(d.timers.length, 0);
+    assert.equal(d.layers.length, 1);
 });

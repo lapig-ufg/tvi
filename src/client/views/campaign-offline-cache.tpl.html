@@ -5,7 +5,8 @@
     </div>
     <div class="panel-body">
         <p ng-if="!offlineSupported() && campaign.imagerySource !== 'bdc'" class="alert alert-warning">Disponível para mapas dinâmicos Landsat e Sentinel. Mapas estáticos, WMS, Planet e Wayback usam outros fluxos e não estão cobertos por esta geração.</p>
-        <p ng-if="campaign.imagerySource === 'bdc'" class="alert alert-info">Campanhas BDC utilizam seleção própria de aquisições. A geração offline do Earth Engine não se aplica a esta fonte.</p>
+        <p ng-if="campaign.imagerySource === 'bdc'" class="alert alert-info">O cache BDC prepara os recortes das aquisições selecionadas para cada ponto e período, reutilizando as referências da inspeção e da supervisão. A qualidade é avaliada no raio configurado ao redor do ponto. O processamento utiliza a origem BDC, sem substituição por imagens do Earth Engine. A ausência de imagem corresponde à seleção preservada, não a uma nova consulta ao catálogo. Para reavaliar as aquisições, altere os critérios de seleção na configuração da campanha para criar uma nova revisão.</p>
+        <p ng-if="campaign.imagerySource === 'bdc' && !offlineSupported()" class="alert alert-warning">Revise a configuração BDC da campanha antes de iniciar o cache: sensor, coleção, anos, estratégia, raio, revisão e composições devem ser válidos, com mapas dinâmicos e sem WMS.</p>
         <p role="alert" ng-if="offline.error" class="alert alert-danger">{{offline.error}}</p>
         <div ng-if="offline.status">
             <div class="campaign-offline-status" aria-live="polite">
@@ -28,7 +29,7 @@
         <div class="campaign-offline-actions">
             <button type="button" class="btn btn-primary" ng-click="startOffline('start')" ng-disabled="!offlineSupported() || offline.loading || offline.starting || offline.confirming || offlineActive()">Gerar ou verificar cache</button>
             <button type="button" class="btn btn-default" ng-click="refreshOffline()" ng-disabled="offline.loading || offline.starting || offline.confirming">Atualizar progresso</button>
-            <button type="button" class="btn btn-warning" ng-click="startOffline('retry_failed')" ng-disabled="offline.loading || offline.starting || offline.confirming || offlineActive() || !offline.status.counts.blocked">Redisparar falhas</button>
+            <button type="button" class="btn btn-warning" ng-click="startOffline('retry_failed')" ng-disabled="!offlineSupported() || offline.loading || offline.starting || offline.confirming || offlineActive() || !offline.status.counts.blocked">Redisparar falhas</button>
             <button type="button" class="btn btn-default" ng-click="startOffline('regenerate')" ng-disabled="!offlineSupported() || offline.loading || offline.starting || offline.confirming || offlineActive()">Regenerar tudo</button>
         </div>
         <div class="campaign-offline-updates text-muted" role="status">

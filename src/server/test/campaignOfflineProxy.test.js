@@ -42,12 +42,28 @@ test('erros preservam código sem expor detalhes da conexão', async () => {
     assert.doesNotMatch(JSON.stringify(res.data), /secret/);
 });
 
-test('campanha BDC não dispara nem consulta geração offline legada', async () => {
-    const handlers = routes({ offlineCampaign: async () => assert.fail('BDC não chama geração GEE') }, { _id: 'test', imagerySource: 'bdc' });
+test('campanha BDC consulta e inicia o cache pelo mesmo proxy autenticado', async () => {
+    const calls = [];
+    const handlers = routes({ offlineCampaign: async (...args) => {
+        calls.push(args);
+        return { status: 'preparing', config: { source: 'bdc' } };
+    } }, { _id: 'test', imagerySource: 'bdc' });
     for (const method of ['get', 'post']) {
         const res = response();
-        await handlers[method]({ params: { campaignId: 'test' }, query: {}, body: {} }, res);
-        assert.equal(res.code, 409);
-        assert.equal(res.data.code, 'BDC_OFFLINE_NOT_SUPPORTED');
+        await handlers[method]({ params: { campaignId: 'test' }, query: {}, body: { source: 'gee' } }, res);
+        assert.equal(res.code, 200);
+        assert.equal(res.data.config.source, 'bdc');
+        assert.equal(calls.at(-1)[1], method);
+        assert.equal(calls.at(-1)[2].source, undefined);
     }
+});
+
+test('configuração BDC rejeitada no Tiles preserva erro sem fabricar sucesso', async () => {
+    const handlers = routes({ offlineCampaign: async () => {
+        throw { response: { status: 422, data: { detail: 'secret' } } };
+    } }, { _id: 'test', imagerySource: 'bdc' });
+    const res = response();
+    await handlers.post({ params: { campaignId: 'test' }, body: {} }, res);
+    assert.equal(res.code, 422);
+    assert.doesNotMatch(JSON.stringify(res.data), /secret/);
 });

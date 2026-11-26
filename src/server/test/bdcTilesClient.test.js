@@ -62,3 +62,15 @@ test('tile usa somente caminho BDC validado, resposta binária limitada e nenhum
     assert.equal(sent.maxContentLength, 8 * 1024 * 1024);
     await assert.rejects(client.getTile('landsat-2', '../evil', 'profile', 6, 1, 2));
 });
+
+
+test('capacidade temporariamente ocupada preserva Retry-After validado', async () => {
+    for (const [value, expected] of [['2', 2], ['120', 120], ['-1', undefined], ['invalid', undefined], ['999999', undefined]]) {
+        const client = factory.create({ request: async () => { throw { response: { status: 503, headers: { 'retry-after': value } } }; } });
+        await assert.rejects(client.getTile('landsat-2', 'scene', 'natural', 6, 1, 2), error => {
+            assert.equal(error.status, 503);
+            assert.equal(error.retryAfterSeconds, expected);
+            return true;
+        });
+    }
+});

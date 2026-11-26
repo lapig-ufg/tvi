@@ -54,7 +54,11 @@ module.exports = function (app) {
             retryable: !!(selection.error && selection.error.retryable), error: selection.error && selection.error.code };
     }
     function failure(res, error) {
-        const status = [400, 401, 403, 404, 409, 422, 502, 503].includes(error.status) ? error.status : 503;
+        const status = [400, 401, 403, 404, 409, 422, 429, 502, 503].includes(error.status) ? error.status : 503;
+        if ([429, 503].includes(status) && Number.isInteger(error.retryAfterSeconds)
+            && error.retryAfterSeconds >= 0 && error.retryAfterSeconds <= 120) {
+            res.set('Retry-After', String(error.retryAfterSeconds));
+        }
         return res.status(status).json({ error: error.status ? error.message : 'Serviço BDC temporariamente indisponível.' });
     }
     function handler(start) {

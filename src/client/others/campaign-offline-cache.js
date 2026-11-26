@@ -50,6 +50,12 @@ Application.directive('campaignOfflineCache', function () {
                     '/admin/campaigns/manage/' + encodeURIComponent($scope.campaignId));
             };
             $scope.offlineReasons = {
+                bdc_selection_pending: 'Aguardando seleção das aquisições BDC',
+                bdc_origin_busy: 'Aguardando disponibilidade da origem BDC',
+                bdc_origin_paused: 'Consultas à origem BDC temporariamente suspensas',
+                bdc_selection_failed: 'Falha na seleção das aquisições BDC',
+                bdc_no_image: 'Nenhuma imagem elegível na seleção BDC preservada',
+                bdc_tile_outside: 'Recorte fora da cobertura da aquisição BDC',
                 empty_collection: 'Nenhuma cena disponível para os critérios do período',
                 invalid_tile: 'Imagem inválida; ausência de dados não comprovada',
                 cache_expired: 'Imagem vencida ou sem validade comprovada; verificar novamente',
@@ -70,9 +76,25 @@ Application.directive('campaignOfflineCache', function () {
                 return status === 'preparing' || status === 'running';
             };
             $scope.offlineSupported = function () {
-                return $scope.campaign && $scope.campaign.imagerySource !== 'bdc' && $scope.campaign.useDynamicMaps === true &&
-                    ['landsat', 'sentinel-2'].indexOf($scope.campaign.imageType) >= 0 &&
-                    !($scope.campaign.wmsConfig && $scope.campaign.wmsConfig.enabled);
+                var campaign = $scope.campaign;
+                if (!campaign || campaign.useDynamicMaps !== true ||
+                    ['landsat', 'sentinel-2'].indexOf(campaign.imageType) < 0 ||
+                    (campaign.wmsConfig && campaign.wmsConfig.enabled)) return false;
+                if (campaign.imagerySource !== 'bdc') return true;
+                var config = campaign.bdcConfig;
+                var collections = { landsat: 'landsat-2', 'sentinel-2': 'S2_L2A-1' };
+                var initialYear = Number(campaign.initialYear), finalYear = Number(campaign.finalYear);
+                return !!config && config.schemaVersion === 1 && config.collection === collections[campaign.imageType] &&
+                    Number.isInteger(initialYear) && Number.isInteger(finalYear) && initialYear >= 1970 &&
+                    finalYear <= new Date().getFullYear() && initialYear <= finalYear &&
+                    Number.isSafeInteger(config.selectionRevision) && config.selectionRevision > 0 &&
+                    config.periodPolicy === 'tvi-seasonal-v1' &&
+                    ['local_cloud', 'local_unusable'].indexOf(config.selectionStrategy) >= 0 &&
+                    Number.isFinite(config.bufferRadiusM) && config.bufferRadiusM >= 100 && config.bufferRadiusM <= 5000 &&
+                    Array.isArray(config.profiles) && config.profiles.length > 0 && config.profiles.length <= 32 &&
+                    config.profiles.every(function (profile) {
+                        return typeof profile === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(profile);
+                    }) && config.profiles.indexOf(config.defaultProfile) >= 0;
             };
             function stopTimer() {
                 if (timer) $timeout.cancel(timer);
@@ -121,7 +143,7 @@ Application.directive('campaignOfflineCache', function () {
                     return;
                 }
                 function send() {
-                    if (destroyed || pending || $scope.offline.starting || $scope.offlineActive()) return;
+                    if (!$scope.offlineSupported() || destroyed || pending || $scope.offline.starting || $scope.offlineActive()) return;
                     stopTimer();
                     $scope.offline.starting = true;
                     $scope.offline.error = null;

@@ -361,7 +361,6 @@
                     <p>{{ 'BDC.CLOUD_NOTICE' | i18n }}</p>
                     <p ng-if="showTimeseries">{{ 'BDC.TIMESERIES_NOTICE' | i18n }}</p>
                 </div>
-                <bdc-comparison ng-if="bdc.comparison" selection="bdc.comparison" point="point" config="config" profile="bdc.comparisonProfile" on-close="bdc.comparison = null" on-viewed="bdcViewed(reference)"></bdc-comparison>
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
                          ng-class="getMapBoxClass(maps.length)">
@@ -383,7 +382,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdc.profile" on-viewed="bdcViewed(reference)" on-compare="openBdcComparison(selection, profile)"></bdc-map>
+                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdc.profile" on-viewed="bdcViewed(reference)"></bdc-map>
                             <landsat-map ng-if="!isBdc && useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"

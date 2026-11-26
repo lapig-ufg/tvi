@@ -23,6 +23,10 @@ function create(transport, credentials) {
             error.code = unconfigured ? 'BDC_SERVICE_AUTH_UNAVAILABLE' :
                 (status === 401 || status === 403 ? 'BDC_SERVICE_AUTH_REJECTED' : 'BDC_TILES_UNAVAILABLE');
             error.status = Number.isInteger(status) && status >= 400 && status <= 599 ? status : 502;
+            const retryAfter = cause.response && cause.response.headers && cause.response.headers['retry-after'];
+            if ([429, 503].includes(status) && /^\d{1,3}$/.test(String(retryAfter)) && Number(retryAfter) <= 120) {
+                error.retryAfterSeconds = Number(retryAfter);
+            }
             throw error;
         }
     }

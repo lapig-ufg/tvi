@@ -21,7 +21,7 @@ async function fixture(t, override = {}) {
     const calls = [];
     app.repository = { collections: { points: collection([point]), campaign: collection([override.campaign || campaign]), campaignImageSelections: selections } };
     app.config = { tilesApi: { baseUrl: 'https://tiles.example' } };
-    app.services = { bdcTilesClient: { async getTile(...args) { calls.push(args); return Buffer.from('89504e470d0a1a0a0000', 'hex'); }, async getCatalog() { return { collections: [] }; } },
+    app.services = { bdcTilesClient: { async getTile(...args) { calls.push(args); if (override.tileError) throw override.tileError; return Buffer.from('89504e470d0a1a0a0000', 'hex'); }, async getCatalog() { return { collections: [] }; } },
         bdcSelectionService: selectionService.create(selections, { createJob: async () => ready() }) };
     require('../routes/bdcSelections')(app);
     const server = app.listen(0, '127.0.0.1');
@@ -70,4 +70,13 @@ test('proxy autoriza histórico e encaminha exclusivamente aquisição e composi
         assert.ok([400, 404].includes((await f.get(invalid)).status));
     }
     assert.equal(f.calls.length, 1);
+});
+
+
+test('proxy mantém indicação de espera sem transformar capacidade ocupada em imagem ausente', async t => {
+    const f = await fixture(t, { tileError: { status: 503, message: 'Temporariamente ocupado.', retryAfterSeconds: 2 } });
+    const response = await f.get('/service/bdc/tiles/' + f.saved._id + '/local/natural/6/1/2.png');
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('retry-after'), '2');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('application').directive('bdcMap', function ($window, $timeout, bdcImageryService, mapSyncService, sampleMarkerService) {
+angular.module('application').directive('bdcMap', function ($window, $timeout, bdcImageryService, bdcTileQueue, mapSyncService, sampleMarkerService) {
     return {
         restrict: 'E',
         scope: { point: '=', year: '=', period: '=', config: '=', profile: '=', selectionId: '=?', historical: '=?',
@@ -17,12 +17,13 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             '</div></div>',
         link: function (scope, element) {
             var destroyed = false, visible = !$window.IntersectionObserver, version = 0;
-            var unsubscribe, observer, map, layer, marker, tileDeadline, renderTask;
+            var unsubscribe, observer, map, layer, marker, renderTask;
+            var tileCleanups = [];
             var stateKeys = { pending: 'BDC.QUEUED', running: 'BDC.ANALYZING', no_image: 'BDC.NO_IMAGE', failed: 'BDC.ERROR' };
             scope.statusKey = 'BDC.QUEUED';
 
             function clearLayer() {
-                if (tileDeadline) $timeout.cancel(tileDeadline);
+                tileCleanups.splice(0).forEach(function (cleanup) { cleanup(); });
                 if (layer) { layer.off(); if (map) map.removeLayer(layer); layer = null; }
             }
 
@@ -71,29 +72,62 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
                 var failedTiles = [], loaded = false;
                 scope.statusKey = 'BDC.LOADING_IMAGE';
                 scope.retryable = false;
-                var currentLayer = L.tileLayer(url, { minZoom: 6, maxZoom: 18, attribution: 'Brazil Data Cube / INPE' });
+                var QueuedTileLayer = L.TileLayer.extend({
+                    createTile: function (coords, done) {
+                        var tile = $window.document.createElement('img');
+                        var objectUrl, decodeTimer, cancelled = false;
+                        tile.alt = '';
+                        tile.setAttribute('role', 'presentation');
+                        function release() {
+                            if (decodeTimer) $window.clearTimeout(decodeTimer);
+                            if (objectUrl) { $window.URL.revokeObjectURL(objectUrl); objectUrl = null; }
+                        }
+                        function complete(error) {
+                            tile.onload = tile.onerror = null;
+                            release();
+                            if (!cancelled) done(error, tile);
+                        }
+                        var cancelRequest = bdcTileQueue.request(this.getTileUrl(coords), function (error, blob) {
+                            if (cancelled) return;
+                            if (error) { complete(error); return; }
+                            objectUrl = $window.URL.createObjectURL(blob);
+                            tile.onload = function () { complete(null); };
+                            tile.onerror = function () { complete(new Error('BDC tile decoding failed')); };
+                            decodeTimer = $window.setTimeout(function () { complete(new Error('BDC tile decoding timeout')); }, 10000);
+                            tile.src = objectUrl;
+                        });
+                        tile.bdcCleanup = function () {
+                            cancelled = true;
+                            cancelRequest();
+                            tile.onload = tile.onerror = null;
+                            release();
+                            tile.removeAttribute('src');
+                            var index = tileCleanups.indexOf(tile.bdcCleanup);
+                            if (index !== -1) tileCleanups.splice(index, 1);
+                        };
+                        tileCleanups.push(tile.bdcCleanup);
+                        return tile;
+                    }
+                });
+                var currentLayer = new QueuedTileLayer(url, { minZoom: 6, maxZoom: 18, attribution: 'Brazil Data Cube / INPE' });
                 layer = currentLayer;
                 function update(fn) {
                     scope.$evalAsync(function () {
                         if (!destroyed && renderVersion === version && layer === currentLayer) fn();
                     });
                 }
-                function armDeadline() {
-                    if (tileDeadline) $timeout.cancel(tileDeadline);
-                    tileDeadline = $timeout(function () {
-                        update(function () { scope.statusKey = 'BDC.IMAGE_ERROR'; scope.retryable = true; });
-                    }, 30000);
-                }
                 layer.on('tileload', function (event) {
                     loaded = true;
                     if (event && event.tile) failedTiles = failedTiles.filter(function (tile) { return tile !== event.tile; });
                 });
-                layer.on('tileunload', function (event) {
+                function cleanupTile(event) {
+                    if (event && event.tile && event.tile.bdcCleanup) event.tile.bdcCleanup();
                     if (event && event.tile) failedTiles = failedTiles.filter(function (tile) { return tile !== event.tile; });
-                });
+                }
+                layer.on('tileunload', cleanupTile);
+                layer.on('tileabort', cleanupTile);
                 layer.on('loading', function () {
                     loaded = false;
-                    armDeadline();
                     update(function () { scope.statusKey = 'BDC.LOADING_IMAGE'; scope.retryable = false; });
                 });
                 layer.on('tileerror', function (event) {
@@ -102,14 +136,12 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
                     update(function () { scope.statusKey = 'BDC.IMAGE_ERROR'; scope.retryable = true; });
                 });
                 layer.on('load', function () {
-                    if (tileDeadline) $timeout.cancel(tileDeadline);
                     update(function () {
                         scope.statusKey = failedTiles.length || !loaded ? 'BDC.IMAGE_ERROR' : 'BDC.READY';
                         scope.retryable = !!failedTiles.length || !loaded;
                         if (loaded && !failedTiles.length) notifyViewed();
                     });
                 });
-                armDeadline();
                 layer.addTo(map);
                 map.invalidateSize();
             }
@@ -147,7 +179,8 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             scope.compare = function () { if (scope.onCompare) scope.onCompare({ selection: scope.resolved, profile: scope.effectiveProfile }); };
             scope.$watchGroup(['point._id', 'point.lat', 'point.lon', 'year', 'period', 'selectionId', 'historical',
                 'config.bdcConfig.selectionRevision', 'selection'], start);
-            scope.$watchGroup(['profile', 'config.zoomLevel', 'config.sampleMarker'], function () {
+            scope.$watchGroup(['profile', 'config.zoomLevel', 'config.sampleMarker'], function (values, previous) {
+                if (values && values === previous) return;
                 if (renderTask) $timeout.cancel(renderTask);
                 renderTask = $timeout(render);
             });
