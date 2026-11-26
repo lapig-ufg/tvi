@@ -3,7 +3,12 @@
 Application.controller('adminTemporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, AdminPages, $timeout, i18nService, NotificationDialog, $routeParams, $http, $injector, sampleMarkerService) {
     var destroyed = false;
     var removalPending = false;
-    $scope.$on('$destroy', function() { destroyed = true; });
+    var counterTimer = null;
+    var generateMaps;
+    $scope.$on('$destroy', function() {
+        destroyed = true;
+        if (counterTimer) $interval.cancel(counterTimer);
+    });
     $scope.showCharts = false;
     $scope.showChartsLandsat = false;
     $scope.showChartsLandsatNdwi = false;
@@ -105,12 +110,13 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
     var loadCampaignAndInit = function() {
         // Obter ID da campanha a partir do URL ou usar padrão
         var urlParams = $location.search();
-        var campaignId = urlParams.campaignId || localStorage.getItem('currentCampaignId');
+        var campaignId = urlParams.campaignId || (!urlParams.pointId && localStorage.getItem('currentCampaignId'));
         
         if (!campaignId) {
             // Se não tiver campanha, tentar buscar do ponto
             if (urlParams.pointId) {
-                $http.get('/service/admin/points/' + urlParams.pointId).then(function(response) {
+                $http.get('/service/admin/points/' + encodeURIComponent(urlParams.pointId)).then(function(response) {
+                    if (destroyed) return;
                     if (response.data && response.data.campaign) {
                         campaignId = response.data.campaign;
                         initializeWithCampaign(campaignId);
@@ -119,6 +125,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                         $scope.showloading = false;
                     }
                 }).catch(function(error) {
+                    if (destroyed) return;
                     NotificationDialog.error('Erro ao carregar informações do ponto');
                     $scope.showloading = false;
                 });
@@ -133,8 +140,10 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
     
     var initializeWithCampaign = function(campaignId) {
         // Buscar dados da campanha
-        $http.get('/api/campaigns/' + campaignId).then(function(response) {
+        $http.get('/api/campaigns/' + encodeURIComponent(campaignId)).then(function(response) {
+            if (destroyed) return;
             var campaign = response.data;
+            if (!campaign || campaign._id !== campaignId) throw new Error('Campanha não encontrada.');
             
             // Simular estrutura do user para compatibilidade
             $rootScope.user = {
@@ -201,6 +210,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             // Inicializar o resto após carregar a campanha
             initializeController();
         }).catch(function(error) {
+            if (destroyed) return;
             NotificationDialog.error('Erro ao carregar dados da campanha');
             $scope.showloading = false;
         });
@@ -575,7 +585,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             });
         };
 
-        var generateMaps = function () {
+        generateMaps = function () {
             $scope.maps = [];
             $scope.mapStates = {};
             $scope.$broadcast('resetLazyMaps');
@@ -605,7 +615,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             const currentPeriod = $scope.period || 'DRY';
             const currentVisparam = $scope.sentinelVisparam || (sentinelData.visparams && sentinelData.visparams[0]) || 'default';
             
-            sentinelData.years.forEach(function(year, index) {
+            sentinelData.years.filter(function(year) {
+                return year >= $scope.config.initialYear && year <= $scope.config.finalYear;
+            }).forEach(function(year) {
                 // Construir URL para tiles Sentinel
                 let tileUrl;
                 if ($injector.has('AppConfig')) {
@@ -661,7 +673,9 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     return;
                 }
                 
-                collection.years.forEach(function(year) {
+                collection.years.filter(function(year) {
+                    return year >= $scope.config.initialYear && year <= $scope.config.finalYear;
+                }).forEach(function(year) {
                     // Construir URL para tiles Landsat usando API de capabilities
                     let tileUrl;
                     if ($injector.has('AppConfig')) {
@@ -805,7 +819,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
         var initCounter = function () {
             $scope.counter = 0;
-            $interval(function () {
+            counterTimer = $interval(function () {
                 $scope.counter = $scope.counter + 1;
             }, 1000);
         };
@@ -1014,34 +1028,8 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             });
         };
 
-        var loadCampaignConfig = function(callback) {
-            requester._get('admin/campaign/config', {campaignId: $scope.campaign._id}, function(config) {
-                if (config) {
-                    $scope.showTimeseries = config.showTimeseries;
-                    $scope.showPointInfo = config.showPointInfo;
-                    $scope.useDynamicMaps = config.useDynamicMaps;
-                    $scope.hasVisParam = config.visParam !== null;
-                    
-                    if (config.visParam) {
-                        $scope.landsatVisparam = config.visParam;
-                        localStorage.setItem('landsatVisparam', config.visParam);
-                        $scope.$broadcast('landsatVisparamChanged', config.visParam);
-                    }
-                    
-                    if (config.imageType) {
-                        $scope.isSentinel = config.imageType === 'sentinel-2-l2a' || 
-                                           config.imageType === 'sentinel-2' || 
-                                           (config.imageType && config.imageType.toLowerCase().includes('sentinel'));
-                    }
-                }
-                
-                if (callback) {
-                    callback();
-                }
-            });
-        };
-
         var loadPoint = function (data) {
+            if (destroyed) return;
             Plotly.purge('LANDSAT');
             Plotly.purge('NDVI');
 
@@ -1053,6 +1041,12 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 }
             }
             
+            if (!data.campaign || data.campaign._id !== $scope.campaign._id ||
+                data.point.campaign !== $scope.campaign._id) {
+                $scope.showloading = false;
+                NotificationDialog.error('O ponto não pertence à campanha selecionada.');
+                return;
+            }
             $scope.campaign = data.campaign;
             $scope.objConsolidated = data.point.classConsolidated;
             $scope.onSubmission = false;
@@ -1067,15 +1061,13 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             initFormViewVariables();
             getCampaignMatadata();
 
-            loadCampaignConfig(function() {
-                generateMaps();
-                if (!$scope.isChaco && $scope.showTimeseries) {
-                    createModisChart();
-                    createModisNdwiChart();
-                    createLandsatChart();
-                    createLandsatNdwiChart();
-                }
-            });
+            generateMaps();
+            if (!$scope.isChaco && $scope.showTimeseries) {
+                createModisChart();
+                createModisNdwiChart();
+                createLandsatChart();
+                createLandsatNdwiChart();
+            }
             
             $scope.counter = 0;
             $scope.total = data.totalPoints;
@@ -1091,6 +1083,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             requester._post('admin/points/get-point-by-id', {
                 pointId: urlParams.pointId
             }, function(data) {
+                if (destroyed) return;
                 if (data && data.point) {
                     loadPoint(data);
                 } else {
@@ -1098,6 +1091,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                     $scope.submit($scope.currentIndex || 1);
                 }
             }, function(error) {
+                if (destroyed) return;
                 NotificationDialog.error('Erro ao carregar ponto');
                 $scope.submit($scope.currentIndex || 1);
             });
@@ -1179,6 +1173,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
 
         // Carregar capabilities unificado
         requester._get('admin/capabilities', function(capabilities) {
+            if (destroyed) return;
             $scope.tilesCapabilities = capabilities || [];
             
             if (Array.isArray(capabilities)) {
@@ -1219,6 +1214,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
                 $scope.sentinelMosaics = [];
                 $scope.landsatMosaics = [];
             }
+            if ($scope.pointLoaded) generateMaps();
         });
 
         $scope.shouldShowProperty = function(key) {

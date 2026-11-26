@@ -65,6 +65,17 @@ Application.run(function(AdminPages, $http, sampleMarkerService) {
         });
     }
 
+    AdminPages.register('campaign-offline', {
+        title: 'Cache offline da campanha',
+        templateUrl: 'views/campaign-offline-page.tpl.html',
+        controller: function($scope, campaign, campaignId) {
+            $scope.campaign = campaign;
+            $scope.campaignId = campaignId;
+        },
+        parent: list,
+        load: loadCampaign
+    });
+
     AdminPages.register('campaign-edit', {
         title: 'Editar campanha',
         editable: true,

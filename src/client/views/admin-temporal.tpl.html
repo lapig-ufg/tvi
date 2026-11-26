@@ -618,12 +618,15 @@
     <div class="admin-container">
         <!-- Page Header -->
         <div class="page-header">
+            <nav class="admin-module-navigation" aria-label="Navegação administrativa">
+                <a class="btn btn-default admin-panel-link" href="#/admin/home"><i class="fas fa-arrow-left" aria-hidden="true"></i> Voltar ao painel</a>
+            </nav>
             <h1 class="page-title">
                 <i class="glyphicon glyphicon-time"></i>
                 {{ 'TEMPORAL.TITLE' | i18n }}
             </h1>
             <p class="page-subtitle" ng-if="campaign">
-                {{ 'CAMPAIGN.CAMPAIGN' | i18n }}: {{campaign.name}} | 
+                {{ 'CAMPAIGN.CAMPAIGN' | i18n }}: {{campaign.name || campaign._id}} |
                 {{ 'SUPERVISOR.POINT_INFO.POINT_NUMBER' | i18n }} {{point.originalIndex || point.index}}
             </p>
         </div>

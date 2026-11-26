@@ -3,20 +3,51 @@
 Application.directive('campaignOfflineCache', function () {
     return {
         restrict: 'E',
-        scope: { campaignId: '=', campaign: '=' },
+        scope: { campaignId: '=', campaign: '=', details: '@' },
         templateUrl: 'views/campaign-offline-cache.tpl.html',
-        controller: function ($scope, $http, $timeout, $q, NotificationDialog) {
+        controller: function ($scope, $http, $timeout, $q, NotificationDialog, AdminPages) {
             var destroyed = false;
             var timer = null;
             var pending = false;
+            var coverageInitialized = false;
             var cancel = $q.defer();
             var endpoint = '/api/cache/campaign/' + encodeURIComponent($scope.campaignId) + '/offline';
-            $scope.offline = { status: null, error: null, starting: false, loading: false,
+            $scope.offline = { status: null, error: null, starting: false, loading: false, confirming: false,
                 width: 512, height: 512, page: 0 };
             $scope.offlineLabels = {
                 not_started: 'Não iniciado', preparing: 'Calculando cobertura', running: 'Gerando imagens',
                 completed: 'Concluído', stale: 'Configuração alterada; verificar novamente', blocked: 'Intervenção necessária', pending: 'Pendente',
                 processing: 'Em processamento', retry_wait: 'Aguardando retentativa', no_data: 'Ausência comprovada de dados'
+            };
+            var summaryStates = [
+                ['completed', 'Imagens válidas'], ['no_data', 'Sem dados comprovados'],
+                ['processing', 'Em processamento'], ['pending', 'Pendentes'],
+                ['retry_wait', 'Aguardando retentativa'], ['blocked', 'Bloqueados']
+            ];
+            function applyStatus(status) {
+                $scope.offline.status = status;
+                var counts = status.counts || {};
+                var total = status.total || 0;
+                var verified = (counts.completed || 0) + (counts.no_data || 0);
+                $scope.offlineSummary = {
+                    total: total,
+                    verified: verified,
+                    percent: total ? Math.min(100, 100 * verified / total) : 0,
+                    segments: summaryStates.map(function(state) {
+                        var count = counts[state[0]] || 0;
+                        return { state: state[0], label: state[1], count: count,
+                            percent: total ? Math.min(100, 100 * count / total) : 0 };
+                    })
+                };
+                if (status.config && !coverageInitialized) {
+                    $scope.offline.width = status.config.width;
+                    $scope.offline.height = status.config.height;
+                    coverageInitialized = true;
+                }
+            }
+            $scope.viewOfflineDetails = function () {
+                AdminPages.go('campaign-offline', { campaignId: $scope.campaignId },
+                    '/admin/campaigns/manage/' + encodeURIComponent($scope.campaignId));
             };
             $scope.offlineReasons = {
                 empty_collection: 'Nenhuma cena disponível para os critérios do período',
@@ -42,18 +73,19 @@ Application.directive('campaignOfflineCache', function () {
             function schedule() {
                 stopTimer();
                 if (!destroyed && $scope.offlineActive()) {
-                    timer = $timeout(function () { timer = null; $scope.refreshOffline(); }, 5000);
+                    timer = $timeout(function () { timer = null; $scope.refreshOffline(true); }, 5000);
                 }
             }
-            $scope.refreshOffline = function () {
-                if (destroyed || pending || $scope.offline.starting) return;
+            $scope.refreshOffline = function (background) {
+                if (destroyed || pending || $scope.offline.starting || $scope.offline.confirming) return;
                 stopTimer();
                 pending = true;
                 $scope.offline.loading = true;
-                $http.get(endpoint, { params: { page: $scope.offline.page }, timeout: cancel.promise })
+                $http.get(endpoint, { params: { page: $scope.offline.page }, timeout: cancel.promise,
+                    hideLoading: background === true })
                     .then(function (response) {
                         if (destroyed) return;
-                        $scope.offline.status = response.data;
+                        applyStatus(response.data);
                         $scope.offline.error = null;
                     }, function (error) {
                         if (destroyed) return;
@@ -69,19 +101,26 @@ Application.directive('campaignOfflineCache', function () {
                 $scope.refreshOffline();
             };
             $scope.startOffline = function (mode) {
-                if (destroyed || pending || $scope.offline.starting || $scope.offlineActive()) return;
+                if (destroyed || pending || $scope.offline.starting || $scope.offline.confirming || $scope.offlineActive()) return;
+                var coverage = $scope.offline.status && $scope.offline.status.config;
+                var useCoverage = coverage && (mode === 'retry_failed' || $scope.details !== 'true');
+                var width = useCoverage ? coverage.width : $scope.offline.width;
+                var height = useCoverage ? coverage.height : $scope.offline.height;
+                if (![width, height].every(function(value) {
+                    return typeof value === 'number' && value >= 256 && value <= 2048 && value % 1 === 0;
+                })) {
+                    $scope.offline.error = 'Informe largura e altura inteiras entre 256 e 2048 pixels.';
+                    return;
+                }
                 function send() {
-                    if (destroyed || $scope.offline.starting) return;
+                    if (destroyed || pending || $scope.offline.starting || $scope.offlineActive()) return;
                     stopTimer();
                     $scope.offline.starting = true;
                     $scope.offline.error = null;
-                    var coverage = $scope.offline.status && $scope.offline.status.config;
-                    var width = mode === 'retry_failed' && coverage ? coverage.width : $scope.offline.width;
-                    var height = mode === 'retry_failed' && coverage ? coverage.height : $scope.offline.height;
                     $http.post(endpoint, { mode: mode, width: width, height: height }, { timeout: cancel.promise })
                         .then(function (response) {
                             if (destroyed) return;
-                            $scope.offline.status = response.data;
+                            applyStatus(response.data);
                             $scope.offline.page = 0;
                         }, function (error) {
                             if (!destroyed) $scope.offline.error = (error.data && error.data.error) || 'Falha ao iniciar o cache offline.';
@@ -90,8 +129,12 @@ Application.directive('campaignOfflineCache', function () {
                         });
                 }
                 if (mode === 'regenerate') {
+                    $scope.offline.confirming = true;
                     NotificationDialog.confirm('Todas as imagens da cobertura desta campanha serão geradas novamente. A operação consome recursos da fonte. Deseja continuar?', 'Regenerar cache da campanha')
-                        .then(function (confirmed) { if (confirmed) send(); });
+                        .then(function (confirmed) {
+                            $scope.offline.confirming = false;
+                            if (confirmed) send();
+                        }, function () { $scope.offline.confirming = false; });
                 } else send();
             };
             $scope.$on('$destroy', function () {
@@ -99,7 +142,7 @@ Application.directive('campaignOfflineCache', function () {
                 stopTimer();
                 cancel.resolve();
             });
-            $scope.refreshOffline();
+            $scope.refreshOffline(true);
         }
     };
 });

@@ -18,3 +18,29 @@
     overflow: visible;
 }
 .admin-page .admin-page-content .modal-content { box-shadow: none; }
+
+.campaign-offline { margin: 20px 0; }
+.campaign-offline-heading,
+.campaign-offline-status,
+.campaign-offline-actions,
+.campaign-offline-coverage { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.campaign-offline-heading,
+.campaign-offline-status { justify-content: space-between; }
+.campaign-offline-heading .panel-title { margin: 0; font-size: 18px; }
+.campaign-offline-status { margin-bottom: 12px; }
+.campaign-offline-progress { display: flex; height: 16px; overflow: hidden; border-radius: 4px; background: #e5e7eb; }
+.campaign-offline-segment { height: 100%; }
+.campaign-offline-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 12px 0; padding: 0; list-style: none; font-size: 14px; }
+.campaign-offline-key { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; }
+.campaign-offline-state-completed { background-color: #278248; }
+.campaign-offline-state-no_data { background-color: #7961a5; }
+.campaign-offline-state-processing { background-color: #337ab7; }
+.campaign-offline-state-pending { background-color: #98a2b3; }
+.campaign-offline-state-retry_wait { background-color: #d99a20; }
+.campaign-offline-state-blocked { background-color: #c84040; }
+.campaign-offline-actions { margin: 16px 0 10px; gap: 8px; }
+.campaign-offline-updates { display: flex; flex-wrap: wrap; gap: 4px 12px; min-height: 20px; font-size: 14px; }
+.campaign-offline-details { margin-top: 20px; padding-top: 4px; border-top: 1px solid #ddd; }
+.campaign-offline-details h3 { font-size: 18px; }
+.campaign-offline-coverage label { margin: 0; }
+.campaign-offline-coverage .form-control { margin-top: 6px; max-width: 280px; }

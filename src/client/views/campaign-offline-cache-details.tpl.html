@@ -1,0 +1,33 @@
+<div class="campaign-offline-details">
+    <h3>Cobertura das imagens</h3>
+    <p>Prepare as imagens antes de liberar a inspeção. A conclusão exige validação dos arquivos armazenados.</p>
+    <p class="alert alert-info">Cobertura centrada em cada ponto, nos zooms usados pela grade e nos dois períodos de cada ano, para todas as visualizações da campanha. Arrastar para fora dessa área ou abrir um mapa maior pode consultar a fonte externa.</p>
+    <div class="campaign-offline-coverage">
+        <label>Largura da área exibida (pixels)
+            <input type="number" class="form-control" ng-model="offline.width" min="256" max="2048" step="1" ng-disabled="offline.loading || offline.starting || offline.confirming || offlineActive()">
+        </label>
+        <label>Altura (pixels)
+            <input type="number" class="form-control" ng-model="offline.height" min="256" max="2048" step="1" ng-disabled="offline.loading || offline.starting || offline.confirming || offlineActive()">
+        </label>
+    </div>
+    <p class="help-block">As dimensões serão aplicadas ao gerar ou regenerar o cache. Redisparar falhas mantém a cobertura registrada.</p>
+    <p ng-if="offline.status.config">Cobertura registrada: {{offline.status.config.width}} × {{offline.status.config.height}} pixels, com margem de {{offline.status.config.buffer}} tiles. Zooms: {{offline.status.config.zooms.join(', ')}}.</p>
+    <p ng-if="offline.status.unique_tiles !== undefined">Tiles únicos: <b>{{offline.status.unique_tiles | number}}</b>. O total de itens inclui os vínculos com cada ponto.</p>
+    <h3>Ocorrências por ponto</h3>
+    <p>Bloqueios, retentativas e ausência comprovada de dados são apresentados abaixo.</p>
+    <p ng-if="offline.status && !offline.status.error_total">Nenhuma ocorrência registrada.</p>
+    <div class="table-responsive" ng-if="offline.status.error_total">
+        <table class="table table-striped">
+            <thead><tr><th>Ponto</th><th>Ano/período</th><th>Visualização</th><th>Tile z/x/y</th><th>Estado e motivo</th><th>Tentativas</th><th>Próxima retentativa</th></tr></thead>
+            <tbody><tr ng-repeat="item in offline.status.errors track by item._id">
+                <td>{{item.point_id}}</td><td>{{item.params.year}} / {{item.params.period}}</td><td>{{item.params.visparam}}</td>
+                <td>{{item.params.z}}/{{item.params.x}}/{{item.params.y}}</td>
+                <td>{{offlineLabels[item.state]}}: {{offlineReasons[item.reason] || item.reason}}</td>
+                <td>{{item.attempts}}</td><td>{{item.next_retry ? (item.next_retry | date:'dd/MM/yyyy HH:mm:ss') : 'Sem retentativa automática'}}</td>
+            </tr></tbody>
+        </table>
+        <button type="button" class="btn btn-default" ng-click="offlinePage(-1)" ng-disabled="offline.loading || offline.starting || offline.confirming || offline.page === 0">Anterior</button>
+        <span>Página {{offline.page + 1}} · {{offline.status.error_total}} {{offline.status.error_total === 1 ? 'ocorrência registrada' : 'ocorrências registradas'}}</span>
+        <button type="button" class="btn btn-default" ng-click="offlinePage(1)" ng-disabled="offline.loading || offline.starting || offline.confirming || (offline.page + 1) * 50 >= offline.status.error_total">Próxima</button>
+    </div>
+</div>

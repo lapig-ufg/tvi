@@ -1,0 +1,221 @@
+body.admin-interface {
+    --admin-ink: #2d3748;
+    --admin-muted: #536273;
+    --admin-border: #d7dfe8;
+    --admin-surface: #fff;
+    --admin-background: #f5f7fa;
+    --admin-accent: #337ab7;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--admin-ink);
+    background: var(--admin-background);
+}
+
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(h1, h2, h3, h4, h5, h6) {
+    line-height: 1.3;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+body.admin-interface .page-view h1 { font-size: 28px; }
+body.admin-interface .page-view h2 { font-size: 24px; }
+body.admin-interface .page-view h3 { font-size: 20px; }
+body.admin-interface .page-view h4 { font-size: 18px; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(h5, h6) { font-size: 16px; }
+
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(p, li, dd, dt, .info-value, .detail-item > span, .message-box) {
+    font-size: 15px;
+    line-height: 1.5;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(label, .form-label, .filter-label, .info-label, .checkbox-label) {
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(small, .small, .help-block, .form-hint, .form-help,
+    .stat-label, .stat-desc, .module-description, .module-stats, .stat-badge,
+    .list-count, .page-info, .pagination-info, .header-subtitle, .campaign-id,
+    .user-info, .text-muted, .log-id, .log-level, .category-badge, .info-badge,
+    .param-description, .visparam-desc, .band-description, .metadata-box) {
+    font-size: 14px;
+    line-height: 1.5;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.action-desc, .action-title, .band-channel, .band-chip,
+    .band-desc, .band-details, .band-label, .band-name, .bands-info, .block-points,
+    .campaign-period, .campaign-inspections, .campaign-points, .card-subtitle,
+    .category-indicator, .channel-band, .class-count, .class-name, .class-percentage,
+    .class-tag, .collection-years, .config-badge, .coordinates-box, .count-badge,
+    .count-label, .data-cell, .distance-hint, .distance-label, .elapsed-time,
+    .empty-message, .error-message, .field-info, .file-badge, .file-error,
+    .filter-badge, .filter-hint, .filter-indicator, .form-error, .form-text,
+    .format-badge, .header-cell, .info-item, .info-text, .inspector-name,
+    .items-per-page, .loading-text, .map-date, .map-period, .mini-stat,
+    .mon-card-footer, .mon-card-name, .mon-loading-badge, .mon-point-info,
+    .mon-progress-text, .mon-status-badge, .municipality-name, .municipality-state,
+    .page-subtitle, .pending-position, .priority-badge, .progress-label,
+    .progress-percentage, .progress-text, .progress-time, .progress-title,
+    .properties-desc, .property-count, .property-coverage, .property-name,
+    .property-title, .range-value, .rank-count, .rank-name, .rank-number,
+    .recommendation-title, .result-warning-message, .row-name, .stat-percentage,
+    .status-badge, .status-toggle, .step-description, .step-label, .suggested-label,
+    .suggested-tag, .summary-label, .table-footer, .table-tab, .tag, .toggle-text,
+    .upload-desc, .badge, .label) {
+    font-size: 14px;
+    line-height: 1.5;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.help-block, .form-hint, .form-help, .text-muted, .stat-label, .stat-desc) {
+    color: var(--admin-muted);
+    font-style: normal;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.stat-label, .stat-desc, .info-badge, .category-badge) {
+    text-transform: none;
+    letter-spacing: normal;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.stat-value, .stat-number) {
+    font-size: 28px;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+}
+
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+    select, textarea, .form-control, .form-input, .form-select) {
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 42px;
+    height: auto;
+    max-width: 100%;
+    border-radius: 6px;
+    border-color: var(--admin-border);
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.form-control, .form-input, .form-select) { padding: 8px 12px; }
+body.admin-interface .page-view select[multiple] { min-height: 126px; }
+body.admin-interface .page-view textarea { min-height: 110px; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(input[type=checkbox], input[type=radio]) { accent-color: var(--admin-accent); }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.form-group, .filter-group) { min-width: 0; }
+body.admin-interface .page-view .form-group { margin-bottom: 20px; }
+body.admin-interface .page-view label { margin-bottom: 6px; }
+
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(button, .btn, .tab-btn, .page-btn) {
+    font-size: 14px;
+    line-height: 1.5;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.btn, .action-btn, .refresh-btn, .cleanup-btn, .job-config-btn,
+    .export-btn, .logout-btn, .page-btn, .view-btn, .back-btn) {
+    min-height: 40px;
+    border-radius: 6px;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.btn, .action-btn, .refresh-btn, .cleanup-btn, .job-config-btn, .export-btn) {
+    padding: 8px 14px;
+    white-space: normal;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.back-btn, .view-btn, .page-btn) { min-width: 40px; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.btn, button, a, input, select, textarea):focus-visible {
+    outline: 3px solid #286090;
+    outline-offset: 3px;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.header-actions, .header-user, .toolbar-left, .toolbar-right,
+    .content-toolbar, .action-buttons, .pagination-controls) {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.header-left, .header-info, .module-content) { min-width: 0; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.header-content, .logs-header) { gap: 20px; }
+body.admin-interface .page-view .header-content { width: 100%; max-width: 1600px; padding: 20px 24px; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.admin-content, .campaign-content, .modules-grid, .system-overview,
+    .logs-stats, .logs-filters, .activity-chart, .logs-list, .stats-bar, .filters-section,
+    .campaigns-section, .generate-panel, .toolbar, .blocks-table-container) { max-width: 1552px; }
+body.admin-interface .page-view .modules-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); }
+body.admin-interface .page-view .module-card { align-items: flex-start; }
+body.admin-interface .page-view .module-card h2 { font-size: 20px; }
+
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(table, .admin-table, .logs-table table) { font-size: 14px; line-height: 1.5; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(th, td) { font-size: 14px; line-height: 1.5; vertical-align: middle; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.table, .admin-table, .logs-table table) > :is(thead, tbody) > tr > :is(th, td) {
+    padding: 12px;
+}
+body.admin-interface .page-view th { text-transform: none; letter-spacing: normal; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.table-responsive, .table-container, .logs-table) { overflow-x: auto; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.nav-tabs, .tabs-container) { display: flex; flex-wrap: wrap; }
+body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.tab-btn, .nav-tabs > li > a) { font-size: 15px; padding: 12px 16px; }
+body.admin-interface .page-view pre { font-size: 14px; line-height: 1.5; }
+
+body.admin-interface .page-view .admin-page { width: 100%; max-width: 1600px; margin: 0 auto; padding: 24px; }
+body.admin-interface .page-view .admin-page > h1 { margin: 0 0 24px; }
+body.admin-interface .page-view .admin-page-navigation { padding-bottom: 20px; border-bottom: 1px solid var(--admin-border); }
+body.admin-interface .page-view .admin-module-navigation { margin-bottom: 16px; }
+body.admin-interface .page-view .admin-panel-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: 8px;
+    color: #286090;
+    background: #fff;
+    border: 1px solid var(--admin-border);
+    text-decoration: none;
+}
+body.admin-interface .page-view .admin-panel-link:hover { background: #f5f7fa; color: #204d74; }
+body.admin-interface .page-view .admin-page-content { background: var(--admin-surface); border-radius: 8px; }
+body.admin-interface .page-view .admin-page-content > .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--admin-border); }
+body.admin-interface .page-view .admin-page-content .modal-header :is(h2, h3) { font-size: 20px; }
+body.admin-interface .page-view .admin-page-content > .modal-body { padding: 24px; }
+body.admin-interface .page-view .admin-page-content .modal-footer { padding: 20px 24px; background: var(--admin-surface); }
+body.admin-interface .page-view .admin-page-content .modal-footer .btn + .btn { margin-left: 8px; }
+body.admin-interface .page-view .admin-page-content .detail-item label { font-size: 15px; }
+
+body.admin-interface .page-view :is(.campaign-header, .admin-header, .logs-header) {
+    background: var(--admin-surface);
+    color: var(--admin-ink);
+    border-bottom: 1px solid var(--admin-border);
+    box-shadow: none;
+}
+body.admin-interface .page-view :is(.campaign-header, .admin-header) :is(.header-title, .campaign-id, .back-btn) {
+    color: var(--admin-ink);
+}
+body.admin-interface .page-view :is(.campaign-header, .admin-header) .back-btn {
+    background: #f5f7fa;
+    border: 1px solid var(--admin-border);
+}
+body.admin-interface .page-view :is(.btn-primary, .action-btn.primary) {
+    color: #fff;
+    background: var(--admin-accent);
+    border-color: #2e6da4;
+}
+body.admin-interface .page-view :is(.btn-primary, .action-btn.primary):hover:not(:disabled) {
+    background: #286090;
+    border-color: #204d74;
+}
+body.admin-interface .page-view .action-btn.secondary {
+    background: #fff;
+    color: #286090;
+    border: 1px solid var(--admin-border);
+}
+body.admin-interface .page-view :is(.tab-btn.active, .nav-tabs > li.active > a) {
+    color: #286090;
+    border-bottom-color: var(--admin-accent);
+}
+body.admin-interface .page-view .tab-btn.active::after { background: var(--admin-accent); }
+
+@media (max-width: 991px) {
+    body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.header-content, .logs-header, .content-toolbar) { flex-wrap: wrap; }
+    body.admin-interface .page-view .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.admin-interface .page-view .header-actions { margin-left: 0; }
+}
+@media (max-width: 767px) {
+    body.admin-interface .page-view .campaign-management-container .stats-section { grid-template-columns: minmax(0, 1fr); }
+    body.admin-interface .page-view .campaign-management-container :is(.analytics-section, .tabs-header, .tabs-content, .analytics-grid) { min-width: 0; max-width: 100%; }
+    body.admin-interface .page-view .campaign-management-container .tabs-header { flex-wrap: wrap; }
+    body.admin-interface .page-view h1 { font-size: 24px; }
+    body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.admin-page, .header-content, .logs-header) { padding: 16px; }
+    body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.admin-page-content > .modal-body, .admin-page-content > .modal-header,
+        .admin-page-content .modal-footer) { padding: 16px; }
+    body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.info-grid, .logs-stats) { grid-template-columns: minmax(0, 1fr); }
+    body.admin-interface .page-view .header-left { flex: 1 1 100%; flex-wrap: wrap; }
+    body.admin-interface .page-view .header-actions { width: 100%; }
+    body.admin-interface .page-view .module-icon { width: 48px; height: 48px; }
+    body.admin-interface .page-view .module-card { padding: 20px; }
+    body.admin-interface .page-view .form-inline .form-control { width: 100%; }
+}

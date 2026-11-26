@@ -193,7 +193,7 @@ test('cadastro: símbolo padrão em campanha nova e normalização no modal de e
 
 test('cadastro orienta o tamanho do símbolo em tela no zoom configurado', () => {
     const template = read('views/campaign-form-modal.tpl.html');
-    const radiusGroup = template.match(/<div class="form-group">\s*<label class="form-label">Raio do buffer \(m\)<\/label>[\s\S]*?<\/div>/);
+    const radiusGroup = template.match(/<div class="form-group">\s*<label[^>]*class="form-label"[^>]*>Raio do buffer \(m\)<\/label>[\s\S]*?<\/div>/);
     assert.ok(radiusGroup, 'grupo do raio ausente');
     assert.match(radiusGroup[0], /sampleMarkerSizePx\(\)/, 'hint do raio não mostra o tamanho em tela');
     assert.match(radiusGroup[0], /sampleMarkerSizePx\(\) < 8/, 'hint do raio não alerta símbolos pequenos');

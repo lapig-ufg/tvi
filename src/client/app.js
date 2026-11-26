@@ -146,6 +146,12 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 		};
 	});
 }).run(function($http, $location, $rootScope, requester, i18nService) {
+	function updateAdminInterface() {
+		$rootScope.adminInterface = /^\/admin(?:\/|$)/.test($location.path());
+	}
+	updateAdminInterface();
+	$rootScope.$on('$locationChangeSuccess', updateAdminInterface);
+
 	// Ensure i18n translations are loaded
 	// [app] Ensuring i18n translations are loaded
 	i18nService.ensureLoaded().then(function() {

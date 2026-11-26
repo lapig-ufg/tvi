@@ -7,10 +7,10 @@ module.exports = function (app) {
     var image = app.controllers.image;
     var capabilities = app.controllers.capabilities;
     
-    // Middleware de autenticação para admin
     var checkAdminAuth = function(req, res, next) {
-        // Por enquanto, permitir acesso sem autenticação para admin-temporal
-        // TODO: Implementar autenticação específica para admin se necessário
+        if (!req.session || !req.session.admin || !req.session.admin.superAdmin) {
+            return res.status(401).json({ error: 'Super admin authentication required' });
+        }
         return next();
     };
     

@@ -1239,8 +1239,8 @@ Application.controller('PointDetailsModalController', function ($scope, $uibModa
     };
 
     $scope.viewInTemporal = function() {
-        // Abrir o admin-temporal em nova aba com o ponto selecionado
-        var url = window.location.origin + '/#/admin/temporal?pointId=' + $scope.point._id;
+        var url = window.location.origin + '/#/admin/temporal?pointId=' + encodeURIComponent($scope.point._id) +
+            '&campaignId=' + encodeURIComponent($scope.campaign._id);
         window.open(url, '_blank');
         $scope.close();
     };

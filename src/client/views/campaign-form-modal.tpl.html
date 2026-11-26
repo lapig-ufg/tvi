@@ -1,1026 +1,1274 @@
-<!-- Modal de Formulário de Campanha - Interface Moderna -->
-<div class="modern-modal">
+<div class="modern-modal campaign-editor">
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">
                 <i class="fas fa-map-marked-alt"></i>
-                {{ isNew ? 'Nova Campanha' : 'Editar Campanha' }}
+                {{ isNew ? 'Nova campanha' : 'Editar campanha' }}
             </h3>
+            <p class="campaign-editor-identity" ng-if="!isNew">{{campaign._id}}</p>
+            <p class="campaign-editor-description">
+                Defina o período, as classes e a apresentação das imagens para os intérpretes.
+            </p>
         </div>
-        
+
         <div class="modal-body">
             <form name="campaignForm" class="modern-form">
-                <!-- ID da Campanha -->
-                <div class="form-group" ng-if="isNew">
-                    <label class="form-label required">ID da Campanha</label>
-                    <input type="text" 
-                           class="form-input" 
-                           ng-model="campaign._id" 
-                           placeholder="Digite um ID único para a campanha"
-                           required>
-                    <span class="form-hint">Este ID não poderá ser alterado depois</span>
-                </div>
-                
-                <!-- Período -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Ano Inicial</label>
-                        <input type="number"
-                               class="form-input"
-                               ng-model="campaign.initialYear"
-                               min="1984"
-                               max="{{currentYear}}"
-                               placeholder="Ex: 2020">
+                <section
+                    class="campaign-editor-section campaign-editor-general"
+                    aria-labelledby="campaign-general-title"
+                >
+                    <h4 class="section-title" id="campaign-general-title">Dados gerais</h4>
+                    <div class="campaign-editor-general-fields">
+                        <div class="form-group" ng-if="isNew">
+                            <label for="campaign-id" class="form-label required">ID da campanha</label>
+                            <input
+                                type="text"
+                                class="form-input"
+                                id="campaign-id"
+                                ng-model="campaign._id"
+                                placeholder="Digite um ID único para a campanha"
+                                required
+                            />
+                            <span class="form-hint">Este ID não poderá ser alterado depois</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="campaign-initial-year" class="form-label">Ano inicial</label>
+                                <input
+                                    id="campaign-initial-year"
+                                    type="number"
+                                    class="form-input"
+                                    ng-model="campaign.initialYear"
+                                    min="1984"
+                                    max="{{currentYear}}"
+                                    placeholder="Ex: 2020"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="campaign-final-year" class="form-label">Ano final</label>
+                                <input
+                                    id="campaign-final-year"
+                                    type="number"
+                                    class="form-input"
+                                    ng-model="campaign.finalYear"
+                                    min="1984"
+                                    max="{{currentYear}}"
+                                    placeholder="Ex: {{currentYear}}"
+                                />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-inspections" class="form-label">Número de inspeções</label>
+                            <input
+                                id="campaign-inspections"
+                                type="number"
+                                class="form-input"
+                                ng-model="campaign.numInspec"
+                                min="1"
+                                placeholder="Quantidade de inspeções por ponto"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-password" class="form-label">Senha de acesso</label>
+                            <input
+                                id="campaign-password"
+                                type="password"
+                                class="form-input"
+                                ng-model="campaign.password"
+                                placeholder="Opcional - deixe em branco para acesso livre"
+                            />
+                        </div>
                     </div>
+                </section>
+                <section
+                    class="campaign-editor-section campaign-editor-classes"
+                    aria-labelledby="campaign-classes-title"
+                >
+                    <h4 class="section-title" id="campaign-classes-title">Classificação do uso da terra</h4>
                     <div class="form-group">
-                        <label class="form-label">Ano Final</label>
-                        <input type="number"
-                               class="form-input"
-                               ng-model="campaign.finalYear"
-                               min="1984"
-                               max="{{currentYear}}"
-                               placeholder="Ex: {{currentYear}}">
-                    </div>
-                </div>
-                
-                <!-- Número de Inspeções -->
-                <div class="form-group">
-                    <label class="form-label">Número de Inspeções</label>
-                    <input type="number" 
-                           class="form-input" 
-                           ng-model="campaign.numInspec" 
-                           min="1"
-                           placeholder="Quantidade de inspeções por ponto">
-                </div>
-                
-                <!-- Senha -->
-                <div class="form-group">
-                    <label class="form-label">Senha de Acesso</label>
-                    <input type="password" 
-                           class="form-input" 
-                           ng-model="campaign.password"
-                           placeholder="Opcional - deixe em branco para acesso livre">
-                </div>
-                
-                <!-- Tipos de Uso da Terra -->
-                <div class="form-group">
-                    <label class="form-label">Tipos de Uso da Terra</label>
-                    <div class="land-use-container">
-                        <div ng-repeat="landUse in campaign.landUse track by $index" class="land-use-item">
-                            <input type="text"
-                                   class="form-input"
-                                   ng-model="campaign.landUse[$index]"
-                                   readonly>
-                            <button class="btn-remove"
+                        <label class="form-label">Classes disponíveis</label>
+                        <div class="land-use-container">
+                            <div ng-repeat="landUse in campaign.landUse track by $index" class="land-use-item">
+                                <input
+                                    type="text"
+                                    class="form-input"
+                                    ng-model="campaign.landUse[$index]"
+                                    aria-label="Classe de uso da terra {{ $index + 1 }}"
+                                    readonly
+                                />
+                                <button
+                                    type="button"
+                                    class="btn-remove"
                                     ng-click="removeLandUse($index)"
-                                    title="Remover">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="land-use-empty" ng-show="!campaign.landUse.length">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Nenhum tipo de uso da terra configurado</span>
-                        </div>
-                        <button type="button"
-                                class="btn-add"
-                                ng-click="addLandUse()">
-                            <i class="fas fa-plus"></i>
-                            Adicionar Tipo
-                        </button>
-                        <button type="button"
-                                class="btn-add"
-                                ng-click="toggleLandUseImport()">
-                            <i class="fas fa-file-import"></i>
-                            Importar de outra campanha
-                        </button>
-                        <div ng-if="landUseImport.open" style="margin-top:0.5rem; padding:0.75rem; border:1px solid #ddd; border-radius:4px;">
-                            <input type="text"
-                                   class="form-input"
-                                   ng-model="landUseImport.query"
-                                   ng-model-options="{ debounce: 300 }"
-                                   ng-change="searchLandUseSources()"
-                                   placeholder="Buscar campanha pelo nome (mínimo de 2 caracteres)">
-                            <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;" ng-show="landUseImport.loading">
-                                Buscando campanhas...
-                            </small>
-                            <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;"
-                                   ng-show="!landUseImport.loading && landUseImport.query.trim().length >= 2 && !landUseImport.results.length">
-                                Nenhuma campanha com classes encontrada.
-                            </small>
-                            <div ng-repeat="source in landUseImport.results track by source.id" style="margin-top:0.25rem;">
-                                <label class="checkbox-label">
-                                    <input type="radio" name="landUseImportSource"
-                                           ng-checked="landUseImport.selected === source"
-                                           ng-click="selectLandUseSource(source)">
-                                    <span class="checkbox-text">{{source.id}} ({{source.count}} classes)</span>
-                                </label>
-                            </div>
-                            <div ng-if="landUseImport.selected" style="margin-top:0.5rem;">
-                                <strong>Classes de {{landUseImport.selected.id}}:</strong>
-                                <ol style="margin:0.25rem 0 0.5rem 1.25rem; max-height:12rem; overflow:auto;">
-                                    <li ng-repeat="lu in landUseImport.selected.landUse track by $index">{{lu}}</li>
-                                </ol>
-                                <button type="button" class="btn-add" ng-click="confirmLandUseImport()">
-                                    <i class="fas fa-check"></i>
-                                    Importar
-                                </button>
-                                <button type="button" class="btn-add" ng-click="toggleLandUseImport()">
-                                    <i class="fas fa-times"></i>
-                                    Cancelar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Classe inicial padrão da primeira caixa do formulário de transição (TKT-000005) -->
-                <div class="form-group">
-                    <label class="form-label">Classe padrão da primeira caixa</label>
-                    <select class="form-input"
-                            ng-model="campaign.defaultLandUse"
-                            ng-disabled="!campaign.landUse.length">
-                        <option value="">— sem pré-seleção (intérprete escolhe) —</option>
-                        <option ng-repeat="lu in campaign.landUse track by $index" value="{{ lu }}">{{ lu }}</option>
-                    </select>
-                    <small class="form-hint" style="display:block; color:#666; margin-top:0.25rem;">
-                        Se definida, a primeira caixa do formulário de transição inicia já nessa classe.
-                        Útil em campanhas com padrão regional previsível (por exemplo, "Não Pastagem" na Amazônia).
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Informações do ponto exibidas</label>
-                    <small class="form-hint" style="display:block; color:#666; margin-bottom:0.5rem;">
-                        Colunas do arquivo de pontos mostradas no quadro de localização do intérprete e do supervisor,
-                        por idioma da interface. Um idioma sem lista própria usa a lista Padrão; sem nenhuma lista,
-                        todas as colunas aparecem. O rótulo é opcional; vazio, aparece o nome da coluna.
-                    </small>
-                    <div class="land-use-empty" ng-show="!propertyKeys.length">
-                        <i class="fas fa-info-circle"></i>
-                        <span>As colunas ficam disponíveis após a importação dos pontos.</span>
-                    </div>
-                    <div ng-show="propertyKeys.length">
-                        <div ng-repeat="list in propertyDisplayLists" style="margin-bottom:0.75rem;">
-                            <strong>{{list.label}}</strong>
-                            <div ng-repeat="item in campaign.propertyDisplay[list.id] track by item.key"
-                                 style="display:flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
-                                <code style="min-width:8rem;">{{item.key}}</code>
-                                <input type="text" class="form-input" ng-model="item.label" maxlength="60"
-                                       placeholder="{{formatPropertyKey(item.key)}}">
-                                <button type="button" class="btn-remove" title="Subir" ng-disabled="$first"
-                                        ng-click="movePropertyDisplayItem(list.id, $index, -1)">
-                                    <i class="fas fa-arrow-up"></i>
-                                </button>
-                                <button type="button" class="btn-remove" title="Descer" ng-disabled="$last"
-                                        ng-click="movePropertyDisplayItem(list.id, $index, 1)">
-                                    <i class="fas fa-arrow-down"></i>
-                                </button>
-                                <button type="button" class="btn-remove" title="Remover"
-                                        ng-click="removePropertyDisplayItem(list.id, $index)">
+                                    title="Remover"
+                                >
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
-                                <select class="form-select" ng-model="propertyDisplaySelection[list.id]"
-                                        ng-options="key as key for key in availablePropertyKeys(list.id)">
-                                    <option value="">Selecione uma coluna</option>
-                                </select>
-                                <button type="button" class="btn-add"
-                                        ng-disabled="!propertyDisplaySelection[list.id] || campaign.propertyDisplay[list.id].length >= propertyDisplayLimits.items"
-                                        ng-click="addPropertyDisplayItem(list.id)">
-                                    <i class="fas fa-plus"></i>
-                                    Adicionar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Configurações de Visualização -->
-                <div class="form-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-cog"></i>
-                        Configurações de Visualização
-                    </h4>
-                    
-                    <div class="checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="campaign.showTimeseries">
-                            <span class="checkbox-text">
-                                <i class="fas fa-chart-line"></i>
-                                Mostrar Gráfico de Série Temporal
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label" ng-show="campaign.showTimeseries">
-                            <input type="checkbox" ng-model="campaign.autoLoadTimeseries">
-                            <span class="checkbox-text">
-                                <i class="fas fa-bolt"></i>
-                                Carregar Gráficos Automaticamente
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="campaign.showPointInfo">
-                            <span class="checkbox-text">
+                            <div class="land-use-empty" ng-show="!campaign.landUse.length">
                                 <i class="fas fa-info-circle"></i>
-                                Mostrar Informações do Ponto
-                            </span>
-                        </label>
-
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="campaign.useDynamicMaps">
-                            <span class="checkbox-text">
-                                <i class="fas fa-map"></i>
-                                Usar Mapas Dinâmicos
-                            </span>
-                        </label>
+                                <span>Nenhum tipo de uso da terra configurado</span>
+                            </div>
+                            <button type="button" class="btn-add" ng-click="addLandUse()">
+                                <i class="fas fa-plus"></i>
+                                Adicionar tipo
+                            </button>
+                            <button type="button" class="btn-add" ng-click="toggleLandUseImport()">
+                                <i class="fas fa-file-import"></i>
+                                Importar de outra campanha
+                            </button>
+                            <div class="campaign-editor-class-import" ng-if="landUseImport.open">
+                                <input
+                                    type="text"
+                                    class="form-input"
+                                    ng-model="landUseImport.query"
+                                    aria-label="Buscar campanha de origem"
+                                    ng-model-options="{ debounce: 300 }"
+                                    ng-change="searchLandUseSources()"
+                                    placeholder="Buscar campanha pelo nome (mínimo de 2 caracteres)"
+                                />
+                                <small
+                                    class="form-hint"
+                                    style="display: block; color: #666; margin-top: 0.25rem"
+                                    ng-show="landUseImport.loading"
+                                >
+                                    Buscando campanhas...
+                                </small>
+                                <small
+                                    class="form-hint"
+                                    style="display: block; color: #666; margin-top: 0.25rem"
+                                    ng-show="!landUseImport.loading && landUseImport.query.trim().length >= 2 && !landUseImport.results.length"
+                                >
+                                    Nenhuma campanha com classes encontrada.
+                                </small>
+                                <div
+                                    ng-repeat="source in landUseImport.results track by source.id"
+                                    style="margin-top: 0.25rem"
+                                >
+                                    <label class="checkbox-label">
+                                        <input
+                                            type="radio"
+                                            name="landUseImportSource"
+                                            ng-checked="landUseImport.selected === source"
+                                            ng-click="selectLandUseSource(source)"
+                                        />
+                                        <span class="checkbox-text">{{source.id}} ({{source.count}} classes)</span>
+                                    </label>
+                                </div>
+                                <div ng-if="landUseImport.selected" style="margin-top: 0.5rem">
+                                    <strong>Classes de {{landUseImport.selected.id}}:</strong>
+                                    <ol style="margin: 0.25rem 0 0.5rem 1.25rem; max-height: 12rem; overflow: auto">
+                                        <li ng-repeat="lu in landUseImport.selected.landUse track by $index">{{lu}}</li>
+                                    </ol>
+                                    <button type="button" class="btn-add" ng-click="confirmLandUseImport()">
+                                        <i class="fas fa-check"></i>
+                                        Importar
+                                    </button>
+                                    <button type="button" class="btn-add" ng-click="toggleLandUseImport()">
+                                        <i class="fas fa-times"></i>
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label">Zoom inicial dos mapas da grade</label>
-                        <input type="number" class="form-input" ng-model="campaign.zoomLevel"
-                               min="10" max="18" step="1" ng-pattern="/^[0-9]+$/" required>
-                        <small class="form-hint" style="display:block; margin-top:0.25rem;">
-                            Nível de zoom com que os mapas da grade são carregados; também é o zoom mínimo das células.
-                            Padrão 13, o zoom das campanhas atuais. Em campanhas Esri Wayback com o símbolo quadrado, 17
-                            deixa o quadrado de 30 m visível (acima de 17 a cobertura da Esri varia por região e release).
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Símbolo da amostra</label>
-                        <select class="form-select" ng-model="campaign.sampleMarker.symbol" required>
-                            <option value="marker">Marcador tradicional</option>
-                            <option value="square">Quadrado</option>
-                            <option value="circle">Círculo</option>
+                        <label for="campaign-default-land-use" class="form-label">
+                            Classe padrão da primeira caixa
+                        </label>
+                        <select
+                            id="campaign-default-land-use"
+                            class="form-input"
+                            ng-model="campaign.defaultLandUse"
+                            ng-disabled="!campaign.landUse.length"
+                        >
+                            <option value="">Sem pré-seleção (o intérprete escolhe)</option>
+                            <option ng-repeat="lu in campaign.landUse track by $index" value="{{ lu }}">
+                                {{ lu }}
+                            </option>
                         </select>
-                        <small class="form-hint" style="display:block; margin-top:0.25rem;">
-                            Como a amostra aparece nas células da grade e no modal de comparação. O quadrado e o círculo
-                            são desenhados em metros sobre a imagem, centrados na amostra.
+                        <small class="form-hint" style="display: block; color: #666; margin-top: 0.25rem">
+                            Se definida, a primeira caixa do formulário de transição inicia já nessa classe. Útil em
+                            campanhas com padrão regional previsível (por exemplo, "Não Pastagem" na Amazônia).
                         </small>
                     </div>
+                </section>
+                <section class="campaign-editor-section campaign-editor-images" aria-labelledby="campaign-images-title">
+                    <h4 class="section-title" id="campaign-images-title">Imagens da campanha</h4>
+                    <div class="form-group">
+                        <label for="campaign-image-type" class="form-label">Tipo de imagem</label>
+                        <select
+                            id="campaign-image-type"
+                            class="form-select"
+                            ng-model="campaign.imageType"
+                            ng-change="onImageTypeChange()"
+                        >
+                            <option value="landsat">Landsat</option>
+                            <option value="sentinel-2">Sentinel-2</option>
+                            <option value="planet">Planet</option>
+                            <option value="wms">WMS (Web Map Service)</option>
+                            <option value="wayback">Esri Wayback (imagens históricas de alta resolução)</option>
+                        </select>
+                    </div>
+                    <div class="form-section" ng-show="campaign.imageType === 'wms'">
+                        <h4 class="section-title">
+                            <i class="fas fa-layer-group"></i>
+                            Configuração WMS
+                        </h4>
 
-                    <div ng-if="campaign.sampleMarker.symbol !== 'marker'">
                         <div class="form-group">
-                            <label class="form-label">Raio do buffer (m)</label>
-                            <input type="number" class="form-input" ng-model="campaign.sampleMarker.radiusMeters"
-                                   min="1" max="10000" step="any" required>
-                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
-                                Distância do centro da amostra até a borda do símbolo. 15 m gera um quadrado de 30 m de lado
-                                (o pixel Landsat) ou um círculo de 30 m de diâmetro.
-                                <span ng-if="sampleMarkerSizePx() !== null">
-                                    No zoom inicial {{campaign.zoomLevel}}, o símbolo mede cerca de
-                                    {{sampleMarkerSizePx() | number:0}} px na tela.
-                                </span>
-                                <span ng-if="sampleMarkerSizePx() !== null && sampleMarkerSizePx() < 8"
-                                      style="color:#a94442; font-weight:600;">
-                                    Abaixo de 8 px ele quase não se distingue: aumente o zoom inicial ou o raio.
-                                </span>
-                            </small>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Marca no centro</label>
-                            <select class="form-select" ng-model="campaign.sampleMarker.centerMark" required>
-                                <option value="cross-green">Cruz verde</option>
-                                <option value="cross-white">Cruz branca</option>
-                                <option value="none">Nenhuma</option>
-                            </select>
-                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
-                                Cruz de tamanho fixo desenhada sobre a coordenada da amostra, no meio do símbolo.
-                            </small>
-                        </div>
-
-                        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                            <div class="form-group" style="flex:1; min-width:140px;">
-                                <label class="form-label">Cor do contorno</label>
-                                <input type="color" class="form-input" ng-model="campaign.sampleMarker.color"
-                                       ng-pattern="/^#[0-9a-fA-F]{6}$/" required style="height:2.5rem; padding:0.2rem;">
-                            </div>
-                            <div class="form-group" style="flex:1; min-width:140px;">
-                                <label class="form-label">Espessura da linha (px)</label>
-                                <input type="number" class="form-input" ng-model="campaign.sampleMarker.weight"
-                                       min="1" max="10" step="1" ng-pattern="/^[0-9]+$/" required>
-                            </div>
-                        </div>
-
-                        <div class="checkbox-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" ng-model="campaign.sampleMarker.fill">
+                                <input type="checkbox" ng-model="campaign.wmsConfig.enabled" />
                                 <span class="checkbox-text">
-                                    <i class="fas fa-paint-brush"></i>
-                                    Preencher o símbolo
+                                    <i class="fas fa-power-off"></i>
+                                    Habilitar WMS
                                 </span>
                             </label>
                         </div>
 
-                        <div class="form-group" ng-if="campaign.sampleMarker.fill">
-                            <label class="form-label">Opacidade do preenchimento</label>
-                            <input type="number" class="form-input" ng-model="campaign.sampleMarker.fillOpacity"
-                                   min="0" max="1" step="0.05" required>
-                            <small class="form-hint" style="display:block; margin-top:0.25rem;">
-                                De 0 (transparente) a 1 (opaco). Preenchimento alto encobre a imagem sob o símbolo.
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tipo de Imagem -->
-                <div class="form-group">
-                    <label class="form-label">Tipo de Imagem</label>
-                    <select class="form-select" 
-                            ng-model="campaign.imageType"
-                            ng-change="onImageTypeChange()">
-                        <option value="landsat">Landsat</option>
-                        <option value="sentinel-2">Sentinel-2</option>
-                        <option value="planet">Planet</option>
-                        <option value="wms">WMS (Web Map Service)</option>
-                        <option value="wayback">Esri Wayback (imagens históricas de alta resolução)</option>
-                    </select>
-                </div>
-                
-                <!-- Configuração WMS -->
-                <div class="form-section" ng-show="campaign.imageType === 'wms'">
-                    <h4 class="section-title">
-                        <i class="fas fa-layer-group"></i>
-                        Configuração WMS
-                    </h4>
-                    
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="campaign.wmsConfig.enabled">
-                            <span class="checkbox-text">
-                                <i class="fas fa-power-off"></i>
-                                Habilitar WMS
-                            </span>
-                        </label>
-                    </div>
-                    
-                    <div ng-show="campaign.wmsConfig.enabled">
-                        <div class="form-group">
-                            <label class="form-label" ng-class="{'required': campaign.wmsConfig.enabled}">URL Base do Servidor WMS</label>
-                            <input type="text" 
-                                   class="form-input" 
-                                   ng-model="campaign.wmsConfig.baseUrl" 
-                                   placeholder="Ex: https://servidor.com/geoserver/wms"
-                                   ng-required="campaign.wmsConfig.enabled">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Período de Visualização</label>
-                            <select class="form-select" ng-model="campaign.wmsPeriod">
-                                <option value="BOTH">Ambos (Seco e Úmido)</option>
-                                <option value="DRY">Apenas Seco</option>
-                                <option value="WET">Apenas Úmido</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Configuração de Camadas por Ano</label>
-                            <div class="wms-layers-container">
-                                <div ng-repeat="layer in campaign.wmsConfig.layers track by $index" class="wms-layer-item">
-                                    <div class="wms-layer-header">
-                                        <strong>Ano {{layer.year}}</strong>
-                                        <button class="btn-remove" 
+                        <div ng-show="campaign.wmsConfig.enabled">
+                            <div class="form-group">
+                                <label
+                                    for="campaign-wms-base-url"
+                                    class="form-label"
+                                    ng-class="{'required': campaign.wmsConfig.enabled}"
+                                >
+                                    URL base do servidor WMS
+                                </label>
+                                <input
+                                    id="campaign-wms-base-url"
+                                    type="text"
+                                    class="form-input"
+                                    ng-model="campaign.wmsConfig.baseUrl"
+                                    placeholder="Ex: https://servidor.com/geoserver/wms"
+                                    ng-required="campaign.wmsConfig.enabled"
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="campaign-wms-period" class="form-label">Período de visualização</label>
+                                <select id="campaign-wms-period" class="form-select" ng-model="campaign.wmsPeriod">
+                                    <option value="BOTH">Ambos (Seco e Úmido)</option>
+                                    <option value="DRY">Apenas Seco</option>
+                                    <option value="WET">Apenas Úmido</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Configuração de camadas por ano</label>
+                                <div class="wms-layers-container">
+                                    <div
+                                        ng-repeat="layer in campaign.wmsConfig.layers track by $index"
+                                        class="wms-layer-item"
+                                    >
+                                        <div class="wms-layer-header">
+                                            <strong>Ano {{layer.year}}</strong>
+                                            <button
+                                                type="button"
+                                                class="btn-remove"
                                                 ng-click="removeWmsLayer($index)"
-                                                title="Remover">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="wms-layer-content">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label class="form-label">Camada Período Seco</label>
-                                                <input type="text" 
-                                                       class="form-input" 
-                                                       ng-model="layer.dryUrl" 
-                                                       placeholder="Nome da camada WMS">
-                                            </div>
-                                            <div class="form-group">
-                                                <label class="form-label">Camada Período Úmido</label>
-                                                <input type="text" 
-                                                       class="form-input" 
-                                                       ng-model="layer.wetUrl" 
-                                                       placeholder="Nome da camada WMS">
+                                                title="Remover"
+                                            >
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div class="wms-layer-content">
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label for="campaign-wms-dry-{{$index}}" class="form-label">
+                                                        Camada do período seco
+                                                    </label>
+                                                    <input
+                                                        id="campaign-wms-dry-{{$index}}"
+                                                        type="text"
+                                                        class="form-input"
+                                                        ng-model="layer.dryUrl"
+                                                        placeholder="Nome da camada WMS"
+                                                    />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="campaign-wms-wet-{{$index}}" class="form-label">
+                                                        Camada do período úmido
+                                                    </label>
+                                                    <input
+                                                        id="campaign-wms-wet-{{$index}}"
+                                                        type="text"
+                                                        class="form-input"
+                                                        ng-model="layer.wetUrl"
+                                                        placeholder="Nome da camada WMS"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="wms-layer-empty" ng-show="!campaign.wmsConfig.layers.length">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Nenhuma camada configurada</span>
+                                    </div>
+                                    <button type="button" class="btn-add" ng-click="addWmsLayer()">
+                                        <i class="fas fa-plus"></i>
+                                        Adicionar configuração de ano
+                                    </button>
                                 </div>
-                                <div class="wms-layer-empty" ng-show="!campaign.wmsConfig.layers.length">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-eye"></i>
+                            Parâmetros de visualização
+                        </h4>
+
+                        <div class="visparam-loading" ng-show="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Carregando opções de visualização...</span>
+                        </div>
+
+                        <div ng-hide="loading">
+                            <div
+                                class="visparam-group"
+                                ng-show="campaign.imageType === 'landsat' && landsatVisParams.length > 0"
+                            >
+                                <h5 class="visparam-subtitle">
+                                    <i class="fas fa-satellite"></i>
+                                    Landsat
+                                </h5>
+                                <div class="visparam-grid">
+                                    <div
+                                        ng-repeat="vp in landsatVisParams"
+                                        class="visparam-item"
+                                        ng-class="{'selected': isVisParamSelected(vp), 'default': isDefaultVisParam(vp)}"
+                                    >
+                                        <div class="visparam-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                id="vp-{{$index}}-landsat"
+                                                ng-checked="isVisParamSelected(vp)"
+                                                ng-click="toggleVisParam(vp)"
+                                            />
+                                            <label for="vp-{{$index}}-landsat">
+                                                <span class="visparam-name">{{vp.label}}</span>
+                                                <span class="visparam-desc" ng-if="vp.description">
+                                                    {{vp.description}}
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="btn-default-visparam"
+                                            ng-show="isVisParamSelected(vp)"
+                                            ng-click="setDefaultVisParam(vp)"
+                                            ng-class="{'active': isDefaultVisParam(vp)}"
+                                            title="Definir como padrão"
+                                        >
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="visparam-group"
+                                ng-show="campaign.imageType === 'sentinel-2' && sentinelVisParams.length > 0"
+                            >
+                                <h5 class="visparam-subtitle">
+                                    <i class="fas fa-satellite-dish"></i>
+                                    Sentinel-2
+                                </h5>
+                                <div class="visparam-grid">
+                                    <div
+                                        ng-repeat="vp in sentinelVisParams"
+                                        class="visparam-item"
+                                        ng-class="{'selected': isVisParamSelected(vp), 'default': isDefaultVisParam(vp)}"
+                                    >
+                                        <div class="visparam-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                id="vp-{{$index}}-sentinel"
+                                                ng-checked="isVisParamSelected(vp)"
+                                                ng-click="toggleVisParam(vp)"
+                                            />
+                                            <label for="vp-{{$index}}-sentinel">
+                                                <span class="visparam-name">{{vp.label}}</span>
+                                                <span class="visparam-desc" ng-if="vp.description">
+                                                    {{vp.description}}
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="btn-default-visparam"
+                                            ng-show="isVisParamSelected(vp)"
+                                            ng-click="setDefaultVisParam(vp)"
+                                            ng-class="{'active': isDefaultVisParam(vp)}"
+                                            title="Definir como padrão"
+                                        >
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="visparam-group" ng-show="campaign.imageType === 'planet'">
+                                <div style="text-align: center; padding: 2rem; color: #718096">
+                                    <i
+                                        class="fas fa-globe"
+                                        style="font-size: 2rem; margin-bottom: 1rem; display: block"
+                                    ></i>
+                                    <p>Imagens Planet não possuem parâmetros de visualização configuráveis.</p>
+                                </div>
+                            </div>
+
+                            <div
+                                class="visparam-summary"
+                                ng-show="campaign.visParams.length > 0 && campaign.imageType !== 'planet'"
+                            >
+                                <i class="fas fa-info-circle"></i>
+                                <span>{{campaign.visParams.length}} parâmetro(s) selecionado(s)</span>
+                                <span ng-show="campaign.defaultVisParam">
+                                    | Padrão:
+                                    <strong>{{getDefaultVisParamDisplayName()}}</strong>
+                                    <i class="fas fa-star" style="color: #f59e0b; margin-left: 4px"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section
+                    class="campaign-editor-section campaign-editor-view"
+                    aria-label="Configurações de visualização"
+                >
+                    <div class="form-section campaign-editor-map-settings">
+                        <h4 class="section-title">
+                            <i class="fas fa-cog"></i>
+                            Configurações de visualização
+                        </h4>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" ng-model="campaign.showTimeseries" />
+                                <span class="checkbox-text">
+                                    <i class="fas fa-chart-line"></i>
+                                    Mostrar gráfico de série temporal
+                                </span>
+                            </label>
+
+                            <label class="checkbox-label" ng-show="campaign.showTimeseries">
+                                <input type="checkbox" ng-model="campaign.autoLoadTimeseries" />
+                                <span class="checkbox-text">
+                                    <i class="fas fa-bolt"></i>
+                                    Carregar gráficos automaticamente
+                                </span>
+                            </label>
+
+                            <label class="checkbox-label">
+                                <input type="checkbox" ng-model="campaign.showPointInfo" />
+                                <span class="checkbox-text">
                                     <i class="fas fa-info-circle"></i>
-                                    <span>Nenhuma camada configurada</span>
+                                    Mostrar informações do ponto
+                                </span>
+                            </label>
+
+                            <label class="checkbox-label">
+                                <input type="checkbox" ng-model="campaign.useDynamicMaps" />
+                                <span class="checkbox-text">
+                                    <i class="fas fa-map"></i>
+                                    Usar mapas dinâmicos
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="campaign-zoom" class="form-label">Zoom inicial dos mapas da grade</label>
+                            <input
+                                id="campaign-zoom"
+                                type="number"
+                                class="form-input"
+                                ng-model="campaign.zoomLevel"
+                                min="10"
+                                max="18"
+                                step="1"
+                                ng-pattern="/^[0-9]+$/"
+                                required
+                            />
+                            <small class="form-hint" style="display: block; margin-top: 0.25rem">
+                                Nível de zoom com que os mapas da grade são carregados; também é o zoom mínimo das
+                                células. Padrão 13, o zoom das campanhas atuais. Em campanhas Esri Wayback com o símbolo
+                                quadrado, 17 deixa o quadrado de 30 m visível (acima de 17 a cobertura da Esri varia por
+                                região e release).
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="campaign-sample-symbol" class="form-label">Símbolo da amostra</label>
+                            <select
+                                id="campaign-sample-symbol"
+                                class="form-select"
+                                ng-model="campaign.sampleMarker.symbol"
+                                required
+                            >
+                                <option value="marker">Marcador tradicional</option>
+                                <option value="square">Quadrado</option>
+                                <option value="circle">Círculo</option>
+                            </select>
+                            <small class="form-hint" style="display: block; margin-top: 0.25rem">
+                                Como a amostra aparece nas células da grade e no modal de comparação. O quadrado e o
+                                círculo são desenhados em metros sobre a imagem, centrados na amostra.
+                            </small>
+                        </div>
+
+                        <div class="campaign-editor-symbol-settings" ng-if="campaign.sampleMarker.symbol !== 'marker'">
+                            <div class="form-group">
+                                <label for="campaign-sample-radius" class="form-label">Raio do buffer (m)</label>
+                                <input
+                                    id="campaign-sample-radius"
+                                    type="number"
+                                    class="form-input"
+                                    ng-model="campaign.sampleMarker.radiusMeters"
+                                    min="1"
+                                    max="10000"
+                                    step="any"
+                                    required
+                                />
+                                <small class="form-hint" style="display: block; margin-top: 0.25rem">
+                                    Distância do centro da amostra até a borda do símbolo. 15 m gera um quadrado de 30 m
+                                    de lado (o pixel Landsat) ou um círculo de 30 m de diâmetro.
+                                    <span ng-if="sampleMarkerSizePx() !== null">
+                                        No zoom inicial {{campaign.zoomLevel}}, o símbolo mede cerca de
+                                        {{sampleMarkerSizePx() | number:0}} px na tela.
+                                    </span>
+                                    <span
+                                        ng-if="sampleMarkerSizePx() !== null && sampleMarkerSizePx() < 8"
+                                        style="color: #a94442; font-weight: 600"
+                                    >
+                                        Abaixo de 8 px ele quase não se distingue: aumente o zoom inicial ou o raio.
+                                    </span>
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="campaign-sample-center" class="form-label">Marca no centro</label>
+                                <select
+                                    id="campaign-sample-center"
+                                    class="form-select"
+                                    ng-model="campaign.sampleMarker.centerMark"
+                                    required
+                                >
+                                    <option value="cross-green">Cruz verde</option>
+                                    <option value="cross-white">Cruz branca</option>
+                                    <option value="none">Nenhuma</option>
+                                </select>
+                                <small class="form-hint" style="display: block; margin-top: 0.25rem">
+                                    Cruz de tamanho fixo desenhada sobre a coordenada da amostra, no meio do símbolo.
+                                </small>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+                                <div class="form-group" style="flex: 1; min-width: 140px">
+                                    <label for="campaign-sample-color" class="form-label">Cor do contorno</label>
+                                    <input
+                                        id="campaign-sample-color"
+                                        type="color"
+                                        class="form-input"
+                                        ng-model="campaign.sampleMarker.color"
+                                        ng-pattern="/^#[0-9a-fA-F]{6}$/"
+                                        required
+                                        style="height: 44px; padding: 4px"
+                                    />
                                 </div>
-                                <button type="button" 
-                                        class="btn-add" 
-                                        ng-click="addWmsLayer()">
-                                    <i class="fas fa-plus"></i>
-                                    Adicionar Configuração de Ano
-                                </button>
+                                <div class="form-group" style="flex: 1; min-width: 140px">
+                                    <label for="campaign-sample-weight" class="form-label">
+                                        Espessura da linha (px)
+                                    </label>
+                                    <input
+                                        id="campaign-sample-weight"
+                                        type="number"
+                                        class="form-input"
+                                        ng-model="campaign.sampleMarker.weight"
+                                        min="1"
+                                        max="10"
+                                        step="1"
+                                        ng-pattern="/^[0-9]+$/"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" ng-model="campaign.sampleMarker.fill" />
+                                    <span class="checkbox-text">
+                                        <i class="fas fa-paint-brush"></i>
+                                        Preencher o símbolo
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="form-group" ng-if="campaign.sampleMarker.fill">
+                                <label for="campaign-sample-opacity" class="form-label">
+                                    Opacidade do preenchimento
+                                </label>
+                                <input
+                                    id="campaign-sample-opacity"
+                                    type="number"
+                                    class="form-input"
+                                    ng-model="campaign.sampleMarker.fillOpacity"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    required
+                                />
+                                <small class="form-hint" style="display: block; margin-top: 0.25rem">
+                                    De 0 (transparente) a 1 (opaco). Preenchimento alto encobre a imagem sob o símbolo.
+                                </small>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Parâmetros de Visualização -->
-                <div class="form-section">
-                    <h4 class="section-title">
-                        <i class="fas fa-eye"></i>
-                        Parâmetros de Visualização
-                    </h4>
-                    
-                    <div class="visparam-loading" ng-show="loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <span>Carregando opções de visualização...</span>
-                    </div>
-                    
-                    <div ng-hide="loading">
-                        <!-- Landsat VisParams -->
-                        <div class="visparam-group" ng-show="campaign.imageType === 'landsat' && landsatVisParams.length > 0">
-                            <h5 class="visparam-subtitle">
-                                <i class="fas fa-satellite"></i>
-                                Landsat
-                            </h5>
-                            <div class="visparam-grid">
-                                <div ng-repeat="vp in landsatVisParams" 
-                                     class="visparam-item"
-                                     ng-class="{'selected': isVisParamSelected(vp), 'default': isDefaultVisParam(vp)}">
-                                    <div class="visparam-checkbox">
-                                        <input type="checkbox" 
-                                               id="vp-{{$index}}-landsat"
-                                               ng-checked="isVisParamSelected(vp)"
-                                               ng-click="toggleVisParam(vp)">
-                                        <label for="vp-{{$index}}-landsat">
-                                            <span class="visparam-name">{{vp.label}}</span>
-                                            <span class="visparam-desc" ng-if="vp.description">{{vp.description}}</span>
-                                        </label>
-                                    </div>
-                                    <button type="button" 
-                                            class="btn-default-visparam"
-                                            ng-show="isVisParamSelected(vp)"
-                                            ng-click="setDefaultVisParam(vp)"
-                                            ng-class="{'active': isDefaultVisParam(vp)}"
-                                            title="Definir como padrão">
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Sentinel VisParams -->
-                        <div class="visparam-group" ng-show="campaign.imageType === 'sentinel-2' && sentinelVisParams.length > 0">
-                            <h5 class="visparam-subtitle">
-                                <i class="fas fa-satellite-dish"></i>
-                                Sentinel-2
-                            </h5>
-                            <div class="visparam-grid">
-                                <div ng-repeat="vp in sentinelVisParams" 
-                                     class="visparam-item"
-                                     ng-class="{'selected': isVisParamSelected(vp), 'default': isDefaultVisParam(vp)}">
-                                    <div class="visparam-checkbox">
-                                        <input type="checkbox" 
-                                               id="vp-{{$index}}-sentinel"
-                                               ng-checked="isVisParamSelected(vp)"
-                                               ng-click="toggleVisParam(vp)">
-                                        <label for="vp-{{$index}}-sentinel">
-                                            <span class="visparam-name">{{vp.label}}</span>
-                                            <span class="visparam-desc" ng-if="vp.description">{{vp.description}}</span>
-                                        </label>
-                                    </div>
-                                    <button type="button" 
-                                            class="btn-default-visparam"
-                                            ng-show="isVisParamSelected(vp)"
-                                            ng-click="setDefaultVisParam(vp)"
-                                            ng-class="{'active': isDefaultVisParam(vp)}"
-                                            title="Definir como padrão">
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Mensagem para Planet -->
-                        <div class="visparam-group" ng-show="campaign.imageType === 'planet'">
-                            <div style="text-align: center; padding: 2rem; color: #718096;">
-                                <i class="fas fa-globe" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                <p>Imagens Planet não possuem parâmetros de visualização configuráveis.</p>
-                            </div>
-                        </div>
-                        
-                        <div class="visparam-summary" ng-show="campaign.visParams.length > 0 && campaign.imageType !== 'planet'">
+                </section>
+                <section class="campaign-editor-section campaign-editor-properties" aria-label="Informações do ponto">
+                    <div class="form-group">
+                        <h4 class="section-title">Informações do ponto</h4>
+                        <small class="form-hint" style="display: block; color: #666; margin-bottom: 0.5rem">
+                            Colunas do arquivo de pontos mostradas no quadro de localização do intérprete e do
+                            supervisor, por idioma da interface. Um idioma sem lista própria usa a lista Padrão; sem
+                            nenhuma lista, todas as colunas aparecem. O rótulo é opcional; vazio, aparece o nome da
+                            coluna.
+                        </small>
+                        <div class="land-use-empty" ng-show="!propertyKeys.length">
                             <i class="fas fa-info-circle"></i>
-                            <span>{{campaign.visParams.length}} parâmetro(s) selecionado(s)</span>
-                            <span ng-show="campaign.defaultVisParam">
-                                | Padrão: <strong>{{getDefaultVisParamDisplayName()}}</strong>
-                                <i class="fas fa-star" style="color: #f59e0b; margin-left: 4px;"></i>
-                            </span>
+                            <span>As colunas ficam disponíveis após a importação dos pontos.</span>
+                        </div>
+                        <div class="campaign-editor-property-lists" ng-show="propertyKeys.length">
+                            <div class="campaign-editor-property-list" ng-repeat="list in propertyDisplayLists">
+                                <strong>{{list.label}}</strong>
+                                <div
+                                    ng-repeat="item in campaign.propertyDisplay[list.id] track by item.key"
+                                    class="campaign-editor-property-row"
+                                >
+                                    <code>{{item.key}}</code>
+                                    <input
+                                        type="text"
+                                        class="form-input"
+                                        ng-model="item.label"
+                                        aria-label="Rótulo de {{item.key}} em {{list.label}}"
+                                        maxlength="60"
+                                        placeholder="{{formatPropertyKey(item.key)}}"
+                                    />
+                                    <button
+                                        type="button"
+                                        class="btn-remove"
+                                        title="Subir"
+                                        ng-disabled="$first"
+                                        ng-click="movePropertyDisplayItem(list.id, $index, -1)"
+                                    >
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-remove"
+                                        title="Descer"
+                                        ng-disabled="$last"
+                                        ng-click="movePropertyDisplayItem(list.id, $index, 1)"
+                                    >
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-remove"
+                                        title="Remover"
+                                        ng-click="removePropertyDisplayItem(list.id, $index)"
+                                    >
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="campaign-editor-property-add">
+                                    <select
+                                        class="form-select"
+                                        ng-model="propertyDisplaySelection[list.id]"
+                                        aria-label="Coluna para {{list.label}}"
+                                        ng-options="key as key for key in availablePropertyKeys(list.id)"
+                                    >
+                                        <option value="">Selecione uma coluna</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        class="btn-add"
+                                        ng-disabled="!propertyDisplaySelection[list.id] || campaign.propertyDisplay[list.id].length >= propertyDisplayLimits.items"
+                                        ng-click="addPropertyDisplayItem(list.id)"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        Adicionar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </form>
         </div>
-        
+
         <div class="modal-footer">
             <button class="btn-secondary" ng-click="cancel()">
                 <i class="fas fa-times"></i>
                 Cancelar
             </button>
-            <button class="btn-primary" 
-                    ng-click="save()" 
-                    ng-disabled="campaignForm.$invalid">
+            <button class="btn-primary" ng-click="save()" ng-disabled="campaignForm.$invalid">
                 <i class="fas fa-save"></i>
-                {{ isNew ? 'Criar Campanha' : 'Salvar Alterações' }}
+                {{ isNew ? 'Criar campanha' : 'Salvar alterações' }}
             </button>
         </div>
     </div>
 </div>
 
 <style>
-/* Modal Container - windowClass aplica ao wrapper do $uibModal */
-.modern-modal-window .modal-dialog {
-    width: 90%;
-    max-width: 900px;
-    margin: 30px auto;
-}
-
-.modern-modal {
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.modern-modal .modal-content {
-    border: none;
-    border-radius: 6px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* Modal Header */
-.modern-modal .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem 2rem;
-    border: none;
-}
-
-.modern-modal .modal-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-/* Modal Body */
-.modern-modal .modal-body {
-    padding: 2rem;
-    background: #f8f9fa;
-    flex: 1;
-    overflow-y: auto;
-    max-height: calc(90vh - 120px);
-}
-
-/* Form Styles */
-.modern-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.form-label {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #4a5568;
-}
-
-.form-label.required::after {
-    content: ' *';
-    color: #e53e3e;
-}
-
-.form-input,
-.form-select {
-    padding: 0.75rem 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1.25rem;
-    transition: all 0.2s;
-    background: white;
-}
-
-.form-input:focus,
-.form-select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-hint {
-    font-size: 0.875rem;
-    color: #718096;
-    font-style: italic;
-}
-
-/* Land Use Container */
-.land-use-container {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1rem;
-}
-
-.land-use-item {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.land-use-item .form-input {
-    flex: 1;
-    background: #f7fafc;
-}
-
-.land-use-empty {
-    text-align: center;
-    padding: 1.5rem;
-    color: #a0aec0;
-    font-size: 1.25rem;
-}
-
-.land-use-empty i {
-    margin-right: 0.5rem;
-}
-
-.btn-remove {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: #e53e3e;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.btn-remove:hover {
-    background: #c53030;
-    transform: scale(1.05);
-}
-
-.btn-add {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px dashed #cbd5e0;
-    background: transparent;
-    color: #4a5568;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    margin-top: 0.5rem;
-}
-
-.btn-add:hover {
-    border-color: #667eea;
-    color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
-}
-
-/* Form Section */
-.form-section {
-    margin-top: 1rem;
-}
-
-.section-title {
-    font-size: 1.375rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Checkbox Group */
-.checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: white;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 2px solid #e2e8f0;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background 0.2s;
-}
-
-.checkbox-label:hover {
-    background: #f7fafc;
-}
-
-.checkbox-label input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-right: 0.75rem;
-    cursor: pointer;
-}
-
-.checkbox-text {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #4a5568;
-    font-size: 1.25rem;
-}
-
-.checkbox-text i {
-    color: #667eea;
-}
-
-/* Modal Footer */
-.modern-modal .modal-footer {
-    background: white;
-    padding: 1.5rem 2rem;
-    border: none;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-}
-
-/* Buttons */
-.btn-primary,
-.btn-secondary {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-    font-size: 1.125rem;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #4a5568;
-}
-
-.btn-secondary:hover {
-    background: #cbd5e0;
-    transform: translateY(-1px);
-}
-
-/* VisParam Styles */
-.visparam-loading {
-    text-align: center;
-    padding: 2rem;
-    color: #718096;
-    font-size: 1.125rem;
-}
-
-.visparam-loading i {
-    margin-right: 0.5rem;
-}
-
-.visparam-group {
-    margin-bottom: 2rem;
-}
-
-.visparam-subtitle {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #4a5568;
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.visparam-subtitle i {
-    color: #667eea;
-}
-
-.visparam-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.75rem;
-}
-
-.visparam-item {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1rem;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-
-.visparam-item:hover {
-    border-color: #cbd5e0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.visparam-item.selected {
-    background: #f0f4ff;
-    border-color: #667eea;
-}
-
-.visparam-item.default {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-}
-
-.visparam-checkbox {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-.visparam-checkbox input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-right: 0.75rem;
-    cursor: pointer;
-}
-
-.visparam-checkbox label {
-    cursor: pointer;
-    flex: 1;
-    margin: 0;
-}
-
-.visparam-name {
-    display: block;
-    font-weight: 500;
-    color: #2d3748;
-    font-size: 0.9375rem;
-}
-
-.visparam-desc {
-    display: block;
-    font-size: 0.813rem;
-    color: #718096;
-    margin-top: 0.25rem;
-}
-
-.btn-default-visparam {
-    width: 36px;
-    height: 36px;
-    border: 2px solid #e2e8f0;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    color: #cbd5e0;
-}
-
-.btn-default-visparam:hover {
-    border-color: #f59e0b;
-    color: #f59e0b;
-    transform: scale(1.1);
-}
-
-.btn-default-visparam.active {
-    background: #f59e0b;
-    border-color: #f59e0b;
-    color: white;
-}
-
-.visparam-summary {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #e6fffa;
-    border: 1px solid #81e6d9;
-    border-radius: 6px;
-    color: #2c7a7b;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.visparam-summary strong {
-    font-weight: 600;
-    color: #1a202c;
-}
-
-/* WMS Configuration Styles */
-.wms-layers-container {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1rem;
-}
-
-.wms-layer-item {
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-.wms-layer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.wms-layer-header strong {
-    color: #2d3748;
-    font-size: 1.125rem;
-}
-
-.wms-layer-content .form-row {
-    gap: 1rem;
-}
-
-.wms-layer-empty {
-    text-align: center;
-    padding: 1.5rem;
-    color: #a0aec0;
-    font-size: 1.125rem;
-}
-
-.wms-layer-empty i {
-    margin-right: 0.5rem;
-}
-
-/* Responsive */
-@media (max-width: 576px) {
-    .modern-modal {
-        margin: 1rem;
+    .modern-modal-window .modal-dialog {
+        width: 90%;
+        max-width: 900px;
+        margin: 30px auto;
     }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .modal-footer {
+    .campaign-editor {
+        color: #26364a;
+        font-size: 16px;
+        max-height: 90vh;
+        display: flex;
         flex-direction: column;
-        gap: 0.5rem;
     }
-    
-    .btn-primary,
-    .btn-secondary {
+    .campaign-editor .modal-content {
+        border: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    .campaign-editor .modal-header {
+        padding: 24px;
+        background: #fff;
+        border-bottom: 1px solid #dce3eb;
+    }
+    .campaign-editor .modal-title {
+        margin: 0 0 12px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #26364a;
+    }
+    .campaign-editor .modal-title i {
+        margin-right: 8px;
+        color: #337ab7;
+    }
+    .campaign-editor-identity {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+    .campaign-editor-description {
+        margin: 0;
+        color: #536273;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    .campaign-editor .modal-body {
+        padding: 24px;
+        background: #f4f6f8;
+        overflow-y: auto;
+        max-height: calc(90vh - 180px);
+    }
+    .campaign-editor .modern-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+    .campaign-editor-section {
+        min-width: 0;
+        padding: 24px;
+        background: #fff;
+        border: 1px solid #dce3eb;
+        border-radius: 6px;
+    }
+    .campaign-editor .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 24px;
+        color: #26364a;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    .campaign-editor .section-title i {
+        color: #337ab7;
+    }
+    .campaign-editor .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        margin: 0 0 20px;
+    }
+    .campaign-editor .form-group:last-child {
+        margin-bottom: 0;
+    }
+    .campaign-editor .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+    .campaign-editor .form-label {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #35465a;
+        line-height: 1.5;
+    }
+    .campaign-editor .form-label.required::after {
+        content: " *";
+        color: #b53832;
+    }
+    .campaign-editor .form-input,
+    .campaign-editor .form-select {
+        display: block;
         width: 100%;
-        justify-content: center;
+        min-width: 0;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid #bbc8d5;
+        border-radius: 4px;
+        font: inherit;
+        font-size: 16px;
+        line-height: 1.4;
+        color: #26364a;
+        background: #fff;
     }
-}
+    .campaign-editor .form-input[readonly] {
+        background: #f4f6f8;
+    }
+    .campaign-editor .form-input:disabled,
+    .campaign-editor .form-select:disabled {
+        background: #edf1f5;
+        color: #536273;
+    }
+    .campaign-editor .form-input:focus,
+    .campaign-editor .form-select:focus {
+        outline: 2px solid #337ab7;
+        outline-offset: 2px;
+        border-color: #337ab7;
+    }
+    .campaign-editor .form-hint {
+        display: block;
+        color: #536273;
+        font-size: 14px;
+        font-style: normal;
+        line-height: 1.6;
+    }
+    .campaign-editor .land-use-container {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .campaign-editor .land-use-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .campaign-editor .land-use-item .form-input {
+        flex: 1;
+    }
+    .campaign-editor .land-use-empty,
+    .campaign-editor .wms-layer-empty {
+        padding: 24px 16px;
+        color: #536273;
+        background: #f4f6f8;
+        border-radius: 4px;
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    .campaign-editor .land-use-empty i,
+    .campaign-editor .wms-layer-empty i {
+        margin-right: 8px;
+    }
+    .campaign-editor button {
+        font: inherit;
+        font-size: 14px;
+        line-height: 1.4;
+        cursor: pointer;
+    }
+    .campaign-editor button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .campaign-editor button:focus-visible {
+        outline: 2px solid #337ab7;
+        outline-offset: 3px;
+    }
+    .campaign-editor .btn-remove {
+        display: inline-flex;
+        flex: 0 0 36px;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid #d4dce5;
+        border-radius: 4px;
+        background: #fff;
+        color: #a43832;
+    }
+    .campaign-editor .btn-remove:hover:not(:disabled) {
+        background: #fff1f0;
+        border-color: #a43832;
+    }
+    .campaign-editor .btn-add {
+        display: inline-flex;
+        width: auto;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 10px 8px 0 0;
+        padding: 8px 12px;
+        border: 1px solid #b8cde0;
+        border-radius: 4px;
+        background: #f3f8fc;
+        color: #286090;
+        font-weight: 600;
+    }
+    .campaign-editor .btn-add:hover:not(:disabled) {
+        background: #e6f0f8;
+        border-color: #337ab7;
+    }
+    .campaign-editor-class-import {
+        margin-top: 16px;
+        padding: 16px;
+        border: 1px solid #dce3eb;
+        border-radius: 4px;
+        background: #f4f6f8;
+    }
+    .campaign-editor .form-section {
+        margin-top: 24px;
+    }
+    .campaign-editor .campaign-editor-map-settings {
+        margin-top: 0;
+    }
+    .campaign-editor .checkbox-group {
+        display: grid;
+        gap: 8px;
+        padding: 0 0 20px;
+        border: 0;
+        background: transparent;
+    }
+    .campaign-editor .checkbox-label {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin: 0;
+        padding: 8px 0;
+        cursor: pointer;
+        font-weight: 400;
+    }
+    .campaign-editor .checkbox-label input {
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: #337ab7;
+    }
+    .campaign-editor .checkbox-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #35465a;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .campaign-editor .checkbox-text i {
+        color: #337ab7;
+    }
+    .campaign-editor .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 20px 24px;
+        border-top: 1px solid #dce3eb;
+        background: #fff;
+    }
+    .campaign-editor .btn-primary,
+    .campaign-editor .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        margin: 0;
+        padding: 10px 18px;
+        border: 1px solid #337ab7;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .campaign-editor .btn-primary {
+        background: #337ab7;
+        color: #fff;
+    }
+    .campaign-editor .btn-primary:hover:not(:disabled) {
+        background: #286090;
+        border-color: #286090;
+    }
+    .campaign-editor .btn-secondary {
+        border-color: #bbc8d5;
+        background: #fff;
+        color: #35465a;
+    }
+    .campaign-editor .btn-secondary:hover {
+        background: #f4f6f8;
+    }
+    .campaign-editor .visparam-loading {
+        padding: 24px;
+        text-align: center;
+        color: #536273;
+        font-size: 16px;
+    }
+    .campaign-editor .visparam-group {
+        margin-bottom: 20px;
+    }
+    .campaign-editor .visparam-subtitle {
+        margin: 0 0 16px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .campaign-editor .visparam-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+        gap: 12px;
+    }
+    .campaign-editor .visparam-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid #d4dce5;
+        border-radius: 4px;
+        background: #fff;
+    }
+    .campaign-editor .visparam-item.selected {
+        background: #f3f8fc;
+        border-color: #337ab7;
+    }
+    .campaign-editor .visparam-item.default {
+        border-color: #a66a0a;
+    }
+    .campaign-editor .visparam-checkbox {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+    .campaign-editor .visparam-checkbox input {
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        margin-right: 12px;
+        accent-color: #337ab7;
+    }
+    .campaign-editor .visparam-checkbox label {
+        margin: 0;
+        cursor: pointer;
+        overflow-wrap: anywhere;
+    }
+    .campaign-editor .visparam-name {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .campaign-editor .visparam-desc {
+        display: block;
+        margin-top: 6px;
+        color: #536273;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .campaign-editor .btn-default-visparam {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        border: 1px solid #d4dce5;
+        border-radius: 4px;
+        color: #6c7888;
+        background: #fff;
+    }
+    .campaign-editor .btn-default-visparam.active {
+        background: #fff4d9;
+        border-color: #a66a0a;
+        color: #925c08;
+    }
+    .campaign-editor .visparam-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px;
+        background: #eef5fb;
+        color: #35465a;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .campaign-editor .wms-layers-container {
+        border: 0;
+        padding: 0;
+    }
+    .campaign-editor .wms-layer-item {
+        padding: 16px;
+        margin-bottom: 16px;
+        border: 1px solid #dce3eb;
+        border-radius: 4px;
+        background: #f4f6f8;
+    }
+    .campaign-editor .wms-layer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .campaign-editor-property-lists {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+    .campaign-editor-property-list {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid #dce3eb;
+        border-radius: 4px;
+    }
+    .campaign-editor-property-list > strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+    .campaign-editor-property-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) repeat(3, 36px);
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .campaign-editor-property-row code {
+        grid-column: 1 / -1;
+        color: #536273;
+        background: #f4f6f8;
+        overflow-wrap: anywhere;
+        font-size: 14px;
+    }
+    .campaign-editor-property-add {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .campaign-editor-property-add .btn-add {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+    .admin-page .campaign-editor .modal-header {
+        padding: 0 0 24px;
+        background: transparent;
+    }
+    .admin-page .campaign-editor .modal-title {
+        display: none;
+    }
+    .admin-page .campaign-editor .modal-body {
+        padding: 24px 0;
+    }
+    .admin-page .campaign-editor .modal-content {
+        background: transparent;
+    }
+    .admin-page .campaign-editor .modal-footer {
+        padding: 20px 0;
+    }
+    @media (min-width: 1100px) {
+        .admin-page .campaign-editor .modern-form {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            align-items: start;
+        }
+        .admin-page .campaign-editor-general,
+        .admin-page .campaign-editor-view,
+        .admin-page .campaign-editor-properties {
+            grid-column: 1 / -1;
+        }
+        .admin-page .campaign-editor-general-fields {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+        }
+        .admin-page .campaign-editor-general-fields > .form-row {
+            display: contents;
+        }
+        .admin-page .campaign-editor-general-fields .form-group {
+            margin: 0;
+        }
+        .admin-page .campaign-editor-general-fields > .form-group[ng-if] {
+            grid-column: 1 / -1;
+        }
+        .admin-page .campaign-editor-property-lists {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .admin-page .campaign-editor-map-settings,
+        .admin-page .campaign-editor-symbol-settings {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 24px;
+        }
+        .admin-page .campaign-editor-map-settings > .section-title,
+        .admin-page .campaign-editor-map-settings > .checkbox-group,
+        .admin-page .campaign-editor-symbol-settings {
+            grid-column: 1 / -1;
+        }
+        .admin-page .campaign-editor-map-settings > .checkbox-group {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            border-bottom: 1px solid #dce3eb;
+        }
+        .admin-page .campaign-editor-map-settings .form-group,
+        .admin-page .campaign-editor-map-settings .section-title {
+            margin-bottom: 0;
+        }
+    }
+    @media (min-width: 1400px) {
+        .admin-page .campaign-editor-property-lists {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 767px) {
+        .campaign-editor .modal-header,
+        .campaign-editor .modal-body,
+        .campaign-editor .modal-footer {
+            padding: 16px;
+        }
+        .campaign-editor-section {
+            padding: 18px;
+        }
+        .campaign-editor .modern-form {
+            gap: 16px;
+        }
+        .campaign-editor .form-row {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0;
+        }
+        .campaign-editor .modal-footer {
+            flex-wrap: wrap;
+        }
+        .campaign-editor .btn-primary,
+        .campaign-editor .btn-secondary {
+            flex: 1;
+        }
+        .campaign-editor-property-add {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
 </style>

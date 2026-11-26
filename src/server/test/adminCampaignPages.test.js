@@ -96,6 +96,28 @@ test('operações de campanha carregam contexto ao abrir diretamente pela URL', 
     }
 });
 
+test('página de cache recarrega a campanha pelo identificador e mantém a listagem administrativa', async () => {
+    const requests = [];
+    const campaign = { _id: 'campanha/a', useDynamicMaps: true, imageType: 'landsat' };
+    const page = registry({ get: async url => { requests.push(url); return { data: campaign }; } })['campaign-offline'];
+    assert.ok(page);
+    const locals = await page.load({ campaignId: 'campanha/a' });
+    assert.deepEqual(requests, ['/api/campaigns/campanha%2Fa']);
+    assert.equal(locals.campaign, campaign);
+    assert.equal(locals.campaignId, 'campanha/a');
+    assert.equal(page.parent(), '/admin/campaigns');
+    const scope = {};
+    page.controller(scope, locals.campaign, locals.campaignId);
+    assert.equal(scope.campaign, campaign);
+    assert.equal(scope.campaignId, 'campanha/a');
+});
+
+test('página de cache rejeita campanha ausente em acesso direto', async () => {
+    const page = registry({ get: async () => ({ data: {} }) })['campaign-offline'];
+    assert.ok(page);
+    await assert.rejects(page.load({ campaignId: 'ausente' }), /Campanha não encontrada/);
+});
+
 function controller(file, name, extra, globals) {
     const controllers = {};
     const calls = [];
@@ -163,6 +185,23 @@ test('gestão individual abre edição, classes, pontos e upload em páginas', (
     scope.details = { campaign: { _id: 'c' } };
     for (const action of ['editCampaign', 'manageLandUse', 'viewPoints', 'uploadMorePoints']) scope[action]();
     assert.deepEqual(calls.map(call => call.id), ['campaign-edit', 'campaign-edit', 'campaign-points', 'campaign-upload']);
+});
+
+test('detalhes abrem o Temporal com campanha e ponto codificados na URL', () => {
+    const opened = [];
+    let dismissed = false;
+    const { scope } = controller('controllers/admin-modals.js', 'PointDetailsModalController', {
+        point: { _id: 'p/a & b', campaign: 'campanha/a & b' },
+        campaign: { _id: 'campanha/a & b', numInspec: 3 },
+        $uibModalInstance: { dismiss: () => { dismissed = true; } }
+    }, { window: { location: { origin: 'https://example.test' }, open: (...args) => opened.push(args) } });
+    scope.viewInTemporal();
+    const query = new URLSearchParams(opened[0][0].split('?')[1]);
+    assert.equal(query.get('campaignId'), 'campanha/a & b');
+    assert.equal(query.get('pointId'), 'p/a & b');
+    assert.equal(query.size, 2);
+    assert.equal(opened[0][1], '_blank');
+    assert.equal(dismissed, true);
 });
 
 test('retorno restaura filtros, paginação e aba sem consumir parâmetros arbitrários', () => {
