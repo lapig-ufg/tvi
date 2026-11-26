@@ -26,7 +26,7 @@
             </div>
             <div class="module-content">
                 <h2 class="module-title">Campanhas</h2>
-                <p class="module-description">Gerencie campanhas de mapeamento e pontos de inspeção</p>
+                <p class="module-description">Gerencie campanhas, pontos de inspeção e a geração do cache de imagens</p>
                 <div class="module-stats" ng-if="stats.campaigns">
                     <span class="stat-item">
                         <span class="stat-value">{{ stats.campaigns.total }}</span>
@@ -35,30 +35,6 @@
                     <span class="stat-item">
                         <span class="stat-value">{{ stats.campaigns.active }}</span>
                         <span class="stat-label">Ativas</span>
-                    </span>
-                </div>
-            </div>
-            <div class="module-arrow">
-                <i class="fas fa-arrow-right"></i>
-            </div>
-        </div>
-
-        <!-- Cache Manager -->
-        <div class="module-card" ng-click="navigateTo('/admin/cache-tiles')">
-            <div class="module-icon cache-tiles">
-                <i class="fas fa-th-large"></i>
-            </div>
-            <div class="module-content">
-                <h2 class="module-title">Gerenciador de Cache</h2>
-                <p class="module-description">Monitore e gerencie o cache de tiles da API moderna</p>
-                <div class="module-stats" ng-if="stats.tiles">
-                    <span class="stat-item">
-                        <span class="stat-value">{{ stats.tiles.cached || 0 }}</span>
-                        <span class="stat-label">Tiles Cached</span>
-                    </span>
-                    <span class="stat-item">
-                        <span class="stat-value">{{ stats.tiles.hitRate || 0 }}%</span>
-                        <span class="stat-label">Hit Rate</span>
                     </span>
                 </div>
             </div>
@@ -289,10 +265,6 @@
 
 .module-icon.cache {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.module-icon.cache-tiles {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
 .module-icon.logs {

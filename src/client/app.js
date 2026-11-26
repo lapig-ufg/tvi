@@ -46,9 +46,7 @@ Application.config(function($routeProvider, $locationProvider, $httpProvider) {
 			reloadOnSearch: false
 		})
 		.when('/admin/cache-tiles', {
-			controller: 'CacheManagerTilesController',
-			templateUrl: 'views/cache-manager-tiles.tpl.html',
-			reloadOnSearch: false
+			redirectTo: '/admin/campaigns'
 		})
 		.when('/admin/home', {
 			controller: 'AdminHomeController',

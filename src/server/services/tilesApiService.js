@@ -529,6 +529,15 @@ class TilesApiService {
         }
     }
 
+    async offlineCampaign(campaignId, method, data, req = null) {
+        const url = '/api/cache/campaign/' + encodeURIComponent(campaignId) + '/offline';
+        const config = await this.createRequestConfig({}, req);
+        const response = method === 'get'
+            ? await this.client.get(url, Object.assign({}, config, { params: data }))
+            : await this.client.post(url, data, config);
+        return response.data;
+    }
+
     async getCampaignCacheStatus(campaignId, req = null) {
         try {
             const url = this.buildUrl(this.config.endpoints.cacheCampaignStatus, { campaign_id: campaignId });

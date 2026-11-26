@@ -1,0 +1,51 @@
+<section class="panel panel-default" aria-label="Cache offline da campanha" style="margin: 20px 0;">
+    <div class="panel-heading"><h3>Cache offline da campanha</h3></div>
+    <div class="panel-body">
+        <p>Prepare as imagens antes de liberar a inspeção. A conclusão exige validação dos arquivos armazenados.</p>
+        <p class="alert alert-info">Cobertura centrada em cada ponto, nos zooms usados pela grade e nos dois períodos de cada ano, para todas as visualizações da campanha. Arrastar para fora dessa área ou abrir um mapa maior pode consultar a fonte externa.</p>
+        <p ng-if="!offlineSupported()" class="alert alert-warning">Disponível para mapas dinâmicos Landsat e Sentinel. Mapas estáticos, WMS, Planet e Wayback usam outros fluxos e não estão cobertos por esta geração.</p>
+        <div class="form-inline">
+            <label>Largura da área exibida (pixels)
+                <input type="number" class="form-control" ng-model="offline.width" min="256" max="2048" step="1" ng-disabled="offlineActive()">
+            </label>
+            <label>Altura (pixels)
+                <input type="number" class="form-control" ng-model="offline.height" min="256" max="2048" step="1" ng-disabled="offlineActive()">
+            </label>
+        </div>
+        <div style="margin: 15px 0;">
+            <button class="btn btn-primary" ng-click="startOffline('start')" ng-disabled="!offlineSupported() || offline.loading || offline.starting || offlineActive()">Gerar ou verificar cache</button>
+            <button class="btn btn-default" ng-click="refreshOffline()" ng-disabled="offline.loading || offline.starting">Atualizar progresso</button>
+            <button class="btn btn-warning" ng-click="startOffline('retry_failed')" ng-disabled="offline.loading || offline.starting || offlineActive() || !offline.status.counts.blocked">Redisparar falhas</button>
+            <button class="btn btn-default" ng-click="startOffline('regenerate')" ng-disabled="!offlineSupported() || offline.loading || offline.starting || offlineActive()">Regenerar tudo</button>
+        </div>
+        <p role="alert" ng-if="offline.error" class="alert alert-danger">{{offline.error}}</p>
+        <p ng-if="offline.starting">Solicitando processamento...</p>
+        <div ng-if="offline.status" aria-live="polite">
+            <strong>{{offlineLabels[offline.status.status] || offline.status.status}}</strong>
+            <p ng-if="offline.status.dispatch_pending">Solicitação registrada; aguardando recuperação da fila.</p>
+            <p ng-if="offline.status.configuration_changed" class="alert alert-warning">A configuração, a localização ou o conjunto de pontos mudou. O resultado anterior não comprova a cobertura atual. Gere ou verifique o cache novamente.</p>
+            <p ng-if="offline.status.error" class="alert alert-danger">{{offline.status.error}}</p>
+            <p ng-if="offline.status.status === 'preparing'">Pontos calculados: {{offline.status.prepared_points}} de {{offline.status.point_count}}. O total de itens ainda está sendo calculado.</p>
+            <p ng-if="offline.status.config">Cobertura registrada: {{offline.status.config.width}} × {{offline.status.config.height}} pixels, com margem de {{offline.status.config.buffer}} tiles. Zooms: {{offline.status.config.zooms.join(', ')}}.</p>
+            <div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="{{offline.status.percent}}" aria-valuemin="0" aria-valuemax="100" ng-style="{width: offline.status.percent + '%'}">{{offline.status.percent}}%</div></div>
+            <p ng-if="offline.status.unique_tiles !== undefined">Tiles únicos: <b>{{offline.status.unique_tiles}}</b>. O total de itens inclui os vínculos com cada ponto.</p>
+            <p ng-if="offline.status.summary_as_of">Contagem atualizada em {{offline.status.summary_as_of * 1000 | date:'dd/MM/yyyy HH:mm:ss'}}. Os totais podem levar até 30 segundos para refletir o processamento.</p>
+            <p>Total: <b>{{offline.status.total}}</b> · Concluídos: <b>{{offline.status.counts.completed}}</b> · Em processamento: <b>{{offline.status.counts.processing}}</b> · Pendentes: <b>{{offline.status.counts.pending}}</b> · Aguardando retentativa: <b>{{offline.status.counts.retry_wait}}</b> · Bloqueados: <b>{{offline.status.counts.blocked}}</b> · Sem dados comprovados: <b>{{offline.status.counts.no_data}}</b></p>
+            <p ng-if="offline.status.status === 'blocked'" class="alert alert-warning">Há falhas que exigem intervenção. A campanha não está pronta para inspeção offline.</p>
+            <div class="table-responsive" ng-if="offline.status.error_total">
+                <table class="table table-striped">
+                    <thead><tr><th>Ponto</th><th>Ano/período</th><th>Visualização</th><th>Tile z/x/y</th><th>Estado e motivo</th><th>Tentativas</th><th>Próxima retentativa</th></tr></thead>
+                    <tbody><tr ng-repeat="item in offline.status.errors track by item._id">
+                        <td>{{item.point_id}}</td><td>{{item.params.year}} / {{item.params.period}}</td><td>{{item.params.visparam}}</td>
+                        <td>{{item.params.z}}/{{item.params.x}}/{{item.params.y}}</td>
+                        <td>{{offlineLabels[item.state]}}: {{offlineReasons[item.reason] || item.reason}}</td>
+                        <td>{{item.attempts}}</td><td>{{item.next_retry ? (item.next_retry | date:'dd/MM/yyyy HH:mm:ss') : 'Sem retentativa automática'}}</td>
+                    </tr></tbody>
+                </table>
+                <button class="btn btn-default" ng-click="offlinePage(-1)" ng-disabled="offline.loading || offline.page === 0">Anterior</button>
+                <span>Página {{offline.page + 1}} · {{offline.status.error_total}} {{offline.status.error_total === 1 ? 'falha registrada' : 'falhas registradas'}}</span>
+                <button class="btn btn-default" ng-click="offlinePage(1)" ng-disabled="offline.loading || (offline.page + 1) * 50 >= offline.status.error_total">Próxima</button>
+            </div>
+        </div>
+    </div>
+</section>

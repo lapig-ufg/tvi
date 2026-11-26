@@ -8,11 +8,8 @@
  * plota os pontos em um mapa Leaflet com agrupamento (markercluster),
  * popup por ponto e legenda por status.
  *
- * Padrão de construção do mapa segue o utilizado em
- * `controllers/cache-manager-tiles.js:936` (L.map + L.tileLayer +
- * L.markerClusterGroup + L.circleMarker). A destruição é delegada ao
- * helper global `safeDestroyMap` definido em `others/directives.js:15`,
- * que neutraliza callbacks pendentes do Leaflet <= 1.9.4.
+ * A destruição utiliza safeDestroyMap para neutralizar callbacks pendentes
+ * do Leaflet <= 1.9.4.
  *
  * Entradas:
  *  - campaign-id: ID da campanha (obrigatório).
