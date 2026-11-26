@@ -2,11 +2,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-function routes(service) {
+function routes(service, campaign = { _id: 'test' }) {
     const registered = {};
     const auth = function auth() {};
     const app = {
         services: { tilesApiService: service },
+        repository: { collections: { campaign: { findOne: async () => campaign } } },
         middleware: { auth: { cacheApiAuth: { requireCacheApiAuth: auth } } },
         get(path, middleware, fn) { assert.equal(middleware, auth); registered.get = fn; },
         post(path, middleware, fn) { assert.equal(middleware, auth); registered.post = fn; }
@@ -39,4 +40,14 @@ test('erros preservam código sem expor detalhes da conexão', async () => {
     await handlers.get({ params: { campaignId: 'test' }, query: {} }, res);
     assert.equal(res.code, 503);
     assert.doesNotMatch(JSON.stringify(res.data), /secret/);
+});
+
+test('campanha BDC não dispara nem consulta geração offline legada', async () => {
+    const handlers = routes({ offlineCampaign: async () => assert.fail('BDC não chama geração GEE') }, { _id: 'test', imagerySource: 'bdc' });
+    for (const method of ['get', 'post']) {
+        const res = response();
+        await handlers[method]({ params: { campaignId: 'test' }, query: {}, body: {} }, res);
+        assert.equal(res.code, 409);
+        assert.equal(res.data.code, 'BDC_OFFLINE_NOT_SUPPORTED');
+    }
 });

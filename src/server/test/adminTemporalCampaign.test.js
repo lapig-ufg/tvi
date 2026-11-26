@@ -12,6 +12,16 @@ const campaign = { _id: 'test', initialYear: 2020, finalYear: 2021, zoomLevel: 1
     landUse: ['Floresta'], imageType: 'landsat', useDynamicMaps: true,
     showTimeseries: false, showPointInfo: true, visParams: ['landsat-tvi-false'] };
 
+test('campanha BDC administrativa não consulta capabilities nem monta imagens GEE', async () => {
+    const c = temporal();
+    const selected = { ...campaign, imagerySource: 'bdc' };
+    await c.respond('/api/campaigns/test', selected);
+    c.point(selected);
+    assert.equal(c.scope.isBdc, true);
+    assert.equal(c.serviceCalls.some(call => call.url === 'admin/capabilities'), false);
+    assert.equal(c.scope.maps.length, 0);
+});
+
 function temporal(query = { campaignId: 'test', pointId: 'p' }, storedCampaign) {
     let factory;
     const httpCalls = [], serviceCalls = [], events = {}, notices = [], cancelled = [];

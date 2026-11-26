@@ -7,7 +7,8 @@
 // vez de em filter.landUse; o fallback no servidor cobre o cliente legado.
 var NOT_CONSOLIDATED_TOKEN = '__NOT_CONSOLIDATED__';
 
-Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, waybackGridService, sampleMarkerService) {
+Application.controller('supervisorController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, $timeout, i18nService, NotificationDialog, waybackGridService, sampleMarkerService, bdcImageryService) {
+    var bdcGrid = bdcImageryService.bindGrid($scope, true);
     // Sequência monotônica de submits — usada por isCurrent() em $scope.submit
     // para descartar respostas obsoletas de chamadas que perderam a corrida
     // (cliques rápidos Anterior/Próximo, troca rápida de filtro etc.).
@@ -764,6 +765,11 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         };
 
         var generateMaps = function () {
+            if ($scope.isBdc) {
+                $scope.maps = $scope.buildBdcMaps();
+                $scope.useWmsForCurrentPeriod = false;
+                return;
+            }
             if ($scope.isWayback) {
                 generateWaybackMaps();
                 return;
@@ -1049,6 +1055,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
         var loadCampaignConfig = function(callback) {
             requester._get('campaign/config', {}, function(config) {
                 if (config) {
+                    bdcGrid.configure(config);
                     // Aplicado antes do callback: generateMaps roda nele e a grade
                     // nasce com o zoom configurado, mesmo que a cópia da campanha na
                     // sessão de login esteja desatualizada.
@@ -1167,6 +1174,7 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.onSubmission = false;
             $scope.pointLoaded = true;
             $scope.point = data.point;
+            bdcGrid.reset(data.point);
             loadPointDoubt(data.point._id);
             $rootScope.total = data.total;
             $rootScope.count = data.count;
@@ -1183,7 +1191,12 @@ Application.controller('supervisorController', function ($rootScope, $scope, $lo
             $scope.chartFilterStartYear = ($scope.config && $scope.config.initialYear) || 1985;
             $scope.chartFilterEndYear = ($scope.config && $scope.config.finalYear) || new Date().getFullYear();
 
+            var formInitialYear = $scope.config.initialYear;
+            var formFinalYear = $scope.config.finalYear;
             loadCampaignConfig(function() {
+                if ($scope.isBdc && (formInitialYear !== $scope.config.initialYear || formFinalYear !== $scope.config.finalYear)) {
+                    initFormViewVariables();
+                }
                 generateMaps();
                 // Os gráficos agora só serão carregados quando o usuário clicar no botão
                 // Resetar a flag sempre que carregar um novo ponto

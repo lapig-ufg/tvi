@@ -1,0 +1,21 @@
+<section class="bdc-comparison" role="region" aria-labelledby="bdc-comparison-title-{{::$id}}">
+    <div class="bdc-comparison-toolbar">
+        <h3 id="bdc-comparison-title-{{::$id}}">{{ 'BDC.COMPARISON_TITLE' | i18n }}</h3>
+        <label>{{ 'BDC.PROFILE' | i18n }}
+            <select ng-model="profile" ng-options="profile.id as (profile.label || profile.id) for profile in selection.profiles"></select>
+        </label>
+        <button type="button" class="btn btn-default" ng-click="fullscreen()">{{ 'BDC.FULLSCREEN' | i18n }}</button>
+        <button type="button" class="btn btn-default" ng-click="onClose()">{{ 'COMMON.CLOSE' | i18n }}</button>
+    </div>
+    <p>{{ 'BDC.COMPARISON_NOTICE' | i18n }}</p>
+    <div class="bdc-comparison-grid">
+        <section>
+            <h4>{{ 'BDC.LOCAL_CHOICE' | i18n }}</h4>
+            <bdc-map point="point" year="selection.year" period="selection.period" config="config" profile="profile" selection="selection" side="local" on-viewed="onViewed && onViewed({reference: reference})"></bdc-map>
+        </section>
+        <section>
+            <h4>{{ 'BDC.GLOBAL_CHOICE' | i18n }}</h4>
+            <bdc-map point="point" year="selection.year" period="selection.period" config="config" profile="profile" selection="selection" side="global"></bdc-map>
+        </section>
+    </div>
+</section>

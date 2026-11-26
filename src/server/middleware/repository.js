@@ -82,7 +82,7 @@ module.exports = function (app) {
                     // ocorreu em val_prodes_to_2025 em 2026-08-17 (494 pontos enviados duas
                     // vezes). Em memória não resolveria: o duplo clique pode cair em workers
                     // distintos do cluster.
-                    var requiredCollections = ['campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync', uploadReceipts.COLLECTION_NAME];
+                    var requiredCollections = ['campaignImageSelections', 'campaign', 'points', 'users', 'cacheConfig', 'logs', 'logsConfig', 'tvi_blocos', 'tickets', 'ticket_counters', 'weekly_progress', 'points_audit', 'tvi_blocos_release_log', 'tvi_zombie_counts', 'destructive_tokens', 'excess_inspection_previews', 'waybackSync', uploadReceipts.COLLECTION_NAME];
                     var ensureCollection = function(collectionName, callback) {
                         if (!Repository.collections[collectionName]) {
                             Repository.db.collection(collectionName, function (err, repository) {
@@ -148,6 +148,13 @@ module.exports = function (app) {
         // Criando índices para otimização de performance
         
         async.series([
+            function(cb) {
+                const selections = Repository.collections.campaignImageSelections;
+                if (!selections) return cb();
+                selections.createIndexes([
+                    { key: { campaignId: 1, pointId: 1, revision: 1, year: 1, period: 1 }, name: 'bdc_point_history' }
+                ], cb);
+            },
             // Índices para collection points
             function(cb) {
                 if (!Repository.collections.points) return cb();

@@ -5,6 +5,19 @@ module.exports = function (app) {
     const tiles = app.services.tilesApiService;
     const route = '/api/cache/campaign/:campaignId/offline';
 
+    async function supportedCampaign(req, res) {
+        const campaign = await app.repository.collections.campaign.findOne({ _id: req.params.campaignId });
+        if (!campaign) {
+            res.status(404).json({ error: 'Campanha não encontrada.' });
+            return false;
+        }
+        if (campaign.imagerySource === 'bdc') {
+            res.status(409).json({ code: 'BDC_OFFLINE_NOT_SUPPORTED', error: 'O cache offline legado não está disponível para campanhas BDC.' });
+            return false;
+        }
+        return true;
+    }
+
     function failure(res, error) {
         const status = error.response && error.response.status;
         const code = [400, 401, 403, 404, 409, 422, 429, 503].includes(status) ? status : 502;
@@ -23,6 +36,7 @@ module.exports = function (app) {
             return res.status(400).json({ error: 'Página inválida.' });
         }
         try {
+            if (!await supportedCampaign(req, res)) return;
             res.json(await tiles.offlineCampaign(req.params.campaignId, 'get', { page: page, limit: 50 }, req));
         } catch (error) { failure(res, error); }
     });
@@ -37,6 +51,7 @@ module.exports = function (app) {
             return res.status(400).json({ error: 'Operação ou dimensões da cobertura inválidas.' });
         }
         try {
+            if (!await supportedCampaign(req, res)) return;
             res.json(await tiles.offlineCampaign(req.params.campaignId, 'post', { mode, width, height }, req));
         } catch (error) { failure(res, error); }
     });

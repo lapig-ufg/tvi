@@ -7,6 +7,7 @@ const supervisorCsv = require('../services/supervisorCsv');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
 const campaignSampleMarker = require('../services/campaignSampleMarker');
 const campaignPropertyDisplay = require('../services/campaignPropertyDisplay');
+const campaignBdcConfig = require('../services/campaignBdcConfig');
 
 const {
     BIOME_PROPERTY_KEYS,
@@ -884,6 +885,8 @@ module.exports = function (app) {
             if (campaign) {
                 // Retornar apenas as configurações relevantes
                 var config = {
+                    initialYear: campaign.initialYear,
+                    finalYear: campaign.finalYear,
                     showTimeseries: campaign.showTimeseries !== false,
                     showPointInfo: campaign.showPointInfo !== false,
                     useDynamicMaps: campaign.useDynamicMaps || false,
@@ -907,6 +910,7 @@ module.exports = function (app) {
                     defaultLandUse: (typeof campaign.defaultLandUse === 'string') ? campaign.defaultLandUse : ''
                 };
 
+                Object.assign(config, campaignBdcConfig.normalizeBdcConfig(campaign));
                 response.json(config);
             } else {
                 response.status(404).json({ error: 'Campanha não encontrada' });

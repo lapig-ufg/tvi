@@ -4,7 +4,8 @@
         <button type="button" class="btn btn-default btn-sm" ng-if="details !== 'true'" ng-click="viewOfflineDetails()" ng-disabled="offline.starting || offline.confirming">Ver detalhes</button>
     </div>
     <div class="panel-body">
-        <p ng-if="!offlineSupported()" class="alert alert-warning">Disponível para mapas dinâmicos Landsat e Sentinel. Mapas estáticos, WMS, Planet e Wayback usam outros fluxos e não estão cobertos por esta geração.</p>
+        <p ng-if="!offlineSupported() && campaign.imagerySource !== 'bdc'" class="alert alert-warning">Disponível para mapas dinâmicos Landsat e Sentinel. Mapas estáticos, WMS, Planet e Wayback usam outros fluxos e não estão cobertos por esta geração.</p>
+        <p ng-if="campaign.imagerySource === 'bdc'" class="alert alert-info">Campanhas BDC utilizam seleção própria de aquisições. A geração offline do Earth Engine não se aplica a esta fonte.</p>
         <p role="alert" ng-if="offline.error" class="alert alert-danger">{{offline.error}}</p>
         <div ng-if="offline.status">
             <div class="campaign-offline-status" aria-live="polite">

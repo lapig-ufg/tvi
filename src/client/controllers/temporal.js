@@ -1,6 +1,7 @@
 'uses trict';
 
-Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog, waybackGridService, sampleMarkerService) {
+Application.controller('temporalController', function ($rootScope, $scope, $location, $interval, $window, requester, fakeRequester, util, $uibModal, i18nService, $timeout, NotificationDialog, waybackGridService, sampleMarkerService, bdcImageryService) {
+    var bdcGrid = bdcImageryService.bindGrid($scope, false);
 
     $scope.pointLoaded = false;
     $scope.showChartsLandsat = false;
@@ -394,6 +395,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         }
 
         function postPoint(formPoint, onSuccess, onPointConflict) {
+            if ($scope.isBdc) formPoint.inspection.bdcSelections = $scope.bdc.references.slice();
             $scope.onSubmission = true;
             $scope.showloading = true;
 
@@ -840,6 +842,11 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         };
 
         const generateMaps = function () {
+            if ($scope.isBdc) {
+                $scope.maps = $scope.buildBdcMaps();
+                $scope.useWmsForCurrentPeriod = false;
+                return;
+            }
             if ($scope.isWayback) {
                 generateWaybackMaps();
                 return;
@@ -954,6 +961,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
         var loadCampaignConfig = function(callback) {
             requester._get('campaign/config', {}, function(config) {
                 if (config) {
+                    bdcGrid.configure(config);
                     // Aplicado antes do callback: generateMaps roda nele e a grade
                     // nasce com o zoom configurado, mesmo que a cópia da campanha na
                     // sessão de login esteja desatualizada.
@@ -1078,6 +1086,7 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.onSubmission = false;
             $scope.pointLoaded = true;
             $scope.point = data.point;
+            bdcGrid.reset(data.point);
             $rootScope.total = data.total;
             $rootScope.count = data.count;
             $rootScope.current = data.current;
@@ -1124,7 +1133,13 @@ Application.controller('temporalController', function ($rootScope, $scope, $loca
             $scope.showTimeseriesCharts = false;
 
             // Gerar mapas somente após config da campanha estar disponível
+            var formInitialYear = $scope.config.initialYear;
+            var formFinalYear = $scope.config.finalYear;
             loadCampaignConfig(function() {
+                if ($scope.isBdc && (formInitialYear !== $scope.config.initialYear || formFinalYear !== $scope.config.finalYear)) {
+                    initFormViewVariables();
+                    generateOptionYears($scope.config.initialYear, $scope.config.finalYear);
+                }
                 generateMaps();
 
                 // TKT-000006: quando a campanha estiver configurada para

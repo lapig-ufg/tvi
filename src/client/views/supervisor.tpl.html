@@ -308,18 +308,18 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="margin-top: 380px;">
             <div class="row">
-                <span ng-hide="isSentinel || isWayback" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                <span ng-hide="isSentinel || isWayback || isBdc" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                     {{ 'SUPERVISOR.MAP.LANDSAT_IMAGES' | i18n }}
                 </span>
 
                 <!-- Seletor de visparam Landsat baseado nos visparams da campanha -->
-                <div ng-show="!isSentinel && availableVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
+                <div ng-show="!isBdc && !isSentinel && availableVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
                     <visparam-selector visparams="availableVisParams"
                                       ng-model="landsatVisparam"
                                       on-change="updateLandsatVisparam()">
                     </visparam-selector>
                 </div>
-                <span ng-show="isSentinel" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
+                <span ng-show="isSentinel && !isBdc" class="pull-left" style="font-weight: bold; font-size: 18px; margin:5px 5px 5px 5px;">
                     {{ 'SUPERVISOR.MAP.SENTINEL_IMAGES' | i18n }}
                 </span>
 
@@ -328,7 +328,7 @@
                 </span>
 
                 <!-- Seletor de visparam Sentinel baseado nos visparams da campanha -->
-                <div ng-show="isSentinel && availableSentinelVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
+                <div ng-show="!isBdc && isSentinel && availableSentinelVisParams.length > 0 && point" class="pull-left" style="margin: 5px 0 5px 20px;">
                     <visparam-selector visparams="availableSentinelVisParams"
                                       ng-model="sentinelVisparam"
                                       on-change="updateSentinelVisparam()">
@@ -341,6 +341,25 @@
                 </div>
 
                 <!-- Container com Bootstrap Grid -->
+                <div class="bdc-toolbar" ng-if="isBdc">
+                    <strong>{{ 'BDC.TITLE' | i18n }}</strong>
+                    <label>{{ 'BDC.VIEW' | i18n }}
+                        <select ng-model="bdc.view" ng-change="changeBdcView()">
+                            <option value="history">{{ 'BDC.HISTORICAL' | i18n }}</option>
+                            <option value="current" ng-disabled="!bdc.currentAvailable">{{ 'BDC.CURRENT' | i18n }}</option>
+                        </select>
+                    </label>
+                    <label ng-if="bdc.view === 'history'">{{ 'BDC.INSPECTION' | i18n }}
+                        <select ng-model="bdc.inspectionIndex" ng-change="changeBdcView()" ng-options="index as inspection.userName for (index, inspection) in bdc.inspectors"></select>
+                    </label>
+                    <label>{{ 'BDC.PROFILE' | i18n }}
+                        <select ng-model="bdc.profile" ng-options="profile for profile in bdc.profiles" ng-change="bdc.profileOverride = true"></select>
+                    </label>
+                    <p>{{ 'BDC.PERIODS' | i18n }}</p>
+                    <p>{{ 'BDC.HISTORY_NOTICE' | i18n }}</p>
+                    <p ng-if="showTimeseries">{{ 'BDC.TIMESERIES_NOTICE' | i18n }}</p>
+                </div>
+                <bdc-comparison ng-if="bdc.comparison" selection="bdc.comparison" point="point" config="config" profile="bdc.comparisonProfile" on-close="bdc.comparison = null"></bdc-comparison>
                 <div class="maps-grid">
                     <div ng-repeat="map in maps track by map.index"
                          ng-class="getMapBoxClass(maps.length)">
@@ -354,14 +373,15 @@
                                 <span ng-hide="isWayback">{{periodo}}</span>
                             </div>
                             
-                            <span class="planet-button" ng-if="hasMosaicForYear(map.year)" >
+                            <span class="planet-button" ng-if="!isBdc && hasMosaicForYear(map.year)" >
                                 <button class="btn btn-icon" ng-click="openMosaicDialog(map, point, config)" title="{{ 'MOSAIC.TITLE' | i18n }}">
                                     <i class="fa fa-camera"></i>
                                 </button>
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <landsat-map ng-if="useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
+                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdc.view === 'history' && !bdc.profileOverride ? bdcSelectionProfile(map.year, period) : bdc.profile" historical="bdc.view === 'history'" selection-id="bdcSelectionId(map.year, period)" on-compare="openBdcComparison(selection, profile)"></bdc-map>
+                            <landsat-map ng-if="!isBdc && useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
@@ -372,7 +392,7 @@
                             </landsat-map>
 
                             <!-- Usar sentinel-map para mapas dinâmicos Sentinel -->
-                            <sentinel-map ng-if="useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod && !isWayback"
+                            <sentinel-map ng-if="!isBdc && useDynamicMaps === true && isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                           lon="point.lon"
                                           lat="point.lat"
                                           zoom="config.zoomLevel"
@@ -383,7 +403,7 @@
                             </sentinel-map>
 
                             <!-- Usar wms-map quando WMS está habilitado para o período atual -->
-                            <wms-map ng-if="useDynamicMaps === true && useWmsForCurrentPeriod && !isWayback"
+                            <wms-map ng-if="!isBdc && useDynamicMaps === true && useWmsForCurrentPeriod && !isWayback"
                                      lon="point.lon"
                                      lat="point.lat"
                                      zoom="config.zoomLevel"
@@ -394,7 +414,7 @@
                             </wms-map>
 
                             <!-- Célula Wayback: URL de tiles já resolvida por release -->
-                            <wayback-map ng-if="useDynamicMaps === true && isWayback"
+                            <wayback-map ng-if="!isBdc && useDynamicMaps === true && isWayback"
                                          lon="point.lon"
                                          lat="point.lat"
                                          zoom="config.zoomLevel"
@@ -407,7 +427,7 @@
                             </div>
 
                             <!-- Usar inspection-map apenas quando não for mapa dinâmico -->
-                            <inspection-map ng-if="useDynamicMaps !== true"
+                            <inspection-map ng-if="!isBdc && useDynamicMaps !== true"
                                             lon="point.lon"
                                             lat="point.lat"
                                             bounds="map.bounds"

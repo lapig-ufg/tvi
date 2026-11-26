@@ -200,6 +200,13 @@
                 <section class="campaign-editor-section campaign-editor-images" aria-labelledby="campaign-images-title">
                     <h4 class="section-title" id="campaign-images-title">Imagens da campanha</h4>
                     <div class="form-group">
+                        <label for="campaign-imagery-source" class="form-label">Fonte das imagens</label>
+                        <select id="campaign-imagery-source" class="form-select" ng-model="bdc.source" ng-change="onImagerySourceChange()">
+                            <option value="legacy">Fonte atual do TVI</option>
+                            <option value="bdc">Brazil Data Cube (BDC)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="campaign-image-type" class="form-label">Tipo de imagem</label>
                         <select
                             id="campaign-image-type"
@@ -209,10 +216,52 @@
                         >
                             <option value="landsat">Landsat</option>
                             <option value="sentinel-2">Sentinel-2</option>
-                            <option value="planet">Planet</option>
-                            <option value="wms">WMS (Web Map Service)</option>
-                            <option value="wayback">Esri Wayback (imagens históricas de alta resolução)</option>
+                            <option value="planet" ng-disabled="bdc.source === 'bdc'">Planet</option>
+                            <option value="wms" ng-disabled="bdc.source === 'bdc'">WMS (Web Map Service)</option>
+                            <option value="wayback" ng-disabled="bdc.source === 'bdc'">Esri Wayback (imagens históricas de alta resolução)</option>
                         </select>
+                    </div>
+                    <div class="form-section" ng-if="bdc.source === 'bdc'">
+                        <h4 class="section-title">Seleção e composições BDC</h4>
+                        <p>O BDC seleciona uma cena por ponto, ano e período usando a qualidade local. A melhor cena disponível ainda pode conter nuvens.</p>
+                        <p ng-if="bdc.loading" role="status">Carregando o catálogo BDC...</p>
+                        <p ng-if="bdc.error" class="text-danger" role="alert">{{bdc.error}}</p>
+                        <button type="button" class="btn-add" ng-click="loadBdcCatalog()" ng-disabled="bdc.loading">Recarregar catálogo</button>
+                        <div class="form-group">
+                            <label for="campaign-bdc-collection" class="form-label">Coleção do sensor</label>
+                            <input id="campaign-bdc-collection" class="form-input" type="text" ng-model="campaign.bdcConfig.collection" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-bdc-strategy" class="form-label">Critério de qualidade local</label>
+                            <select id="campaign-bdc-strategy" class="form-select" ng-model="campaign.bdcConfig.selectionStrategy">
+                                <option value="local_cloud">Menor cobertura de nuvens</option>
+                                <option value="local_unusable">Menor área inutilizável</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-bdc-radius" class="form-label">Raio de avaliação da qualidade (metros)</label>
+                            <input id="campaign-bdc-radius" class="form-input" type="number" min="100" max="5000" ng-model="campaign.bdcConfig.bufferRadiusM" />
+                            <small class="form-help">Entre 100 e 5.000 metros. Este raio não altera o marcador da amostra no mapa.</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Composições disponíveis</label>
+                            <label class="checkbox-label" ng-repeat="profile in bdcProfiles() track by profile.id">
+                                <input type="checkbox" ng-checked="campaign.bdcConfig.profiles.indexOf(profile.id) !== -1" ng-click="toggleBdcProfile(profile)" />
+                                <span class="checkbox-text">{{profile.label || profile.id}}</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-bdc-default" class="form-label">Composição padrão</label>
+                            <select id="campaign-bdc-default" class="form-select" ng-model="campaign.bdcConfig.defaultProfile">
+                                <option ng-repeat="profile in bdcProfiles() track by profile.id" ng-if="campaign.bdcConfig.profiles.indexOf(profile.id) !== -1" value="{{profile.id}}">{{profile.label || profile.id}}</option>
+                            </select>
+                        </div>
+                        <p>Períodos de seleção: chuvoso de 1º de janeiro a 30 de abril; seco de 1º de junho a 30 de outubro, incluindo as datas finais. Maio, novembro e dezembro ficam fora dessas janelas.</p>
+                        <p>Alterar o sensor, o critério ou o raio inicia uma revisão da seleção. As inspeções anteriores são preservadas. Alterar apenas a composição não seleciona outra cena. Salvar a configuração não gera imagens.</p>
+                        <label class="checkbox-label" ng-if="campaign.wmsConfig.enabled">
+                            <input type="checkbox" ng-model="campaign.wmsConfig.enabled" />
+                            <span class="checkbox-text">WMS habilitado: desmarque para salvar uma campanha BDC.</span>
+                        </label>
                     </div>
                     <div class="form-section" ng-show="campaign.imageType === 'wms'">
                         <h4 class="section-title">
@@ -317,7 +366,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-section">
+                    <div class="form-section" ng-if="bdc.source !== 'bdc'">
                         <h4 class="section-title">
                             <i class="fas fa-eye"></i>
                             Parâmetros de visualização
@@ -472,7 +521,7 @@
                             </label>
 
                             <label class="checkbox-label">
-                                <input type="checkbox" ng-model="campaign.useDynamicMaps" />
+                                <input type="checkbox" ng-model="campaign.useDynamicMaps" ng-disabled="bdc.source === 'bdc'" />
                                 <span class="checkbox-text">
                                     <i class="fas fa-map"></i>
                                     Usar mapas dinâmicos

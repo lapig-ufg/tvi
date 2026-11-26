@@ -1594,6 +1594,81 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     $scope.sentinelVisParams = [];
     $scope.loading = true;
     $scope.currentYear = new Date().getFullYear();
+    var bdcCollections = { landsat: 'landsat-2', 'sentinel-2': 'S2_L2A-1' };
+    $scope.bdc = { source: campaign.imagerySource === 'bdc' ? 'bdc' : 'legacy', loading: false, error: null, collections: [] };
+
+    $scope.bdcProfiles = function () {
+        var config = campaign.bdcConfig;
+        var collection = config && $scope.bdc.collections.find(function (entry) { return entry.id === config.collection; });
+        return collection && Array.isArray(collection.profiles) ? collection.profiles : [];
+    };
+
+    function prepareBdcConfig() {
+        if (!campaign.bdcConfig) {
+            campaign.bdcConfig = { schemaVersion: 1, collection: bdcCollections[campaign.imageType],
+                selectionStrategy: 'local_cloud', bufferRadiusM: 1000, periodPolicy: 'tvi-seasonal-v1',
+                profiles: [], defaultProfile: null };
+        }
+    }
+
+    function selectInitialBdcProfile() {
+        var config = campaign.bdcConfig;
+        var profiles = $scope.bdcProfiles();
+        if (config && !config.selectionRevision && Array.isArray(config.profiles) && !config.profiles.length && profiles.length) {
+            config.profiles = [profiles[0].id];
+            config.defaultProfile = profiles[0].id;
+        }
+    }
+
+    $scope.loadBdcCatalog = function () {
+        if (destroyed || $scope.bdc.loading) return;
+        $scope.bdc.loading = true;
+        $scope.bdc.error = null;
+        $http.get('/api/bdc/catalog').then(function (response) {
+            if (destroyed) return;
+            $scope.bdc.collections = response.data && Array.isArray(response.data.collections) ? response.data.collections : [];
+            $scope.bdc.loading = false;
+            if (!$scope.bdcProfiles().length) {
+                $scope.bdc.error = 'O catálogo BDC não disponibilizou composições para o sensor selecionado.';
+                return;
+            }
+            selectInitialBdcProfile();
+        }).catch(function () {
+            if (destroyed) return;
+            $scope.bdc.loading = false;
+            $scope.bdc.collections = [];
+            $scope.bdc.error = 'Não foi possível carregar o catálogo BDC. Tente novamente antes de salvar.';
+        });
+    };
+
+    $scope.onImagerySourceChange = function () {
+        campaign.imagerySource = $scope.bdc.source === 'bdc' ? 'bdc' : null;
+        if ($scope.bdc.source !== 'bdc') return;
+        campaign.useDynamicMaps = true;
+        prepareBdcConfig();
+        $scope.loadBdcCatalog();
+    };
+
+    $scope.toggleBdcProfile = function (profile) {
+        var config = campaign.bdcConfig;
+        var index = config.profiles.indexOf(profile.id);
+        if (index === -1) config.profiles.push(profile.id);
+        else config.profiles.splice(index, 1);
+        if (config.profiles.indexOf(config.defaultProfile) === -1) config.defaultProfile = config.profiles[0] || null;
+    };
+
+    $scope.bdcValidationError = function () {
+        var config = campaign.bdcConfig;
+        if ($scope.bdc.loading || $scope.bdc.error) return $scope.bdc.error || 'Aguarde o catálogo BDC.';
+        if (!bdcCollections[campaign.imageType]) return 'Selecione Landsat ou Sentinel-2 para usar o BDC.';
+        if (!campaign.useDynamicMaps || (campaign.wmsConfig && campaign.wmsConfig.enabled)) return 'O BDC requer mapas dinâmicos e WMS desabilitado.';
+        if (!config || config.collection !== bdcCollections[campaign.imageType]) return 'Selecione uma coleção compatível com o sensor.';
+        if (!Number.isFinite(config.bufferRadiusM) || config.bufferRadiusM < 100 || config.bufferRadiusM > 5000) return 'O raio de qualidade deve estar entre 100 e 5.000 metros.';
+        var available = $scope.bdcProfiles().map(function (profile) { return profile.id; });
+        if (!Array.isArray(config.profiles) || !config.profiles.length || config.profiles.some(function (id) { return available.indexOf(id) === -1; })) return 'Selecione composições disponíveis no catálogo BDC.';
+        if (config.profiles.indexOf(config.defaultProfile) === -1) return 'Selecione uma composição padrão entre as composições habilitadas.';
+        return null;
+    };
     
     // Inicializar arrays se não existirem
     if (!$scope.campaign.visParams) {
@@ -1612,6 +1687,10 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     // Inicializar imageType se não existir
     if (!$scope.campaign.imageType) {
         $scope.campaign.imageType = 'landsat'; // Padrão para Landsat
+    }
+    if ($scope.bdc.source === 'bdc') {
+        prepareBdcConfig();
+        $scope.loadBdcCatalog();
     }
 
     // TKT-000006: garantir o default do flag de carregamento automático dos
@@ -1750,8 +1829,15 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
             return;
         }
         
+        if ($scope.bdc.source === 'bdc') {
+            var bdcError = $scope.bdcValidationError();
+            if (bdcError) {
+                NotificationDialog.error(bdcError);
+                return;
+            }
+        }
         // Validar parâmetros de visualização para Landsat e Sentinel
-        if (($scope.campaign.imageType === 'landsat' || $scope.campaign.imageType === 'sentinel-2') &&
+        if ($scope.bdc.source !== 'bdc' && ($scope.campaign.imageType === 'landsat' || $scope.campaign.imageType === 'sentinel-2') &&
             (!$scope.campaign.visParams || $scope.campaign.visParams.length === 0)) {
             NotificationDialog.error('Selecione pelo menos um parâmetro de visualização');
             return;
@@ -1942,6 +2028,16 @@ Application.controller('CampaignFormModalController', function ($scope, $uibModa
     
     // Função chamada quando o imageType muda
     $scope.onImageTypeChange = function() {
+        if ($scope.bdc.source === 'bdc') {
+            prepareBdcConfig();
+            if (campaign.bdcConfig.collection !== bdcCollections[campaign.imageType]) {
+                campaign.bdcConfig.collection = bdcCollections[campaign.imageType];
+                campaign.bdcConfig.profiles = [];
+                campaign.bdcConfig.defaultProfile = null;
+            }
+            $scope.bdc.error = $scope.bdcProfiles().length ? null : 'O catálogo BDC não disponibilizou composições para o sensor selecionado.';
+            return;
+        }
         // Limpar seleções anteriores quando trocar de tipo
         if ($scope.campaign.visParams && $scope.campaign.visParams.length > 0) {
             // Verificar se os visparams selecionados são do tipo atual

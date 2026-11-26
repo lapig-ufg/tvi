@@ -52,6 +52,14 @@ function buildInspectionTable(point) {
 
     point.userName.forEach(function (userName, i) {
         const row = { userName: userName, landUse: [] };
+        const references = inspectionList[i] && inspectionList[i].bdcSelections;
+        if (Array.isArray(references)) {
+            row.bdcSelections = references.map(function (reference) {
+                const copy = Object.assign({}, reference);
+                if (Array.isArray(reference.profilesViewed)) copy.profilesViewed = reference.profilesViewed.slice();
+                return copy;
+            });
+        }
         const form = inspectionList[i] && inspectionList[i].form;
         forEachColumn(form, function (cell) {
             row.landUse.push(cell);

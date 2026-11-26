@@ -155,6 +155,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             
             // Definir campaign no scope para uso nas funções
             $scope.campaign = campaign;
+            $scope.isBdc = campaign.imagerySource === 'bdc';
             
             $scope.showloading = false;
             $scope.size = 4;
@@ -593,6 +594,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
             $scope.maps = [];
             $scope.mapStates = {};
             $scope.$broadcast('resetLazyMaps');
+            if ($scope.isBdc) return;
             $scope.periodo = i18nService.translate($scope.period === 'WET' ? 'PERIODS.WET' : 'PERIODS.DRY');
 
             if ($scope.isSentinel) {
@@ -1179,7 +1181,7 @@ Application.controller('adminTemporalController', function ($rootScope, $scope, 
         };
 
         // Carregar capabilities unificado
-        requester._get('admin/capabilities', function(capabilities) {
+        if (!$scope.isBdc) requester._get('admin/capabilities', function(capabilities) {
             if (destroyed) return;
             $scope.tilesCapabilities = capabilities || [];
             

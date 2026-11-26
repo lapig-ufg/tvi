@@ -2,6 +2,7 @@ const proj4 = require('proj4');
 const usernameMatcher = require('../services/usernameMatcher');
 const waybackGuard = require('../services/waybackInspectionGuard');
 const inspectionTable = require('../services/inspectionTable');
+const bdcInspectionReferences = require('../services/bdcInspectionReferences');
 
 // Filtro de seleção do próximo ponto do inspetor (findPoint). Função pura,
 // extraída para ser testável isoladamente (test/waybackDistributionFilter.test.js).
@@ -870,13 +871,25 @@ module.exports = function(app) {
 			// Carrega o documento ANTES (igual ao código legado) para
 			// (a) decidir consolidação com base em userName.length
 			// (b) reaproveitar como pointDbBefore no service (evita findOne duplicado)
-			const pointDb = await points.findOne({ _id: point._id });
+			const pointDb = await points.findOne({ _id: point._id, campaign: user.campaign._id });
 			if (!pointDb) {
 				const errorCode = await logger.warn('Point not found for update', {
 					module: 'points', function: 'updatePoint',
 					metadata: { pointId: point._id, username: user.name }
 				});
 				return response.status(404).json({ error: 'Point not found', errorCode });
+			}
+
+			const campaignDb = await app.repository.collections.campaign.findOne({ _id: user.campaign._id });
+			if (!campaignDb) return response.status(404).json({ error: 'Campanha não encontrada.' });
+			try {
+				const references = await bdcInspectionReferences.validate(app.repository.collections.campaignImageSelections,
+					campaignDb, pointDb, point.inspection.bdcSelections);
+				if (references) point.inspection.bdcSelections = references;
+				else delete point.inspection.bdcSelections;
+			} catch (error) {
+				if (error.code === 'BDC_INVALID_REFERENCE') return response.status(400).json({ code: error.code, error: error.message });
+				throw error;
 			}
 
 			// Mesma condição de consolidação do código pré-Tier 1: dispara quando o

@@ -36,6 +36,7 @@ const SERVICOS_INJETAVEIS = [
     'fakeRequester',
     'waybackGridService',
     'sampleMarkerService',
+    'bdcImageryService',
     'util'
 ];
 

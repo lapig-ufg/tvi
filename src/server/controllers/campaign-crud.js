@@ -7,6 +7,7 @@ const uploadReceipts = require('../services/geojsonUploadReceipts');
 const campaignZoomLevel = require('../services/campaignZoomLevel');
 const campaignSampleMarker = require('../services/campaignSampleMarker');
 const campaignPropertyDisplay = require('../services/campaignPropertyDisplay');
+const campaignBdcConfig = require('../services/campaignBdcConfig');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -14,6 +15,19 @@ module.exports = function(app) {
     const campaignCollection = app.repository.collections.campaign;
     const pointsCollection = app.repository.collections.points;
     const logger = app.services.logger;
+
+    async function validateBdcConfiguration(input, previous) {
+        const effective = Object.assign({}, previous, input);
+        let catalog = null;
+        if (effective.imagerySource === 'bdc') {
+            try {
+                catalog = await app.services.bdcTilesClient.getCatalog();
+            } catch (error) {
+                return { status: 503, error: 'O catálogo BDC está indisponível. A configuração não foi salva.', field: 'bdcConfig' };
+            }
+        }
+        return campaignBdcConfig.validateBdcConfig(input, catalog, previous);
+    }
     
     // Try to load PropertyAnalyzer with error handling
     let PropertyAnalyzer;
@@ -1170,6 +1184,9 @@ module.exports = function(app) {
                 return res.status(400).json({ error: propertyDisplay.error });
             }
 
+            const bdc = await validateBdcConfiguration(campaignData);
+            if (bdc.error) return res.status(bdc.status || 400).json({ error: bdc.error, field: bdc.field });
+
             const campaign = {
                 _id: campaignData._id,
                 initialYear: parseInt(campaignData.initialYear) || 1985,
@@ -1205,6 +1222,7 @@ module.exports = function(app) {
                 properties: campaignData.properties || [],
                 createdAt: new Date()
             };
+            Object.assign(campaign, bdc.value);
             
             await campaignCollection.insertOne(campaign);
             
@@ -1241,6 +1259,8 @@ module.exports = function(app) {
         try {
             const campaignId = req.params.id;
             const updateData = req.body;
+            const previous = await campaignCollection.findOne({ _id: campaignId });
+            if (!previous) return res.status(404).json({ error: 'Campanha não encontrada.' });
             
             await logger.info('Campaign update requested', {
                 req,
@@ -1421,23 +1441,34 @@ module.exports = function(app) {
                 }
             }
 
+            const bdc = await validateBdcConfiguration(updateData, previous);
+            if (bdc.error) return res.status(bdc.status || 400).json({ error: bdc.error, field: bdc.field });
+            delete updateData.imagerySource;
+            delete updateData.bdcConfig;
+            Object.assign(updateData, bdc.value);
             updateData.updatedAt = new Date();
+
+            const updateQuery = { _id: campaignId };
+            for (const field of ['imagerySource', 'bdcConfig', 'imageType', 'useDynamicMaps', 'wmsConfig']) {
+                updateQuery[field] = Object.prototype.hasOwnProperty.call(previous, field)
+                    ? previous[field] : { $exists: false };
+            }
             
             const result = await campaignCollection.updateOne(
-                { _id: campaignId },
+                updateQuery,
                 { $set: updateData }
             );
             
             if (result.matchedCount === 0) {
-                const errorCode = await logger.warn('Campaign update failed - campaign not found', {
+                const errorCode = await logger.warn('Campaign update rejected after concurrent configuration change', {
                     req,
                     module: 'campaignCrud',
                     function: 'update',
                     metadata: { campaignId }
                 });
                 
-                return res.status(404).json({ 
-                    error: 'Campaign not found',
+                return res.status(409).json({
+                    error: 'A configuração da campanha mudou durante a edição. Recarregue antes de salvar.',
                     errorCode
                 });
             }

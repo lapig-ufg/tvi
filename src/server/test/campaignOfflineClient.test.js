@@ -242,3 +242,14 @@ test('dimensões inválidas não são enviadas nem substituídas silenciosamente
         assert.ok(p.scope.offline.error);
     }
 });
+
+test('campanha BDC não permite iniciar geração offline GEE', async () => {
+    const env = panel();
+    env.calls[0].d.resolve({ data: { status: 'not_started' } });
+    await tick();
+    env.scope.campaign.imagerySource = 'bdc';
+    assert.equal(env.scope.offlineSupported(), false);
+    env.scope.startOffline('start');
+    await tick();
+    assert.equal(env.calls.filter(call => call.method === 'post').length, 0);
+});

@@ -70,7 +70,7 @@ Application.directive('campaignOfflineCache', function () {
                 return status === 'preparing' || status === 'running';
             };
             $scope.offlineSupported = function () {
-                return $scope.campaign && $scope.campaign.useDynamicMaps === true &&
+                return $scope.campaign && $scope.campaign.imagerySource !== 'bdc' && $scope.campaign.useDynamicMaps === true &&
                     ['landsat', 'sentinel-2'].indexOf($scope.campaign.imageType) >= 0 &&
                     !($scope.campaign.wmsConfig && $scope.campaign.wmsConfig.enabled);
             };
@@ -109,7 +109,7 @@ Application.directive('campaignOfflineCache', function () {
                 $scope.refreshOffline();
             };
             $scope.startOffline = function (mode) {
-                if (destroyed || pending || $scope.offline.starting || $scope.offline.confirming || $scope.offlineActive()) return;
+                if (!$scope.offlineSupported() || destroyed || pending || $scope.offline.starting || $scope.offline.confirming || $scope.offlineActive()) return;
                 var coverage = $scope.offline.status && $scope.offline.status.config;
                 var useCoverage = coverage && (mode === 'retry_failed' || $scope.details !== 'true');
                 var width = useCoverage ? coverage.width : $scope.offline.width;
