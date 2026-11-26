@@ -304,6 +304,7 @@ Application.controller('AdminLandsatCollectionsController', function ($scope, $u
 
 // Modal Controller para Editar Sentinel Collections
 Application.controller('AdminSentinelCollectionsController', function ($scope, $uibModalInstance, collections, requester, NotificationDialog) {
+    $scope.bandCount = function(bands) { return Object.keys(bands || {}).length; };
     $scope.data = collections || {
         collections: [],
         default_collection: '',
@@ -341,6 +342,7 @@ Application.controller('AdminSentinelCollectionsController', function ($scope, $
 Application.controller('AdminCollectionBandsController', function ($scope, $uibModalInstance, collectionName, bands) {
     $scope.collectionName = collectionName;
     $scope.bands = bands;
+    $scope.bandCount = Object.keys(bands || {}).length;
     
     $scope.close = function() {
         $uibModalInstance.dismiss('close');

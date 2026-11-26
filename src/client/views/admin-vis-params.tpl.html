@@ -307,7 +307,7 @@
                                         ng-click="viewCollectionBands(collection.name)"
                                         title="Ver bandas">
                                     <i class="fas fa-list"></i>
-                                    Bandas ({{ Object.keys(collection.bands || {}).length }})
+                                    Bandas ({{ bandCount(collection.bands) }})
                                 </button>
                             </div>
                         </div>

@@ -118,14 +118,36 @@ test('clonagem persiste depois de recarregar a página e propaga falhas', async 
     assert.deepEqual(writes, [['../api/vis-params/clone/original%2Fa?new_name=copia', {}]]);
 });
 
-test('coleções e bandas são recuperadas sem depender da listagem', async () => {
+test('coleções e bandas respeitam o documento retornado pelo Tiles em acesso direto', async () => {
     const requests = [];
-    const pages = loadPages({ get: url => { requests.push(url); return Promise.resolve({ data: { data: ['B4'] } }); } });
-    for (const id of ['landsat-collections', 'sentinel-collections', 'collection-bands']) assert.ok(pages[id]);
-    assert.deepEqual(plain(await pages['landsat-collections'].load({})), { collections: ['B4'] });
-    assert.deepEqual(plain(await pages['sentinel-collections'].load({})), { collections: ['B4'] });
-    assert.deepEqual(plain(await pages['collection-bands'].load({ collectionName: 'COPERNICUS/S2' })), { collectionName: 'COPERNICUS/S2', bands: ['B4'] });
-    assert.deepEqual(requests, ['../api/vis-params/landsat-collections', '../api/vis-params/sentinel-collections', '../api/vis-params/sentinel-collections/bands/COPERNICUS%2FS2']);
+    const mapping = { satellite: 'Landsat 5', start_year: 1985, end_year: 2011, collection: 'LANDSAT/LT05/C02/T1_L2' };
+    const bands = { B4: { name: 'Red', resolution: '10m' } };
+    const sentinel = { collections: [{ name: 'COPERNICUS/S2', bands }] };
+    const pages = loadPages({ get: url => {
+        requests.push(url);
+        return Promise.resolve({ data: { data: url.endsWith('/landsat-collections') ? { _id: 'landsat_collections', mappings: [mapping] } : sentinel } });
+    } });
+    const locals = await pages['landsat-collections'].load({});
+    assert.deepEqual(plain(locals), { collections: [mapping] });
+    const form = loadForm('AdminLandsatCollectionsController', locals);
+    form.scope.save();
+    assert.deepEqual(plain(form.requests[0][1]), [mapping]);
+    assert.deepEqual(plain(await pages['sentinel-collections'].load({})), { collections: sentinel });
+    assert.deepEqual(plain(await pages['collection-bands'].load({ collectionName: 'COPERNICUS/S2' })), { collectionName: 'COPERNICUS/S2', bands });
+    assert.deepEqual(requests, ['../api/vis-params/landsat-collections', '../api/vis-params/sentinel-collections', '../api/vis-params/sentinel-collections']);
+    await assert.rejects(pages['collection-bands'].load({ collectionName: 'inexistente' }), /Coleção não encontrada/);
+});
+
+test('listagem extrai os mapeamentos Landsat e conta bandas sem globais no template', () => {
+    const { scope, reads } = loadList();
+    scope.loadCollections();
+    const mapping = { satellite: 'Landsat 8', start_year: 2013, end_year: 2026, collection: 'LANDSAT/LC08/C02/T1_L2' };
+    reads.find(args => args[0].endsWith('/landsat-collections'))[2]({ data: { _id: 'landsat_collections', mappings: [mapping] } });
+    assert.deepEqual(plain(scope.landsatCollections), [mapping]);
+    assert.equal(scope.bandCount({ B1: {}, B2: {} }), 2);
+    assert.equal(scope.bandCount(null), 0);
+    const form = loadForm('AdminCollectionBandsController', { collectionName: 'COPERNICUS/S2', bands: { B4: {} } });
+    assert.equal(form.scope.bandCount, 1);
 });
 
 test('rotas específicas de coleções precedem os parâmetros dinâmicos e mantêm autenticação', () => {

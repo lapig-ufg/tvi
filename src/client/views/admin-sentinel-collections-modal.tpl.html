@@ -71,7 +71,7 @@
                     <p class="text-muted">{{ collection.description }}</p>
                     <p><strong>ID:</strong> <code>{{ collection.name }}</code></p>
                     <p><strong>Data de Início:</strong> {{ collection.start_date }}</p>
-                    <p><strong>Bandas:</strong> {{ Object.keys(collection.bands || {}).length }} disponíveis</p>
+                    <p><strong>Bandas:</strong> {{ bandCount(collection.bands) }} disponíveis</p>
                 </div>
             </div>
         </div>

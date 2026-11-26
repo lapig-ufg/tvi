@@ -9,7 +9,7 @@
 </div>
 
 <div class="modal-body">
-    <div class="bands-grid" ng-if="bands && Object.keys(bands).length > 0">
+    <div class="bands-grid" ng-if="bands && bandCount > 0">
         <div class="band-card" ng-repeat="(bandId, band) in bands">
             <div class="band-header">
                 <span class="band-id">{{ bandId }}</span>
@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div ng-if="!bands || Object.keys(bands).length === 0" class="alert alert-info">
+    <div ng-if="!bands || bandCount === 0" class="alert alert-info">
         <i class="fas fa-info-circle"></i>
         Nenhuma informação de bandas disponível para esta collection.
     </div>

@@ -64,6 +64,7 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
     syncQuery();
 
     // Collections
+    $scope.bandCount = function(bands) { return Object.keys(bands || {}).length; };
     $scope.landsatCollections = [];
     $scope.sentinelCollections = {};
 
@@ -260,7 +261,8 @@ Application.controller('AdminVisParamsController', function ($scope, $http, $loc
         // Carregar Landsat collections
         requester._get('../api/vis-params/landsat-collections', {}, function(response) {
             if (!isCurrentPage()) return;
-            $scope.landsatCollections = response.data || response;
+            const data = response.data || response;
+            $scope.landsatCollections = Array.isArray(data) ? data : data.mappings;
             
             // Carregar Sentinel collections
             requester._get('../api/vis-params/sentinel-collections', {}, function(response) {

@@ -105,7 +105,7 @@ Application.run(function(AdminPages, $http) {
         controller: 'AdminLandsatCollectionsController',
         parent: parent,
         load: function() {
-            return get('../api/vis-params/landsat-collections').then(function(collections) { return { collections: collections }; });
+            return get('../api/vis-params/landsat-collections').then(function(collections) { return { collections: Array.isArray(collections) ? collections : collections.mappings }; });
         }
     });
 
@@ -128,8 +128,11 @@ Application.run(function(AdminPages, $http) {
         controller: 'AdminCollectionBandsController',
         parent: parent,
         load: function(params) {
-            return get('../api/vis-params/sentinel-collections/bands/' + identifier(params, 'collectionName')).then(function(bands) {
-                return { collectionName: params.collectionName, bands: bands };
+            identifier(params, 'collectionName');
+            return get('../api/vis-params/sentinel-collections').then(function(config) {
+                const collection = (config.collections || []).find(function(item) { return item.name === params.collectionName; });
+                if (!collection) throw new Error('Coleção não encontrada.');
+                return { collectionName: params.collectionName, bands: collection.bands || {} };
             });
         }
     });
