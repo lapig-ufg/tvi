@@ -145,10 +145,17 @@ Application.service('diagnosticCapture', function () {
 
     for (var i = 0; i < tileImgs.length; i++) {
       var src = tileImgs[i].getAttribute('src');
-      if (src && !src.startsWith('data:') && !src.startsWith('/service/tile-proxy')) {
-        // Reescrever para passar pelo proxy local (same-origin)
-        tileImgs[i].setAttribute('src', '/service/tile-proxy?url=' + encodeURIComponent(src));
+      if (!src) continue;
+      var url;
+      try {
+        url = new URL(src, window.location.href);
+      } catch (e) {
+        continue;
       }
+      // URLs blob pertencem ao navegador; o servidor não pode recuperar seu conteúdo.
+      if ((url.protocol !== 'http:' && url.protocol !== 'https:') ||
+          url.origin === window.location.origin) continue;
+      tileImgs[i].setAttribute('src', '/service/tile-proxy?url=' + encodeURIComponent(url.href));
     }
   }
 
