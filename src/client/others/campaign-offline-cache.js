@@ -55,6 +55,7 @@ Application.directive('campaignOfflineCache', function () {
                 bdc_origin_paused: 'Consultas à origem BDC temporariamente suspensas',
                 bdc_selection_failed: 'Falha na seleção das aquisições BDC',
                 bdc_no_image: 'Nenhuma imagem elegível na seleção BDC preservada',
+                bdc_tile_no_data: 'Recorte sem pixels válidos na aquisição selecionada',
                 bdc_tile_outside: 'Recorte fora da cobertura da aquisição BDC',
                 empty_collection: 'Nenhuma cena disponível para os critérios do período',
                 invalid_tile: 'Imagem inválida; ausência de dados não comprovada',
