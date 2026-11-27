@@ -52,7 +52,7 @@ module.exports = function (app) {
                     if (!selected) return res.status(404).json({ error: 'Referência não encontrada.' });
                 } else {
                     selected = await app.services.bdcSelectionService.resolve(ctx.campaign, ctx.point, Number(input.year), input.period, start, input.retry === true);
-                    if (!selected) return res.status(404).json({ code: 'BDC_NOT_STARTED', error: 'Seleção BDC ainda não solicitada.' });
+                    if (!selected) return res.status(200).json({ state: 'not_started', code: 'BDC_NOT_STARTED' });
                 }
                 await context(req, ctx.point._id, ctx.campaign._id);
                 res.status(start && ['pending', 'running'].includes(selected.state) ? 202 : 200).json(present(selected));

@@ -40,7 +40,10 @@ test('seleções exigem sessão e associação real entre ponto e campanha', asy
     assert.equal((await f.get('/service/points/p/bdc-selections?year=2020&period=DRY', null)).status, 401);
     assert.equal((await f.get('/service/points/p/bdc-selections?year=2020&period=DRY', 'other')).status, 404);
     assert.equal((await f.get('/service/points/p/bdc-selections?year=2020&period=DRY', 'supervisor')).status, 200);
-    assert.equal((await f.get('/service/points/p/bdc-selections?year=2021&period=WET')).status, 404);
+    const pending = await f.get('/service/points/p/bdc-selections?year=2021&period=WET');
+    assert.equal(pending.status, 200);
+    assert.equal((await pending.json()).state, 'not_started');
+    assert.equal((await f.get('/service/points/missing/bdc-selections?year=2021&period=WET')).status, 404);
 });
 
 test('histórico conserva coordenadas e URLs relativas mesmo após campanha mudar de fonte', async t => {
