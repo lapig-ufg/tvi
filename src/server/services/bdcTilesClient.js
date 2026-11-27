@@ -32,6 +32,28 @@ function create(transport, credentials) {
     }
     return {
         getCatalog() { return request('get', '/api/bdc/collections'); },
+        async searchImages(params) {
+            if (!params || !['landsat-2', 'S2_L2A-1'].includes(params.collection)
+                || !Array.isArray(params.bbox) || params.bbox.length !== 4 || !params.bbox.every(Number.isFinite)
+                || ![params.start, params.end].every(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
+                || !Number.isInteger(params.page) || params.page < 1 || params.page > 1000
+                || !Number.isInteger(params.limit) || params.limit < 1 || params.limit > 24
+                || !Number.isInteger(params.maxCloud) || params.maxCloud < 0 || params.maxCloud > 100) {
+                throw Object.assign(new Error('Consulta de imagens BDC inválida.'), { status: 400 });
+            }
+            return request('get', '/api/bdc/search', undefined, false, {
+                params: { collection: params.collection, bbox: params.bbox.join(','), start: params.start, end: params.end,
+                    page: params.page, limit: params.limit, max_cloud: params.maxCloud }, maxContentLength: 4 * 1024 * 1024
+            });
+        },
+        async getItem(collection, item) {
+            if (!['landsat-2', 'S2_L2A-1'].includes(collection)
+                || typeof item !== 'string' || !/^[A-Za-z0-9_.-]{1,180}$/.test(item) || ['.', '..'].includes(item)) {
+                throw Object.assign(new Error('Aquisição BDC inválida.'), { status: 400 });
+            }
+            return request('get', '/api/bdc/items/' + encodeURIComponent(collection) + '/' + encodeURIComponent(item),
+                undefined, false, { maxContentLength: 1024 * 1024 });
+        },
         createJob(params) { return request('post', '/api/bdc/selection-jobs', params, true); },
         async getTile(collection, item, profile, z, x, y) {
             if (!['landsat-2', 'S2_L2A-1'].includes(collection)

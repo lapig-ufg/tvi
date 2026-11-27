@@ -1,6 +1,6 @@
 'use strict';
 
-Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMarkerService) {
+Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMarkerService, bdcQueuedTileLayer) {
     return {
         restrict: 'E',
         scope: {
@@ -20,6 +20,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
             var marker = null;
             var swipePosition = 0.5; // Posição inicial do swipe (50%)
             var swipeEl = null;
+            var swipeCleanup = null;
             var isDragging = false;
             var destroyed = false;
             var pendingTimeouts = [];
@@ -80,6 +81,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
 
             function buildTileUrl(layerConfig) {
                 if (!layerConfig) return null;
+                if (layerConfig.source === 'bdc') return layerConfig.tileUrl;
 
                 var baseUrl = layerConfig.baseUrl || 'https://tm{s}.lapig.iesa.ufg.br/api/layers/';
                 var url = baseUrl + layerConfig.collection + '/{x}/{y}/{z}';
@@ -137,7 +139,20 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 //     );
                 // }
 
-                var layer = L.tileLayer(tileUrl, options);
+                var layer = layerConfig.source === 'bdc' ? bdcQueuedTileLayer.create(tileUrl, options) : L.tileLayer(tileUrl, options);
+                if (!layer) return null;
+                if (layerConfig.source === 'bdc') {
+                    layer.bdcExploration = true;
+                    function notify(name) {
+                        scope.$evalAsync(function () {
+                            if (!destroyed && (scope.leftLayer === layerConfig || scope.rightLayer === layerConfig)
+                                && typeof layerConfig[name] === 'function') layerConfig[name]();
+                        });
+                    }
+                    layer.on('loading', function () { notify('onLoading'); });
+                    layer.on('load', function () { notify('onLoaded'); });
+                    layer.on('tileerror', function () { notify('onError'); });
+                }
                 
                 // Adicionar fade in quando a camada for adicionada ao mapa
                 layer.on('add', function() {
@@ -175,6 +190,11 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 
                 // Função para fazer fade out e remover camada
                 function fadeOutAndRemove(layer, callback) {
+                    if (layer && layer.bdcExploration) {
+                        if (map && map.hasLayer(layer)) map.removeLayer(layer);
+                        if (callback) callback();
+                        return;
+                    }
                     if (layer && layer.getContainer()) {
                         var container = layer.getContainer();
                         container.style.transition = 'opacity 0.3s ease-out';
@@ -229,6 +249,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                             }
                         } else {
                             isUpdating.right = false;
+                            removeSwipeControl();
                         }
                     }
                     
@@ -267,17 +288,8 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 }
                 
                 // Remover controle de swipe se existir (apenas se não for updateOnlyRight)
-                if (!updateOnlyRight && swipeEl) {
-                    swipeEl.style.opacity = '0';
-                    swipeEl.style.transition = 'opacity 0.3s ease-out';
-                    safeTimeout(function() {
-                        if (swipeEl) {
-                            swipeEl.remove();
-                            swipeEl = null;
-                        }
-                    }, 300);
-                }
-                
+                if (!updateOnlyRight && swipeEl) removeSwipeControl();
+
                 function addNewLayers() {
                     // Criar novas camadas
                     if (scope.leftLayer) {
@@ -321,6 +333,12 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 }
             }
 
+            function removeSwipeControl() {
+                if (swipeCleanup) { swipeCleanup(); swipeCleanup = null; }
+                if (swipeEl) { swipeEl.remove(); swipeEl = null; }
+                isDragging = false;
+            }
+
             function createSwipeControl() {
                 if (!leftLayerObj || !rightLayerObj) return;
                 
@@ -328,10 +346,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 var previousPosition = swipePosition;
                 
                 // Remover controle existente se houver
-                if (swipeEl) {
-                    swipeEl.remove();
-                    swipeEl = null;
-                }
+                removeSwipeControl();
                 
                 // Restaurar posição anterior
                 swipePosition = previousPosition;
@@ -488,11 +503,19 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 swipeEl.addEventListener('touchstart', onTouchStart);
 
                 // Atualizar o swipe quando o mapa for redimensionado
-                map.on('resize', function() {
+                function onResize() {
                     if (!swipeEl) return;
                     var rect = mapContainer.getBoundingClientRect();
                     updateSwipe(rect.left + swipePosition * rect.width);
-                });
+                }
+                map.on('resize', onResize);
+                swipeCleanup = function () {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    if (map) map.off('resize', onResize);
+                };
 
                 // Usar posição salva ou posição inicial
                 updateSwipe(mapRect.left + mapRect.width * swipePosition);
@@ -544,10 +567,7 @@ Application.directive('leafletSwipeMap', function($timeout, $injector, sampleMar
                 pendingTimeouts.forEach(function(t) { $timeout.cancel(t); });
                 pendingTimeouts.length = 0;
 
-                if (swipeEl) {
-                    swipeEl.remove();
-                    swipeEl = null;
-                }
+                removeSwipeControl();
                 if (map) {
                     safeDestroyMap(map);
                     map = null;

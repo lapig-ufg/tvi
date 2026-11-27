@@ -74,3 +74,18 @@ test('capacidade temporariamente ocupada preserva Retry-After validado', async (
         });
     }
 });
+
+test('exploração consulta STAC por caminhos fixos sem credenciais nem URLs externas', async () => {
+    const calls = [];
+    const client = factory.create({ request: async config => { calls.push(config); return { data: { items: [] } }; } });
+    await client.searchImages({ collection: 'landsat-2', bbox: [-49.001, -3.001, -48.999, -2.999], start: '2020-01-01', end: '2020-12-31', page: 2, limit: 24, maxCloud: 80 });
+    await client.getItem('landsat-2', 'scene-1');
+    assert.equal(calls[0].url, '/api/bdc/search');
+    assert.deepEqual(calls[0].params, { collection: 'landsat-2', bbox: '-49.001,-3.001,-48.999,-2.999', start: '2020-01-01', end: '2020-12-31', page: 2, limit: 24, max_cloud: 80 });
+    assert.equal(calls[1].url, '/api/bdc/items/landsat-2/scene-1');
+    assert.equal(calls[0].headers, undefined);
+    assert.equal(calls[1].maxRedirects, 0);
+    await assert.rejects(client.getItem('landsat-2', '../segredo'), { status: 400 });
+    await assert.rejects(client.getItem('outra', 'scene'), { status: 400 });
+    assert.equal(calls.length, 2);
+});

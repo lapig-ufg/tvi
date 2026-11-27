@@ -9,6 +9,34 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     $scope.config = config;
     $scope.year = map.year || new Date(map.date).getFullYear();
     $scope.period = period;
+
+    var bdcBrowser;
+    $scope.imagerySource = { right: 'sentinel' };
+    $scope.bdcAvailable = config.imagerySource === 'bdc' && config.bdcConfig
+        && ['landsat-2', 'S2_L2A-1'].indexOf(config.bdcConfig.collection) !== -1
+        && $injector.has('bdcImageBrowserService');
+    if ($scope.bdcAvailable) {
+        bdcBrowser = $injector.get('bdcImageBrowserService').create({ pointId: point._id, year: $scope.year }, function (layer) {
+            if ($scope.imagerySource.right !== 'bdc') return;
+            if (layer) {
+                layer.onError = function () { bdcBrowser.failTile(); };
+                layer.onLoading = function () { $scope.bdcBrowser.tileLoading = true; };
+                layer.onLoaded = function () { $scope.bdcBrowser.tileLoading = false; };
+            }
+            $scope.rightMapConfig = layer;
+            $scope.rightLayerLabel = layer ? 'BDC ' + (layer.datetime || layer.itemId) : 'BDC';
+        });
+        $scope.bdcBrowser = bdcBrowser.state;
+    }
+    $scope.changeRightSource = function () {
+        if (bdcBrowser) bdcBrowser.suspend();
+        $scope.rightMapConfig = null;
+        if ($scope.imagerySource.right === 'bdc' && bdcBrowser) bdcBrowser.search(1);
+        else doUpdateMapLayers(true);
+    };
+    $scope.searchBdcImages = function (page) { if (bdcBrowser) bdcBrowser.search(page || 1); };
+    $scope.selectBdcImage = function () { if (bdcBrowser) bdcBrowser.select(); };
+    $scope.changeBdcComposition = function () { if (bdcBrowser) bdcBrowser.applyProfile(); };
     
     // Timers para debounce
     var updateTimers = {
@@ -118,6 +146,7 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     };
 
     $scope.getLegend = function(satellite) {
+        if (satellite === 'sentinel' && $scope.imagerySource.right === 'bdc') return null;
         var details = satellite === 'landsat' ? $scope.landsatVisparamDetails : $scope.sentinelVisparamDetails;
         var selected = satellite === 'landsat' ? $scope.selectedLandsatVisparam : $scope.selectedSentinelVisparam;
         if (!selected || !Array.isArray(details)) {
@@ -182,6 +211,8 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
             }
         }
         
+        if ($scope.imagerySource.right === 'bdc') return;
+
         // Configuração da camada direita (Sentinel)
         if ($scope.hasSentinelImageForYear($scope.year) && $scope.selectedSentinelVisparam) {
             var sentinelPeriod = $scope.monthly.enabled ? 'MONTH' : $scope.period;
@@ -257,6 +288,7 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     
     // Fechar modal
     $scope.close = function() {
+        if (bdcBrowser) bdcBrowser.dispose();
         // Cancelar timers pendentes
         if (updateTimers.month) {
             $timeout.cancel(updateTimers.month);
@@ -270,6 +302,7 @@ Application.controller('MosaicDialogController', function ($scope, $uibModalInst
     
     // Limpar timers quando o scope for destruído
     $scope.$on('$destroy', function() {
+        if (bdcBrowser) bdcBrowser.dispose();
         if (updateTimers.month) {
             $timeout.cancel(updateTimers.month);
         }

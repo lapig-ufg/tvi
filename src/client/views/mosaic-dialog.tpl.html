@@ -43,9 +43,53 @@
     
     <!-- Controles -->
     <div class="comparison-controls">
+        <div class="bdc-explorer-controls" ng-if="bdcAvailable">
+            <label>{{ 'BDC.BROWSER_SOURCE' | i18n }}
+                <select class="form-control" ng-model="imagerySource.right" ng-change="changeRightSource()">
+                    <option value="sentinel">Sentinel-2 / GEE</option>
+                    <option value="bdc">Brazil Data Cube</option>
+                </select>
+            </label>
+            <div ng-if="imagerySource.right === 'bdc'">
+                <p>{{ 'BDC.BROWSER_NOTICE' | i18n }}</p>
+                <div class="bdc-explorer-fields">
+                    <label>{{ 'BDC.BROWSER_PERIOD' | i18n }}
+                        <select class="form-control" ng-model="bdcBrowser.period" ng-change="searchBdcImages(1)">
+                            <option value="YEAR">{{ 'BDC.BROWSER_YEAR' | i18n }}</option>
+                            <option value="WET">{{ 'BDC.BROWSER_WET' | i18n }}</option>
+                            <option value="DRY">{{ 'BDC.BROWSER_DRY' | i18n }}</option>
+                            <option value="CUSTOM">{{ 'BDC.BROWSER_CUSTOM' | i18n }}</option>
+                        </select>
+                    </label>
+                    <label ng-if="bdcBrowser.period === 'CUSTOM'">{{ 'BDC.BROWSER_START' | i18n }}
+                        <input class="form-control" type="date" ng-model="bdcBrowser.start" min="{{year}}-01-01" max="{{year}}-12-31">
+                    </label>
+                    <label ng-if="bdcBrowser.period === 'CUSTOM'">{{ 'BDC.BROWSER_END' | i18n }}
+                        <input class="form-control" type="date" ng-model="bdcBrowser.end" min="{{year}}-01-01" max="{{year}}-12-31">
+                    </label>
+                    <button type="button" class="btn btn-default" ng-if="bdcBrowser.period === 'CUSTOM'" ng-disabled="!bdcBrowser.start || !bdcBrowser.end || bdcBrowser.loading" ng-click="searchBdcImages(1)">{{ 'COMMON.SEARCH' | i18n }}</button>
+                    <label ng-if="bdcBrowser.items.length">{{ 'BDC.BROWSER_ACQUISITION' | i18n }}
+                        <select class="form-control" ng-model="bdcBrowser.selectedId" ng-change="selectBdcImage()" ng-options="item.id as ((item.datetime | date:'dd/MM/yyyy':'UTC') + ' · ' + item.id) for item in bdcBrowser.items">
+                            <option value="">{{ 'BDC.BROWSER_SELECT' | i18n }}</option>
+                        </select>
+                    </label>
+                    <label ng-if="bdcBrowser.profiles.length">{{ 'BDC.AVAILABLE_PROFILES' | i18n }}
+                        <select class="form-control" ng-model="bdcBrowser.profile" ng-change="changeBdcComposition()" ng-options="profile.id as (profile.label || profile.id) for profile in bdcBrowser.profiles"></select>
+                    </label>
+                </div>
+                <p role="status" ng-if="bdcBrowser.loading || bdcBrowser.tileLoading">{{ 'BDC.LOADING_IMAGE' | i18n }}</p>
+                <p role="alert" ng-if="bdcBrowser.error">{{ bdcBrowser.error | i18n }} <button type="button" class="btn btn-default btn-sm" ng-click="bdcBrowser.selectedId ? selectBdcImage() : searchBdcImages(bdcBrowser.page)">{{ 'BDC.RETRY' | i18n }}</button></p>
+                <p ng-if="!bdcBrowser.loading && !bdcBrowser.error && !bdcBrowser.items.length">{{ 'BDC.BROWSER_EMPTY' | i18n }}</p>
+                <div class="bdc-explorer-pages">
+                    <button type="button" class="btn btn-default btn-sm" ng-disabled="bdcBrowser.loading || bdcBrowser.page <= 1" ng-click="searchBdcImages(bdcBrowser.page - 1)">{{ 'BDC.BROWSER_PREVIOUS' | i18n }}</button>
+                    <span>{{ 'BDC.BROWSER_PAGE' | i18n }} {{bdcBrowser.page}}</span>
+                    <button type="button" class="btn btn-default btn-sm" ng-disabled="bdcBrowser.loading || !bdcBrowser.nextPage" ng-click="searchBdcImages(bdcBrowser.nextPage)">{{ 'BDC.BROWSER_NEXT' | i18n }}</button>
+                </div>
+            </div>
+        </div>
         <!-- Toggle para visualização mensal (só quando o Sentinel cobre o ano;
              antes de 2017 o modal exibe apenas a camada Landsat) -->
-        <div class="control-group" ng-if="hasSentinelImageForYear(year)">
+        <div class="control-group" ng-if="imagerySource.right !== 'bdc' && hasSentinelImageForYear(year)">
             <label class="switch">
                 <input type="checkbox" ng-model="monthly.enabled" ng-change="updateMapLayers()">
                 <span class="slider round"></span>
@@ -57,7 +101,7 @@
         </div>
         
         <!-- Slider de meses (apenas com o modo mensal ativo) -->
-        <div class="month-controls" ng-show="monthly.enabled">
+        <div class="month-controls" ng-show="imagerySource.right !== 'bdc' && monthly.enabled">
             <label>{{ 'MOSAIC.MONTH' | i18n }}:</label>
             <input type="range" 
                    class="month-slider" 
@@ -87,7 +131,7 @@
             </div>
             
             <!-- Visparam Sentinel (oculto quando o Sentinel não cobre o ano) -->
-            <div class="visparam-section" ng-if="sentinelVisparams.length > 0 && hasSentinelImageForYear(year)">
+            <div class="visparam-section" ng-if="imagerySource.right !== 'bdc' && sentinelVisparams.length > 0 && hasSentinelImageForYear(year)">
                 <div class="visparam-header">
                     <i class="fa fa-satellite-dish"></i>
                     <span>{{ 'MOSAIC.SENTINEL_VISUALIZATION' | i18n }}</span>
@@ -110,6 +154,11 @@
 </div>
 
 <style>
+.bdc-explorer-fields { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.bdc-explorer-fields label { min-width: 0; max-width: 100%; }
+.bdc-explorer-fields select { max-width: 100%; }
+.bdc-explorer-pages { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.bdc-explorer-controls { margin-bottom: 16px; }
 /* Modal Header Customizado */
 .modal-header {
     background: black;

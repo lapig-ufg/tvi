@@ -219,8 +219,8 @@ test('template: ligações ng-model usam caminho com ponto e o slider aciona o d
     });
 
     assert.match(html, /ng-model="monthly\.enabled"/);
-    assert.match(html, /ng-show="monthly\.enabled"/);
+    assert.match(html, /ng-show="imagerySource\.right !== \'bdc\' && monthly\.enabled"/);
     assert.match(html, /ng-model="monthly\.month"[\s\S]*?ng-change="updateMapLayers\(true,\s*true\)"/);
-    assert.match(html, /<div class="control-group" ng-if="hasSentinelImageForYear\(year\)">/);
+    assert.match(html, /<div class="control-group" ng-if="imagerySource\.right !== \'bdc\' && hasSentinelImageForYear\(year\)">/);
     assert.ok(!/showMonthlyView|selectedMonth/.test(html), 'identificadores antigos não devem permanecer no template');
 });

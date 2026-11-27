@@ -529,3 +529,25 @@ test('perfil indisponível na aquisição histórica não consulta outra seleç�
     assert.equal(d.calls.filter(call => typeof call === 'object').length, 1);
     assert.equal(d.viewed.length, 0);
 });
+
+test('botão anual permite exploração BDC mesmo fora da cobertura das imagens auxiliares', () => {
+    for (const name of ['temporal', 'supervisor']) {
+        const template = fs.readFileSync(path.join(__dirname, '../../client/views/' + name + '.tpl.html'), 'utf8');
+        const toolbar = template.match(/<span class="planet-button"[\s\S]*?<\/span>/)[0];
+        const visible = toolbar.match(/ng-if="([^"]+)"/)[1];
+        const click = toolbar.match(/ng-click="([^"]+)"/)[1];
+        const opened = [];
+        const context = { isBdc: true, map: { year: 2020 }, point: { _id: 'p' }, config: { imagerySource: 'bdc' },
+            hasMosaicForYear: year => year === 2020,
+            openMosaicDialog: (map, point, config) => opened.push({ map, point, config }) };
+        assert.equal(vm.runInNewContext(visible, context), true);
+        vm.runInNewContext(click, context);
+        assert.equal(opened[0].map.year, 2020);
+        assert.equal(opened[0].point._id, 'p');
+        assert.equal(opened[0].config.imagerySource, 'bdc');
+        context.map.year = 1970;
+        assert.equal(vm.runInNewContext(visible, context), true);
+        context.config.imagerySource = 'gee';
+        assert.equal(vm.runInNewContext(visible, context), false);
+    }
+});
