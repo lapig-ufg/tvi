@@ -195,23 +195,15 @@ module.exports = function(app) {
 	 * GET /cached-points — Pontos com/sem cache
 	 */
 	CampaignMonitoring.cachedPoints = function(req, res) {
-		var campaignId = req.params.id;
-		var cursor = points.find({ campaign: campaignId });
-		var result = { pointsCached: 0, pointsNoCached: 0 };
-
-		cursor.toArray(function(error, docs) {
-			if (error) return res.status(500).json({ error: 'Erro de banco de dados' });
-
-			docs.forEach(function(doc) {
-				if (doc.cached === false) {
-					result.pointsNoCached++;
-				} else {
-					result.pointsCached++;
-				}
-			});
-			res.json(result);
-		});
-	};
+        withCampaign(req.params.id, req, res, async function(campaign) {
+            try {
+                const summary = require('../services/campaignCacheSummary')(app);
+                res.json(await summary(campaign._id, req));
+            } catch (error) {
+                res.status(503).json({ error: 'Não foi possível consultar o cache por ponto.' });
+            }
+        });
+    };
 
 	/**
 	 * GET /agreement — Concordância entre inspetores por ano

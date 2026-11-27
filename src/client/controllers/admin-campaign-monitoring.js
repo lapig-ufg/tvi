@@ -16,6 +16,7 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 	var chartsGd = [];
 	var socket = null;
 	var refreshDebounce = null;
+    var cacheTimer = null;
 	var chartsGeneration = 0; // Guard contra race condition em refreshes sobrepostos
 
 	$scope.campaignId = $routeParams.id;
@@ -204,11 +205,20 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 			checkDone();
 		}, checkDone);
 
-		$http.get(apiBase + '/cached-points').then(function(r) {
-			if (isStale()) return;
-			$timeout(function() { createCachedPointsChart(r.data); });
-			checkDone();
-		}, checkDone);
+        if (cacheTimer) $timeout.cancel(cacheTimer);
+        function refreshCache(first) {
+            if (isStale()) return;
+            $http.get(apiBase + '/cached-points', { hideLoading: true, timeout: 30000 }).then(function(r) {
+                if (isStale()) return;
+                createCachedPointsChart(r.data);
+            }, function() {
+                if (!isStale() && first) createCachedPointsChart(null);
+            }).finally(function() {
+                if (first) checkDone();
+                if (!isStale()) cacheTimer = $timeout(function() { refreshCache(false); }, 30000);
+            });
+        }
+        refreshCache(true);
 
 		$http.get(apiBase + '/agreement').then(function(r) {
 			if (isStale()) return;
@@ -349,15 +359,15 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 		}
 
 		// Campanha sem pontos: ambos zero
-		if ((data.pointsCached || 0) + (data.pointsNoCached || 0) === 0) {
+		if ((data.pointsCached || 0) + (data.pointsNoCached || 0) + (data.pointsPartial || 0) + (data.pointsNoData || 0) === 0) {
 			showNoDataMessage(gd, 'Pontos em Cache', 400);
 			return;
 		}
 
-		Plotly.newPlot(gd, [{
-			values: [data.pointsCached, data.pointsNoCached],
-			marker: { colors: ['rgba(29,84,54,0.9)', 'rgba(208,201,26,0.9)'] },
-			labels: ['Com cache', 'Sem cache'],
+		Plotly.react(gd, [{
+			values: [data.pointsCached, data.pointsPartial || 0, data.pointsNoCached, data.pointsNoData || 0],
+			marker: { colors: ['#2d7653', '#e9a23b', '#cbd5e1', '#8070ad'] },
+			labels: ['Cache completo', 'Cache parcial', 'Pendente de cache válido', 'Sem imagem comprovada'],
 			type: 'pie',
 			hoverinfo: 'label+value'
 		}], {
@@ -365,7 +375,7 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 			title: 'Pontos em Cache',
 			titlefont: { size: 16 }
 		}, { displayModeBar: false });
-		chartsGd.push(gd);
+		if (chartsGd.indexOf(gd) === -1) chartsGd.push(gd);
 	}
 
 	function createAgreementPointsChart(data) {
@@ -667,6 +677,8 @@ Application.controller('AdminCampaignMonitoringController', function($scope, $ht
 	// ========== CLEANUP ==========
 
 	$scope.$on('$destroy', function() {
+        chartsGeneration++;
+        if (cacheTimer) $timeout.cancel(cacheTimer);
 		// Socket
 		if (socket) {
 			socket.emit('leave', 'campaign-monitoring-' + $scope.campaignId);
