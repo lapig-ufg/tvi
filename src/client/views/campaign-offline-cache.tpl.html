@@ -9,6 +9,7 @@
         <p ng-if="campaign.imagerySource === 'bdc' && !offlineSupported()" class="alert alert-warning">Revise a configuração BDC da campanha antes de iniciar o cache: sensor, coleção, anos, estratégia, raio, revisão e composições devem ser válidos, com mapas dinâmicos e sem WMS.</p>
         <p role="alert" ng-if="offline.error" class="alert alert-danger">{{offline.error}}</p>
         <div ng-if="offline.status">
+            <p class="text-muted" ng-if="offline.status.config.policy === 'configured-default-v2'">Pré-cache: composição {{offline.status.config.visualizations[0]}}, zoom {{offline.status.config.zooms[0]}}, cobertura {{offline.status.config.width}} × {{offline.status.config.height}} pixels. Outras composições e zooms são carregados sob demanda.</p>
             <div class="campaign-offline-status" aria-live="polite">
                 <strong>{{offlineLabels[offline.status.status] || offline.status.status}}</strong>
                 <span ng-if="offlineSummary.total">{{offlineSummary.percent | number:1}}% verificados · {{offlineSummary.verified | number}} de {{offlineSummary.total | number}} itens</span>

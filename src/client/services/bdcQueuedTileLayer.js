@@ -9,6 +9,9 @@ angular.module('application').factory('bdcQueuedTileLayer', function ($window, b
                 var tile = $window.document.createElement('img');
                 var objectUrl, timer, cancelled = false;
                 tile.alt = '';
+                tile.setAttribute('data-tile-x', coords.x);
+                tile.setAttribute('data-tile-y', coords.y);
+                tile.setAttribute('data-tile-z', coords.z);
                 tile.setAttribute('role', 'presentation');
                 function release() {
                     if (timer) $window.clearTimeout(timer);
