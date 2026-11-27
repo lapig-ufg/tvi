@@ -202,19 +202,19 @@
     </section>
 
     <!-- Main Content -->
-    <div class="campaigns-content" aria-busy="{{loading}}">
+    <section class="campaigns-content campaign-results-card" aria-label="Resultados das campanhas" aria-busy="{{loading}}">
         <!-- Table Header Info -->
         <div class="table-info">
             <div class="info-text">
                 Mostrando {{ campaigns.length }} de {{ pagination.totalCampaigns }} campanhas
-                <span class="page-info">(Página {{ pagination.currentPage }} de {{ pagination.totalPages }})</span>
+                <span class="page-info" ng-if="pagination.totalCampaigns > 0">(Página {{ pagination.currentPage }} de {{ pagination.totalPages }})</span>
                 <span class="filter-indicator" ng-show="hasActiveFilters()">
                     <i class="fas fa-filter"></i> Filtrado
                 </span>
             </div>
             <div class="items-per-page">
-                <label>Itens por página:</label>
-                <select class="page-select" aria-label="Itens por página" ng-model="pagination.limit" ng-options="size as size for size in pageSizes" ng-change="loadCampaigns(1)"></select>
+                <label for="campaign-page-size">Itens por página:</label>
+                <select id="campaign-page-size" class="page-select" aria-label="Itens por página" ng-model="pagination.limit" ng-options="size as size for size in pageSizes" ng-change="loadCampaigns(1)"></select>
             </div>
         </div>
 
@@ -352,7 +352,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
 <style>
@@ -1136,4 +1136,13 @@
 .admin-campaigns-container .campaign-filter-error { color: #9b322e; }
 @media (max-width: 1000px) { .admin-campaigns-container .campaign-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .admin-campaigns-container .campaign-search-row { flex-wrap: wrap; padding: 16px; gap: 12px; } .admin-campaigns-container .campaign-search { flex-basis: 100%; } .admin-campaigns-container .campaign-sort { flex: 1; width: auto; } .admin-campaigns-container .campaign-filter-grid { grid-template-columns: 1fr; } .admin-campaigns-container .campaign-filter-details { padding: 8px 16px 16px; } }
+
+.admin-campaigns-container .campaign-results-card { background: #fff; border: 1px solid #dce5ed; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.05); }
+.admin-campaigns-container .campaign-results-card .table-info { margin: 0; padding: 16px 24px; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #e2e9ef; }
+.admin-campaigns-container .campaign-results-card .table-container { border-radius: 0 0 12px 12px; box-shadow: none; }
+.admin-campaigns-container .campaign-results-card .pagination-container { margin: 0; padding: 16px 24px; border-top: 1px solid #e2e9ef; }
+.admin-campaigns-container .campaign-results-card .pagination { margin: 0; flex-wrap: wrap; justify-content: center; }
+.admin-campaigns-container .campaign-results-card .items-per-page { margin-left: auto; flex-shrink: 0; }
+.admin-campaigns-container .campaign-results-card .items-per-page label { margin: 0; }
+@media (max-width: 640px) { .admin-campaigns-container .campaign-results-card .table-info { padding: 16px; } .admin-campaigns-container .campaign-results-card .items-per-page { margin-left: 0; } }
 </style>

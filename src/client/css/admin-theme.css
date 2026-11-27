@@ -221,7 +221,7 @@ body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *
 body.admin-interface .page-view .header-content { width: 100%; max-width: 1600px; padding: 20px 24px; }
 body.admin-interface .page-view :not(:where(.leaflet-container *, .ol-viewport *, .js-plotly-plot *)):is(.admin-content, .campaign-content, .modules-grid, .system-overview,
     .logs-stats, .logs-filters, .activity-chart, .logs-list, .stats-bar, .filters-section,
-    .campaigns-section, .generate-panel, .toolbar, .blocks-table-container) { max-width: 1552px; }
+    .campaigns-section, .campaigns-content, .generate-panel, .toolbar, .blocks-table-container) { max-width: 1552px; }
 body.admin-interface .page-view .modules-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); }
 body.admin-interface .page-view .module-card { align-items: flex-start; }
 body.admin-interface .page-view .module-card h2 { font-size: 20px; }
