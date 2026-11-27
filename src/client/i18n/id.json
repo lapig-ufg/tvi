@@ -31,7 +31,8 @@
     "HISTORICAL": "Citra yang dicatat dalam inspeksi",
     "CURRENT": "Revisi kampanye saat ini",
     "INSPECTION": "Inspeksi",
-    "HISTORY_NOTICE": "Setiap inspeksi menyimpan referensinya sendiri. Citra tidak ditetapkan secara retrospektif tanpa referensi historis."
+    "HISTORY_NOTICE": "Setiap inspeksi mempertahankan referensi yang tercatat, termasuk periode tanpa citra yang memenuhi syarat. Untuk periode tanpa referensi, konfigurasi BDC kampanye saat ini hanya menyediakan pratinjau tanpa mengubah inspeksi.",
+    "PREVIEW_NOTICE": "Pratinjau saat ini; tidak ada referensi yang tercatat dalam inspeksi ini."
   },
   "COMMON": {
     "SEARCH": "Cari",

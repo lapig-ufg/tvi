@@ -121,10 +121,10 @@ test('supervisão preserva referências históricas mesmo diante de configuraç�
     grid.configure({ imagerySource: 'bdc', bdcConfig: { selectionRevision: 2, defaultProfile: 'rgb', profiles: ['rgb'] } });
     assert.equal(scope.bdc.view, 'history');
     assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'old');
-    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019]);
+    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019, 2020, 2021]);
     scope.bdc.view = 'current';
     assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'old');
-    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019]);
+    assert.deepEqual(JSON.parse(JSON.stringify(scope.buildBdcMaps().map(map => map.year))), [2019, 2020, 2021]);
     assert.equal(c.calls.length, 0);
 });
 
@@ -416,14 +416,16 @@ test('composições têm rótulos legíveis mantendo os identificadores e refer�
     assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), 'false-color');
 });
 
-test('supervisão sem referência não substitui anos nem composição pela campanha atual', () => {
+test('supervisão sem referência usa prévia atual sem registrar referência histórica', () => {
     const c = client(), scope = { config: { initialYear: 2020, finalYear: 2022 } };
     const grid = c.service.bindGrid(scope, true);
     grid.reset({ inspection: [{ userName: 'Ana', bdcSelections: [] }] });
     grid.configure({ imagerySource: 'bdc', bdcConfig: { defaultProfile: 'natural', profiles: ['natural'] } });
     assert.equal(scope.isBdc, true);
-    assert.equal(scope.buildBdcMaps().length, 0);
-    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), null);
+    assert.deepEqual(Array.from(scope.buildBdcMaps(), map => map.year), [2020, 2021, 2022]);
+    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), 'natural');
+    assert.equal(scope.bdcIsPreview(2020, 'DRY'), true);
+    assert.equal(scope.bdcUseHistorical(2020, 'DRY'), false);
     assert.equal(scope.bdcSelectionId(2020, 'DRY'), null);
     assert.equal(c.calls.length, 0);
 });
@@ -442,4 +444,43 @@ test('troca de inspeção preserva aquisição e composição individuais sem ap
     assert.equal(scope.bdcSelectionProfile(2019, 'DRY'), 'ndvi');
     assert.deepEqual(Array.from(scope.maps, map => map.year), [2019]);
     assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), null);
+});
+
+test('referência histórica inclusive ausência comprovada prevalece sobre prévia no mesmo período', () => {
+    const c = client(), scope = { config: {} };
+    const grid = c.service.bindGrid(scope, true);
+    grid.reset({ inspection: [{ bdcSelections: [{ year: 2019, period: 'DRY', selectionId: 'no-image-selection', profile: 'ndvi' }] }] });
+    grid.configure({ imagerySource: 'bdc', initialYear: 2020, finalYear: 2021,
+        bdcConfig: { defaultProfile: 'natural', profiles: ['natural'] } });
+    assert.equal(scope.bdcUseHistorical(2019, 'DRY'), true);
+    assert.equal(scope.bdcIsPreview(2019, 'DRY'), false);
+    assert.equal(scope.bdcSelectionProfile(2019, 'DRY'), 'ndvi');
+    assert.equal(scope.bdcSelectionId(2019, 'DRY'), 'no-image-selection');
+    assert.equal(scope.bdcIsPreview(2019, 'WET'), false);
+    assert.equal(scope.bdcUseHistorical(2019, 'WET'), true);
+    assert.equal(scope.bdcSelectionProfile(2019, 'WET'), null);
+    assert.equal(scope.bdcIsPreview(2020, 'WET'), true);
+    assert.equal(scope.bdcSelectionProfile(2020, 'WET'), 'natural');
+    assert.equal(scope.bdcIsPreview(2022, 'WET'), false);
+    assert.deepEqual(Array.from(scope.buildBdcMaps(), map => map.year), [2019, 2020, 2021]);
+    assert.equal(scope.bdc.references.length, 0);
+});
+test('campanha legada sem BDC atual mantém ausência histórica sem consulta substituta', () => {
+    const c = client(), scope = { config: {} };
+    const grid = c.service.bindGrid(scope, true);
+    grid.reset({ inspection: [{ bdcSelections: [{ year: 2019, period: 'DRY', selectionId: 'old', profile: 'ndvi' }] }] });
+    grid.configure({ imagerySource: 'gee', initialYear: 2020, finalYear: 2021 });
+    assert.equal(scope.bdcUseHistorical(2019, 'WET'), true);
+    assert.equal(scope.bdcIsPreview(2019, 'WET'), false);
+    assert.equal(scope.bdcSelectionProfile(2019, 'WET'), null);
+    assert.deepEqual(Array.from(scope.buildBdcMaps(), map => map.year), [2019]);
+});
+test('prévia atual não registra evidência nem quando a imagem ou ausência é exibida', () => {
+    const d = mapDirective({ scope: { preview: true } });
+    d.calls[0].callback(ready());
+    d.layers[0].events.tileload({ tile: {} });
+    d.layers[0].events.load();
+    assert.equal(d.viewed.length, 0);
+    d.calls[0].callback({ id: 'empty', state: 'no_image', revision: 2 });
+    assert.equal(d.viewed.length, 0);
 });

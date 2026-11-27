@@ -31,7 +31,8 @@
     "HISTORICAL": "Imagens registradas na inspeção",
     "CURRENT": "Revisão atual da campanha",
     "INSPECTION": "Inspeção",
-    "HISTORY_NOTICE": "Cada inspeção conserva suas próprias referências. Sem referência histórica, nenhuma imagem é atribuída retrospectivamente."
+    "HISTORY_NOTICE": "Cada inspeção conserva suas referências registradas, inclusive quando não houve imagem elegível. Nos períodos sem referência, a configuração BDC atual da campanha fornece apenas uma prévia, sem alterar a inspeção.",
+    "PREVIEW_NOTICE": "Prévia atual; sem referência registrada nesta inspeção."
   },
   "COMMON": {
     "SEARCH": "Buscar",

@@ -9,6 +9,7 @@ const campaignZoomLevel = require('../services/campaignZoomLevel');
 const campaignSampleMarker = require('../services/campaignSampleMarker');
 const campaignPropertyDisplay = require('../services/campaignPropertyDisplay');
 const campaignBdcConfig = require('../services/campaignBdcConfig');
+const campaignListing = require('../services/campaignListing');
 // Logger será acessado via app
 
 module.exports = function(app) {
@@ -322,249 +323,13 @@ module.exports = function(app) {
         }
     };
 
-    // Listar todas as campanhas com paginação, filtros e ordenação
     CampaignCrud.list = async (req, res) => {
         try {
-            const startTime = Date.now();
-            
-            await logger.info('Campaign list requested', {
-                req,
-                module: 'campaignCrud',
-                function: 'list',
-                metadata: {
-                    page: req.query.page || 1,
-                    limit: req.query.limit || 10,
-                    filters: req.query
-                }
-            });
-            // Parâmetros de paginação
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
-            const skip = (page - 1) * limit;
-            
-            // Construir filtros
-            let query = {};
-            
-            // Filtro por ID da campanha
-            if (req.query.campaignId && req.query.campaignId.trim()) {
-                query._id = { $regex: req.query.campaignId.trim(), $options: 'i' };
-            }
-            
-            // Filtros por anos
-            if (req.query.initialYear) {
-                query.initialYear = parseInt(req.query.initialYear);
-            }
-            if (req.query.finalYear) {
-                query.finalYear = parseInt(req.query.finalYear);
-            }
-            
-            // Filtro por número de inspeções
-            if (req.query.numInspec) {
-                query.numInspec = parseInt(req.query.numInspec);
-            }
-            
-            // Filtro por tipo de imagem
-            if (req.query.imageType) {
-                query.imageType = req.query.imageType;
-            }
-            
-            // Filtros por configurações booleanas
-            if (req.query.showTimeseries !== undefined) {
-                query.showTimeseries = req.query.showTimeseries === 'true';
-            }
-            if (req.query.showPointInfo !== undefined) {
-                query.showPointInfo = req.query.showPointInfo === 'true';
-            }
-            if (req.query.useDynamicMaps !== undefined) {
-                query.useDynamicMaps = req.query.useDynamicMaps === 'true';
-            }
-            // TKT-000006: permitir filtragem por campanhas com carregamento
-            // automático de gráficos habilitado/desabilitado.
-            if (req.query.autoLoadTimeseries !== undefined) {
-                query.autoLoadTimeseries = req.query.autoLoadTimeseries === 'true';
-            }
-            
-            // Definir ordenação
-            let sortBy = { _id: -1 }; // Default: mais recente primeiro
-            if (req.query.sortBy) {
-                switch (req.query.sortBy) {
-                    case 'campaignId':
-                        sortBy = { _id: 1 };
-                        break;
-                    case 'initialYear':
-                        sortBy = { initialYear: -1 };
-                        break;
-                    case 'finalYear':
-                        sortBy = { finalYear: -1 };
-                        break;
-                    case 'totalPoints':
-                        // Este será aplicado após calcular estatísticas
-                        break;
-                    case 'progress':
-                        // Este será aplicado após calcular estatísticas
-                        break;
-                    default:
-                        sortBy = { _id: -1 };
-                }
-            }
-            
-            // Campaign list query and sort logged for debugging
-            
-            // Contar total de campanhas com filtros
-            const totalCampaigns = await campaignCollection.count(query);
-            
-            // Buscar campanhas com paginação e filtros
-            let campaigns = await campaignCollection.find(query)
-                .sort(sortBy)
-                .skip(skip)
-                .limit(limit)
-                .toArray();
-            
-            // Buscar estatísticas de pontos em paralelo usando aggregation pipeline otimizado
-            const campaignIds = campaigns.map(c => c._id);
-            
-            if (campaignIds.length > 0) {
-                // Criar um mapa de numInspec para cada campanha
-                const numInspecMap = {};
-                campaigns.forEach(c => {
-                    numInspecMap[c._id] = c.numInspec || 3;
-                });
-                
-                // Pipeline otimizado para contar total e completos de uma vez
-                const statsResult = await pointsCollection.aggregate([
-                    { $match: { campaign: { $in: campaignIds } } },
-                    { 
-                        $project: {
-                            campaign: 1,
-                            userNameCount: { $size: { $ifNull: ["$userName", []] } }
-                        }
-                    },
-                    { 
-                        $group: {
-                            _id: "$campaign",
-                            totalPoints: { $sum: 1 },
-                            userNameCounts: { $push: "$userNameCount" }
-                        }
-                    }
-                ], { allowDiskUse: true }).toArray();
-                
-                // Processar resultados e calcular pontos completos
-                const statsMap = {};
-                statsResult.forEach(stat => {
-                    const numInspec = numInspecMap[stat._id] || 3;
-                    const completedPoints = stat.userNameCounts.filter(count => count >= numInspec).length;
-                    statsMap[stat._id] = {
-                        totalPoints: stat.totalPoints,
-                        completedPoints: completedPoints
-                    };
-                });
-                
-                // Adicionar estatísticas às campanhas
-                for (let campaign of campaigns) {
-                    const stats = statsMap[campaign._id] || { totalPoints: 0, completedPoints: 0 };
-                    campaign.totalPoints = stats.totalPoints;
-                    campaign.completedPoints = stats.completedPoints;
-                    campaign.progress = stats.totalPoints > 0 ? (stats.completedPoints / stats.totalPoints * 100).toFixed(2) : 0;
-                }
-                
-                // Aplicar filtros pós-processamento (que dependem de estatísticas calculadas)
-                let filteredCampaigns = campaigns;
-                
-                // Filtro por status de progresso
-                if (req.query.progressStatus) {
-                    filteredCampaigns = campaigns.filter(campaign => {
-                        const progress = parseFloat(campaign.progress);
-                        switch (req.query.progressStatus) {
-                            case 'empty':
-                                return progress === 0;
-                            case 'started':
-                                return progress > 0 && progress < 100;
-                            case 'completed':
-                                return progress === 100;
-                            default:
-                                return true;
-                        }
-                    });
-                }
-                
-                // Aplicar ordenação pós-processamento se necessário
-                if (req.query.sortBy === 'totalPoints') {
-                    filteredCampaigns.sort((a, b) => b.totalPoints - a.totalPoints);
-                } else if (req.query.sortBy === 'progress') {
-                    filteredCampaigns.sort((a, b) => parseFloat(b.progress) - parseFloat(a.progress));
-                }
-                
-                // Se aplicamos filtros pós-processamento, precisamos recalcular paginação
-                if (req.query.progressStatus || req.query.sortBy === 'totalPoints' || req.query.sortBy === 'progress') {
-                    const totalFiltered = filteredCampaigns.length;
-                    const startIndex = skip;
-                    const endIndex = startIndex + limit;
-                    filteredCampaigns = filteredCampaigns.slice(startIndex, endIndex);
-                    
-                    // Atualizar estatísticas de paginação
-                    const totalPages = Math.ceil(totalFiltered / limit);
-                    
-                    // Resposta paginada com filtros pós-processamento
-                    return res.json({
-                        campaigns: filteredCampaigns,
-                        pagination: {
-                            currentPage: page,
-                            totalPages: totalPages,
-                            totalCampaigns: totalFiltered,
-                            limit,
-                            hasNext: page < totalPages,
-                            hasPrev: page > 1
-                        }
-                    });
-                }
-                
-                campaigns = filteredCampaigns;
-            } else {
-                // Se não há campanhas, definir valores padrão
-                for (let campaign of campaigns) {
-                    campaign.totalPoints = 0;
-                    campaign.completedPoints = 0;
-                    campaign.progress = 0;
-                }
-            }
-            
-            const duration = Date.now() - startTime;
-            
-            await logger.info('Campaign list completed', {
-                req,
-                module: 'campaignCrud',
-                function: 'list',
-                metadata: {
-                    duration,
-                    totalCampaigns,
-                    returnedCampaigns: campaigns.length,
-                    page,
-                    limit
-                }
-            });
-            
-            // Resposta paginada
-            res.json({
-                campaigns,
-                pagination: {
-                    currentPage: page,
-                    totalPages: Math.ceil(totalCampaigns / limit),
-                    totalCampaigns,
-                    limit,
-                    hasNext: page < Math.ceil(totalCampaigns / limit),
-                    hasPrev: page > 1
-                }
-            });
+            return res.json(await campaignListing.list(campaignCollection, pointsCollection, req.query));
         } catch (error) {
-            const errorCode = await logger.logError(error, req, {
-                module: 'campaignCrud',
-                function: 'list'
-            });
-            
-            res.status(500).json({
-                error: 'Failed to list campaigns',
-                errorCode
-            });
+            if (error.statusCode === 400) return res.status(400).json({ error: error.message });
+            const errorCode = await logger.logError(error, req, { module: 'campaignCrud', function: 'list' });
+            return res.status(500).json({ error: 'Failed to list campaigns', errorCode });
         }
     };
 
@@ -628,30 +393,7 @@ module.exports = function(app) {
     // Valores distintos para popular os selects dos filtros
     CampaignCrud.getFilterOptions = async (req, res) => {
         try {
-            const [initialYears, finalYears, imageTypes, numInspec] = await Promise.all([
-                campaignCollection.distinct('initialYear'),
-                campaignCollection.distinct('finalYear'),
-                campaignCollection.distinct('imageType'),
-                campaignCollection.distinct('numInspec')
-            ]);
-
-            const sortNumAsc = (a, b) => a - b;
-            const cleanNumbers = arr => (arr || [])
-                .filter(v => typeof v === 'number' && !isNaN(v))
-                .sort(sortNumAsc);
-            const cleanStrings = arr => (arr || [])
-                .filter(v => typeof v === 'string' && v.length > 0)
-                .sort();
-
-            return res.json({
-                success: true,
-                data: {
-                    initialYears: cleanNumbers(initialYears),
-                    finalYears: cleanNumbers(finalYears),
-                    imageTypes: cleanStrings(imageTypes),
-                    numInspec: cleanNumbers(numInspec)
-                }
-            });
+            return res.json({ success: true, data: await campaignListing.filterOptions(campaignCollection) });
         } catch (error) {
             const errorCode = await logger.logError(error, req, {
                 module: 'campaignCrud',

@@ -4,7 +4,7 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
     return {
         restrict: 'E',
         scope: { point: '=', year: '=', period: '=', config: '=', profile: '=', selectionId: '=?', historical: '=?',
-            selection: '=?', side: '@?', onViewed: '&?', onCompare: '&?' },
+            selection: '=?', preview: '=?', side: '@?', onViewed: '&?', onCompare: '&?' },
         template: "<div class=\"bdc-card\" ng-keydown=\"informationKeydown($event)\">" +
             "<div class=\"bdc-leaflet-map\" aria-label=\"BDC\"></div>" +
             "<div class=\"bdc-card-status\" role=\"status\" ng-if=\"statusKey !== 'BDC.READY'\">{{ statusKey | i18n }} <button type=\"button\" class=\"btn btn-default btn-sm\" ng-if=\"retryable\" ng-click=\"retry()\">{{ 'BDC.RETRY' | i18n }}</button></div>" +
@@ -12,6 +12,7 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             "<div class=\"bdc-card-information\" id=\"bdc-information-{{$id}}\" ng-show=\"informationOpen\" role=\"region\" aria-label=\"{{ 'BDC.TITLE' | i18n }}\">" +
             "<button type=\"button\" class=\"bdc-information-close btn btn-default btn-sm\" ng-click=\"closeInformation(true)\">{{ 'COMMON.CLOSE' | i18n }}</button>" +
             "<strong>{{ 'BDC.TITLE' | i18n }}</strong><p>{{ statusKey | i18n }}</p>" +
+            "<p ng-if=\"preview\">{{ 'BDC.PREVIEW_NOTICE' | i18n }}</p>" +
             "<p ng-if=\"image.datetime\">{{ image.datetime | date:'dd/MM/yyyy':'UTC' }}</p>" +
             "<p ng-if=\"image.cloudPercent != null\">{{ 'BDC.LOCAL_CLOUD' | i18n }}: {{ image.cloudPercent | number:1 }}%</p>" +
             "<p ng-if=\"resolved.revision\">{{ 'BDC.REVISION' | i18n }}: {{resolved.revision}}</p>" +
@@ -57,7 +58,7 @@ angular.module('application').directive('bdcMap', function ($window, $timeout, b
             }
 
             function notifyViewed() {
-                if (!scope.onViewed || !scope.resolved || !scope.resolved.id) return;
+                if (scope.preview || !scope.onViewed || !scope.resolved || !scope.resolved.id) return;
                 scope.onViewed({ reference: { selectionId: scope.resolved.id, year: scope.year, period: scope.period,
                     revision: scope.resolved.revision, profile: scope.effectiveProfile || null } });
             }

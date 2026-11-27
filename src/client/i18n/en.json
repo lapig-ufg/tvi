@@ -31,7 +31,8 @@
     "HISTORICAL": "Images recorded in the inspection",
     "CURRENT": "Current campaign revision",
     "INSPECTION": "Inspection",
-    "HISTORY_NOTICE": "Each inspection retains its own references. Images are never assigned retrospectively without historical references."
+    "HISTORY_NOTICE": "Each inspection retains its recorded references, including periods with no eligible image. For periods without a reference, the current campaign BDC configuration provides a preview only, without changing the inspection.",
+    "PREVIEW_NOTICE": "Current preview; no reference recorded in this inspection."
   },
   "COMMON": {
     "SEARCH": "Search",

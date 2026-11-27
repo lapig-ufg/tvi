@@ -150,11 +150,20 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
         };
         scope.bdcSelectionProfile = function (year, period) {
             var reference = historicalReferences().find(function (item) { return item.year === year && item.period === period; });
-            return reference ? reference.profile : supervision ? null : scope.bdc.profile;
+            if (reference && reference.selectionId) return reference.profile;
+            return !supervision || scope.bdcIsPreview(year, period) ? scope.bdc.profile : null;
+        };
+        scope.bdcIsPreview = function (year, period) {
+            return !!(supervision && scope.bdc.currentAvailable && Number.isInteger(year)
+                && year >= Number(scope.config.initialYear) && year <= Number(scope.config.finalYear)
+                && !scope.bdcSelectionId(year, period));
+        };
+        scope.bdcUseHistorical = function (year, period) {
+            return supervision && !scope.bdcIsPreview(year, period);
         };
         scope.buildBdcMaps = function () {
             var years = supervision || scope.bdc.view === 'history' ? historicalReferences().map(function (reference) { return reference.year; }) : [];
-            if (!years.length && !supervision) {
+            if ((!supervision && !years.length) || (supervision && scope.bdc.currentAvailable)) {
                 var initial = Number(scope.config.initialYear), final = Number(scope.config.finalYear);
                 if (Number.isInteger(initial) && Number.isInteger(final) && initial >= 1970 && final <= new Date().getFullYear()) {
                     for (var year = initial; year <= final; year += 1) years.push(year);

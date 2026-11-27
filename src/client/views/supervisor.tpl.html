@@ -369,7 +369,7 @@
                             </span>
 
                             <!-- Usar landsat-map para mapas dinâmicos Landsat -->
-                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdcSelectionProfile(map.year, period)" historical="true" selection-id="bdcSelectionId(map.year, period)"></bdc-map>
+                            <bdc-map ng-if="isBdc" point="point" year="map.year" period="period" config="config" profile="bdcSelectionProfile(map.year, period)" historical="bdcUseHistorical(map.year, period)" preview="bdcIsPreview(map.year, period)" selection-id="bdcSelectionId(map.year, period)"></bdc-map>
                             <landsat-map ng-if="!isBdc && useDynamicMaps === true && !isSentinel && !useWmsForCurrentPeriod && !isWayback"
                                          lon="point.lon"
                                          lat="point.lat"

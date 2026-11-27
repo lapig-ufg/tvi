@@ -46,140 +46,163 @@
         </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="filters-section">
-        <div class="filters-header" ng-click="toggleFilters()">
-            <h3 class="filters-title">
-                <i class="fas" ng-class="{'fa-chevron-down': !showFilters, 'fa-chevron-up': showFilters}"></i>
-                Filtros Avançados
-            </h3>
-            <span class="filter-badge" ng-show="hasActiveFilters()">
-                {{ getActiveFiltersCount() }} filtro(s) ativo(s)
-            </span>
+    <section class="filters-section campaign-filter-panel" aria-label="Busca e filtros de campanhas">
+        <div class="campaign-search-row">
+            <div class="filter-group campaign-search">
+                <label class="filter-label" for="campaign-search">Buscar campanha</label>
+                <input id="campaign-search" class="filter-input" type="search" ng-model="filters.campaignId" placeholder="Nome ou parte do identificador" ng-model-options="{ debounce: 350 }" ng-change="onFilterChange()">
+            </div>
+            <div class="filter-group campaign-sort">
+                <label class="filter-label" for="campaign-sort">Ordenar por</label>
+                <select id="campaign-sort" class="filter-select" ng-model="filters.sortBy" ng-change="onFilterChange()">
+                    <option value="createdAt">Mais recentes primeiro</option>
+                    <option value="createdAtAsc">Mais antigas primeiro</option>
+                    <option value="campaignId">Nome: A a Z</option>
+                    <option value="initialYear">Ano inicial: maior primeiro</option>
+                    <option value="finalYear">Ano final: maior primeiro</option>
+                    <option value="totalPoints">Mais pontos primeiro</option>
+                    <option value="progress">Maior progresso primeiro</option>
+                </select>
+            </div>
+            <button type="button" class="filter-toggle" ng-click="toggleFilters()" aria-expanded="{{showFilters}}" aria-controls="campaign-filter-details">
+                <i class="fas fa-sliders-h" aria-hidden="true"></i> Filtros <span class="filter-badge" ng-if="hasActiveFilters()">{{getActiveFiltersCount()}}</span>
+                <i class="fas" ng-class="{'fa-chevron-up': showFilters, 'fa-chevron-down': !showFilters}" aria-hidden="true"></i>
+            </button>
         </div>
-        
-        <div class="filters-content" ng-show="showFilters">
-            <div class="filters-grid">
-                <!-- ID da Campanha -->
-                <div class="filter-group">
-                    <label class="filter-label">ID da Campanha</label>
-                    <input type="text" class="filter-input"
-                           ng-model="filters.campaignId"
-                           placeholder="Digite parte do ID (mín. 2 caracteres)"
-                           uib-typeahead="item.id as item.label for item in searchCampaigns($viewValue)"
-                           typeahead-min-length="2"
-                           typeahead-wait-ms="250"
-                           typeahead-loading="typeaheadLoading"
-                           typeahead-no-results="typeaheadNoResults"
-                           typeahead-on-select="onFilterChange()"
-                           ng-model-options="{ debounce: 350 }"
-                           ng-change="onFilterChange()">
-                    <div class="filter-hint" ng-show="typeaheadLoading"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>
-                    <div class="filter-hint" ng-show="typeaheadNoResults">Nenhuma campanha encontrada.</div>
-                </div>
-
-                <!-- Período -->
-                <div class="filter-group">
-                    <label class="filter-label">Ano Inicial</label>
-                    <select class="filter-select" ng-model="filters.initialYear" ng-change="onFilterChange()">
-                        <option value="">Todos</option>
-                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Ano Final</label>
-                    <select class="filter-select" ng-model="filters.finalYear" ng-change="onFilterChange()">
-                        <option value="">Todos</option>
-                        <option ng-repeat="year in availableYears" value="{{year}}">{{year}}</option>
-                    </select>
-                </div>
-
-                <!-- Número de Inspeções -->
-                <div class="filter-group">
-                    <label class="filter-label">Nº de Inspeções</label>
-                    <select class="filter-select" ng-model="filters.numInspec" ng-change="onFilterChange()">
-                        <option value="">Todos</option>
-                        <option ng-repeat="n in availableNumInspec" value="{{n}}">{{n}}</option>
-                    </select>
-                </div>
-
-                <!-- Status -->
-                <div class="filter-group">
-                    <label class="filter-label">Status do Progresso</label>
-                    <select class="filter-select" ng-model="filters.progressStatus" ng-change="onFilterChange()">
-                        <option value="">Todos</option>
-                        <option value="empty">Sem pontos (0%)</option>
-                        <option value="started">Iniciada (1-99%)</option>
-                        <option value="completed">Completa (100%)</option>
-                    </select>
-                </div>
-
-                <!-- Tipo de Imagem -->
-                <div class="filter-group">
-                    <label class="filter-label">Tipo de Imagem</label>
-                    <select class="filter-select" ng-model="filters.imageType" ng-change="onFilterChange()">
-                        <option value="">Todos</option>
-                        <option ng-repeat="type in availableImageTypes" value="{{type}}">{{type}}</option>
-                    </select>
-                </div>
-
-                <!-- Configurações -->
-                <div class="filter-group">
-                    <label class="filter-label">Configurações</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.showTimeseries" ng-change="onFilterChange()">
-                            <span>Timeseries</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.showPointInfo" ng-change="onFilterChange()">
-                            <span>Point Info</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" ng-model="filters.useDynamicMaps" ng-change="onFilterChange()">
-                            <span>Dynamic Maps</span>
-                        </label>
+        <div class="campaign-active-filters" ng-if="hasActiveFilters()" aria-label="Filtros ativos">
+            <button type="button" class="campaign-filter-chip" ng-repeat="filter in activeFilters() track by filter.key" ng-click="removeFilter(filter.key)" aria-label="Remover filtro {{filter.label}}: {{filter.value}}">
+                <strong>{{filter.label}}:</strong> {{filter.value}} <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+            <button class="campaign-clear" ng-click="clearFilters()">Limpar filtros</button>
+        </div>
+        <div id="campaign-filter-details" class="campaign-filter-details" ng-show="showFilters">
+            <p class="campaign-filter-error" ng-if="filterOptionsError" role="alert">Não foi possível carregar as opções. <button class="btn btn-link" ng-click="loadFilterOptions()">Tentar novamente</button>
+            </p>
+            <fieldset>
+                <legend>Imagens e classificação</legend>
+                <div class="campaign-filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-imagerySource">Fonte das imagens</label>
+                        <select id="filter-imagerySource" class="filter-select" ng-model="filters.imagerySource" ng-change="onSourceChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.imagerySources track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-imageType">Tipo de imagem</label>
+                        <select id="filter-imageType" class="filter-select" ng-model="filters.imageType" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in availableImageTypes track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-landUse">Classe de uso da terra</label>
+                        <select id="filter-landUse" class="filter-select" ng-model="filters.landUse" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.landUses track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-zoomLevel">Zoom configurado</label>
+                        <select id="filter-zoomLevel" class="filter-select" ng-model="filters.zoomLevel" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.zoomLevels track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
                     </div>
                 </div>
-
-                <!-- Ordenação -->
-                <div class="filter-group">
-                    <label class="filter-label">Ordenar por</label>
-                    <select class="filter-select" ng-model="filters.sortBy" ng-change="onFilterChange()">
-                        <option value="_id">Data de Criação</option>
-                        <option value="campaignId">ID da Campanha</option>
-                        <option value="initialYear">Ano Inicial</option>
-                        <option value="finalYear">Ano Final</option>
-                        <option value="totalPoints">Número de Pontos</option>
-                        <option value="progress">Progresso</option>
-                    </select>
+            </fieldset>
+            <fieldset ng-if="filters.imagerySource !== 'legacy' && filterOptions.bdcCollections.length">
+                <legend>Configuração BDC</legend>
+                <div class="campaign-filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-bdcCollection">Coleção</label>
+                        <select id="filter-bdcCollection" class="filter-select" ng-model="filters.bdcCollection" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.bdcCollections track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-bdcSelectionStrategy">Critério de seleção</label>
+                        <select id="filter-bdcSelectionStrategy" class="filter-select" ng-model="filters.bdcSelectionStrategy" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.bdcSelectionStrategies track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-bdcDefaultProfile">Composição padrão</label>
+                        <select id="filter-bdcDefaultProfile" class="filter-select" ng-model="filters.bdcDefaultProfile" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.bdcDefaultProfiles track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-bdcBufferRadiusM">Raio de avaliação (m)</label>
+                        <select id="filter-bdcBufferRadiusM" class="filter-select" ng-model="filters.bdcBufferRadiusM" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.bdcBufferRadii track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <div class="filter-actions">
-                <button class="filter-btn clear" ng-click="clearFilters()">
-                    <i class="fas fa-times"></i>
-                    Limpar Filtros
-                </button>
-                <button class="filter-btn apply" ng-click="applyFilters()">
-                    <i class="fas fa-check"></i>
-                    Aplicar Filtros
-                </button>
+            </fieldset>
+            <fieldset>
+                <legend>Período e inspeções</legend>
+                <div class="campaign-filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-initialYear">Ano inicial</label>
+                        <select id="filter-initialYear" class="filter-select" ng-model="filters.initialYear" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.initialYears track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-finalYear">Ano final</label>
+                        <select id="filter-finalYear" class="filter-select" ng-model="filters.finalYear" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in filterOptions.finalYears track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-numInspec">Inspeções por ponto</label>
+                        <select id="filter-numInspec" class="filter-select" ng-model="filters.numInspec" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option ng-repeat="value in availableNumInspec track by value" value="{{value}}">{{optionLabel(value)}}</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filter-progressStatus">Progresso</label>
+                        <select id="filter-progressStatus" class="filter-select" ng-model="filters.progressStatus" ng-change="onFilterChange()">
+                            <option value="">Todas</option>
+                            <option value="empty">Sem pontos</option>
+                            <option value="notStarted">Não iniciada</option>
+                            <option value="started">Em andamento</option>
+                            <option value="completed">Concluída (100%)</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>Recursos da campanha</legend>
+                <div class="campaign-filter-grid">
+                    <div class="filter-group" ng-repeat="configuration in configurationFilters track by configuration.key">
+                        <label class="filter-label" for="filter-{{configuration.key}}">{{configuration.label}}</label>
+                        <select id="filter-{{configuration.key}}" class="filter-select" ng-model="filters[configuration.key]" ng-options="option.value as option.label for option in booleanOptions" ng-change="onFilterChange()">
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="campaign-filter-footer">
+                <span>Os filtros são aplicados automaticamente.</span>
+                <button type="button" class="filter-btn clear" ng-click="showFilters = false">Recolher filtros</button>
             </div>
         </div>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading-container" ng-show="loading">
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
+        <div class="campaign-list-update" role="status" aria-live="polite">
+            <span ng-if="loading">
+                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Atualizando campanhas…</span>
         </div>
-        <p class="loading-text">Carregando campanhas...</p>
-    </div>
+    </section>
 
     <!-- Main Content -->
-    <div class="campaigns-content" ng-hide="loading">
+    <div class="campaigns-content" aria-busy="{{loading}}">
         <!-- Table Header Info -->
         <div class="table-info">
             <div class="info-text">
@@ -191,12 +214,7 @@
             </div>
             <div class="items-per-page">
                 <label>Itens por página:</label>
-                <select class="page-select" ng-model="pagination.limit" ng-change="loadCampaigns(1)">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
+                <select class="page-select" aria-label="Itens por página" ng-model="pagination.limit" ng-options="size as size for size in pageSizes" ng-change="loadCampaigns(1)"></select>
             </div>
         </div>
 
@@ -229,6 +247,7 @@
                             </div>
                         </td>
                         <td class="campaign-configs">
+                            <span class="config-badge info" ng-if="campaign.imagerySource === 'bdc'">BDC</span>
                             <span class="config-badge timeseries" ng-show="campaign.showTimeseries">
                                 <i class="fas fa-chart-line"></i> Timeseries
                             </span>
@@ -1094,4 +1113,27 @@
         flex-wrap: wrap;
     }
 }
+
+.admin-campaigns-container .campaign-filter-panel { overflow: visible; border: 1px solid #dce5ed; box-shadow: none; }
+.admin-campaigns-container .campaign-search-row { display: flex; align-items: flex-end; gap: 20px; padding: 20px 24px 12px; }
+.admin-campaigns-container .campaign-search { flex: 1; min-width: 220px; }
+.admin-campaigns-container .campaign-sort { width: 260px; }
+.admin-campaigns-container .campaign-filter-panel .filter-label { font-size: 14px; line-height: 1.5; font-weight: 600; color: #334b60; }
+.admin-campaigns-container .campaign-filter-panel .filter-input,
+.admin-campaigns-container .campaign-filter-panel .filter-select { width: 100%; min-width: 0; height: 42px; font-size: 14px; padding: 8px 12px; border-color: #cbd7e2; }
+.admin-campaigns-container .filter-toggle { display: flex; gap: 10px; align-items: center; justify-content: center; height: 42px; padding: 0 16px; border: 1px solid #cbd7e2; border-radius: 6px; background: #f7fafc; color: #245a80; font-size: 14px; font-weight: 600; }
+.admin-campaigns-container .filter-toggle:focus-visible, .admin-campaigns-container .campaign-filter-chip:focus-visible { outline: 3px solid #287eb5; outline-offset: 2px; }
+.admin-campaigns-container .campaign-active-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 12px; }
+.admin-campaigns-container .campaign-filter-chip { border: 1px solid #c8dce9; background: #edf5fa; color: #264b65; border-radius: 5px; padding: 6px 10px; font-size: 13px; text-align: left; }
+.admin-campaigns-container .campaign-filter-chip i { margin-left: 8px; }
+.admin-campaigns-container .campaign-clear { border: 0; background: transparent; color: #245a80; text-decoration: underline; padding: 6px 10px; }
+.admin-campaigns-container .campaign-filter-details { border-top: 1px solid #e2e9ef; padding: 8px 24px 16px; }
+.admin-campaigns-container .campaign-filter-details fieldset { min-width: 0; padding: 12px 0 16px; margin: 0; border: 0; }
+.admin-campaigns-container .campaign-filter-details legend { width: auto; border: 0; margin: 0; padding: 0; font-size: 15px; line-height: 1.6; font-weight: 600; color: #223b50; }
+.admin-campaigns-container .campaign-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.admin-campaigns-container .campaign-filter-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #e2e9ef; padding-top: 12px; color: #526a7d; font-size: 13px; }
+.admin-campaigns-container .campaign-list-update { min-height: 22px; padding: 0 24px 6px; color: #526a7d; font-size: 13px; }
+.admin-campaigns-container .campaign-filter-error { color: #9b322e; }
+@media (max-width: 1000px) { .admin-campaigns-container .campaign-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .admin-campaigns-container .campaign-search-row { flex-wrap: wrap; padding: 16px; gap: 12px; } .admin-campaigns-container .campaign-search { flex-basis: 100%; } .admin-campaigns-container .campaign-sort { flex: 1; width: auto; } .admin-campaigns-container .campaign-filter-grid { grid-template-columns: 1fr; } .admin-campaigns-container .campaign-filter-details { padding: 8px 16px 16px; } }
 </style>

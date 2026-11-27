@@ -1,3 +1,5 @@
+const campaignListing = require('../services/campaignListing');
+
 module.exports = function(app) {
     const DashboardController = {};
     const logger = app.services.logger;
@@ -103,34 +105,8 @@ module.exports = function(app) {
         try {
             const db = app.repository.db;
             
-            // Total de campanhas
-            const totalCampaigns = await db.collection('campaign').count();
-            
-            // Campanhas ativas (com inspeções)
-            const activeCampaigns = await db.collection('campaign').count({ 
-                numInspec: { $gt: 0 } 
-            });
-            
-            // Campanhas concluídas
-            const completedCampaigns = await db.collection('campaign').count({ 
-                status: 'completed' 
-            });
-            
-            // Total de inspeções
-            const campaigns = await db.collection('campaign').find({}).toArray();
-            const totalInspections = campaigns.reduce((sum, campaign) => {
-                return sum + (campaign.numInspec || 0);
-            }, 0);
-            
-            res.json({
-                success: true,
-                data: {
-                    total: totalCampaigns,
-                    active: activeCampaigns,
-                    completed: completedCampaigns,
-                    totalInspections: totalInspections
-                }
-            });
+            const data = await campaignListing.summary(db.collection('campaign'), db.collection('points'));
+            res.json({ success: true, data });
         } catch (error) {
             const errorCode = await logger.logError(error, req, {
                 module: 'dashboardController',

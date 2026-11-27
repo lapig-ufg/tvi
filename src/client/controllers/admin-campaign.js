@@ -63,25 +63,71 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     };
     $scope.user = null;
     
-    // Filtros avançados
+    var listRequest = 0;
+    var booleanFilters = ['showTimeseries', 'showPointInfo', 'useDynamicMaps', 'autoLoadTimeseries'];
+    function defaultFilters() {
+        return { campaignId: '', initialYear: '', finalYear: '', numInspec: '', progressStatus: '',
+            imageType: '', imagerySource: '', bdcCollection: '', bdcSelectionStrategy: '',
+            bdcDefaultProfile: '', bdcBufferRadiusM: '', zoomLevel: '', landUse: '',
+            showTimeseries: null, showPointInfo: null, useDynamicMaps: null,
+            autoLoadTimeseries: null, sortBy: 'createdAt' };
+    }
     $scope.showFilters = false;
-    $scope.filters = {
-        campaignId: '',
-        initialYear: '',
-        finalYear: '',
-        numInspec: '',
-        progressStatus: '',
-        imageType: '',
-        showTimeseries: null,
-        showPointInfo: null,
-        useDynamicMaps: null,
-        sortBy: '_id'
-    };
-    
-    // Opções dinâmicas para filtros (populadas via /api/campaigns/filter-options)
+    $scope.filters = defaultFilters();
+    $scope.filterOptions = {};
     $scope.availableYears = [];
     $scope.availableImageTypes = [];
-    $scope.availableNumInspec = [1, 2, 3, 4, 5];
+    $scope.availableNumInspec = [];
+    $scope.pageSizes = [10, 20, 50, 100];
+    $scope.booleanOptions = [{ value: null, label: 'Todas' }, { value: true, label: 'Habilitadas' }, { value: false, label: 'Desabilitadas' }];
+    $scope.configurationFilters = [
+        { key: 'showTimeseries', label: 'Séries temporais' },
+        { key: 'autoLoadTimeseries', label: 'Carregamento automático das séries' },
+        { key: 'showPointInfo', label: 'Informações dos pontos' },
+        { key: 'useDynamicMaps', label: 'Mapas dinâmicos' }
+    ];
+    $scope.filterLabels = { campaignId: 'Busca', initialYear: 'Ano inicial', finalYear: 'Ano final',
+        numInspec: 'Inspeções por ponto', progressStatus: 'Progresso', imageType: 'Tipo de imagem',
+        imagerySource: 'Fonte', bdcCollection: 'Coleção BDC', bdcSelectionStrategy: 'Critério BDC',
+        bdcDefaultProfile: 'Composição BDC', bdcBufferRadiusM: 'Raio BDC', zoomLevel: 'Zoom', landUse: 'Classe',
+        showTimeseries: 'Séries temporais', autoLoadTimeseries: 'Séries automáticas',
+        showPointInfo: 'Informações dos pontos', useDynamicMaps: 'Mapas dinâmicos' };
+    $scope.optionLabel = function(value) {
+        var labels = { bdc: 'Brazil Data Cube (BDC)', legacy: 'Fonte legada (GEE, WMS ou Wayback)',
+            landsat: 'Landsat', 'sentinel-2': 'Sentinel-2', wayback: 'Esri Wayback', wms: 'WMS',
+            local_cloud: 'Menor cobertura de nuvens no ponto', global_cloud: 'Menor cobertura global de nuvens',
+            'landsat-tvi-false': 'Falsa cor', 'landsat-tvi-true': 'Cor natural', 'landsat-tvi-ndvi': 'NDVI',
+            empty: 'Sem pontos', notStarted: 'Não iniciada', started: 'Em andamento', completed: 'Concluída' };
+        return labels[value] || value;
+    };
+    var activeFilterKey;
+    var activeFilterItems = [];
+    $scope.activeFilters = function() {
+        var signature = JSON.stringify($scope.filters);
+        if (signature === activeFilterKey) return activeFilterItems;
+        activeFilterKey = signature;
+        activeFilterItems = Object.keys($scope.filterLabels).filter(function(key) {
+            var value = $scope.filters[key];
+            return value !== '' && value !== null && value !== undefined;
+        }).map(function(key) {
+            var value = $scope.filters[key];
+            return { key: key, label: $scope.filterLabels[key],
+                value: typeof value === 'boolean' ? (value ? 'Habilitadas' : 'Desabilitadas') : $scope.optionLabel(value) };
+        });
+        return activeFilterItems;
+    };
+    $scope.onSourceChange = function() {
+        if ($scope.filters.imagerySource === 'legacy') {
+            ['bdcCollection', 'bdcSelectionStrategy', 'bdcDefaultProfile', 'bdcBufferRadiusM'].forEach(function(key) {
+                $scope.filters[key] = '';
+            });
+        }
+        $scope.onFilterChange();
+    };
+    $scope.removeFilter = function(key) {
+        $scope.filters[key] = defaultFilters()[key];
+        $scope.applyFilters();
+    };
 
     // Estado do typeahead do campo "ID da Campanha"
     $scope.typeaheadLoading = false;
@@ -133,7 +179,8 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     // Carregar campanhas com filtros
     // Carregar estatísticas
     $scope.loadStats = function() {
-        $http.get('/api/admin/campaigns/stats').then(function(response) {
+        $http.get('/api/admin/campaigns/stats', { hideLoading: true }).then(function(response) {
+            if (destroyed) return;
             if (response.data.success && response.data.data) {
                 $scope.stats = response.data.data;
             }
@@ -144,9 +191,12 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
 
     // Popula os selects de filtros com valores realmente presentes no banco
     $scope.loadFilterOptions = function() {
-        $http.get('/api/campaigns/filter-options').then(function(response) {
+        $scope.filterOptionsError = false;
+        $http.get('/api/campaigns/filter-options', { hideLoading: true }).then(function(response) {
+            if (destroyed) return;
             if (!response.data || !response.data.success) return;
             const data = response.data.data || {};
+            $scope.filterOptions = data;
             const years = (data.initialYears || []).concat(data.finalYears || []);
             $scope.availableYears = years
                 .filter(function(v, i, a) { return a.indexOf(v) === i; })
@@ -156,7 +206,7 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
                 $scope.availableNumInspec = data.numInspec;
             }
         }, function(error) {
-            console.error('Error loading filter options:', error);
+            if (!destroyed) $scope.filterOptionsError = true;
         });
     };
 
@@ -190,49 +240,22 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
         
         $scope.loading = true;
         
-        // Construir parâmetros incluindo filtros
-        let params = `?page=${$scope.pagination.currentPage}&limit=${$scope.pagination.limit}`;
-        
-        // Adicionar filtros ativos
-        if ($scope.filters.campaignId && $scope.filters.campaignId.trim()) {
-            params += `&campaignId=${encodeURIComponent($scope.filters.campaignId.trim())}`;
-        }
-        if ($scope.filters.initialYear) {
-            params += `&initialYear=${$scope.filters.initialYear}`;
-        }
-        if ($scope.filters.finalYear) {
-            params += `&finalYear=${$scope.filters.finalYear}`;
-        }
-        if ($scope.filters.numInspec) {
-            params += `&numInspec=${$scope.filters.numInspec}`;
-        }
-        if ($scope.filters.progressStatus) {
-            params += `&progressStatus=${$scope.filters.progressStatus}`;
-        }
-        if ($scope.filters.imageType) {
-            params += `&imageType=${encodeURIComponent($scope.filters.imageType)}`;
-        }
-        if ($scope.filters.showTimeseries !== null) {
-            params += `&showTimeseries=${$scope.filters.showTimeseries}`;
-        }
-        if ($scope.filters.showPointInfo !== null) {
-            params += `&showPointInfo=${$scope.filters.showPointInfo}`;
-        }
-        if ($scope.filters.useDynamicMaps !== null) {
-            params += `&useDynamicMaps=${$scope.filters.useDynamicMaps}`;
-        }
-        if ($scope.filters.sortBy) {
-            params += `&sortBy=${encodeURIComponent($scope.filters.sortBy)}`;
-        }
-        
-        // Making API call to load campaigns
-        
-        $http.get('/api/campaigns' + params).then(function(response) {
-            // API call successful, processing response
+        var requestId = ++listRequest;
+        var params = '?page=' + $scope.pagination.currentPage + '&limit=' + $scope.pagination.limit;
+        Object.keys($scope.filters).forEach(function(key) {
+            var value = $scope.filters[key];
+            if (typeof value === 'string') value = value.trim();
+            if (value !== '' && value !== null && value !== undefined) {
+                params += '&' + key + '=' + encodeURIComponent(value);
+            }
+        });
+        $http.get('/api/campaigns' + params, { hideLoading: true }).then(function(response) {
+            if (destroyed || requestId !== listRequest) return;
             $scope.campaigns = response.data.campaigns;
             $scope.pagination = response.data.pagination;
             $scope.loading = false;
         }, function(error) {
+            if (destroyed || requestId !== listRequest) return;
             console.error('Error loading campaigns:', error);
             // Error occurred while loading campaigns
             $scope.loading = false;
@@ -251,55 +274,17 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     };
     
     $scope.applyFilters = function() {
+        if ($scope.filterChangeTimeout) $timeout.cancel($scope.filterChangeTimeout);
         $scope.pagination.currentPage = 1;
         $scope.loadCampaigns();
     };
     
     $scope.clearFilters = function() {
-        $scope.filters = {
-            campaignId: '',
-            initialYear: '',
-            finalYear: '',
-            numInspec: '',
-            progressStatus: '',
-            imageType: '',
-            showTimeseries: null,
-            showPointInfo: null,
-            useDynamicMaps: null,
-            sortBy: '_id'
-        };
+        $scope.filters = defaultFilters();
         $scope.applyFilters();
     };
-    
-    $scope.hasActiveFilters = function() {
-        return !!(
-            $scope.filters.campaignId ||
-            $scope.filters.initialYear ||
-            $scope.filters.finalYear ||
-            $scope.filters.numInspec ||
-            $scope.filters.progressStatus ||
-            $scope.filters.imageType ||
-            $scope.filters.showTimeseries !== null ||
-            $scope.filters.showPointInfo !== null ||
-            $scope.filters.useDynamicMaps !== null ||
-            ($scope.filters.sortBy && $scope.filters.sortBy !== '_id')
-        );
-    };
-    
-    $scope.getActiveFiltersCount = function() {
-        let count = 0;
-        if ($scope.filters.campaignId) count++;
-        if ($scope.filters.initialYear) count++;
-        if ($scope.filters.finalYear) count++;
-        if ($scope.filters.numInspec) count++;
-        if ($scope.filters.progressStatus) count++;
-        if ($scope.filters.imageType) count++;
-        if ($scope.filters.showTimeseries !== null) count++;
-        if ($scope.filters.showPointInfo !== null) count++;
-        if ($scope.filters.useDynamicMaps !== null) count++;
-        if ($scope.filters.sortBy && $scope.filters.sortBy !== '_id') count++;
-        return count;
-    };
+    $scope.hasActiveFilters = function() { return $scope.activeFilters().length > 0; };
+    $scope.getActiveFiltersCount = function() { return $scope.activeFilters().length; };
 
     // Funções de navegação
     $scope.goToPage = function(page) {
@@ -452,10 +437,11 @@ Application.controller('AdminCampaignController', function ($scope, $http, Admin
     Object.keys($scope.filters).forEach(function(key) {
         var value = listQuery['f_' + key];
         if (typeof value === 'string') {
-            $scope.filters[key] = ['showTimeseries', 'showPointInfo', 'useDynamicMaps'].indexOf(key) >= 0
+            $scope.filters[key] = booleanFilters.indexOf(key) >= 0
                 ? (value === 'true' ? true : value === 'false' ? false : null) : value;
         }
     });
+    if ($scope.filters.sortBy === '_id') $scope.filters.sortBy = 'createdAt';
     $scope.pagination.currentPage = Math.max(1, parseInt(listQuery.page, 10) || 1);
     $scope.showFilters = Object.keys($scope.filters).some(function(key) { return key !== 'sortBy' && $scope.filters[key] !== '' && $scope.filters[key] !== null; });
 
