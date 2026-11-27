@@ -484,3 +484,48 @@ test('prévia atual não registra evidência nem quando a imagem ou ausência é
     d.calls[0].callback({ id: 'empty', state: 'no_image', revision: 2 });
     assert.equal(d.viewed.length, 0);
 });
+
+test('composição explícita na supervisão preserva aquisição histórica e é limpa ao trocar inspeção ou ponto', () => {
+    const c = client(), scope = { config: {} };
+    const grid = c.service.bindGrid(scope, true);
+    const point = { inspection: [
+        { bdcSelections: [{ year: 2020, period: 'DRY', selectionId: 'original', profile: 'natural', profilesViewed: ['ndvi'] }] },
+        { bdcSelections: [{ year: 2020, period: 'DRY', selectionId: 'other', profile: 'ndvi' }] }
+    ] };
+    grid.reset(point);
+    grid.configure({ imagerySource: 'bdc', initialYear: 2020, finalYear: 2021,
+        bdcConfig: { defaultProfile: 'agriculture', profiles: ['agriculture', 'false-color'] } });
+    assert.equal(scope.bdcDisplayProfile(2020, 'DRY'), 'natural');
+    assert.equal(scope.bdcDisplayProfile(2021, 'DRY'), 'agriculture');
+    assert.deepEqual(Array.from(scope.bdc.profiles), ['agriculture', 'false-color', 'natural', 'ndvi']);
+    scope.bdc.selectedProfile = 'false-color';
+    scope.changeBdcProfile();
+    assert.equal(scope.bdcDisplayProfile(2020, 'DRY'), 'false-color');
+    assert.equal(scope.bdcSelectionId(2020, 'DRY'), 'original');
+    assert.equal(scope.bdcSelectionProfile(2020, 'DRY'), 'natural');
+    assert.equal(scope.bdc.references.length, 0);
+    scope.bdc.inspectionIndex = 1;
+    scope.changeBdcView();
+    assert.equal(scope.bdc.selectedProfile, null);
+    assert.equal(scope.bdcDisplayProfile(2020, 'DRY'), 'ndvi');
+    scope.bdc.selectedProfile = 'natural';
+    scope.changeBdcProfile();
+    grid.reset(point);
+    assert.equal(scope.bdc.selectedProfile, null);
+    assert.equal(scope.bdcDisplayProfile(2020, 'DRY'), 'natural');
+    assert.equal(point.inspection[0].bdcSelections[0].profile, 'natural');
+    assert.equal(c.calls.length, 0);
+});
+test('perfil indisponível na aquisição histórica não consulta outra seleção nem substitui composição', () => {
+    const d = mapDirective({ scope: { historical: true, selectionId: 'original' } });
+    d.calls[0].callback(ready());
+    const original = d.scope.resolved;
+    d.scope.profile = 'unsupported';
+    d.watches[1]();
+    d.timers.at(-1).fn();
+    assert.equal(d.scope.statusKey, 'BDC.PROFILE_UNAVAILABLE');
+    assert.equal(d.scope.resolved, original);
+    assert.equal(d.scope.effectiveProfile, 'unsupported');
+    assert.equal(d.calls.filter(call => typeof call === 'object').length, 1);
+    assert.equal(d.viewed.length, 0);
+});

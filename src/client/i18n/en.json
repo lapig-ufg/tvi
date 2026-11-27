@@ -1,5 +1,7 @@
 {
   "BDC": {
+    "AVAILABLE_PROFILES": "Available compositions",
+    "RECORDED_PROFILE": "Recorded composition or preview default",
     "PROFILE_VEGETATION": "Vegetation and land use",
     "PROFILE_INFRARED": "Infrared and vegetation",
     "HELP": "Help",

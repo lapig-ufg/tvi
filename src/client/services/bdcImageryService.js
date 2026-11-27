@@ -138,7 +138,7 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
             helpModal.result.then(clearHelp, clearHelp);
         };
         if (scope.$on) scope.$on('$destroy', function () { if (helpModal) helpModal.dismiss(); });
-        scope.bdc = { view: supervision ? 'history' : 'current', inspectors: [], inspectionIndex: 0, references: [], profile: null };
+        scope.bdc = { view: supervision ? 'history' : 'current', inspectors: [], inspectionIndex: 0, references: [], profile: null, selectedProfile: null };
         function historicalReferences() {
             var inspection = scope.bdc.inspectors[scope.bdc.inspectionIndex];
             return inspection && Array.isArray(inspection.bdcSelections) ? inspection.bdcSelections : [];
@@ -152,6 +152,12 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
             var reference = historicalReferences().find(function (item) { return item.year === year && item.period === period; });
             if (reference && reference.selectionId) return reference.profile;
             return !supervision || scope.bdcIsPreview(year, period) ? scope.bdc.profile : null;
+        };
+        scope.bdcDisplayProfile = function (year, period) {
+            return scope.bdc.profileOverride ? scope.bdc.selectedProfile : scope.bdcSelectionProfile(year, period);
+        };
+        scope.changeBdcProfile = function () {
+            scope.bdc.profileOverride = !!scope.bdc.selectedProfile;
         };
         scope.bdcIsPreview = function (year, period) {
             return !!(supervision && scope.bdc.currentAvailable && Number.isInteger(year)
@@ -177,6 +183,7 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
         scope.changeBdcView = function () {
             scope.bdc.comparison = null;
             scope.bdc.profileOverride = false;
+            scope.bdc.selectedProfile = null;
             scope.maps = scope.buildBdcMaps();
         };
         scope.bdcViewed = function (reference) {
@@ -197,6 +204,7 @@ angular.module('application').factory('bdcImageryService', function ($http, $tim
                 scope.bdc.references = [];
                 scope.bdc.comparison = null;
                 scope.bdc.profileOverride = false;
+                scope.bdc.selectedProfile = null;
                 scope.bdc.view = supervision ? 'history' : 'current';
                 scope.bdc.inspectors = point && Array.isArray(point.inspection) ? point.inspection.map(function (inspection, index) {
                     return Object.assign({}, inspection, { userName: inspection.userName || (point.userName || [])[index] || String(index + 1) });

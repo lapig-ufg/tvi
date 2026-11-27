@@ -354,7 +354,7 @@
                 </div>
                 <div class="bdc-toolbar" ng-if="isBdc">
                     <strong>{{ 'BDC.TITLE' | i18n }}</strong>
-                    <label>{{ 'BDC.PROFILE' | i18n }}
+                    <label>{{ 'BDC.AVAILABLE_PROFILES' | i18n }}
                         <select ng-model="bdc.profile" ng-options="profile as bdcProfileLabel(profile) for profile in bdc.profiles"></select>
                     </label>
                     <button type="button" class="btn btn-default btn-sm bdc-help-button" ng-click="openBdcHelp()"><i class="fa fa-question-circle" aria-hidden="true"></i> {{ 'BDC.HELP' | i18n }}</button>

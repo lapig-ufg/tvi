@@ -1,5 +1,7 @@
 {
   "BDC": {
+    "AVAILABLE_PROFILES": "Komposisi tersedia",
+    "RECORDED_PROFILE": "Komposisi tercatat atau bawaan pratinjau",
     "PROFILE_VEGETATION": "Vegetasi dan penggunaan lahan",
     "PROFILE_INFRARED": "Inframerah dan vegetasi",
     "HELP": "Bantuan",
